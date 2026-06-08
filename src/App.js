@@ -42,11 +42,17 @@ function App() {
         input:focus { outline: none; border-color: rgba(0,212,212,0.6) !important; }
         button:hover { opacity: 0.88; }
 
+        .texte-mobile { display: none; }
+        .texte-desktop { display: block; }
+
         @media (max-width: 700px) {
+          .texte-desktop { display: none !important; }
+          .texte-mobile { display: block !important; }
           .encart-msg, .encart-login {
-            max-width: 92vw !important;
-            width: 92vw !important;
+            max-width: 75vw !important;
+            width: 75vw !important;
             background: rgba(0,0,0,0.52) !important;
+            padding: 18px 20px !important;
           }
         }
       `}</style>
@@ -187,7 +193,8 @@ function App() {
               textAlign: 'center',
             }}
           >
-            <p style={{
+            {/* Texte desktop */}
+            <p className="texte-desktop" style={{
               color: '#00d4d4',
               fontStyle: 'italic',
               marginBottom: '14px',
@@ -197,7 +204,7 @@ function App() {
               Des idées plein la tête et la tête dans les nuages,{'\n'}
               bienvenue dans mon univers.
             </p>
-            <p style={{
+            <p className="texte-desktop" style={{
               color: 'rgba(255,255,255,0.72)',
               fontSize: '13.5px',
               lineHeight: '1.9',
@@ -211,6 +218,29 @@ Constituez votre collection, découvrez les nouveautés,
 partagez vos coloriages et plongez dans mes histoires.
 Ce site c'est un peu ma maison,
 et j'espère qu'elle vous ressourcera.`}
+            </p>
+
+            {/* Texte mobile — plus court */}
+            <p className="texte-mobile" style={{
+              color: '#00d4d4',
+              fontStyle: 'italic',
+              marginBottom: '10px',
+              fontSize: '13px',
+              lineHeight: '1.6',
+            }}>
+              Des idées plein la tête,{'\n'}bienvenue dans mon univers.
+            </p>
+            <p className="texte-mobile" style={{
+              color: 'rgba(255,255,255,0.72)',
+              fontSize: '12px',
+              lineHeight: '1.8',
+              whiteSpace: 'pre-line',
+            }}>
+              {`Illustrations à colorier —
+personnages, univers, émotions.
+
+Constituez votre collection,
+partagez vos coloriages.`}
             </p>
           </div>
 
