@@ -220,7 +220,7 @@ Ce site c'est un peu ma maison,
 et j'espère qu'elle vous ressourcera.`}
             </p>
 
-            {/* Texte mobile — même contenu, retours à la ligne adaptés */}
+            {/* Texte mobile — même contenu, word-wrap naturel */}
             <p className="texte-mobile" style={{
               color: '#00d4d4',
               fontStyle: 'italic',
@@ -228,26 +228,16 @@ et j'espère qu'elle vous ressourcera.`}
               fontSize: '13px',
               lineHeight: '1.6',
             }}>
-              Des idées plein la tête et la tête dans les nuages,{'\n'}
-              bienvenue dans mon univers.
+              Des idées plein la tête et la tête dans les nuages, bienvenue dans mon univers.
             </p>
             <p className="texte-mobile" style={{
               color: 'rgba(255,255,255,0.72)',
               fontSize: '12px',
               lineHeight: '1.8',
-              whiteSpace: 'pre-line',
             }}>
-              {`Ici vous trouverez toutes mes illustrations à colorier,
-des personnages, des univers, des émotions,
-pensés pour vous emmener ailleurs
-le temps d'une page.
-
-Constituez votre collection,
-découvrez les nouveautés,
-partagez vos coloriages
-et plongez dans mes histoires.
-Ce site c'est un peu ma maison,
-et j'espère qu'elle vous ressourcera.`}
+              Ici vous trouverez toutes mes illustrations à colorier, des personnages, des univers, des émotions, pensés pour vous emmener ailleurs le temps d'une page.
+              <br/><br/>
+              Constituez votre collection, découvrez les nouveautés, partagez vos coloriages et plongez dans mes histoires. Ce site c'est un peu ma maison, et j'espère qu'elle vous ressourcera.
             </p>
           </div>
 
