@@ -43,8 +43,11 @@ function App() {
         button:hover { opacity: 0.88; }
 
         @media (max-width: 700px) {
-          .encarts { flex-direction: column !important; align-items: center !important; }
-          .encart-msg, .encart-login { max-width: 90vw !important; width: 90vw !important; }
+          .encart-msg, .encart-login {
+            max-width: 92vw !important;
+            width: 92vw !important;
+            background: rgba(0,0,0,0.52) !important;
+          }
         }
       `}</style>
 
@@ -96,7 +99,7 @@ function App() {
       <div style={{ position: 'relative', width: '100%' }}>
 
         {/* Barres animées — centrées, largeur = bannière */}
-        <div style={{
+        <div className="barres-wrapper" style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
