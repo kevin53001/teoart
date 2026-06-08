@@ -76,7 +76,7 @@ function App() {
         display: 'flex',
         justifyContent: 'center',
         marginTop: '-60px',
-        marginBottom: '18px',
+        marginBottom: '0px',
       }}>
         <img
           src={`${R2}/site/Logo.png`}
@@ -116,14 +116,14 @@ function App() {
               {/* Dégradés latéraux */}
               <div style={{
                 position: 'absolute', left: 0, top: 0,
-                width: '120px', height: '100%',
-                background: 'linear-gradient(to right, #000 40%, transparent)',
+                width: '60px', height: '100%',
+                background: 'linear-gradient(to right, #000 20%, transparent)',
                 zIndex: 2, pointerEvents: 'none',
               }} />
               <div style={{
                 position: 'absolute', right: 0, top: 0,
-                width: '120px', height: '100%',
-                background: 'linear-gradient(to left, #000 40%, transparent)',
+                width: '60px', height: '100%',
+                background: 'linear-gradient(to left, #000 20%, transparent)',
                 zIndex: 2, pointerEvents: 'none',
               }} />
 
@@ -142,7 +142,7 @@ function App() {
                       height: `${IMG_H}px`,
                       objectFit: 'cover',
                       borderRadius: '5px',
-                      opacity: 0.25,
+                      opacity: 0.5,
                       display: 'block',
                     }}
                   />
@@ -163,11 +163,11 @@ function App() {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             alignItems: 'center',
-            gap: '24px',
+            gap: '16px',
             zIndex: 10,
-            padding: '30px 20px',
+            padding: '16px 20px 30px',
           }}
         >
           {/* Message d'accueil */}
@@ -177,10 +177,11 @@ function App() {
               background: 'rgba(0,0,0,0.78)',
               border: '1px solid rgba(0,212,212,0.3)',
               borderRadius: '16px',
-              padding: '28px 32px',
+              padding: '24px 32px',
               maxWidth: '480px',
-              width: '100%',
+              width: '92%',
               backdropFilter: 'blur(10px)',
+              textAlign: 'center',
             }}
           >
             <p style={{
@@ -188,17 +189,25 @@ function App() {
               fontStyle: 'italic',
               marginBottom: '14px',
               fontSize: '15px',
-              lineHeight: '1.6',
+              lineHeight: '1.7',
             }}>
-              Des idées plein la tête et la tête dans les nuages, bienvenue dans mon univers.
+              Des idées plein la tête et la tête dans les nuages,{'\n'}
+              bienvenue dans mon univers.
             </p>
             <p style={{
               color: 'rgba(255,255,255,0.72)',
               fontSize: '13.5px',
-              lineHeight: '1.75',
+              lineHeight: '1.9',
+              whiteSpace: 'pre-line',
             }}>
-              Ici vous trouverez toutes mes illustrations à colorier — des personnages, des univers, des émotions — pensés pour vous emmener ailleurs le temps d'une page.<br /><br />
-              Constituez votre collection, découvrez les nouveautés, partagez vos coloriages et plongez dans mes histoires. Ce site c'est un peu ma maison, et j'espère qu'elle vous ressourcera.
+              {`Ici vous trouverez toutes mes illustrations à colorier
+des personnages, des univers, des émotions,
+pensés pour vous emmener ailleurs le temps d'une page.
+
+Constituez votre collection, découvrez les nouveautés,
+partagez vos coloriages et plongez dans mes histoires.
+Ce site c'est un peu ma maison,
+et j'espère qu'elle vous ressourcera.`}
             </p>
           </div>
 
@@ -210,7 +219,8 @@ function App() {
               border: '1px solid rgba(0,212,212,0.3)',
               borderRadius: '16px',
               padding: '28px 32px',
-              width: '340px',
+              maxWidth: '480px',
+              width: '92%',
               backdropFilter: 'blur(10px)',
             }}
           >
