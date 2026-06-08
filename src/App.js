@@ -1,6 +1,6 @@
 import React from 'react';
 
-const R2 = 'https://pub-ba3a7a4e3f584275b97e53437cdd7782.r2.dev';
+const R2 = 'https://images.kevinteoart.fr';
 
 const barres = [
   { direction: 'left', images: Array.from({length: 20}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`) },
