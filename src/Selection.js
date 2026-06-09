@@ -54,22 +54,10 @@ function Selection() {
     charger();
   }, []);
 
-  const toggleRecueil = (id) => {
-    setRecueilsCoches(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
+  const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
-  const toggleLivre = (id) => {
-    setLivresCoches(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
-
-  const validerRecueils = () => {
-    window.scrollTo(0, 0);
-    setEtape(2);
-  };
+  const validerRecueils = () => { window.scrollTo(0, 0); setEtape(2); };
 
   const validerLivres = async () => {
     setSaving(true);
@@ -83,21 +71,15 @@ function Selection() {
       ? await supabase.from('illustrations').select('id').overlaps('recueils_ids', recueilsCoches)
       : { data: [] };
 
-    const toutesIllustrations = [
-      ...new Set([
-        ...(illustrationsLivres || []).map(i => i.id),
-        ...(illustrationsRecueils || []).map(i => i.id),
-      ])
-    ];
+    const toutesIllustrations = [...new Set([
+      ...(illustrationsLivres || []).map(i => i.id),
+      ...(illustrationsRecueils || []).map(i => i.id),
+    ])];
 
     await supabase.from('profils').update({ selection_faite: true }).eq('id', user.id);
 
     if (toutesIllustrations.length > 0) {
-      const rows = toutesIllustrations.map(illId => ({
-        user_id: user.id,
-        illustration_id: illId,
-        j_ai: true,
-      }));
+      const rows = toutesIllustrations.map(illId => ({ user_id: user.id, illustration_id: illId, j_ai: true }));
       await supabase.from('collection').upsert(rows);
     }
 
@@ -108,15 +90,14 @@ function Selection() {
   const CarteItem = ({ item, coche, onToggle }) => {
     const url = cheminVersUrl(item.visuel_presentation);
     return (
-      <div onClick={onToggle}
-        style={{
-          width: '180px', cursor: 'pointer', borderRadius: '12px',
-          border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.1)'}`,
-          background: 'rgba(0,0,0,0.6)', overflow: 'hidden', position: 'relative',
-          transition: 'transform .2s, box-shadow .2s, border-color .2s',
-          transform: coche ? 'translateY(-4px)' : 'none',
-          boxShadow: coche ? '0 8px 24px rgba(0,212,212,0.25)' : 'none',
-        }}>
+      <div onClick={onToggle} style={{
+        width: '180px', cursor: 'pointer', borderRadius: '12px',
+        border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.1)'}`,
+        background: 'rgba(0,0,0,0.75)', overflow: 'hidden', position: 'relative',
+        transition: 'transform .2s, box-shadow .2s, border-color .2s',
+        transform: coche ? 'translateY(-4px)' : 'none',
+        boxShadow: coche ? '0 8px 24px rgba(0,212,212,0.25)' : 'none',
+      }}>
         {url
           ? <img src={url} alt={item.nom} style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: '100%', height: '220px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -146,9 +127,6 @@ function Selection() {
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
-        @media (max-width: 700px) {
-          .encart-selection { max-width: 75vw !important; width: 75vw !important; background: rgba(0,0,0,0.52) !important; padding: 18px 20px !important; }
-        }
       `}</style>
 
       {/* BANNIÈRE HAUT */}
@@ -161,8 +139,10 @@ function Selection() {
         <img src={`${R2}/site/Logo.png`} alt="logo Kevin Teo'Art" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover' }} />
       </div>
 
-      {/* ZONE BARRES + ENCART */}
+      {/* ZONE BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%' }}>
+
+        {/* BARRES */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
           {barres.map((barre, i) => (
             <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
@@ -177,77 +157,72 @@ function Selection() {
           ))}
         </div>
 
-        {/* ENCART EXPLICATION */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '20px' }}>
-          <div className="encart-selection" style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '28px 36px', maxWidth: '520px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
-            <p style={{ color: '#00d4d4', fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>
-              Minute papillon ! 🦋
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', lineHeight: '1.9' }}>
+        {/* ENCART + RECUEILS par dessus les barres */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly', zIndex: 10, padding: '16px 20px' }}>
+
+          {/* ENCART EXPLICATION */}
+          <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '24px 32px', maxWidth: '520px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
+            <p style={{ color: '#00d4d4', fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>Minute papillon ! 🦋</p>
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13.5px', lineHeight: '1.8' }}>
               Avant de te laisser explorer toutes les illustrations, il faut résoudre une énigme de la plus haute importance :
             </p>
-            <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '15px', margin: '14px 0', fontWeight: 'bold' }}>
-              Quels livres possèdes-tu déjà ?
+            <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '14px', margin: '10px 0', fontWeight: 'bold' }}>Quels livres possèdes-tu déjà ?</p>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.8' }}>
+              Sélectionne simplement tes recueils et livres, et je m'occuperai du reste en ajoutant automatiquement les illustrations correspondantes à ta collection.
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13.5px', lineHeight: '1.9' }}>
-              Sélectionne simplement tes recueils et livres (sur la page suivante), et je m'occuperai du reste en ajoutant automatiquement les illustrations correspondantes à ta collection.
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: '1.8', marginTop: '12px', fontStyle: 'italic' }}>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12.5px', lineHeight: '1.8', marginTop: '10px', fontStyle: 'italic' }}>
               Promis, c'est rapide. Probablement plus rapide que de retrouver un feutre tombé sous le canapé.<br />
               Et surtout, tu n'auras jamais à refaire cette étape.
             </p>
           </div>
-        </div>
-      </div>
 
-      {/* SECTION SÉLECTION */}
-      <div style={{ padding: '48px 20px 60px', maxWidth: '1100px', margin: '0 auto' }}>
+          {/* SECTION RECUEILS/LIVRES */}
+          <div style={{ width: '100%', maxWidth: '1100px' }}>
 
-        {/* Barre de progression */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
-          {[1, 2].map(n => (
-            <div key={n} style={{ width: '60px', height: '5px', borderRadius: '3px', background: n <= etape ? '#00d4d4' : 'rgba(255,255,255,0.15)' }} />
-          ))}
-        </div>
-
-        <p style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold', textAlign: 'center', marginBottom: '6px' }}>
-          {etape === 1 ? '📚 Quels recueils possèdes-tu ?' : '📖 Quels livres possèdes-tu ?'}
-        </p>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', textAlign: 'center', marginBottom: '32px' }}>
-          {etape === 1 ? 'Coche les recueils que tu as déjà, puis clique sur Valider.' : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
-        </p>
-
-        {loading ? (
-          <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
-        ) : (
-          <>
-            {/* GRILLE 3 par ligne */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 180px)', gap: '24px', justifyContent: 'center', marginBottom: '40px' }}>
-              {(etape === 1 ? recueils : livres).map(item => (
-                <CarteItem
-                  key={item.id}
-                  item={item}
-                  coche={etape === 1 ? recueilsCoches.includes(item.id) : livresCoches.includes(item.id)}
-                  onToggle={() => etape === 1 ? toggleRecueil(item.id) : toggleLivre(item.id)}
-                />
+            {/* Barre de progression */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
+              {[1, 2].map(n => (
+                <div key={n} style={{ width: '60px', height: '5px', borderRadius: '3px', background: n <= etape ? '#00d4d4' : 'rgba(255,255,255,0.15)' }} />
               ))}
             </div>
 
-            {/* BOUTONS */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              {etape === 2 && (
-                <button onClick={() => setEtape(1)}
-                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '13px 32px', color: 'rgba(255,255,255,0.6)', fontSize: '15px', cursor: 'pointer' }}>
-                  ← Retour
-                </button>
-              )}
-              <button onClick={etape === 1 ? validerRecueils : validerLivres} disabled={saving}
-                style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px 48px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Enregistrement...' : etape === 1 ? 'Valider →' : 'Accéder au catalogue →'}
-              </button>
-            </div>
-          </>
-        )}
+            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>
+              {etape === 1 ? '📚 Quels recueils possèdes-tu ?' : '📖 Quels livres possèdes-tu ?'}
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', textAlign: 'center', marginBottom: '16px' }}>
+              {etape === 1 ? 'Coche les recueils que tu as déjà, puis clique sur Valider.' : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
+            </p>
+
+            {loading ? (
+              <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 180px)', gap: '16px', justifyContent: 'center', marginBottom: '20px' }}>
+                  {(etape === 1 ? recueils : livres).map(item => (
+                    <CarteItem
+                      key={item.id}
+                      item={item}
+                      coche={etape === 1 ? recueilsCoches.includes(item.id) : livresCoches.includes(item.id)}
+                      onToggle={() => etape === 1 ? toggleRecueil(item.id) : toggleLivre(item.id)}
+                    />
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                  {etape === 2 && (
+                    <button onClick={() => setEtape(1)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px 28px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+                      ← Retour
+                    </button>
+                  )}
+                  <button onClick={etape === 1 ? validerRecueils : validerLivres} disabled={saving}
+                    style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                    {saving ? 'Enregistrement...' : etape === 1 ? 'Valider →' : 'Accéder au catalogue →'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* BANNIÈRE BAS */}
