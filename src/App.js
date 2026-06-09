@@ -365,10 +365,8 @@ et j'espère qu'elle vous ressourcera.`}
             }}
           />
           {/* Zone cliquable Instagram (gauche) */}
-          <a
-            href="https://www.instagram.com/kevin_teoart/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
+            onClick={() => window.open('https://www.instagram.com/kevin_teoart/', '_blank')}
             style={{
               position: 'absolute',
               top: 0, left: 0,
@@ -377,10 +375,8 @@ et j'espère qu'elle vous ressourcera.`}
             }}
           />
           {/* Zone cliquable Patreon (centre) */}
-          <a
-            href="https://patreon.com/u119601283?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
+            onClick={() => window.open('https://patreon.com/u119601283?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink', '_blank')}
             style={{
               position: 'absolute',
               top: 0, left: '33.33%',
@@ -389,10 +385,8 @@ et j'espère qu'elle vous ressourcera.`}
             }}
           />
           {/* Zone cliquable Facebook (droite) */}
-          <a
-            href="https://www.facebook.com/groups/516417952677490/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
+            onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')}
             style={{
               position: 'absolute',
               top: 0, left: '66.66%',
