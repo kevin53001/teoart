@@ -27,7 +27,7 @@ function cheminVersUrl(chemin) {
 
 function Selection() {
   const navigate = useNavigate();
-  const [etape, setEtape] = React.useState(0); // 0=intro, 1=recueils, 2=livres
+  const [etape, setEtape] = React.useState(0);
   const [recueils, setRecueils] = React.useState([]);
   const [livres, setLivres] = React.useState([]);
   const [recueilsCoches, setRecueilsCoches] = React.useState([]);
@@ -46,7 +46,7 @@ function Selection() {
         .from('livres')
         .select('id, nom, annee, recueils_ids, visuel_presentation')
         .eq('statut', 'published')
-        .order('annee');
+        .order('nom'); // ordre alphabétique
       setRecueils(r || []);
       setLivres(l || []);
       setLoading(false);
@@ -57,10 +57,15 @@ function Selection() {
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
-  // Livres à afficher : ceux qui ne sont PAS dans les recueils cochés
+  const retourRecueils = () => {
+    setLivresCoches([]); // vider les livres cochés au retour
+    setEtape(1);
+  };
+
+  // Livres filtrés : ceux dont AUCUN recueil n'est coché
   const livresFiltres = livres.filter(l => {
-    if (!l.recueils_ids || l.recueils_ids.length === 0) return true; // livre sans recueil → toujours affiché
-    return !l.recueils_ids.some(rid => recueilsCoches.includes(rid)); // livre dont aucun recueil n'est coché
+    if (!l.recueils_ids || l.recueils_ids.length === 0) return true;
+    return !l.recueils_ids.some(rid => recueilsCoches.includes(rid));
   });
 
   const validerLivres = async () => {
@@ -91,38 +96,38 @@ function Selection() {
     navigate('/catalogue');
   };
 
-  const CarteItem = ({ item, coche, onToggle }) => {
+  const CarteItem = ({ item, coche, onToggle, taille = 150 }) => {
     const url = cheminVersUrl(item.visuel_presentation);
     return (
       <div onClick={onToggle} style={{
-        width: '170px', cursor: 'pointer', borderRadius: '12px',
+        width: `${taille}px`, cursor: 'pointer', borderRadius: '10px',
         border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.15)'}`,
         background: 'rgba(0,0,0,0.75)', overflow: 'hidden', position: 'relative',
         transition: 'transform .2s, box-shadow .2s, border-color .2s',
         transform: coche ? 'translateY(-4px)' : 'none',
         boxShadow: coche ? '0 8px 24px rgba(0,212,212,0.25)' : 'none',
         backdropFilter: 'blur(4px)',
+        flexShrink: 0,
       }}>
         {url
-          ? <img src={url} alt={item.nom} style={{ width: '100%', height: '210px', objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: '210px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>Pas d'image</span>
+          ? <img src={url} alt={item.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
+          : <div style={{ width: '100%', height: `${taille}px`, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Pas d'image</span>
             </div>
         }
         {coche && (
-          <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#00d4d4', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+          <div style={{ position: 'absolute', top: '6px', right: '6px', background: '#00d4d4', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold' }}>✓</span>
           </div>
         )}
-        <div style={{ padding: '8px 10px' }}>
-          <p style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{item.nom}</p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{item.annee}</p>
+        <div style={{ padding: '6px 8px' }}>
+          <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}</p>
         </div>
       </div>
     );
   };
 
-  // Contenu de l'encart selon l'étape
   const renderEncart = () => {
     if (etape === 0) return (
       <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '28px 36px', maxWidth: '520px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
@@ -150,9 +155,9 @@ function Selection() {
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 170px)', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
               {recueils.map(item => (
-                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} />
+                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} taille={160} />
               ))}
             </div>
             <button onClick={() => setEtape(2)} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
@@ -164,24 +169,24 @@ function Selection() {
     );
 
     if (etape === 2) return (
-      <div style={{ width: '92%', maxWidth: '900px', textAlign: 'center' }}>
+      <div style={{ width: '94%', maxWidth: '1100px', textAlign: 'center' }}>
         <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '4px' }}>📖 Quels livres possèdes-tu ?</p>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>
           {livresFiltres.length === 0
-            ? 'Tous tes livres sont déjà inclus dans tes recueils !'
+            ? 'Tous tes livres sont déjà inclus dans tes recueils ! 🎉'
             : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
         </p>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
             {livresFiltres.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 170px)', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginBottom: '20px' }}>
                 {livresFiltres.map(item => (
-                  <CarteItem key={item.id} item={item} coche={livresCoches.includes(item.id)} onToggle={() => toggleLivre(item.id)} />
+                  <CarteItem key={item.id} item={item} coche={livresCoches.includes(item.id)} onToggle={() => toggleLivre(item.id)} taille={130} />
                 ))}
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <button onClick={() => setEtape(1)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px 28px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+              <button onClick={retourRecueils} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px 28px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
                 ← Retour
               </button>
               <button onClick={validerLivres} disabled={saving} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
@@ -196,7 +201,6 @@ function Selection() {
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
-
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0);    } to { transform: translateX(-50%); } }
@@ -232,8 +236,8 @@ function Selection() {
           ))}
         </div>
 
-        {/* ENCART PAR DESSUS LES BARRES */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '16px 20px', overflowY: 'auto' }}>
+        {/* CONTENU PAR DESSUS */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '20px', overflowY: 'auto' }}>
           {renderEncart()}
         </div>
       </div>
@@ -247,7 +251,6 @@ function Selection() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
-
     </div>
   );
 }
