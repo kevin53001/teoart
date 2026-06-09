@@ -3,12 +3,11 @@ import React from 'react';
 const R2 = 'https://images.kevinteoart.fr';
 
 const barres = [
-  { direction: 'left',  images: Array.from({length: 20}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 20}, (_, i) => `bg_${String(i+21).padStart(3,'0')}.jpg`) },
-  { direction: 'left',  images: Array.from({length: 20}, (_, i) => `bg_${String(i+41).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 20}, (_, i) => `bg_${String(i+61).padStart(3,'0')}.jpg`) },
-  { direction: 'left',  images: Array.from({length: 20}, (_, i) => `bg_${String(i+81).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 20}, (_, i) => `bg_${String(i+101).padStart(3,'0')}.jpg`) },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`) },
+  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+25).padStart(3,'0')}.jpg`) },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+49).padStart(3,'0')}.jpg`) },
+  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+73).padStart(3,'0')}.jpg`) },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+97).padStart(3,'0')}.jpg`) },
 ];
 
 const BANNER_MAX = '1200px';
@@ -339,6 +338,68 @@ et j'espère qu'elle vous ressourcera.`}
               Créer un compte
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* ── BANNIÈRE BAS ── */}
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '24px 0 24px',
+        position: 'relative',
+        zIndex: 2,
+      }}>
+        <div style={{
+          position: 'relative',
+          maxWidth: '1200px',
+          width: '92%',
+        }}>
+          <img
+            src={`${R2}/site/banniere_bas.jpg`}
+            alt="bannière bas"
+            style={{
+              width: '100%',
+              borderRadius: '14px',
+              display: 'block',
+            }}
+          />
+          {/* Zone cliquable Instagram (gauche) */}
+          <a
+            href="https://www.instagram.com/kevin_teoart/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '33.33%', height: '100%',
+              cursor: 'pointer',
+            }}
+          />
+          {/* Zone cliquable Patreon (centre) */}
+          <a
+            href="https://patreon.com/u119601283?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: 'absolute',
+              top: 0, left: '33.33%',
+              width: '33.33%', height: '100%',
+              cursor: 'pointer',
+            }}
+          />
+          {/* Zone cliquable Facebook (droite) */}
+          <a
+            href="https://www.facebook.com/groups/516417952677490/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: 'absolute',
+              top: 0, left: '66.66%',
+              width: '33.34%', height: '100%',
+              cursor: 'pointer',
+            }}
+          />
         </div>
       </div>
 
