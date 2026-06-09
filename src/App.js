@@ -1,14 +1,29 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { supabase } from './supabase';
 import Connexion from './Connexion';
 import Inscription from './Inscription';
+import Selection from './Selection';
+import Catalogue from './Catalogue';
 
 function App() {
+  const [session, setSession] = React.useState(undefined);
+
+  React.useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (session === undefined) return null;
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Connexion />} />
-        <Route path="/inscription" element={<Inscription />} />
+        <Route path="/" element={!session ? <Connexion /> : <Navigate to="/catalogue" />} />
+        <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/catalogue" />} />
+        <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
+        <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

@@ -28,9 +28,24 @@ function Connexion() {
   const handleConnexion = async () => {
     setError('');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      setError('Email ou mot de passe incorrect.');
+      return;
+    }
+    const { data: profil } = await supabase
+      .from('profils')
+      .select('selection_faite')
+      .eq('id', data.user.id)
+      .single();
+
     setLoading(false);
-    if (error) setError('Email ou mot de passe incorrect.');
+    if (profil?.selection_faite) {
+      navigate('/catalogue');
+    } else {
+      navigate('/selection');
+    }
   };
 
   return (
