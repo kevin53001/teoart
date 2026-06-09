@@ -373,7 +373,7 @@ function Inscription() {
               {etape === 3 && (
                 <div className="encart-inscription" style={encartStyle}>
                   <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>③ Adresse de livraison</p>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande de version reliée.</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande.</p>
                   <label style={labelStyle}>Pays</label>
                   <input type="text" placeholder="France" value={pays} onChange={e => setPays(e.target.value)} style={inputStyle} />
                   <label style={labelStyle}>Adresse</label>
