@@ -131,7 +131,7 @@ function Inscription() {
     const userId = data.user?.id;
 
     const fileName = `avatars/${userId}.jpg`;
-    await supabase.storage.from('teoart-files').upload(fileName, photoCroppee, { upsert: true });
+    await supabase.storage.from('avatars').upload(fileName, photoCroppee, { upsert: true });
 
     await supabase.from('profils').insert({
       id: userId,
