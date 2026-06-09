@@ -27,7 +27,7 @@ function cheminVersUrl(chemin) {
 
 function Selection() {
   const navigate = useNavigate();
-  const [etape, setEtape] = React.useState(1);
+  const [etape, setEtape] = React.useState(0); // 0=intro, 1=recueils, 2=livres
   const [recueils, setRecueils] = React.useState([]);
   const [livres, setLivres] = React.useState([]);
   const [recueilsCoches, setRecueilsCoches] = React.useState([]);
@@ -57,7 +57,11 @@ function Selection() {
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
-  const validerRecueils = () => { window.scrollTo(0, 0); setEtape(2); };
+  // Livres à afficher : ceux qui ne sont PAS dans les recueils cochés
+  const livresFiltres = livres.filter(l => {
+    if (!l.recueils_ids || l.recueils_ids.length === 0) return true; // livre sans recueil → toujours affiché
+    return !l.recueils_ids.some(rid => recueilsCoches.includes(rid)); // livre dont aucun recueil n'est coché
+  });
 
   const validerLivres = async () => {
     setSaving(true);
@@ -91,16 +95,17 @@ function Selection() {
     const url = cheminVersUrl(item.visuel_presentation);
     return (
       <div onClick={onToggle} style={{
-        width: '180px', cursor: 'pointer', borderRadius: '12px',
-        border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.1)'}`,
+        width: '170px', cursor: 'pointer', borderRadius: '12px',
+        border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.15)'}`,
         background: 'rgba(0,0,0,0.75)', overflow: 'hidden', position: 'relative',
         transition: 'transform .2s, box-shadow .2s, border-color .2s',
         transform: coche ? 'translateY(-4px)' : 'none',
         boxShadow: coche ? '0 8px 24px rgba(0,212,212,0.25)' : 'none',
+        backdropFilter: 'blur(4px)',
       }}>
         {url
-          ? <img src={url} alt={item.nom} style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: '220px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          ? <img src={url} alt={item.nom} style={{ width: '100%', height: '210px', objectFit: 'cover', display: 'block' }} />
+          : <div style={{ width: '100%', height: '210px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>Pas d'image</span>
             </div>
         }
@@ -109,10 +114,82 @@ function Selection() {
             <span style={{ color: '#000', fontSize: '14px', fontWeight: 'bold' }}>✓</span>
           </div>
         )}
-        <div style={{ padding: '10px 12px' }}>
-          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', marginBottom: '2px' }}>{item.nom}</p>
+        <div style={{ padding: '8px 10px' }}>
+          <p style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{item.nom}</p>
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{item.annee}</p>
         </div>
+      </div>
+    );
+  };
+
+  // Contenu de l'encart selon l'étape
+  const renderEncart = () => {
+    if (etape === 0) return (
+      <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '28px 36px', maxWidth: '520px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
+        <p style={{ color: '#00d4d4', fontSize: '20px', fontWeight: 'bold', marginBottom: '14px' }}>Minute papillon ! 🦋</p>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13.5px', lineHeight: '1.9' }}>
+          Avant de te laisser explorer toutes les illustrations, il faut résoudre une énigme de la plus haute importance :
+        </p>
+        <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '15px', margin: '12px 0', fontWeight: 'bold' }}>Quels livres possèdes-tu déjà ?</p>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.9' }}>
+          Sélectionne simplement tes recueils et livres, et je m'occuperai du reste en ajoutant automatiquement les illustrations correspondantes à ta collection.
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12.5px', lineHeight: '1.8', marginTop: '12px', fontStyle: 'italic' }}>
+          Promis, c'est rapide. Probablement plus rapide que de retrouver un feutre tombé sous le canapé.<br />
+          Et surtout, tu n'auras jamais à refaire cette étape.
+        </p>
+        <button onClick={() => setEtape(1)} style={{ marginTop: '20px', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px 40px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+          C'est parti ! →
+        </button>
+      </div>
+    );
+
+    if (etape === 1) return (
+      <div style={{ width: '92%', maxWidth: '700px', textAlign: 'center' }}>
+        <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '4px' }}>📚 Quels recueils possèdes-tu ?</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
+        {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 170px)', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
+              {recueils.map(item => (
+                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} />
+              ))}
+            </div>
+            <button onClick={() => setEtape(2)} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+              Valider →
+            </button>
+          </>
+        )}
+      </div>
+    );
+
+    if (etape === 2) return (
+      <div style={{ width: '92%', maxWidth: '900px', textAlign: 'center' }}>
+        <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '4px' }}>📖 Quels livres possèdes-tu ?</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>
+          {livresFiltres.length === 0
+            ? 'Tous tes livres sont déjà inclus dans tes recueils !'
+            : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
+        </p>
+        {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
+          <>
+            {livresFiltres.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 170px)', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
+                {livresFiltres.map(item => (
+                  <CarteItem key={item.id} item={item} coche={livresCoches.includes(item.id)} onToggle={() => toggleLivre(item.id)} />
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+              <button onClick={() => setEtape(1)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px 28px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+                ← Retour
+              </button>
+              <button onClick={validerLivres} disabled={saving} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                {saving ? 'Enregistrement...' : 'Accéder au catalogue →'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   };
@@ -135,14 +212,12 @@ function Selection() {
       </div>
 
       {/* LOGO */}
-      <div style={{ position: 'relative', zIndex: 20, display: 'flex', justifyContent: 'center', marginTop: '-60px', marginBottom: '0px' }}>
+      <div style={{ position: 'relative', zIndex: 20, display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
         <img src={`${R2}/site/Logo.png`} alt="logo Kevin Teo'Art" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover' }} />
       </div>
 
-      {/* ZONE BARRES + CONTENU */}
+      {/* ZONE BARRES */}
       <div style={{ position: 'relative', width: '100%' }}>
-
-        {/* BARRES */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
           {barres.map((barre, i) => (
             <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
@@ -157,76 +232,14 @@ function Selection() {
           ))}
         </div>
 
-        {/* ENCART + RECUEILS par dessus les barres */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-evenly', zIndex: 10, padding: '16px 20px' }}>
-
-          {/* ENCART EXPLICATION */}
-          <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '24px 32px', maxWidth: '520px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
-            <p style={{ color: '#00d4d4', fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>Minute papillon ! 🦋</p>
-            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13.5px', lineHeight: '1.8' }}>
-              Avant de te laisser explorer toutes les illustrations, il faut résoudre une énigme de la plus haute importance :
-            </p>
-            <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '14px', margin: '10px 0', fontWeight: 'bold' }}>Quels livres possèdes-tu déjà ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.8' }}>
-              Sélectionne simplement tes recueils et livres, et je m'occuperai du reste en ajoutant automatiquement les illustrations correspondantes à ta collection.
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12.5px', lineHeight: '1.8', marginTop: '10px', fontStyle: 'italic' }}>
-              Promis, c'est rapide. Probablement plus rapide que de retrouver un feutre tombé sous le canapé.<br />
-              Et surtout, tu n'auras jamais à refaire cette étape.
-            </p>
-          </div>
-
-          {/* SECTION RECUEILS/LIVRES */}
-          <div style={{ width: '100%', maxWidth: '1100px' }}>
-
-            {/* Barre de progression */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
-              {[1, 2].map(n => (
-                <div key={n} style={{ width: '60px', height: '5px', borderRadius: '3px', background: n <= etape ? '#00d4d4' : 'rgba(255,255,255,0.15)' }} />
-              ))}
-            </div>
-
-            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px' }}>
-              {etape === 1 ? '📚 Quels recueils possèdes-tu ?' : '📖 Quels livres possèdes-tu ?'}
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', textAlign: 'center', marginBottom: '16px' }}>
-              {etape === 1 ? 'Coche les recueils que tu as déjà, puis clique sur Valider.' : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
-            </p>
-
-            {loading ? (
-              <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
-            ) : (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 180px)', gap: '16px', justifyContent: 'center', marginBottom: '20px' }}>
-                  {(etape === 1 ? recueils : livres).map(item => (
-                    <CarteItem
-                      key={item.id}
-                      item={item}
-                      coche={etape === 1 ? recueilsCoches.includes(item.id) : livresCoches.includes(item.id)}
-                      onToggle={() => etape === 1 ? toggleRecueil(item.id) : toggleLivre(item.id)}
-                    />
-                  ))}
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                  {etape === 2 && (
-                    <button onClick={() => setEtape(1)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '12px 28px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
-                      ← Retour
-                    </button>
-                  )}
-                  <button onClick={etape === 1 ? validerRecueils : validerLivres} disabled={saving}
-                    style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                    {saving ? 'Enregistrement...' : etape === 1 ? 'Valider →' : 'Accéder au catalogue →'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+        {/* ENCART PAR DESSUS LES BARRES */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '16px 20px', overflowY: 'auto' }}>
+          {renderEncart()}
         </div>
       </div>
 
       {/* BANNIÈRE BAS */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 24px', position: 'relative', zIndex: 2 }}>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
           <div onClick={() => window.open('https://www.instagram.com/kevin_teoart/', '_blank')} style={{ position: 'absolute', top: 0, left: 0, width: '33.33%', height: '100%', cursor: 'pointer' }} />
