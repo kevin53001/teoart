@@ -26,12 +26,12 @@ function Selection() {
       const { data: r } = await supabase
         .from('recueils')
         .select('id, nom, annee, visuel_presentation')
-        .eq('statut', 'publié')
+        .eq('statut', 'published')
         .order('annee');
       const { data: l } = await supabase
         .from('livres')
         .select('id, nom, annee, recueils_ids, visuel_presentation')
-        .eq('statut', 'publié')
+        .eq('statut', 'published')
         .order('annee');
       setRecueils(r || []);
       setLivres(l || []);
