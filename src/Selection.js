@@ -34,6 +34,7 @@ function Selection() {
   const [livresCoches, setLivresCoches] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 700);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -52,6 +53,9 @@ function Selection() {
       setLoading(false);
     };
     charger();
+    const handleResize = () => setIsMobile(window.innerWidth <= 700);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -95,16 +99,13 @@ function Selection() {
     marginBottom: '20px',
   };
 
-  // Effet tilt 3D + reflet doré
   const handleMouseMove = (e, el, wrap) => {
     const rect = el.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const dx = (e.clientX - cx) / (rect.width / 2);
     const dy = (e.clientY - cy) / (rect.height / 2);
-    const rotX = -dy * 5;
-    const rotY = dx * 5;
-    el.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`;
+    el.style.transform = `rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) scale(1.04)`;
     if (wrap) wrap.style.transform = 'perspective(800px)';
   };
 
@@ -149,23 +150,17 @@ function Selection() {
               : '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)',
             willChange: 'transform',
           }}>
-
-          {/* Image */}
           {url
             ? <img src={url} alt={item.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
             : <div style={{ width: '100%', height: `${taille}px`, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Pas d'image</span>
               </div>
           }
-
-          {/* Coche */}
           {coche && (
             <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#00d4d4', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
               <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold' }}>✓</span>
             </div>
           )}
-
-          {/* Nom */}
           <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
             <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}</p>
@@ -174,6 +169,9 @@ function Selection() {
       </div>
     );
   };
+
+  const tailleRecueil = isMobile ? 140 : 190;
+  const tailleLivre = isMobile ? 110 : 130;
 
   const renderEncart = () => {
     if (etape === 0) return (
@@ -204,9 +202,18 @@ function Selection() {
         </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, 190px)',
+              gap: isMobile ? '12px' : '16px',
+              justifyContent: 'center',
+              marginBottom: '20px',
+              padding: isMobile ? '0 8px' : '0',
+            }}>
               {recueils.map(item => (
-                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} taille={190} />
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'center' }}>
+                  <CarteItem item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} taille={tailleRecueil} />
+                </div>
               ))}
             </div>
             <button onClick={() => setEtape(2)} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
@@ -232,7 +239,7 @@ function Selection() {
             {livresFiltres.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginBottom: '20px' }}>
                 {livresFiltres.map(item => (
-                  <CarteItem key={item.id} item={item} coche={livresCoches.includes(item.id)} onToggle={() => toggleLivre(item.id)} taille={130} />
+                  <CarteItem key={item.id} item={item} coche={livresCoches.includes(item.id)} onToggle={() => toggleLivre(item.id)} taille={tailleLivre} />
                 ))}
               </div>
             )}
@@ -259,38 +266,17 @@ function Selection() {
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
-
         .teoart-card::before {
           content: '';
           position: absolute;
-          top: -20%;
-          left: -150%;
-          width: 80%;
-          height: 140%;
-          background: linear-gradient(
-            to right,
-            transparent 0%,
-            rgba(255,215,80,0.02) 10%,
-            rgba(255,225,110,0.07) 25%,
-            rgba(255,235,150,0.12) 40%,
-            rgba(255,245,170,0.08) 50%,
-            rgba(255,235,140,0.11) 62%,
-            rgba(255,220,100,0.06) 75%,
-            rgba(255,210,80,0.02) 88%,
-            transparent 100%
-          );
+          top: -20%; left: -150%;
+          width: 80%; height: 140%;
+          background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
           transform: skewX(-28deg);
-          z-index: 10;
-          pointer-events: none;
-          mix-blend-mode: screen;
+          z-index: 10; pointer-events: none; mix-blend-mode: screen;
         }
-        .teoart-card.shining::before {
-          animation: shine 1.0s ease-in-out forwards;
-        }
-        @keyframes shine {
-          0%   { left: -150%; opacity: 1; }
-          100% { left: 220%;  opacity: 1; }
-        }
+        .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
+        @keyframes shine { 0% { left: -150%; opacity: 1; } 100% { left: 220%; opacity: 1; } }
         .teoart-card:hover {
           border-color: rgba(255,210,80,0.5) !important;
           box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important;
@@ -324,7 +310,16 @@ function Selection() {
         </div>
 
         {/* CONTENU PAR DESSUS */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, padding: '20px', overflowY: 'auto' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          zIndex: 10,
+          paddingTop: isMobile ? '16px' : '20px',
+          paddingBottom: '20px',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+          overflowY: 'auto',
+        }}>
           {renderEncart()}
         </div>
       </div>
