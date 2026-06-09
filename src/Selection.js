@@ -46,7 +46,7 @@ function Selection() {
         .from('livres')
         .select('id, nom, annee, recueils_ids, visuel_presentation')
         .eq('statut', 'published')
-        .order('nom'); // ordre alphabétique
+        .order('nom');
       setRecueils(r || []);
       setLivres(l || []);
       setLoading(false);
@@ -56,13 +56,8 @@ function Selection() {
 
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const retourRecueils = () => { setLivresCoches([]); setEtape(1); };
 
-  const retourRecueils = () => {
-    setLivresCoches([]); // vider les livres cochés au retour
-    setEtape(1);
-  };
-
-  // Livres filtrés : ceux dont AUCUN recueil n'est coché
   const livresFiltres = livres.filter(l => {
     if (!l.recueils_ids || l.recueils_ids.length === 0) return true;
     return !l.recueils_ids.some(rid => recueilsCoches.includes(rid));
@@ -71,58 +66,110 @@ function Selection() {
   const validerLivres = async () => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-
     const { data: illustrationsLivres } = livresCoches.length > 0
       ? await supabase.from('illustrations').select('id').overlaps('livres_ids', livresCoches)
       : { data: [] };
-
     const { data: illustrationsRecueils } = recueilsCoches.length > 0
       ? await supabase.from('illustrations').select('id').overlaps('recueils_ids', recueilsCoches)
       : { data: [] };
-
     const toutesIllustrations = [...new Set([
       ...(illustrationsLivres || []).map(i => i.id),
       ...(illustrationsRecueils || []).map(i => i.id),
     ])];
-
     await supabase.from('profils').update({ selection_faite: true }).eq('id', user.id);
-
     if (toutesIllustrations.length > 0) {
       const rows = toutesIllustrations.map(illId => ({ user_id: user.id, illustration_id: illId, j_ai: true }));
       await supabase.from('collection').upsert(rows);
     }
-
     setSaving(false);
     navigate('/catalogue');
   };
 
+  const encartStyle = {
+    background: 'rgba(0,0,0,0.82)',
+    border: '1px solid rgba(0,212,212,0.3)',
+    borderRadius: '16px',
+    padding: '16px 28px',
+    backdropFilter: 'blur(10px)',
+    textAlign: 'center',
+    marginBottom: '20px',
+  };
+
+  // Effet tilt 3D + reflet doré
+  const handleMouseMove = (e, el, wrap) => {
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    const rotX = -dy * 5;
+    const rotY = dx * 5;
+    el.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`;
+    if (wrap) wrap.style.transform = 'perspective(800px)';
+  };
+
+  const handleMouseEnter = (el) => {
+    el.classList.remove('shining');
+    void el.offsetWidth;
+    el.classList.add('shining');
+  };
+
+  const handleMouseLeave = (el, wrap) => {
+    el.style.transform = '';
+    if (wrap) wrap.style.transform = '';
+    el.classList.remove('shining');
+  };
+
   const CarteItem = ({ item, coche, onToggle, taille = 150 }) => {
     const url = cheminVersUrl(item.visuel_presentation);
+    const wrapRef = React.useRef(null);
+    const cardRef = React.useRef(null);
+
     return (
-      <div onClick={onToggle} style={{
-        width: `${taille}px`, cursor: 'pointer', borderRadius: '10px',
-        border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.15)'}`,
-        background: 'rgba(0,0,0,0.75)', overflow: 'hidden', position: 'relative',
-        transition: 'transform .2s, box-shadow .2s, border-color .2s',
-        transform: coche ? 'translateY(-4px)' : 'none',
-        boxShadow: coche ? '0 8px 24px rgba(0,212,212,0.25)' : 'none',
-        backdropFilter: 'blur(4px)',
-        flexShrink: 0,
-      }}>
-        {url
-          ? <img src={url} alt={item.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: `${taille}px`, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Pas d'image</span>
+      <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
+        <div
+          ref={cardRef}
+          onClick={onToggle}
+          onMouseMove={(e) => handleMouseMove(e, cardRef.current, wrapRef.current)}
+          onMouseEnter={() => handleMouseEnter(cardRef.current)}
+          onMouseLeave={() => handleMouseLeave(cardRef.current, wrapRef.current)}
+          className="teoart-card"
+          style={{
+            width: `${taille}px`,
+            cursor: 'pointer',
+            borderRadius: '12px',
+            border: `2px solid ${coche ? '#00d4d4' : 'rgba(255,255,255,0.1)'}`,
+            background: '#111',
+            overflow: 'hidden',
+            position: 'relative',
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.1s ease, box-shadow 0.3s, border-color 0.3s',
+            boxShadow: coche
+              ? '0 8px 24px rgba(0,212,212,0.3), 0 2px 4px rgba(0,0,0,0.5)'
+              : '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)',
+            willChange: 'transform',
+          }}>
+
+          {/* Image */}
+          {url
+            ? <img src={url} alt={item.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
+            : <div style={{ width: '100%', height: `${taille}px`, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>Pas d'image</span>
+              </div>
+          }
+
+          {/* Coche */}
+          {coche && (
+            <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#00d4d4', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
+              <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold' }}>✓</span>
             </div>
-        }
-        {coche && (
-          <div style={{ position: 'absolute', top: '6px', right: '6px', background: '#00d4d4', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold' }}>✓</span>
+          )}
+
+          {/* Nom */}
+          <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
+            <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}</p>
           </div>
-        )}
-        <div style={{ padding: '6px 8px' }}>
-          <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', marginBottom: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}</p>
         </div>
       </div>
     );
@@ -150,14 +197,16 @@ function Selection() {
     );
 
     if (etape === 1) return (
-      <div style={{ width: '92%', maxWidth: '700px', textAlign: 'center' }}>
-        <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '4px' }}>📚 Quels recueils possèdes-tu ?</p>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
+      <div style={{ width: '92%', maxWidth: '800px', textAlign: 'center' }}>
+        <div style={encartStyle}>
+          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>📚 Quels recueils possèdes-tu ?</p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
+        </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '20px' }}>
               {recueils.map(item => (
-                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} taille={160} />
+                <CarteItem key={item.id} item={item} coche={recueilsCoches.includes(item.id)} onToggle={() => toggleRecueil(item.id)} taille={190} />
               ))}
             </div>
             <button onClick={() => setEtape(2)} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
@@ -170,12 +219,14 @@ function Selection() {
 
     if (etape === 2) return (
       <div style={{ width: '94%', maxWidth: '1100px', textAlign: 'center' }}>
-        <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '4px' }}>📖 Quels livres possèdes-tu ?</p>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '20px' }}>
-          {livresFiltres.length === 0
-            ? 'Tous tes livres sont déjà inclus dans tes recueils ! 🎉'
-            : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
-        </p>
+        <div style={encartStyle}>
+          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>📖 Quels livres possèdes-tu ?</p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>
+            {livresFiltres.length === 0
+              ? 'Tous tes livres sont déjà inclus dans tes recueils ! 🎉'
+              : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
+          </p>
+        </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
             {livresFiltres.length > 0 && (
@@ -208,6 +259,42 @@ function Selection() {
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
+
+        .teoart-card::before {
+          content: '';
+          position: absolute;
+          top: -20%;
+          left: -150%;
+          width: 80%;
+          height: 140%;
+          background: linear-gradient(
+            to right,
+            transparent 0%,
+            rgba(255,215,80,0.02) 10%,
+            rgba(255,225,110,0.07) 25%,
+            rgba(255,235,150,0.12) 40%,
+            rgba(255,245,170,0.08) 50%,
+            rgba(255,235,140,0.11) 62%,
+            rgba(255,220,100,0.06) 75%,
+            rgba(255,210,80,0.02) 88%,
+            transparent 100%
+          );
+          transform: skewX(-28deg);
+          z-index: 10;
+          pointer-events: none;
+          mix-blend-mode: screen;
+        }
+        .teoart-card.shining::before {
+          animation: shine 1.0s ease-in-out forwards;
+        }
+        @keyframes shine {
+          0%   { left: -150%; opacity: 1; }
+          100% { left: 220%;  opacity: 1; }
+        }
+        .teoart-card:hover {
+          border-color: rgba(255,210,80,0.5) !important;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important;
+        }
       `}</style>
 
       {/* BANNIÈRE HAUT */}
