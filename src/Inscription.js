@@ -45,6 +45,7 @@ async function getCroppedImg(imageSrc, croppedAreaPixels) {
 
 function Inscription() {
   const navigate = useNavigate();
+  const [etape, setEtape] = useState(1);
 
   // Étape 1
   const [email, setEmail] = useState('');
@@ -97,23 +98,24 @@ function Inscription() {
     setPhotoSrc(null);
   };
 
+  const validerEtape1 = () => {
+    setError('');
+    if (!email || !password) { setError('Merci de remplir tous les champs.'); return; }
+    if (strength < 2) { setError('Mot de passe trop faible. Ajoute des majuscules et des chiffres.'); return; }
+    setEtape(2);
+  };
+
+  const validerEtape2 = () => {
+    setError('');
+    if (!prenom || !nom || !pseudo) { setError('Merci de remplir les champs obligatoires.'); return; }
+    if (!photoCroppee) { setError('Une photo de profil est obligatoire.'); return; }
+    setEtape(3);
+  };
+
   const handleInscription = async () => {
     setError('');
-    if (!email || !password || !prenom || !nom || !pseudo) {
-      setError('Merci de remplir tous les champs obligatoires.');
-      return;
-    }
-    if (!photoCroppee) {
-      setError('Une photo de profil est obligatoire.');
-      return;
-    }
-    if (strength < 2) {
-      setError('Mot de passe trop faible. Ajoute des majuscules et des chiffres.');
-      return;
-    }
     setLoading(true);
 
-    // Inscription Supabase Auth
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -128,11 +130,9 @@ function Inscription() {
 
     const userId = data.user?.id;
 
-    // Upload photo de profil
     const fileName = `avatars/${userId}.jpg`;
     await supabase.storage.from('teoart-files').upload(fileName, photoCroppee, { upsert: true });
 
-    // Sauvegarder le profil
     await supabase.from('profils').insert({
       id: userId,
       email,
@@ -173,7 +173,7 @@ function Inscription() {
   };
 
   const encartStyle = {
-    background: 'rgba(0,0,0,0.78)',
+    background: 'rgba(0,0,0,0.82)',
     border: '1px solid rgba(0,212,212,0.3)',
     borderRadius: '16px',
     padding: '28px 32px',
@@ -182,13 +182,50 @@ function Inscription() {
     backdropFilter: 'blur(10px)',
   };
 
-  const titreEncart = (txt) => (
-    <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>{txt}</p>
+  const btnPrimary = {
+    width: '100%',
+    background: 'linear-gradient(135deg, #00d4d4, #0099aa)',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '13px',
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: '15px',
+    cursor: 'pointer',
+    transition: 'opacity .2s',
+    marginTop: '8px',
+  };
+
+  // Barre de progression
+  const ProgressBar = () => (
+    <div style={{ maxWidth: '480px', width: '92%', marginBottom: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+        {['Identifiants', 'Identité', 'Adresse'].map((label, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+            <div style={{
+              width: '28px', height: '28px', borderRadius: '50%',
+              background: etape > i + 1 ? '#00cc66' : etape === i + 1 ? '#00d4d4' : 'rgba(255,255,255,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '13px', fontWeight: 'bold', color: '#fff',
+              border: etape === i + 1 ? '2px solid #00d4d4' : 'none',
+              transition: 'all .3s',
+            }}>
+              {etape > i + 1 ? '✓' : i + 1}
+            </div>
+            <span style={{ color: etape === i + 1 ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '4px' }}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${((etape - 1) / 2) * 100}%`, background: 'linear-gradient(to right, #00d4d4, #0099aa)', transition: 'width .4s ease' }} />
+      </div>
+    </div>
   );
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
-
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0);    } to { transform: translateX(-50%); } }
@@ -230,11 +267,11 @@ function Inscription() {
           ))}
         </div>
 
-        {/* ENCARTS INSCRIPTION */}
+        {/* ENCARTS */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', zIndex: 10, padding: '16px 20px 30px', overflowY: 'auto' }}>
 
           {success ? (
-            <div className="encart-inscription" style={{ ...encartStyle, textAlign: 'center' }}>
+            <div className="encart-inscription" style={{ ...encartStyle, textAlign: 'center', marginTop: '20px' }}>
               <p style={{ fontSize: '40px', marginBottom: '16px' }}>🎉</p>
               <p style={{ color: '#00d4d4', fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>Compte créé !</p>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: '1.7' }}>
@@ -242,124 +279,126 @@ function Inscription() {
                 Clique sur le lien dans cet email pour activer ton compte. Le lien est valable 24h.<br /><br />
                 <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Pense à vérifier tes spams si tu ne le vois pas.</span>
               </p>
-              <button onClick={() => navigate('/')} style={{ marginTop: '20px', width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
-                Retour à la connexion
-              </button>
+              <button onClick={() => navigate('/')} style={btnPrimary}>Retour à la connexion</button>
             </div>
           ) : (
             <>
-              {/* ÉTAPE 1 — Identifiants */}
-              <div className="encart-inscription" style={encartStyle}>
-                {titreEncart('① Identifiants')}
-                <label style={labelStyle}>Email *</label>
-                <input type="email" placeholder="ton@email.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-                <label style={labelStyle}>Mot de passe *</label>
-                <input type="password" placeholder="Minimum 8 caractères" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
-                {password.length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                      {[1,2,3,4].map(i => (
-                        <div key={i} style={{ flex: 1, height: '4px', borderRadius: '2px', background: i <= strength ? strengthColor : 'rgba(255,255,255,0.1)', transition: 'background .3s' }} />
-                      ))}
-                    </div>
-                    <p style={{ color: strengthColor, fontSize: '12px' }}>{strengthLabel}</p>
-                  </div>
-                )}
-                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>8 caractères minimum, avec majuscules et chiffres.</p>
-              </div>
+              <ProgressBar />
 
-              {/* ÉTAPE 2 — Identité */}
-              <div className="encart-inscription" style={encartStyle}>
-                {titreEncart('② Identité')}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Prénom *</label>
-                    <input type="text" placeholder="Prénom" value={prenom} onChange={e => setPrenom(e.target.value)} style={inputStyle} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Nom *</label>
-                    <input type="text" placeholder="Nom" value={nom} onChange={e => setNom(e.target.value)} style={inputStyle} />
-                  </div>
+              {/* ÉTAPE 1 */}
+              {etape === 1 && (
+                <div className="encart-inscription" style={encartStyle}>
+                  <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>① Identifiants</p>
+                  <label style={labelStyle}>Email *</label>
+                  <input type="email" placeholder="ton@email.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
+                  <label style={labelStyle}>Mot de passe *</label>
+                  <input type="password" placeholder="Minimum 8 caractères" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
+                  {password.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                        {[1,2,3,4].map(i => (
+                          <div key={i} style={{ flex: 1, height: '4px', borderRadius: '2px', background: i <= strength ? strengthColor : 'rgba(255,255,255,0.1)', transition: 'background .3s' }} />
+                        ))}
+                      </div>
+                      <p style={{ color: strengthColor, fontSize: '12px' }}>{strengthLabel}</p>
+                    </div>
+                  )}
+                  <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginBottom: '16px' }}>8 caractères minimum, avec majuscules et chiffres.</p>
+                  {error && <p style={{ color: '#ff6b6b', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
+                  <button onClick={validerEtape1} style={btnPrimary}>Suivant →</button>
+                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textAlign: 'center', marginTop: '12px' }}>
+                    Déjà un compte ? <span onClick={() => navigate('/')} style={{ color: '#00d4d4', cursor: 'pointer' }}>Se connecter</span>
+                  </p>
                 </div>
-                <label style={labelStyle}>Pseudo * <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '10px' }}>— ce sera ton nom visible sur le site</span></label>
-                <input type="text" placeholder="Ton pseudo" value={pseudo} onChange={e => setPseudo(e.target.value)} style={inputStyle} />
+              )}
 
-                <label style={labelStyle}>Date de naissance <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none' }}>(optionnel)</span></label>
-                <input type="date" value={dateNaissance} onChange={e => setDateNaissance(e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }} />
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginBottom: '20px' }}>
-                  🤫 Champ optionnel. Mais chut — quelques chanceux ont reçu un truc bizarre le jour de leur anniversaire. Coïncidence ? Peut-être. Peut-être pas. À toi de voir si tu tentes le destin.
-                </p>
-
-                <label style={labelStyle}>Photo de profil * <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '10px' }}>— obligatoire</span></label>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginBottom: '12px' }}>
-                  📸 Ta tête, ton héros préféré, ton plaid... peu importe. On va la rogner en rond de toute façon. Choisir avec soin ou au hasard, les deux marchent.
-                </p>
-
-                {!photoSrc && !photoCroppee && (
-                  <button onClick={() => fileRef.current.click()} style={{ width: '100%', background: 'rgba(0,212,212,0.15)', border: '1px dashed rgba(0,212,212,0.4)', borderRadius: '8px', padding: '13px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>
-                    📁 Choisir une image
-                  </button>
-                )}
-                <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
-
-                {photoSrc && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{ position: 'relative', width: '100%', height: '240px', borderRadius: '12px', overflow: 'hidden', background: '#111' }}>
-                      <Cropper image={photoSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
+              {/* ÉTAPE 2 */}
+              {etape === 2 && (
+                <div className="encart-inscription" style={encartStyle}>
+                  <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>② Identité</p>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Prénom *</label>
+                      <input type="text" placeholder="Prénom" value={prenom} onChange={e => setPrenom(e.target.value)} style={inputStyle} />
                     </div>
-                    <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', margin: '10px 0', accentColor: '#00d4d4' }} />
-                    <button onClick={validerCadrage} style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '11px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                      ✓ Valider le cadrage
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Nom *</label>
+                      <input type="text" placeholder="Nom" value={nom} onChange={e => setNom(e.target.value)} style={inputStyle} />
+                    </div>
+                  </div>
+                  <label style={labelStyle}>Pseudo * <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '10px' }}>— ce sera ton nom visible sur le site</span></label>
+                  <input type="text" placeholder="Ton pseudo" value={pseudo} onChange={e => setPseudo(e.target.value)} style={inputStyle} />
+                  <label style={labelStyle}>Date de naissance <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none' }}>(optionnel)</span></label>
+                  <input type="date" value={dateNaissance} onChange={e => setDateNaissance(e.target.value)} style={{ ...inputStyle, colorScheme: 'dark' }} />
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginBottom: '20px' }}>
+                    🤫 Champ optionnel. Mais chut — quelques chanceux ont reçu un truc bizarre le jour de leur anniversaire. Coïncidence ? Peut-être. Peut-être pas. À toi de voir si tu tentes le destin.
+                  </p>
+                  <label style={labelStyle}>Photo de profil * <span style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'none', fontSize: '10px' }}>— obligatoire</span></label>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontStyle: 'italic', marginBottom: '12px' }}>
+                    📸 Ta tête, ton héros préféré, ton plaid... peu importe. On va la rogner en rond de toute façon. Choisir avec soin ou au hasard, les deux marchent.
+                  </p>
+                  {!photoSrc && !photoCroppee && (
+                    <button onClick={() => fileRef.current.click()} style={{ width: '100%', background: 'rgba(0,212,212,0.15)', border: '1px dashed rgba(0,212,212,0.4)', borderRadius: '8px', padding: '13px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer', marginBottom: '12px' }}>
+                      📁 Choisir une image
                     </button>
-                  </div>
-                )}
+                  )}
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
+                  {photoSrc && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ position: 'relative', width: '100%', height: '240px', borderRadius: '12px', overflow: 'hidden', background: '#111' }}>
+                        <Cropper image={photoSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
+                      </div>
+                      <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={e => setZoom(Number(e.target.value))} style={{ width: '100%', margin: '10px 0', accentColor: '#00d4d4' }} />
+                      <button onClick={validerCadrage} style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '11px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+                        ✓ Valider le cadrage
+                      </button>
+                    </div>
+                  )}
+                  {photoCroppee && !photoSrc && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <img src={URL.createObjectURL(photoCroppee)} alt="profil" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #00d4d4' }} />
+                      <div>
+                        <p style={{ color: '#00cc66', fontSize: '13px' }}>✓ Photo validée</p>
+                        <button onClick={() => { setPhotoCroppee(null); setPhotoSrc(null); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>Changer</button>
+                      </div>
+                    </div>
+                  )}
+                  {error && <p style={{ color: '#ff6b6b', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
+                  <button onClick={validerEtape2} style={btnPrimary}>Suivant →</button>
+                  <button onClick={() => { setError(''); setEtape(1); }} style={{ width: '100%', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '13px', cursor: 'pointer', marginTop: '10px' }}>← Retour</button>
+                </div>
+              )}
 
-                {photoCroppee && !photoSrc && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <img src={URL.createObjectURL(photoCroppee)} alt="profil" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #00d4d4' }} />
-                    <div>
-                      <p style={{ color: '#00cc66', fontSize: '13px' }}>✓ Photo validée</p>
-                      <button onClick={() => { setPhotoCroppee(null); setPhotoSrc(null); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>Changer</button>
+              {/* ÉTAPE 3 */}
+              {etape === 3 && (
+                <div className="encart-inscription" style={encartStyle}>
+                  <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>③ Adresse de livraison</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande de version reliée.</p>
+                  <label style={labelStyle}>Pays</label>
+                  <input type="text" placeholder="France" value={pays} onChange={e => setPays(e.target.value)} style={inputStyle} />
+                  <label style={labelStyle}>Adresse</label>
+                  <input type="text" placeholder="12 rue des illustrations" value={adresse} onChange={e => setAdresse(e.target.value)} style={inputStyle} />
+                  <label style={labelStyle}>Complément</label>
+                  <input type="text" placeholder="Appartement, bâtiment..." value={complement} onChange={e => setComplement(e.target.value)} style={inputStyle} />
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Code postal</label>
+                      <input type="text" placeholder="75000" value={codePostal} onChange={e => setCodePostal(e.target.value)} style={inputStyle} />
+                    </div>
+                    <div style={{ flex: 2 }}>
+                      <label style={labelStyle}>Ville</label>
+                      <input type="text" placeholder="Paris" value={ville} onChange={e => setVille(e.target.value)} style={inputStyle} />
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* ÉTAPE 3 — Adresse */}
-              <div className="encart-inscription" style={encartStyle}>
-                {titreEncart('③ Adresse de livraison')}
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande de version reliée.</p>
-                <label style={labelStyle}>Pays</label>
-                <input type="text" placeholder="France" value={pays} onChange={e => setPays(e.target.value)} style={inputStyle} />
-                <label style={labelStyle}>Adresse</label>
-                <input type="text" placeholder="12 rue des illustrations" value={adresse} onChange={e => setAdresse(e.target.value)} style={inputStyle} />
-                <label style={labelStyle}>Complément</label>
-                <input type="text" placeholder="Appartement, bâtiment..." value={complement} onChange={e => setComplement(e.target.value)} style={inputStyle} />
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Code postal</label>
-                    <input type="text" placeholder="75000" value={codePostal} onChange={e => setCodePostal(e.target.value)} style={inputStyle} />
-                  </div>
-                  <div style={{ flex: 2 }}>
-                    <label style={labelStyle}>Ville</label>
-                    <input type="text" placeholder="Paris" value={ville} onChange={e => setVille(e.target.value)} style={inputStyle} />
-                  </div>
+                  <label style={labelStyle}>Téléphone</label>
+                  <input type="tel" placeholder="+33 6 00 00 00 00" value={telephone} onChange={e => setTelephone(e.target.value)} style={inputStyle} />
+                  {error && <p style={{ color: '#ff6b6b', fontSize: '13px', marginBottom: '12px' }}>{error}</p>}
+                  <button onClick={handleInscription} disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.6 : 1 }}>
+                    {loading ? 'Création en cours...' : '🎨 Créer mon compte'}
+                  </button>
+                  <button onClick={() => { setError(''); setEtape(2); }} style={{ width: '100%', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '13px', cursor: 'pointer', marginTop: '10px' }}>← Retour</button>
                 </div>
-                <label style={labelStyle}>Téléphone</label>
-                <input type="tel" placeholder="+33 6 00 00 00 00" value={telephone} onChange={e => setTelephone(e.target.value)} style={inputStyle} />
-              </div>
-
-              {/* BOUTON VALIDER */}
-              {error && <p style={{ color: '#ff6b6b', fontSize: '13px', textAlign: 'center', maxWidth: '480px', width: '92%' }}>{error}</p>}
-              <div style={{ maxWidth: '480px', width: '92%', paddingBottom: '20px' }}>
-                <button onClick={handleInscription} disabled={loading}
-                  style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '15px', color: '#fff', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', transition: 'opacity .2s', opacity: loading ? 0.6 : 1 }}>
-                  {loading ? 'Création en cours...' : '🎨 Créer mon compte'}
-                </button>
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textAlign: 'center', marginTop: '12px' }}>
-                  Déjà un compte ? <span onClick={() => navigate('/')} style={{ color: '#00d4d4', cursor: 'pointer' }}>Se connecter</span>
-                </p>
-              </div>
+              )}
             </>
           )}
         </div>
@@ -374,7 +413,6 @@ function Inscription() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
-
     </div>
   );
 }
