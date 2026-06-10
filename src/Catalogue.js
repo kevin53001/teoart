@@ -84,17 +84,22 @@ function Catalogue() {
   const navigate = useNavigate();
   const [illustrations, setIllustrations] = React.useState([]);
   const [collection, setCollection] = React.useState({});
+  const [coloriages, setColoriages] = React.useState({}); // illuId → true/false
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
   const [recherche, setRecherche] = React.useState('');
+  const [filtreCollection, setFiltreCollection] = React.useState('tout'); // 'tout' | 'jai' | 'jeveux' | 'japas'
+  const [tri, setTri] = React.useState('az'); // 'az' | 'za' | 'recent'
+  const [vueCompacte, setVueCompacte] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [popup, setPopup] = React.useState(null);
   const [popupIndex, setPopupIndex] = React.useState(null);
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
+  const [popupColo, setPopupColo] = React.useState(null); // illuId pour popup palette vignette
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
@@ -107,12 +112,7 @@ function Catalogue() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        navigate('/connexion');
-        return;
-      }
-
+      if (!user) { navigate('/connexion'); return; }
       setUserId(user.id);
       const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
@@ -121,15 +121,18 @@ function Catalogue() {
         .select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase
-        .from('collection')
-        .select('illustration_id, j_ai, je_veux, j_ai_auto')
-        .eq('user_id', user.id);
+        .from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
+      const { data: colos } = await supabase
+        .from('coloriages').select('illustration_id').eq('user_id', user.id);
       setIllustrations(illus || []);
       const collMap = {};
       (coll || []).forEach(c => {
         collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false };
       });
       setCollection(collMap);
+      const coloMap = {};
+      (colos || []).forEach(c => { coloMap[c.illustration_id] = true; });
+      setColoriages(coloMap);
       setLoading(false);
     };
     charger();
@@ -156,28 +159,70 @@ function Catalogue() {
     await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false });
   };
 
+  const handleColoUploaded = (illuId) => {
+    setColoriages(prev => ({ ...prev, [illuId]: true }));
+  };
+
   const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
 
-  const illustrationsFiltrees = illustrations.filter(i => {
+  // Filtrage
+  let illustrationsFiltrees = illustrations.filter(i => {
     if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     if (annees.length > 0 && !annees.includes(i.annee)) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
+    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai) return false;
+    if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
+    if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
     return true;
   });
 
+  // Tri
+  illustrationsFiltrees = [...illustrationsFiltrees].sort((a, b) => {
+    if (tri === 'za') return b.nom.localeCompare(a.nom, 'fr');
+    if (tri === 'recent') return (b.annee || 0) - (a.annee || 0);
+    return a.nom.localeCompare(b.nom, 'fr'); // az par défaut
+  });
+
   const total = illustrationsFiltrees.length;
+  const TAILLE_VIGNETTE = vueCompacte ? 100 : 150;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
   const ouvrirPopup = (illu, index) => { setPopup(illu); setPopupIndex(index); };
   const popupSuivant = () => { const next = (popupIndex + 1) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[next]); setPopupIndex(next); };
   const popupPrecedent = () => { const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev); };
 
-  // Tailles responsive
   const P = isMobile ? 44 : 80;
   const L = isMobile ? 70 : 120;
   const GAP_NAV = isMobile ? 0 : 8;
   const MARGIN_NAV = isMobile ? 2 : 12;
   const H_NAV = isMobile ? 80 : 120;
+
+  const btnFiltreStyle = (actif) => ({
+    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
+    background: actif ? 'rgba(0,212,212,0.2)' : 'transparent',
+    border: actif ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)',
+    color: actif ? '#00d4d4' : 'rgba(255,255,255,0.5)',
+  });
+
+  const btnTriStyle = (actif) => ({
+    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
+    background: actif ? 'rgba(255,210,80,0.15)' : 'transparent',
+    border: actif ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)',
+    color: actif ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)',
+  });
+
+  const encartStyle = {
+    background: 'rgba(0,0,0,0.82)',
+    border: '1px solid rgba(0,212,212,0.3)',
+    borderRadius: '16px',
+    padding: '12px 16px',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+  };
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -213,6 +258,10 @@ function Catalogue() {
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
         .badge-panier { position: absolute; bottom: 8px; right: 8px; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 3px 10px rgba(255,62,181,0.65); }
         .badge-panier:hover { transform: scale(1.12); }
+        .badge-palette { position: absolute; bottom: 8px; left: 8px; z-index: 20; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+        .badge-palette.inactif { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); }
+        .badge-palette.actif { background: rgba(255,210,80,0.2); border: 1px solid rgba(255,210,80,0.6); }
+        .badge-palette:hover { transform: scale(1.2); }
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background .2s; z-index: 300; }
         .nav-arrow:hover { background: rgba(0,212,212,0.3); }
         @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -220,6 +269,7 @@ function Catalogue() {
         .similaires-scroll:hover { animation-play-state: paused; }
         .visuel-zoom { cursor: zoom-in; transition: opacity .2s; }
         .visuel-zoom:hover { opacity: 0.9; }
+        .btn-vue { width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; font-size: 14px; }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -228,49 +278,14 @@ function Catalogue() {
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION RESPONSIVE */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        marginTop: `-${Math.round(L * 0.5)}px`,
-        overflow: 'visible'
-      }}>
-        <div style={{
-          maxWidth: BANNER_MAX,
-          width: isMobile ? '100%' : '92%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          height: `${H_NAV}px`,
-          overflow: 'visible'
-        }}>
-
-          {/* GAUCHE */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: `${GAP_NAV}px`,
-            marginRight: `${MARGIN_NAV}px`,
-            overflow: 'visible',
-            flexShrink: 0
-          }}>
-            {/* Accueil */}
-            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/catalogue')} />
-
-            {/* Livres — jaune plus bas sur mobile */}
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
-
-            {/* Catégories — alignée avec les roses sur mobile */}
+      {/* NAVIGATION */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
+        <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/catalogue')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0' }}>
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
-                style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={() => setShowCategories(v => !v)} />
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
                   {CATEGORIES.map(cat => (
@@ -281,40 +296,23 @@ function Catalogue() {
               )}
             </div>
           </div>
-
-          {/* LOGO */}
           <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10, flexShrink: 0 }} />
-
-          {/* DROITE */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: `${GAP_NAV}px`,
-            marginLeft: `${MARGIN_NAV}px`,
-            overflow: 'visible',
-            flexShrink: 0
-          }}>
-            {/* Pensées — alignée avec les roses sur mobile */}
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
-
-            {/* Panier — jaune plus bas sur mobile */}
-            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
-
-            {/* Mon Compte */}
-            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
           </div>
         </div>
       </div>
 
+      {/* RECHERCHE */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
         <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
           value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
           style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
+      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -334,9 +332,30 @@ function Catalogue() {
         </div>
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'inline-block' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+
+          {/* ENCARTS FILTRES */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
+
+            {/* ENCART GAUCHE — Tri + Vue */}
+            <div style={encartStyle}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
+                <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
+                <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                <button className="btn-vue" onClick={() => setVueCompacte(false)}
+                  style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}
+                  title="Vue normale">⊞</button>
+                <button className="btn-vue" onClick={() => setVueCompacte(true)}
+                  style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}
+                  title="Vue compacte">⊟</button>
+              </div>
+            </div>
+
+            {/* ENCART CENTRE — Années */}
+            <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>{a}</button>)}
               </div>
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
@@ -346,20 +365,36 @@ function Catalogue() {
                 {recherche ? ` · "${recherche}"` : ''}
               </p>
             </div>
+
+            {/* ENCART DROITE — Filtre collection */}
+            <div style={encartStyle}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
+                <button style={btnFiltreStyle(filtreCollection === 'jai')} onClick={() => { setFiltreCollection('jai'); setPage(1); }}>✓ J'ai</button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
+                <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
+              </div>
+            </div>
           </div>
 
+          {/* GRILLE */}
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: vueCompacte ? '8px' : '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
                 {illustrationsPage.map((illu, idx) => (
                   <IlluCard key={illu.id} illu={illu}
                     urlPresentation={getVisuelPresentation(illu.visuels)}
                     visuelsOrdonnes={getVisuelsOrdonnes(illu.visuels)}
                     jAi={collection[illu.id]?.j_ai || false}
                     jeVeux={collection[illu.id]?.je_veux || false}
+                    aColorié={coloriages[illu.id] || false}
+                    taille={TAILLE_VIGNETTE}
                     onToggleJAi={(e) => handleToggleJAi(illu.id, e)}
                     onToggleJeVeux={(e) => toggleJeVeux(illu.id, e)}
                     onClickPopup={() => ouvrirPopup(illu, idx)}
+                    onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
                   />
                 ))}
               </div>
@@ -376,6 +411,7 @@ function Catalogue() {
         </div>
       </div>
 
+      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -385,11 +421,13 @@ function Catalogue() {
         </div>
       </div>
 
+      {/* POPUP FICHE */}
       {popup && (
         <PopupFiche
           illu={popup} illustrations={illustrations}
           jAi={collection[popup.id]?.j_ai || false}
           jeVeux={collection[popup.id]?.je_veux || false}
+          aColorié={coloriages[popup.id] || false}
           onToggleJAi={(e) => handleToggleJAi(popup.id, e)}
           onToggleJeVeux={(e) => toggleJeVeux(popup.id, e)}
           onClose={() => setPopup(null)}
@@ -398,9 +436,22 @@ function Catalogue() {
           onPrecedent={popupPrecedent}
           userPseudo={userPseudo}
           userId={userId}
+          onColoUploaded={() => handleColoUploaded(popup.id)}
         />
       )}
 
+      {/* POPUP PALETTE VIGNETTE */}
+      {popupColo && (
+        <PopupColoVignette
+          illu={popupColo}
+          userId={userId}
+          userPseudo={userPseudo}
+          onClose={() => setPopupColo(null)}
+          onUploaded={() => { handleColoUploaded(popupColo.id); setPopupColo(null); }}
+        />
+      )}
+
+      {/* CONFIRMATION DÉCOCHAGE */}
       {confirmation && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
@@ -427,10 +478,9 @@ function Catalogue() {
   );
 }
 
-function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClickPopup }) {
+function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette }) {
   const wrapRef = React.useRef(null);
   const cardRef = React.useRef(null);
-  const TAILLE = 150;
   const [visuelIndex, setVisuelIndex] = React.useState(0);
   const [fadeKey, setFadeKey] = React.useState(0);
   const intervalRef = React.useRef(null);
@@ -471,17 +521,19 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
     <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
       <div ref={cardRef} className="teoart-card"
         onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClickPopup}
-        style={{ width: `${TAILLE}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
+        style={{ width: `${taille}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
 
         {urlActuelle
-          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade" style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: `${TAILLE}px`, background: '#111' }} />
+          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade" style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
+          : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
         }
 
+        {/* BADGE J'AI */}
         <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>
           {jAi ? "✓ J'ai" : "✕ J'ai"}
         </div>
 
+        {/* COEUR */}
         <div onClick={onToggleJeVeux}
           style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
@@ -494,12 +546,37 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
           </svg>
         </div>
 
+        {/* PALETTE 🎨 */}
+        <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
+            {aColorié ? (
+              // Palette colorée
+              <g>
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5"/>
+                <circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d"/>
+                <circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4"/>
+                <circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043"/>
+                <circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a"/>
+              </g>
+            ) : (
+              // Palette sombre
+              <g>
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+                <circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
+                <circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
+                <circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
+                <circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
+              </g>
+            )}
+          </svg>
+        </div>
+
+        {/* PANIER */}
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" />
             <circle cx="19" cy="21" r="1.4" fill="#000" />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-            <path d="M8 11h11.5" />
           </svg>
         </div>
 
@@ -512,7 +589,67 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   );
 }
 
-function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId }) {
+function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
+  const [coloImage, setColoImage] = React.useState(null);
+  const [coloDate, setColoDate] = React.useState('');
+  const [envoi, setEnvoi] = React.useState(false);
+  const [ok, setOk] = React.useState(false);
+
+  const handleUpload = async () => {
+    if (!coloImage) return;
+    setEnvoi(true);
+    try {
+      const ext = coloImage.name.split('.').pop();
+      const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
+      const { data: uploadData } = await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(`coloriages/${nomFichier}`);
+      await supabase.from('coloriages').upsert({
+        user_id: userId,
+        illustration_id: illu.id,
+        image_url: urlData.publicUrl,
+        date_coloriage: coloDate || null,
+      });
+      setOk(true);
+      setTimeout(() => { onUploaded(); }, 1200);
+    } catch (e) {}
+    setEnvoi(false);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 450, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', padding: '24px', maxWidth: '360px', width: '100%', textAlign: 'center' }}>
+        <p style={{ fontSize: '24px', marginBottom: '8px' }}>🎨</p>
+        <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{illu.nom}</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px' }}>Partage ton coloriage !</p>
+        {ok ? (
+          <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px' }}>🎉 Coloriage partagé ! Merci {userPseudo} !</p>
+        ) : (
+          <>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px' }}>
+              Pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong>
+            </p>
+            <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])}
+              style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', display: 'block', width: '100%' }} />
+            <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button onClick={onClose}
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 18px', color: 'rgba(255,255,255,0.5)', fontSize: '12px', cursor: 'pointer' }}>
+                Annuler
+              </button>
+              <button onClick={handleUpload} disabled={!coloImage || envoi}
+                style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))', border: 'none', borderRadius: '8px', padding: '8px 18px', color: '#000', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>
+                {envoi ? 'Envoi...' : 'Partager 🎨'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded }) {
   const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
   const [visuelActif, setVisuelActif] = React.useState(0);
@@ -536,12 +673,12 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
       .slice(0, 20);
   }, [illu, illustrations]);
 
-  const getVisuelPres = (visuels) => {
-    if (!visuels) return null;
-    const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
-    if (cle) return cheminVersUrl(visuels[cle]);
-    if (visuels['B']) return cheminVersUrl(visuels['B']);
-    if (visuels['b']) return cheminVersUrl(visuels['b']);
+  const getVisuelPres = (v) => {
+    if (!v) return null;
+    const cle = Object.keys(v).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
+    if (cle) return cheminVersUrl(v[cle]);
+    if (v['B']) return cheminVersUrl(v['B']);
+    if (v['b']) return cheminVersUrl(v['b']);
     return null;
   };
 
@@ -558,8 +695,16 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
     try {
       const ext = coloImage.name.split('.').pop();
       const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
-      await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
+      const { data: uploadData } = await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
+      await supabase.from('coloriages').upsert({
+        user_id: userId,
+        illustration_id: illu.id,
+        image_url: urlData.publicUrl,
+        date_coloriage: coloDate || null,
+      });
       setColoOk(true);
+      onColoUploaded();
     } catch (e) {}
     setColoEnvoi(false);
   };
@@ -620,8 +765,9 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
                   </svg>
                   Je veux
                 </button>
-                <button onClick={() => setShowPartagerColo(v => !v)} style={{ background: showPartagerColo ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${showPartagerColo ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 10px', color: showPartagerColo ? '#00d4d4' : 'rgba(255,255,255,0.6)', fontSize: '11px', cursor: 'pointer' }}>
-                  🎨 Mon colo
+                <button onClick={() => setShowPartagerColo(v => !v)}
+                  style={{ background: aColorié ? 'rgba(255,210,80,0.15)' : showPartagerColo ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${aColorié ? 'rgba(255,210,80,0.5)' : showPartagerColo ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 10px', color: aColorié ? 'rgba(255,210,80,0.9)' : showPartagerColo ? '#00d4d4' : 'rgba(255,255,255,0.6)', fontSize: '11px', cursor: 'pointer' }}>
+                  🎨 {aColorié ? 'Colorié ✓' : 'Mon colo'}
                 </button>
                 <button style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
                   🛒 Panier
