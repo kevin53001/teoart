@@ -229,21 +229,49 @@ function Catalogue() {
       </div>
 
       {/* NAVIGATION RESPONSIVE */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px` }}>
-        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px` }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: `-${Math.round(L * 0.5)}px`,
+        overflow: 'visible'
+      }}>
+        <div style={{
+          maxWidth: BANNER_MAX,
+          width: isMobile ? '100%' : '92%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          height: `${H_NAV}px`,
+          overflow: 'visible'
+        }}>
 
           {/* GAUCHE */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px` }}>
-            {/* Accueil — aligné centre */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '0px' : `${GAP_NAV}px`,
+            marginRight: isMobile ? '-5px' : `${MARGIN_NAV}px`,
+            transform: isMobile ? 'translateX(8px)' : 'none',
+            overflow: 'visible'
+          }}>
+            {/* Accueil */}
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => navigate('/catalogue')} />
-            {/* Livres — légèrement plus bas sur desktop seulement */}
+              style={{ width: `${P}px`, height: `${P}px`, flexShrink: 0 }} onClick={() => navigate('/catalogue')} />
+
+            {/* Livres */}
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '0' : '20px' }} onClick={() => {}} />
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '14px' : '20px', flexShrink: 0 }} onClick={() => {}} />
+
             {/* Catégories */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
-                style={{ width: `${P}px`, height: `${P}px` }} onClick={() => setShowCategories(v => !v)} />
+                style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-14px' : '0' }}
+                onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
                   {CATEGORIES.map(cat => (
@@ -259,16 +287,25 @@ function Catalogue() {
           <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10, flexShrink: 0 }} />
 
           {/* DROITE */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px` }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isMobile ? '0px' : `${GAP_NAV}px`,
+            marginLeft: isMobile ? '-5px' : `${MARGIN_NAV}px`,
+            transform: isMobile ? 'translateX(-8px)' : 'none',
+            overflow: 'visible'
+          }}>
             {/* Pensées */}
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
-            {/* Panier — légèrement plus bas sur desktop seulement */}
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-14px' : '0', flexShrink: 0 }} onClick={() => {}} />
+
+            {/* Panier */}
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '0' : '20px' }} onClick={() => {}} />
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '14px' : '20px', flexShrink: 0 }} onClick={() => {}} />
+
             {/* Mon Compte */}
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
+              style={{ width: `${P}px`, height: `${P}px`, flexShrink: 0 }} onClick={() => {}} />
           </div>
         </div>
       </div>
