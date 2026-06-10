@@ -95,7 +95,7 @@ function Catalogue() {
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
-  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 600);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
   React.useEffect(() => {
@@ -107,6 +107,12 @@ function Catalogue() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        navigate('/connexion');
+        return;
+      }
+
       setUserId(user.id);
       const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
@@ -127,7 +133,7 @@ function Catalogue() {
       setLoading(false);
     };
     charger();
-  }, []);
+  }, [navigate]);
 
   const handleToggleJAi = (illuId, e) => {
     e && e.stopPropagation();
@@ -171,7 +177,6 @@ function Catalogue() {
   const L = isMobile ? 70 : 120;
   const GAP_NAV = isMobile ? 2 : 8;
   const MARGIN_NAV = isMobile ? 3 : 12;
-  const MB_NAV = isMobile ? -6 : -20;
   const H_NAV = isMobile ? 80 : 120;
 
   return (
