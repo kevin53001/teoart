@@ -95,7 +95,14 @@ function Catalogue() {
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 600);
   const PAR_PAGE = 40;
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -109,16 +116,12 @@ function Catalogue() {
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase
         .from('collection')
-        .select('illustration_id, j_ai, je_veux, j_ai_auto') // ← j_ai_auto ajouté
+        .select('illustration_id, j_ai, je_veux, j_ai_auto')
         .eq('user_id', user.id);
       setIllustrations(illus || []);
       const collMap = {};
       (coll || []).forEach(c => {
-        collMap[c.illustration_id] = {
-          j_ai: c.j_ai,
-          je_veux: c.je_veux,
-          j_ai_auto: c.j_ai_auto || false, // ← stocké dans la map
-        };
+        collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false };
       });
       setCollection(collMap);
       setLoading(false);
@@ -130,36 +133,21 @@ function Catalogue() {
     e && e.stopPropagation();
     const estCoche = collection[illuId]?.j_ai || false;
     const estAuto = collection[illuId]?.j_ai_auto || false;
-    // Message seulement si coché ET coché automatiquement
-    if (estCoche && estAuto) {
-      setConfirmation({ illuId }); return;
-    }
+    if (estCoche && estAuto) { setConfirmation({ illuId }); return; }
     toggleJAi(illuId);
   };
 
   const toggleJAi = async (illuId) => {
     const nouveau = !(collection[illuId]?.j_ai || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert({
-      user_id: userId,
-      illustration_id: illuId,
-      j_ai: nouveau,
-      j_ai_auto: false, // ← cochage manuel = jamais auto
-      je_veux: collection[illuId]?.je_veux || false
-    });
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false });
   };
 
   const toggleJeVeux = async (illuId, e) => {
     e && e.stopPropagation();
     const nouveau = !(collection[illuId]?.je_veux || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({
-      user_id: userId,
-      illustration_id: illuId,
-      je_veux: nouveau,
-      j_ai: collection[illuId]?.j_ai || false,
-      j_ai_auto: collection[illuId]?.j_ai_auto || false
-    });
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false });
   };
 
   const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
@@ -177,6 +165,13 @@ function Catalogue() {
   const ouvrirPopup = (illu, index) => { setPopup(illu); setPopupIndex(index); };
   const popupSuivant = () => { const next = (popupIndex + 1) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[next]); setPopupIndex(next); };
   const popupPrecedent = () => { const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev); };
+
+  // Tailles responsive
+  const P = isMobile ? 48 : 80;   // taille pastille
+  const L = isMobile ? 70 : 120;  // taille logo
+  const GAP_NAV = isMobile ? 4 : 8;
+  const MARGIN_NAV = isMobile ? 6 : 12;
+  const MB_NAV = isMobile ? -12 : -20; // marginBottom pastilles décalées
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -198,7 +193,7 @@ function Catalogue() {
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
         @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
         .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
-        .dropdown-cat { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
+        .dropdown-cat { position: absolute; top: ${isMobile ? '52px' : '85px'}; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
@@ -223,17 +218,24 @@ function Catalogue() {
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
+      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
-        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: '120px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginRight: '12px' }}>
-            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
+      {/* NAVIGATION RESPONSIVE */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${L * 0.5}px` }}>
+        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: `${L}px` }}>
+
+          {/* GAUCHE */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px` }}>
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
+              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => navigate('/catalogue')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
+              style={{ width: `${P}px`, height: `${P}px`, marginBottom: `${MB_NAV}px` }} onClick={() => {}} />
             <div style={{ position: 'relative' }}>
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => setShowCategories(v => !v)} />
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
+                style={{ width: `${P}px`, height: `${P}px` }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
                   {CATEGORIES.map(cat => (
@@ -244,21 +246,30 @@ function Catalogue() {
               )}
             </div>
           </div>
-          <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10 }} />
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: '12px' }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
-            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+
+          {/* LOGO */}
+          <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10 }} />
+
+          {/* DROITE */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px` }}>
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
+              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
+              style={{ width: `${P}px`, height: `${P}px`, marginBottom: `${MB_NAV}px` }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
+              style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
           </div>
         </div>
       </div>
 
+      {/* RECHERCHE */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
         <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
           value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
           style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
+      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -320,6 +331,7 @@ function Catalogue() {
         </div>
       </div>
 
+      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -331,8 +343,7 @@ function Catalogue() {
 
       {popup && (
         <PopupFiche
-          illu={popup}
-          illustrations={illustrations}
+          illu={popup} illustrations={illustrations}
           jAi={collection[popup.id]?.j_ai || false}
           jeVeux={collection[popup.id]?.je_veux || false}
           onToggleJAi={(e) => handleToggleJAi(popup.id, e)}
@@ -527,8 +538,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
                 {visuels[visuelActif] && (
-                  <img src={visuels[visuelActif]} alt={illu.nom}
-                    className="visuel-zoom"
+                  <img src={visuels[visuelActif]} alt={illu.nom} className="visuel-zoom"
                     onClick={() => setZoomUrl(visuels[visuelActif])}
                     style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
                 )}
