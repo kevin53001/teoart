@@ -195,20 +195,22 @@ function Catalogue() {
         {/* CONTENU AU PREMIER PLAN */}
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
-          {/* ENCART FILTRES */}
-          <div style={{ maxWidth: BANNER_MAX, margin: '0 auto 24px', background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-              {ANNEES.map(a => (
-                <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
-                  {a}
-                </button>
-              ))}
+          {/* ENCART FILTRES — taille adaptée au contenu */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'inline-block' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                {ANNEES.map(a => (
+                  <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
+                    {a}
+                  </button>
+                ))}
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
+                {total} illustration{total > 1 ? 's' : ''}
+                {categorie !== 'Tout' ? ` · ${categorie}` : ''}
+                {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
+              </p>
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
-              {total} illustration{total > 1 ? 's' : ''}
-              {categorie !== 'Tout' ? ` · ${categorie}` : ''}
-              {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
-            </p>
           </div>
 
           {/* GRILLE */}
