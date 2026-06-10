@@ -22,7 +22,7 @@ const SPEED = '80s';
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
-  return `${R2}/${encodeURIComponent(relatif).replaceAll('%2F', '/')}`;
+  return `${R2}/${relatif.split('/').map(segment => encodeURIComponent(segment)).join('/')}`;
 }
 
 function Selection() {
@@ -70,21 +70,33 @@ function Selection() {
   const validerLivres = async () => {
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
+
     const { data: illustrationsLivres } = livresCoches.length > 0
       ? await supabase.from('illustrations').select('id').overlaps('livres_ids', livresCoches)
       : { data: [] };
+
     const { data: illustrationsRecueils } = recueilsCoches.length > 0
       ? await supabase.from('illustrations').select('id').overlaps('recueils_ids', recueilsCoches)
       : { data: [] };
+
     const toutesIllustrations = [...new Set([
       ...(illustrationsLivres || []).map(i => i.id),
       ...(illustrationsRecueils || []).map(i => i.id),
     ])];
+
     await supabase.from('profils').update({ selection_faite: true }).eq('id', user.id);
+
     if (toutesIllustrations.length > 0) {
-      const rows = toutesIllustrations.map(illId => ({ user_id: user.id, illustration_id: illId, j_ai: true }));
+      const rows = toutesIllustrations.map(illId => ({
+        user_id: user.id,
+        illustration_id: illId,
+        j_ai: true,
+        j_ai_auto: true, // ← marqué comme automatique
+        je_veux: false,
+      }));
       await supabase.from('collection').upsert(rows);
     }
+
     setSaving(false);
     navigate('/catalogue');
   };
@@ -268,12 +280,10 @@ function Selection() {
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
         .teoart-card::before {
           content: '';
-          position: absolute;
-          top: -20%; left: -150%;
+          position: absolute; top: -20%; left: -150%;
           width: 80%; height: 140%;
           background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
-          transform: skewX(-28deg);
-          z-index: 10; pointer-events: none; mix-blend-mode: screen;
+          transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
         }
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
         @keyframes shine { 0% { left: -150%; opacity: 1; } 100% { left: 220%; opacity: 1; } }
@@ -309,7 +319,6 @@ function Selection() {
           ))}
         </div>
 
-        {/* CONTENU PAR DESSUS */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           display: 'flex', alignItems: 'flex-start', justifyContent: 'center',

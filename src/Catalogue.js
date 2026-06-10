@@ -47,7 +47,6 @@ function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
   const result = [];
   const valeursAjoutees = new Set();
-
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
     if ((k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')) && v && !valeursAjoutees.has(v)) {
@@ -85,7 +84,6 @@ function Catalogue() {
   const navigate = useNavigate();
   const [illustrations, setIllustrations] = React.useState([]);
   const [collection, setCollection] = React.useState({});
-  const [illustrationsInitiales, setIllustrationsInitiales] = React.useState(new Set());
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
   const [annees, setAnnees] = React.useState([]);
@@ -110,16 +108,19 @@ function Catalogue() {
         .select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase
-        .from('collection').select('illustration_id, j_ai, je_veux').eq('user_id', user.id);
+        .from('collection')
+        .select('illustration_id, j_ai, je_veux, j_ai_auto') // ← j_ai_auto ajouté
+        .eq('user_id', user.id);
       setIllustrations(illus || []);
       const collMap = {};
-      const initiales = new Set();
       (coll || []).forEach(c => {
-        collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux };
-        if (c.j_ai) initiales.add(c.illustration_id);
+        collMap[c.illustration_id] = {
+          j_ai: c.j_ai,
+          je_veux: c.je_veux,
+          j_ai_auto: c.j_ai_auto || false, // ← stocké dans la map
+        };
       });
       setCollection(collMap);
-      setIllustrationsInitiales(initiales);
       setLoading(false);
     };
     charger();
@@ -127,7 +128,10 @@ function Catalogue() {
 
   const handleToggleJAi = (illuId, e) => {
     e && e.stopPropagation();
-    if ((collection[illuId]?.j_ai || false) && illustrationsInitiales.has(illuId)) {
+    const estCoche = collection[illuId]?.j_ai || false;
+    const estAuto = collection[illuId]?.j_ai_auto || false;
+    // Message seulement si coché ET coché automatiquement
+    if (estCoche && estAuto) {
       setConfirmation({ illuId }); return;
     }
     toggleJAi(illuId);
@@ -136,15 +140,26 @@ function Catalogue() {
   const toggleJAi = async (illuId) => {
     const nouveau = !(collection[illuId]?.j_ai || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    if (!nouveau) setIllustrationsInitiales(prev => { const s = new Set(prev); s.delete(illuId); return s; });
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, je_veux: collection[illuId]?.je_veux || false });
+    await supabase.from('collection').upsert({
+      user_id: userId,
+      illustration_id: illuId,
+      j_ai: nouveau,
+      j_ai_auto: false, // ← cochage manuel = jamais auto
+      je_veux: collection[illuId]?.je_veux || false
+    });
   };
 
   const toggleJeVeux = async (illuId, e) => {
     e && e.stopPropagation();
     const nouveau = !(collection[illuId]?.je_veux || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false });
+    await supabase.from('collection').upsert({
+      user_id: userId,
+      illustration_id: illuId,
+      je_veux: nouveau,
+      j_ai: collection[illuId]?.j_ai || false,
+      j_ai_auto: collection[illuId]?.j_ai_auto || false
+    });
   };
 
   const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
