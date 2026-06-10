@@ -33,14 +33,20 @@ function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
   const ordre = ['présentation', 'presentation', 'B', 'b', 'C', 'c'];
   const result = [];
+  const valeursAjoutees = new Set();
   ordre.forEach(k => {
-    const cle = Object.keys(visuels).find(key => key.toLowerCase() === k.toLowerCase() || key.toLowerCase().includes(k.toLowerCase()));
-    if (cle && visuels[cle] && !result.includes(visuels[cle])) {
+    const cle = Object.keys(visuels).find(key =>
+      key.toLowerCase() === k.toLowerCase() ||
+      key.toLowerCase().includes(k.toLowerCase())
+    );
+    if (cle && visuels[cle] && !valeursAjoutees.has(visuels[cle])) {
       result.push(visuels[cle]);
+      valeursAjoutees.add(visuels[cle]);
     }
   });
-  // Ajouter les restants
-  Object.values(visuels).forEach(v => { if (v && !result.includes(v)) result.push(v); });
+  Object.values(visuels).forEach(v => {
+    if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
+  });
   return result;
 }
 
@@ -81,7 +87,7 @@ function Catalogue() {
   }, []);
 
   const toggleJAi = async (illuId, e) => {
-    e.stopPropagation();
+    e && e.stopPropagation();
     const actuel = collection[illuId]?.j_ai || false;
     const nouveau = !actuel;
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
@@ -92,7 +98,7 @@ function Catalogue() {
   };
 
   const toggleJeVeux = async (illuId, e) => {
-    e.stopPropagation();
+    e && e.stopPropagation();
     const actuel = collection[illuId]?.je_veux || false;
     const nouveau = !actuel;
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
@@ -161,13 +167,16 @@ function Catalogue() {
         .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
-        .search-input::placeholder { color: rgba(255,255,255,0.3); }
+        .search-input::placeholder { color: rgba(255,255,255,0.4); }
         .search-input:focus { outline: none; border-color: rgba(0,212,212,0.6) !important; }
-        .badge-jai { position: absolute; top: 6px; left: 6px; background: #00d4d4; border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: bold; color: #000; z-index: 20; cursor: pointer; transition: opacity .2s; }
-        .badge-jai:hover { opacity: 0.8; }
-        .badge-jai.inactif { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
-        .badge-veux { position: absolute; top: 6px; right: 6px; z-index: 20; cursor: pointer; font-size: 18px; line-height: 1; transition: transform .2s; }
+        .badge-jai { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 2px; }
+        .badge-jai.actif { background: #00d4d4; color: #000; }
+        .badge-jai.inactif { background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,80,80,0.5); }
+        .badge-veux { position: absolute; top: 5px; right: 5px; z-index: 20; cursor: pointer; font-size: 14px; line-height: 1; transition: transform .2s; background: rgba(0,0,0,0.5); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
         .badge-veux:hover { transform: scale(1.3); }
+        .badge-panier { position: absolute; bottom: 28px; right: 5px; z-index: 20; cursor: pointer; font-size: 13px; background: rgba(0,0,0,0.6); border-radius: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+        .badge-panier:hover { background: rgba(0,212,212,0.3); }
+        @keyframes fadeImg { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
 
       {/* CLOCHE */}
@@ -190,7 +199,7 @@ function Catalogue() {
               style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
               style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} id="pastille-cat">
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
                 style={{ width: '80px', height: '80px' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
@@ -211,8 +220,10 @@ function Catalogue() {
 
           {/* DROITE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: '12px' }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-              style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+            <div id="pastille-pensees">
+              <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
+                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+            </div>
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
               style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
@@ -221,31 +232,36 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* BARRE DE RECHERCHE */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 20px 0', position: 'relative', zIndex: 40 }}>
-        <input
-          className="search-input"
-          type="text"
-          placeholder="🔍 Rechercher une illustration..."
-          value={recherche}
-          onChange={e => { setRecherche(e.target.value); setPage(1); }}
-          style={{
-            width: '100%', maxWidth: '400px',
-            background: 'rgba(0,0,0,0.75)',
-            border: '1px solid rgba(0,212,212,0.3)',
-            borderRadius: '24px',
-            padding: '10px 18px',
-            color: '#fff',
-            fontSize: '13px',
-            backdropFilter: 'blur(10px)',
-          }}
-        />
+      {/* BARRE DE RECHERCHE — alignée entre pastille catégorie et pastille pensées */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
+        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', justifyContent: 'center' }}>
+          {/* largeur approximative : du bord gauche de Catégories au bord droit de Pensées
+              soit logo(120) + 2x(accueil80+gap8+livres80+gap8) = environ 560px centré */}
+          <input
+            className="search-input"
+            type="text"
+            placeholder="🔍 Rechercher une illustration..."
+            value={recherche}
+            onChange={e => { setRecherche(e.target.value); setPage(1); }}
+            style={{
+              width: '560px',
+              maxWidth: '100%',
+              background: 'rgba(40,40,40,0.85)',
+              border: '1px solid rgba(0,212,212,0.3)',
+              borderRadius: '24px',
+              padding: '10px 18px',
+              color: '#fff',
+              fontSize: '13px',
+              backdropFilter: 'blur(10px)',
+            }}
+          />
+        </div>
       </div>
 
-      {/* ZONE BARRES + CONTENU DANS LE MEME CONTENEUR */}
+      {/* ZONE BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
 
-        {/* BARRES EN POSITION ABSOLUE DERRIERE */}
+        {/* BARRES EN ARRIERE PLAN */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             {BARRES.map((barre, i) => (
@@ -329,18 +345,20 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* POPUP FICHE */}
+      {/* POPUP */}
       {popup && (
         <PopupFiche
           illu={popup}
+          illustrations={illustrations}
           jAi={collection[popup.id]?.j_ai || false}
           jeVeux={collection[popup.id]?.je_veux || false}
           onToggleJAi={(e) => toggleJAi(popup.id, e)}
           onToggleJeVeux={(e) => toggleJeVeux(popup.id, e)}
           onClose={() => setPopup(null)}
+          onOpenSimilaire={(illu) => setPopup(illu)}
+          collection={collection}
         />
       )}
-
     </div>
   );
 }
@@ -350,10 +368,11 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   const cardRef = React.useRef(null);
   const TAILLE = 150;
   const [visuelIndex, setVisuelIndex] = React.useState(0);
+  const [fadeKey, setFadeKey] = React.useState(0);
   const intervalRef = React.useRef(null);
 
   const urlsVisuels = visuelsOrdonnes.map(v => cheminVersUrl(v)).filter(Boolean);
-  const urlActuelle = urlsVisuels[visuelIndex] || urlPresentation;
+  const urlActuelle = urlsVisuels.length > 0 ? urlsVisuels[visuelIndex] : urlPresentation;
 
   const handleMouseEnter = () => {
     const el = cardRef.current;
@@ -362,8 +381,12 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
     el.classList.add('shining');
     if (urlsVisuels.length > 1) {
       intervalRef.current = setInterval(() => {
-        setVisuelIndex(prev => (prev + 1) % urlsVisuels.length);
-      }, 800);
+        setVisuelIndex(prev => {
+          const next = (prev + 1) % urlsVisuels.length;
+          setFadeKey(k => k + 1);
+          return next;
+        });
+      }, 1500); // ralenti à 1.5s
     }
   };
 
@@ -375,6 +398,7 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
     el.classList.remove('shining');
     clearInterval(intervalRef.current);
     setVisuelIndex(0);
+    setFadeKey(k => k + 1);
   };
 
   const handleMouseMove = (e) => {
@@ -415,20 +439,30 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
         }}>
 
         {urlActuelle
-          ? <img src={urlActuelle} alt={illu.nom} style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block', transition: 'opacity 0.3s' }} />
-          : <div style={{ width: '100%', height: `${TAILLE}px`, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          ? <img
+              key={fadeKey}
+              src={urlActuelle}
+              alt={illu.nom}
+              style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block', animation: 'fadeImg 0.4s ease' }}
+            />
+          : <div style={{ width: '100%', height: `${TAILLE}px`, background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '11px' }}>Pas d'image</span>
             </div>
         }
 
         {/* BADGE J'AI */}
-        <div className={`badge-jai${jAi ? '' : ' inactif'}`} onClick={onToggleJAi}>
-          {jAi ? "✓ J'ai" : "J'ai"}
+        <div className={`badge-jai${jAi ? ' actif' : ' inactif'}`} onClick={onToggleJAi}>
+          {jAi ? '✓ J\'ai' : '✕ J\'ai'}
         </div>
 
         {/* BADGE JE VEUX */}
         <div className="badge-veux" onClick={onToggleJeVeux}>
-          {jeVeux ? '🩷' : '🤍'}
+          {jeVeux ? '🩷' : <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>♡</span>}
+        </div>
+
+        {/* BADGE PANIER */}
+        <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
+          🛒
         </div>
 
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
@@ -440,58 +474,97 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   );
 }
 
-function PopupFiche({ illu, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose }) {
+function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, collection }) {
   const visuels = getVisuelsOrdonnes(illu.visuels).map(v => cheminVersUrl(v)).filter(Boolean);
   const [visuelActif, setVisuelActif] = React.useState(0);
 
+  // Fiches similaires : 1 ou 2 tags en commun
+  const similaires = React.useMemo(() => {
+    if (!illu.tags || illu.tags.length === 0) return [];
+    return illustrations
+      .filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
+      .sort((a, b) => {
+        const scoreA = a.tags.filter(t => illu.tags.includes(t)).length;
+        const scoreB = b.tags.filter(t => illu.tags.includes(t)).length;
+        return scoreB - scoreA;
+      })
+      .slice(0, 15);
+  }, [illu, illustrations]);
+
+  const getVisuelPres = (visuels) => {
+    if (!visuels) return null;
+    const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
+    if (cle) return cheminVersUrl(visuels[cle]);
+    const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
+    if (cleB) return cheminVersUrl(visuels[cleB]);
+    return null;
+  };
+
+  // Formater la description avec sauts de ligne
+  const formatDescription = (desc) => {
+    if (!desc) return null;
+    return desc.split('\n').map((line, i) => (
+      <React.Fragment key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</React.Fragment>
+    ));
+  };
+
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '28px', position: 'relative' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '820px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
 
         {/* FERMER */}
-        <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '24px', cursor: 'pointer' }}>✕</button>
+        <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
 
-        <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        <div style={{ padding: '24px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
 
           {/* VISUELS */}
-          <div style={{ flex: '1', minWidth: '240px' }}>
+          <div style={{ flex: '0 0 240px' }}>
             {visuels[visuelActif] && (
-              <img src={visuels[visuelActif]} alt={illu.nom} style={{ width: '100%', borderRadius: '12px', display: 'block', marginBottom: '12px' }} />
+              <img src={visuels[visuelActif]} alt={illu.nom} style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '10px' }} />
             )}
             {visuels.length > 1 && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {visuels.map((url, i) => (
                   <img key={i} src={url} alt="" onClick={() => setVisuelActif(i)}
-                    style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.5 }} />
+                    style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.45 }} />
                 ))}
               </div>
             )}
           </div>
 
           {/* INFOS */}
-          <div style={{ flex: '1', minWidth: '200px' }}>
-            <p style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>{illu.nom}</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '4px' }}>{illu.categorie} · {illu.annee}</p>
-            {illu.prix && <p style={{ color: '#00d4d4', fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>{illu.prix} €</p>}
+          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <p style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>{illu.nom}</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
+            {illu.prix && <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold' }}>{illu.prix} €</p>}
 
-            {/* BOUTONS J'AI / JE VEUX */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-              <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: jAi ? '#000' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
-                {jAi ? "✓ J'ai" : "J'ai"}
+            {/* BOUTONS */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.08)', border: jAi ? 'none' : '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 14px', color: jAi ? '#000' : 'rgba(255,255,255,0.6)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                {jAi ? "✓ J'ai" : "✕ J'ai"}
               </button>
-              <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,100,150,0.3)' : 'rgba(255,255,255,0.1)', border: `1px solid ${jeVeux ? 'rgba(255,100,150,0.6)' : 'transparent'}`, borderRadius: '8px', padding: '8px 16px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>
+              <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,100,150,0.2)' : 'rgba(255,255,255,0.08)', border: `1px solid ${jeVeux ? 'rgba(255,100,150,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '7px 14px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>
                 {jeVeux ? '🩷 Je veux' : '🤍 Je veux'}
+              </button>
+              <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 14px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer' }}>
+                🛒 Panier
               </button>
             </div>
 
+            {/* DESCRIPTION — hauteur limitée avec scroll */}
             {illu.description && (
-              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', lineHeight: '1.8', marginBottom: '16px' }}>{illu.description}</p>
+              <div style={{ maxHeight: '100px', overflowY: 'auto', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 12px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: '1.7' }}>
+                  {formatDescription(illu.description)}
+                </p>
+              </div>
             )}
 
+            {/* TAGS */}
             {illu.tags && illu.tags.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {illu.tags.map((tag, i) => (
-                  <span key={i} style={{ background: 'rgba(0,212,212,0.1)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '3px 10px', color: '#00d4d4', fontSize: '11px' }}>
+                  <span key={i} style={{ background: 'rgba(0,212,212,0.08)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '10px', padding: '2px 7px', color: 'rgba(0,212,212,0.7)', fontSize: '9px' }}>
                     {tag}
                   </span>
                 ))}
@@ -499,6 +572,32 @@ function PopupFiche({ illu, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose })
             )}
           </div>
         </div>
+
+        {/* FICHES SIMILAIRES */}
+        {similaires.length > 0 && (
+          <div style={{ padding: '0 24px 24px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
+              {similaires.map(sim => {
+                const url = getVisuelPres(sim.visuels);
+                return (
+                  <div key={sim.id} onClick={() => { setVisuelActif(0); onOpenSimilaire(sim); }}
+                    style={{ flexShrink: 0, width: '90px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', background: '#111', transition: 'border-color .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.4)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}>
+                    {url
+                      ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '90px', objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: '100%', height: '90px', background: 'rgba(255,255,255,0.03)' }} />
+                    }
+                    <div style={{ padding: '4px 6px' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
