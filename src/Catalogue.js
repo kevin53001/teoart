@@ -74,14 +74,12 @@ function Catalogue() {
   const total = illustrationsFiltrees.length;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
-  const getVisuelPresentation = (visuels, nom) => {
+  const getVisuelPresentation = (visuels) => {
     if (!visuels) return null;
-    // Cherche la clé qui contient "présentation" ou "presentation"
     const cle = Object.keys(visuels).find(k =>
       k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')
     );
     if (cle) return cheminVersUrl(visuels[cle]);
-    // Fallback sur B
     const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
     if (cleB) return cheminVersUrl(visuels[cleB]);
     return null;
@@ -174,7 +172,7 @@ function Catalogue() {
       </div>
 
       {/* BARRES AVEC OPACITE DECROISSANTE */}
-      <div style={{ width: '100%', marginTop: '20px' }}>
+      <div style={{ width: '100%', marginTop: '20px', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
           {BARRES.map((barre, i) => (
             <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
@@ -192,12 +190,10 @@ function Catalogue() {
       </div>
 
       {/* CONTENU CATALOGUE SUR FOND NOIR */}
-      <div style={{ width: '100%', background: '#000', padding: '24px 20px 60px' }}>
+      <div style={{ width: '100%', background: '#000', padding: '24px 20px 60px', position: 'relative', zIndex: 20 }}>
 
         {/* ENCART FILTRES */}
         <div style={{ maxWidth: BANNER_MAX, margin: '0 auto 24px', background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)' }}>
-
-          {/* FILTRES ANNEES */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {ANNEES.map(a => (
               <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
@@ -205,8 +201,6 @@ function Catalogue() {
               </button>
             ))}
           </div>
-
-          {/* COMPTEUR */}
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
             {total} illustration{total > 1 ? 's' : ''}
             {categorie !== 'Tout' ? ` · ${categorie}` : ''}
@@ -221,7 +215,7 @@ function Catalogue() {
           <>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
               {illustrationsPage.map(illu => (
-                <IlluCard key={illu.id} illu={illu} url={getVisuelPresentation(illu.visuels, illu.nom)} jAi={collection.has(illu.id)} />
+                <IlluCard key={illu.id} illu={illu} url={getVisuelPresentation(illu.visuels)} jAi={collection.has(illu.id)} />
               ))}
             </div>
 
