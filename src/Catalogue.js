@@ -167,11 +167,12 @@ function Catalogue() {
   const popupPrecedent = () => { const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev); };
 
   // Tailles responsive
-  const P = isMobile ? 48 : 80;   // taille pastille
-  const L = isMobile ? 70 : 120;  // taille logo
-  const GAP_NAV = isMobile ? 4 : 8;
-  const MARGIN_NAV = isMobile ? 6 : 12;
-  const MB_NAV = isMobile ? -12 : -20; // marginBottom pastilles décalées
+  const P = isMobile ? 48 : 80;
+  const L = isMobile ? 70 : 120;
+  const GAP_NAV = isMobile ? 2 : 8;
+  const MARGIN_NAV = isMobile ? 3 : 12;
+  const MB_NAV = isMobile ? -6 : -20;
+  const H_NAV = isMobile ? 80 : 120;
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -193,7 +194,7 @@ function Catalogue() {
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
         @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
         .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
-        .dropdown-cat { position: absolute; top: ${isMobile ? '52px' : '85px'}; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
+        .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
@@ -218,21 +219,23 @@ function Catalogue() {
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
-      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
       {/* NAVIGATION RESPONSIVE */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${L * 0.5}px` }}>
-        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: `${L}px` }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px` }}>
+        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px` }}>
 
           {/* GAUCHE */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px` }}>
+            {/* Accueil — aligné centre */}
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
               style={{ width: `${P}px`, height: `${P}px` }} onClick={() => navigate('/catalogue')} />
+            {/* Livres — légèrement plus bas sur desktop seulement */}
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginBottom: `${MB_NAV}px` }} onClick={() => {}} />
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '0' : '20px' }} onClick={() => {}} />
+            {/* Catégories */}
             <div style={{ position: 'relative' }}>
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
                 style={{ width: `${P}px`, height: `${P}px` }} onClick={() => setShowCategories(v => !v)} />
@@ -248,28 +251,29 @@ function Catalogue() {
           </div>
 
           {/* LOGO */}
-          <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10 }} />
+          <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10, flexShrink: 0 }} />
 
           {/* DROITE */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px` }}>
+            {/* Pensées */}
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
               style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
+            {/* Panier — légèrement plus bas sur desktop seulement */}
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginBottom: `${MB_NAV}px` }} onClick={() => {}} />
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '0' : '20px' }} onClick={() => {}} />
+            {/* Mon Compte */}
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
               style={{ width: `${P}px`, height: `${P}px` }} onClick={() => {}} />
           </div>
         </div>
       </div>
 
-      {/* RECHERCHE */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
         <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
           value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
           style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
-      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -331,7 +335,6 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
