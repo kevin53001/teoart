@@ -84,14 +84,14 @@ function Catalogue() {
   const navigate = useNavigate();
   const [illustrations, setIllustrations] = React.useState([]);
   const [collection, setCollection] = React.useState({});
-  const [coloriages, setColoriages] = React.useState({}); // illuId → true/false
+  const [coloriages, setColoriages] = React.useState({});
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
   const [recherche, setRecherche] = React.useState('');
-  const [filtreCollection, setFiltreCollection] = React.useState('tout'); // 'tout' | 'jai' | 'jeveux' | 'japas'
-  const [tri, setTri] = React.useState('az'); // 'az' | 'za' | 'recent'
+  const [filtreCollection, setFiltreCollection] = React.useState('tout');
+  const [tri, setTri] = React.useState('az');
   const [vueCompacte, setVueCompacte] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [popup, setPopup] = React.useState(null);
@@ -99,7 +99,7 @@ function Catalogue() {
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
-  const [popupColo, setPopupColo] = React.useState(null); // illuId pour popup palette vignette
+  const [popupColo, setPopupColo] = React.useState(null);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
@@ -165,7 +165,6 @@ function Catalogue() {
 
   const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
 
-  // Filtrage
   let illustrationsFiltrees = illustrations.filter(i => {
     if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     if (annees.length > 0 && !annees.includes(i.annee)) return false;
@@ -176,11 +175,10 @@ function Catalogue() {
     return true;
   });
 
-  // Tri
   illustrationsFiltrees = [...illustrationsFiltrees].sort((a, b) => {
     if (tri === 'za') return b.nom.localeCompare(a.nom, 'fr');
     if (tri === 'recent') return (b.annee || 0) - (a.annee || 0);
-    return a.nom.localeCompare(b.nom, 'fr'); // az par défaut
+    return a.nom.localeCompare(b.nom, 'fr');
   });
 
   const total = illustrationsFiltrees.length;
@@ -336,7 +334,7 @@ function Catalogue() {
           {/* ENCARTS FILTRES */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
 
-            {/* ENCART GAUCHE — Tri + Vue */}
+            {/* GAUCHE — Tri + Vue */}
             <div style={encartStyle}>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
@@ -353,7 +351,7 @@ function Catalogue() {
               </div>
             </div>
 
-            {/* ENCART CENTRE — Années */}
+            {/* CENTRE — Années */}
             <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>{a}</button>)}
@@ -366,7 +364,7 @@ function Catalogue() {
               </p>
             </div>
 
-            {/* ENCART DROITE — Filtre collection */}
+            {/* DROITE — Filtre collection */}
             <div style={encartStyle}>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
@@ -421,7 +419,6 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* POPUP FICHE */}
       {popup && (
         <PopupFiche
           illu={popup} illustrations={illustrations}
@@ -440,7 +437,6 @@ function Catalogue() {
         />
       )}
 
-      {/* POPUP PALETTE VIGNETTE */}
       {popupColo && (
         <PopupColoVignette
           illu={popupColo}
@@ -451,7 +447,6 @@ function Catalogue() {
         />
       )}
 
-      {/* CONFIRMATION DÉCOCHAGE */}
       {confirmation && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
@@ -528,12 +523,10 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
           : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
         }
 
-        {/* BADGE J'AI */}
         <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>
           {jAi ? "✓ J'ai" : "✕ J'ai"}
         </div>
 
-        {/* COEUR */}
         <div onClick={onToggleJeVeux}
           style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
@@ -546,11 +539,10 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
           </svg>
         </div>
 
-        {/* PALETTE 🎨 */}
+        {/* PALETTE */}
         <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
             {aColorié ? (
-              // Palette colorée
               <g>
                 <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5"/>
                 <circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d"/>
@@ -559,7 +551,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
                 <circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a"/>
               </g>
             ) : (
-              // Palette sombre
               <g>
                 <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
                 <circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
@@ -601,7 +592,7 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
     try {
       const ext = coloImage.name.split('.').pop();
       const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-      const { data: uploadData } = await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
+      await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(`coloriages/${nomFichier}`);
       await supabase.from('coloriages').upsert({
         user_id: userId,
@@ -695,7 +686,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
     try {
       const ext = coloImage.name.split('.').pop();
       const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
-      const { data: uploadData } = await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
+      await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
       await supabase.from('coloriages').upsert({
         user_id: userId,
