@@ -29,15 +29,18 @@ function cheminVersUrl(chemin) {
   return `${R2}/${encodeURIComponent(relatif).replaceAll('%2F', '/')}`;
 }
 
-// Extraire le nom du coloriste depuis le nom de fichier
-// Format : "Opaline - Cx - Valérie Liebermann.jpg" → "Valérie Liebermann"
 function extraireColoriste(chemin) {
   if (!chemin) return null;
   const nomFichier = chemin.split('\\').pop().split('/').pop();
-  // Pattern: "NomIllustration - Cx - NomColoriste.ext" ou "NomIllustration - C - NomColoriste.ext"
   const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
   if (match) return match[1].trim();
   return null;
+}
+
+function estVisuelCChemin(chemin) {
+  if (!chemin) return false;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  return /\s*-\s*C\d*\s*[-.]/.test(nomFichier);
 }
 
 function getVisuelsOrdonnes(visuels) {
@@ -45,27 +48,23 @@ function getVisuelsOrdonnes(visuels) {
   const result = [];
   const valeursAjoutees = new Set();
 
-  // Présentation en premier
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
     if ((k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')) && v && !valeursAjoutees.has(v)) {
       result.push(v); valeursAjoutees.add(v);
     }
   });
-  // B exact (majuscule puis minuscule)
   ['B', 'b'].forEach(k => {
     if (visuels[k] && !valeursAjoutees.has(visuels[k])) {
       result.push(visuels[k]); valeursAjoutees.add(visuels[k]);
     }
   });
-  // C (toutes les clés C, C1, C2...)
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
     if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) {
       result.push(v); valeursAjoutees.add(v);
     }
   });
-  // Reste
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
     if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
@@ -80,13 +79,6 @@ function getVisuelPresentation(visuels) {
   if (visuels['B']) return cheminVersUrl(visuels['B']);
   if (visuels['b']) return cheminVersUrl(visuels['b']);
   return null;
-}
-
-// Savoir si un chemin correspond à un visuel C
-function estVisuelCChemin(chemin) {
-  if (!chemin) return false;
-  const nomFichier = chemin.split('\\').pop().split('/').pop();
-  return /\s*-\s*C\d*\s*[-\.]/i.test(nomFichier);
 }
 
 function Catalogue() {
@@ -216,12 +208,10 @@ function Catalogue() {
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
-      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
         <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: '120px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginRight: '12px' }}>
@@ -248,14 +238,12 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* RECHERCHE */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
         <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
           value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
           style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
-      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -317,7 +305,6 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -402,9 +389,9 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   const handleMouseMove = (e) => {
     const el = cardRef.current; const wrap = wrapRef.current;
     const rect = el.getBoundingClientRect();
-    const dx = (e.clientX - rect.left - rect.width/2) / (rect.width/2);
-    const dy = (e.clientY - rect.top - rect.height/2) / (rect.height/2);
-    el.style.transform = `rotateX(${-dy*5}deg) rotateY(${dx*5}deg) scale(1.04)`;
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) scale(1.04)`;
     if (wrap) wrap.style.transform = 'perspective(800px)';
   };
 
@@ -465,7 +452,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
 
   React.useEffect(() => { setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomUrl(null); }, [illu.id]);
 
-  // Extraire coloriste du chemin du visuel actif
   const cheminActif = visuelsChemins[visuelActif];
   const coloriste = estVisuelCChemin(cheminActif) ? extraireColoriste(cheminActif) : null;
 
@@ -507,7 +493,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
 
   return (
     <>
-      {/* ZOOM PLEIN ÉCRAN */}
       {zoomUrl && (
         <div onClick={() => setZoomUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
           <img src={zoomUrl} alt="" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
@@ -515,7 +500,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
         </div>
       )}
 
-      {/* FLÈCHES */}
       <div className="nav-arrow" style={{ left: '8px' }} onClick={(e) => { e.stopPropagation(); onPrecedent(); }}>‹</div>
       <div className="nav-arrow" style={{ right: '8px' }} onClick={(e) => { e.stopPropagation(); onSuivant(); }}>›</div>
 
@@ -525,8 +509,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
           <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
 
           <div style={{ padding: '24px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-
-            {/* VISUELS */}
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
                 {visuels[visuelActif] && (
@@ -535,7 +517,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
                     onClick={() => setZoomUrl(visuels[visuelActif])}
                     style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
                 )}
-                {/* COLORISTE */}
                 {coloriste && (
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                     Réalisé par {coloriste}
@@ -552,7 +533,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
               )}
             </div>
 
-            {/* INFOS */}
             <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
