@@ -88,24 +88,16 @@ function Catalogue() {
 
   const toggleJAi = async (illuId, e) => {
     e && e.stopPropagation();
-    const actuel = collection[illuId]?.j_ai || false;
-    const nouveau = !actuel;
+    const nouveau = !(collection[illuId]?.j_ai || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert({
-      user_id: userId, illustration_id: illuId, j_ai: nouveau,
-      je_veux: collection[illuId]?.je_veux || false
-    });
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, je_veux: collection[illuId]?.je_veux || false });
   };
 
   const toggleJeVeux = async (illuId, e) => {
     e && e.stopPropagation();
-    const actuel = collection[illuId]?.je_veux || false;
-    const nouveau = !actuel;
+    const nouveau = !(collection[illuId]?.je_veux || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({
-      user_id: userId, illustration_id: illuId, je_veux: nouveau,
-      j_ai: collection[illuId]?.j_ai || false
-    });
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false });
   };
 
   const toggleAnnee = (a) => {
@@ -125,9 +117,7 @@ function Catalogue() {
 
   const getVisuelPresentation = (visuels) => {
     if (!visuels) return null;
-    const cle = Object.keys(visuels).find(k =>
-      k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')
-    );
+    const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
     if (cle) return cheminVersUrl(visuels[cle]);
     const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
     if (cleB) return cheminVersUrl(visuels[cleB]);
@@ -139,8 +129,8 @@ function Catalogue() {
 
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes scrollLeft  { from { transform: translateX(0);    } to { transform: translateX(-50%); } }
-        @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0);    } }
+        @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
@@ -148,19 +138,14 @@ function Catalogue() {
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
         .teoart-card::before {
           content: '';
-          position: absolute;
-          top: -20%; left: -150%;
+          position: absolute; top: -20%; left: -150%;
           width: 80%; height: 140%;
           background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
-          transform: skewX(-28deg);
-          z-index: 10; pointer-events: none; mix-blend-mode: screen;
+          transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
         }
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
-        @keyframes shine { 0% { left: -150%; opacity: 1; } 100% { left: 220%; opacity: 1; } }
-        .teoart-card:hover {
-          border-color: rgba(255,210,80,0.5) !important;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important;
-        }
+        @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
+        .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
         .dropdown-cat { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
@@ -169,46 +154,37 @@ function Catalogue() {
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
         .search-input::placeholder { color: rgba(255,255,255,0.4); }
         .search-input:focus { outline: none; border-color: rgba(0,212,212,0.6) !important; }
-        .badge-jai { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 2px; }
-        .badge-jai.actif { background: #00d4d4; color: #000; }
-        .badge-jai.inactif { background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,80,80,0.5); }
-        .badge-veux { position: absolute; top: 5px; right: 5px; z-index: 20; cursor: pointer; font-size: 14px; line-height: 1; transition: transform .2s; background: rgba(0,0,0,0.5); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
-        .badge-veux:hover { transform: scale(1.3); }
-        .badge-panier { position: absolute; bottom: 28px; right: 5px; z-index: 20; cursor: pointer; font-size: 13px; background: rgba(0,0,0,0.6); border-radius: 4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
-        .badge-panier:hover { background: rgba(0,212,212,0.3); }
         @keyframes fadeImg { from { opacity: 0; } to { opacity: 1; } }
+        .card-img-fade { animation: fadeImg 0.6s ease; }
+        .badge-jai-actif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #00d4d4; color: #000; }
+        .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
+        .badge-panier { position: absolute; bottom: 28px; right: 5px; z-index: 20; cursor: pointer; font-size: 12px; background: rgba(0,0,0,0.55); border-radius: 4px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+        .badge-panier:hover { background: rgba(0,212,212,0.3); }
       `}</style>
 
       {/* CLOCHE */}
-      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>
-        🔔
-      </div>
+      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
       {/* BANNIÈRE HAUT */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* BARRE NAVIGATION FIXE */}
+      {/* NAVIGATION FIXE */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
         <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: '120px' }}>
 
           {/* GAUCHE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginRight: '12px' }}>
-            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
-              style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
-            <div style={{ position: 'relative' }} id="pastille-cat">
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => setShowCategories(v => !v)} />
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
+            <div style={{ position: 'relative' }}>
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
                   {CATEGORIES.map(cat => (
                     <div key={cat} className={`dropdown-item${categorie === cat ? ' actif' : ''}`}
-                      onClick={() => { setCategorie(cat); setShowCategories(false); setPage(1); }}>
-                      {cat}
-                    </div>
+                      onClick={() => { setCategorie(cat); setShowCategories(false); setPage(1); }}>{cat}</div>
                   ))}
                 </div>
               )}
@@ -220,48 +196,39 @@ function Catalogue() {
 
           {/* DROITE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: '12px' }}>
-            <div id="pastille-pensees">
-              <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            </div>
-            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
-              style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
-            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
-              style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => {}} />
           </div>
         </div>
       </div>
 
-      {/* BARRE DE RECHERCHE — alignée entre pastille catégorie et pastille pensées */}
+      {/* BARRE DE RECHERCHE — taille réduite, centrée */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
-        <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', justifyContent: 'center' }}>
-          {/* largeur approximative : du bord gauche de Catégories au bord droit de Pensées
-              soit logo(120) + 2x(accueil80+gap8+livres80+gap8) = environ 560px centré */}
-          <input
-            className="search-input"
-            type="text"
-            placeholder="🔍 Rechercher une illustration..."
-            value={recherche}
-            onChange={e => { setRecherche(e.target.value); setPage(1); }}
-            style={{
-              width: '560px',
-              maxWidth: '100%',
-              background: 'rgba(40,40,40,0.85)',
-              border: '1px solid rgba(0,212,212,0.3)',
-              borderRadius: '24px',
-              padding: '10px 18px',
-              color: '#fff',
-              fontSize: '13px',
-              backdropFilter: 'blur(10px)',
-            }}
-          />
-        </div>
+        <input
+          className="search-input"
+          type="text"
+          placeholder="🔍 Rechercher une illustration..."
+          value={recherche}
+          onChange={e => { setRecherche(e.target.value); setPage(1); }}
+          style={{
+            width: '300px',
+            maxWidth: '90%',
+            background: 'rgba(30,30,30,0.9)',
+            border: '1px solid rgba(0,212,212,0.25)',
+            borderRadius: '24px',
+            padding: '9px 16px',
+            color: '#fff',
+            fontSize: '12px',
+            backdropFilter: 'blur(10px)',
+          }}
+        />
       </div>
 
       {/* ZONE BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
 
-        {/* BARRES EN ARRIERE PLAN */}
+        {/* BARRES */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             {BARRES.map((barre, i) => (
@@ -279,7 +246,7 @@ function Catalogue() {
           </div>
         </div>
 
-        {/* CONTENU AU PREMIER PLAN */}
+        {/* CONTENU */}
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
           {/* ENCART FILTRES */}
@@ -287,9 +254,7 @@ function Catalogue() {
             <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'inline-block' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                 {ANNEES.map(a => (
-                  <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
-                    {a}
-                  </button>
+                  <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>{a}</button>
                 ))}
               </div>
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
@@ -321,7 +286,6 @@ function Catalogue() {
                   />
                 ))}
               </div>
-
               {illustrationsPage.length < total && (
                 <div style={{ textAlign: 'center', marginTop: '32px' }}>
                   <button onClick={() => setPage(p => p + 1)}
@@ -386,7 +350,7 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
           setFadeKey(k => k + 1);
           return next;
         });
-      }, 1500); // ralenti à 1.5s
+      }, 2500);
     }
   };
 
@@ -425,45 +389,41 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
         onMouseLeave={handleMouseLeave}
         onClick={onClickPopup}
         style={{
-          width: `${TAILLE}px`,
-          cursor: 'pointer',
-          borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: '#111',
-          overflow: 'hidden',
-          position: 'relative',
-          transformStyle: 'preserve-3d',
+          width: `${TAILLE}px`, cursor: 'pointer', borderRadius: '12px',
+          border: '1px solid rgba(255,255,255,0.1)', background: '#111',
+          overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d',
           transition: 'transform 0.1s ease, box-shadow 0.3s',
           boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)',
           willChange: 'transform',
         }}>
 
         {urlActuelle
-          ? <img
-              key={fadeKey}
-              src={urlActuelle}
-              alt={illu.nom}
-              style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block', animation: 'fadeImg 0.4s ease' }}
-            />
-          : <div style={{ width: '100%', height: `${TAILLE}px`, background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '11px' }}>Pas d'image</span>
-            </div>
+          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom}
+              className="card-img-fade"
+              style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block' }} />
+          : <div style={{ width: '100%', height: `${TAILLE}px`, background: '#111' }} />
         }
 
         {/* BADGE J'AI */}
-        <div className={`badge-jai${jAi ? ' actif' : ' inactif'}`} onClick={onToggleJAi}>
+        <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>
           {jAi ? '✓ J\'ai' : '✕ J\'ai'}
         </div>
 
-        {/* BADGE JE VEUX */}
-        <div className="badge-veux" onClick={onToggleJeVeux}>
-          {jeVeux ? '🩷' : <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>♡</span>}
+        {/* COEUR JE VEUX — SVG pur, pas d'emoji */}
+        <div onClick={onToggleJeVeux}
+          style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+            {jeVeux
+              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            }
+          </svg>
         </div>
 
-        {/* BADGE PANIER */}
-        <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
-          🛒
-        </div>
+        {/* PANIER */}
+        <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">🛒</div>
 
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
           <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
@@ -474,20 +434,15 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   );
 }
 
-function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, collection }) {
+function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire }) {
   const visuels = getVisuelsOrdonnes(illu.visuels).map(v => cheminVersUrl(v)).filter(Boolean);
   const [visuelActif, setVisuelActif] = React.useState(0);
 
-  // Fiches similaires : 1 ou 2 tags en commun
   const similaires = React.useMemo(() => {
     if (!illu.tags || illu.tags.length === 0) return [];
     return illustrations
       .filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
-      .sort((a, b) => {
-        const scoreA = a.tags.filter(t => illu.tags.includes(t)).length;
-        const scoreB = b.tags.filter(t => illu.tags.includes(t)).length;
-        return scoreB - scoreA;
-      })
+      .sort((a, b) => b.tags.filter(t => illu.tags.includes(t)).length - a.tags.filter(t => illu.tags.includes(t)).length)
       .slice(0, 15);
   }, [illu, illustrations]);
 
@@ -500,11 +455,10 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
     return null;
   };
 
-  // Formater la description avec sauts de ligne
   const formatDescription = (desc) => {
     if (!desc) return null;
-    return desc.split('\n').map((line, i) => (
-      <React.Fragment key={i}>{line}{i < desc.split('\n').length - 1 && <br />}</React.Fragment>
+    return desc.split('\n').map((line, i, arr) => (
+      <React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>
     ));
   };
 
@@ -512,49 +466,54 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '820px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
 
-        {/* FERMER */}
         <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
 
         <div style={{ padding: '24px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
 
           {/* VISUELS */}
-          <div style={{ flex: '0 0 240px' }}>
+          <div style={{ flex: '0 0 220px' }}>
             {visuels[visuelActif] && (
-              <img src={visuels[visuelActif]} alt={illu.nom} style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '10px' }} />
+              <img src={visuels[visuelActif]} alt={illu.nom} style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
             )}
             {visuels.length > 1 && (
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                 {visuels.map((url, i) => (
                   <img key={i} src={url} alt="" onClick={() => setVisuelActif(i)}
-                    style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.45 }} />
+                    style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.4 }} />
                 ))}
               </div>
             )}
           </div>
 
           {/* INFOS */}
-          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <p style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>{illu.nom}</p>
+          <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
-            {illu.prix && <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold' }}>{illu.prix} €</p>}
+            {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
 
             {/* BOUTONS */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.08)', border: jAi ? 'none' : '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 14px', color: jAi ? '#000' : 'rgba(255,255,255,0.6)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>
                 {jAi ? "✓ J'ai" : "✕ J'ai"}
               </button>
-              <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,100,150,0.2)' : 'rgba(255,255,255,0.08)', border: `1px solid ${jeVeux ? 'rgba(255,100,150,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '7px 14px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>
-                {jeVeux ? '🩷 Je veux' : '🤍 Je veux'}
+              <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,77,125,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${jeVeux ? 'rgba(255,77,125,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 12px', color: '#fff', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <svg viewBox="0 0 24 24" width="12" height="12">
+                  {jeVeux
+                    ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+                    : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  }
+                </svg>
+                Je veux
               </button>
-              <button style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 14px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer' }}>
+              <button style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
                 🛒 Panier
               </button>
             </div>
 
-            {/* DESCRIPTION — hauteur limitée avec scroll */}
+            {/* DESCRIPTION — hauteur limitée */}
             {illu.description && (
-              <div style={{ maxHeight: '100px', overflowY: 'auto', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 12px' }}>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: '1.7' }}>
+              <div style={{ maxHeight: '80px', overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '8px 10px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>
                   {formatDescription(illu.description)}
                 </p>
               </div>
@@ -564,7 +523,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             {illu.tags && illu.tags.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {illu.tags.map((tag, i) => (
-                  <span key={i} style={{ background: 'rgba(0,212,212,0.08)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '10px', padding: '2px 7px', color: 'rgba(0,212,212,0.7)', fontSize: '9px' }}>
+                  <span key={i} style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', padding: '1px 6px', color: 'rgba(0,212,212,0.6)', fontSize: '9px' }}>
                     {tag}
                   </span>
                 ))}
@@ -573,24 +532,24 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
           </div>
         </div>
 
-        {/* FICHES SIMILAIRES */}
+        {/* SIMILAIRES */}
         {similaires.length > 0 && (
-          <div style={{ padding: '0 24px 24px' }}>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
-            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
+          <div style={{ padding: '0 24px 20px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
               {similaires.map(sim => {
                 const url = getVisuelPres(sim.visuels);
                 return (
                   <div key={sim.id} onClick={() => { setVisuelActif(0); onOpenSimilaire(sim); }}
-                    style={{ flexShrink: 0, width: '90px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', background: '#111', transition: 'border-color .2s' }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.4)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}>
+                    style={{ flexShrink: 0, width: '80px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.35)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}>
                     {url
-                      ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '90px', objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: '100%', height: '90px', background: 'rgba(255,255,255,0.03)' }} />
+                      ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: '100%', height: '80px', background: 'rgba(255,255,255,0.02)' }} />
                     }
-                    <div style={{ padding: '4px 6px' }}>
-                      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
+                    <div style={{ padding: '3px 5px' }}>
+                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
                     </div>
                   </div>
                 );
