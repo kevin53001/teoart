@@ -172,6 +172,7 @@ function Catalogue() {
     if (filtreCollection === 'jai' && !collection[i.id]?.j_ai) return false;
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
     if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
+    if (filtreCollection === 'colorie' && !coloriages[i.id]) return false;
     return true;
   });
 
@@ -256,7 +257,7 @@ function Catalogue() {
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
         .badge-panier { position: absolute; bottom: 8px; right: 8px; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 3px 10px rgba(255,62,181,0.65); }
         .badge-panier:hover { transform: scale(1.12); }
-        .badge-palette { position: absolute; bottom: 8px; left: 8px; z-index: 20; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+        .badge-palette { position: absolute; bottom: 36px; left: 6px; z-index: 20; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
         .badge-palette.inactif { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); }
         .badge-palette.actif { background: rgba(255,210,80,0.2); border: 1px solid rgba(255,210,80,0.6); }
         .badge-palette:hover { transform: scale(1.2); }
@@ -331,7 +332,7 @@ function Catalogue() {
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
-          {/* ENCARTS FILTRES */}
+          {/* ENCARTS */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
 
             {/* GAUCHE — Tri + Vue */}
@@ -373,6 +374,9 @@ function Catalogue() {
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
                 <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button style={btnFiltreStyle(filtreCollection === 'colorie')} onClick={() => { setFiltreCollection('colorie'); setPage(1); }}>🎨 Colorié</button>
               </div>
             </div>
           </div>
@@ -539,7 +543,7 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
           </svg>
         </div>
 
-        {/* PALETTE */}
+        {/* PALETTE — bas gauche de l'image */}
         <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
             {aColorié ? (
