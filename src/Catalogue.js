@@ -23,15 +23,6 @@ const SPEED = '80s';
 const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
 const ANNEES = [2021, 2022, 2023, 2024, 2025, 2026];
 
-const PASTILLES = [
-  { id: 'accueil',     src: `${R2}/site/pastille_accueil.png`,     label: 'Accueil',     side: 'left',  row: 'top' },
-  { id: 'livres',      src: `${R2}/site/pastille_livres.png`,      label: 'Livres',      side: 'left',  row: 'bottom' },
-  { id: 'categories',  src: `${R2}/site/pastille_categories.png`,  label: 'Catégories',  side: 'left',  row: 'top' },
-  { id: 'pensees',     src: `${R2}/site/pastille_pensees.png`,     label: 'Pensées',     side: 'right', row: 'top' },
-  { id: 'panier',      src: `${R2}/site/pastille_panier.png`,      label: 'Panier',      side: 'right', row: 'bottom' },
-  { id: 'mon_compte',  src: `${R2}/site/pastille_mon_compte.png`,  label: 'Mon Compte',  side: 'right', row: 'top' },
-];
-
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
@@ -52,19 +43,16 @@ function Catalogue() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-
       const { data: illus } = await supabase
         .from('illustrations')
         .select('id, nom, annee, categorie, visuels, prix')
         .eq('statut', 'published')
         .order('nom');
-
       const { data: coll } = await supabase
         .from('collection')
         .select('illustration_id')
         .eq('user_id', user.id)
         .eq('j_ai', true);
-
       setIllustrations(illus || []);
       setCollection(new Set((coll || []).map(c => c.illustration_id)));
       setLoading(false);
@@ -90,11 +78,6 @@ function Catalogue() {
     if (!visuels) return null;
     const url = visuels.B || visuels.b || visuels.presentation || null;
     return cheminVersUrl(url);
-  };
-
-  const handlePastille = (id) => {
-    if (id === 'accueil') navigate('/catalogue');
-    // autres routes à ajouter
   };
 
   return (
@@ -124,7 +107,7 @@ function Catalogue() {
           border-color: rgba(255,210,80,0.5) !important;
           box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important;
         }
-        .dropdown-cat { position: absolute; top: '100%'; left: 0; background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
+        .dropdown-cat { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
@@ -143,32 +126,20 @@ function Catalogue() {
       </div>
 
       {/* BARRE NAVIGATION FIXE */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        width: '100%', display: 'flex', justifyContent: 'center',
-        padding: '0',
-        marginTop: '-60px',
-      }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
         <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: '120px' }}>
 
           {/* GAUCHE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginRight: '12px' }}>
-            {/* Accueil - haut */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-              <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
-            </div>
-            {/* Livres - bas (décalé) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginBottom: '-20px' }}>
-              <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            </div>
-            {/* Catégories - haut */}
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
+              style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
+              style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
+            <div style={{ position: 'relative' }}>
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
                 style={{ width: '80px', height: '80px' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
-                <div className="dropdown-cat" style={{ position: 'absolute', top: '85px', left: '50%', transform: 'translateX(-50%)' }}>
+                <div className="dropdown-cat">
                   {CATEGORIES.map(cat => (
                     <div key={cat} className={`dropdown-item${categorie === cat ? ' actif' : ''}`}
                       onClick={() => { setCategorie(cat); setShowCategories(false); setPage(1); }}>
@@ -185,21 +156,12 @@ function Catalogue() {
 
           {/* DROITE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: '12px' }}>
-            {/* Pensées - haut */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            </div>
-            {/* Panier - bas (décalé) */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '-20px' }}>
-              <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            </div>
-            {/* Mon Compte - haut */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
-                style={{ width: '80px', height: '80px' }} onClick={() => {}} />
-            </div>
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
+              style={{ width: '80px', height: '80px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
+              style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
+              style={{ width: '80px', height: '80px' }} onClick={() => {}} />
           </div>
         </div>
       </div>
@@ -247,16 +209,11 @@ function Catalogue() {
           ) : (
             <>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
-                {illustrationsPage.map(illu => {
-                  const url = getVisuelB(illu.visuels);
-                  const jAi = collection.has(illu.id);
-                  return (
-                    <IlluCard key={illu.id} illu={illu} url={url} jAi={jAi} />
-                  );
-                })}
+                {illustrationsPage.map(illu => (
+                  <IlluCard key={illu.id} illu={illu} url={getVisuelB(illu.visuels)} jAi={collection.has(illu.id)} />
+                ))}
               </div>
 
-              {/* CHARGER PLUS */}
               {illustrationsPage.length < total && (
                 <div style={{ textAlign: 'center', marginTop: '32px' }}>
                   <button onClick={() => setPage(p => p + 1)}
@@ -345,7 +302,6 @@ function IlluCard({ illu, url, jAi }) {
             </div>
         }
 
-        {/* Badge J'ai */}
         {jAi && (
           <div style={{ position: 'absolute', top: '6px', left: '6px', background: '#00d4d4', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', color: '#000', zIndex: 20 }}>
             J'ai
