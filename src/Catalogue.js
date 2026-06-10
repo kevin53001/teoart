@@ -171,64 +171,68 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* BARRES AVEC OPACITE DECROISSANTE */}
-      <div style={{ width: '100%', marginTop: '20px', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-          {BARRES.map((barre, i) => (
-            <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
-              <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'}
-                style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
-                {[...barre.images, ...barre.images].map((img, j) => (
-                  <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />
-                ))}
+      {/* ZONE BARRES + CONTENU DANS LE MEME CONTENEUR */}
+      <div style={{ position: 'relative', width: '100%', marginTop: '20px' }}>
+
+        {/* BARRES EN POSITION ABSOLUE DERRIERE */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            {BARRES.map((barre, i) => (
+              <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'}
+                  style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
+                  {[...barre.images, ...barre.images].map((img, j) => (
+                    <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* CONTENU CATALOGUE SUR FOND NOIR */}
-      <div style={{ width: '100%', background: '#000', padding: '24px 20px 60px', position: 'relative', zIndex: 20 }}>
-
-        {/* ENCART FILTRES */}
-        <div style={{ maxWidth: BANNER_MAX, margin: '0 auto 24px', background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {ANNEES.map(a => (
-              <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
-                {a}
-              </button>
             ))}
           </div>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
-            {total} illustration{total > 1 ? 's' : ''}
-            {categorie !== 'Tout' ? ` · ${categorie}` : ''}
-            {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
-          </p>
         </div>
 
-        {/* GRILLE */}
-        {loading ? (
-          <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
-              {illustrationsPage.map(illu => (
-                <IlluCard key={illu.id} illu={illu} url={getVisuelPresentation(illu.visuels)} jAi={collection.has(illu.id)} />
+        {/* CONTENU AU PREMIER PLAN */}
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
+
+          {/* ENCART FILTRES */}
+          <div style={{ maxWidth: BANNER_MAX, margin: '0 auto 24px', background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              {ANNEES.map(a => (
+                <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
+                  {a}
+                </button>
               ))}
             </div>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
+              {total} illustration{total > 1 ? 's' : ''}
+              {categorie !== 'Tout' ? ` · ${categorie}` : ''}
+              {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
+            </p>
+          </div>
 
-            {illustrationsPage.length < total && (
-              <div style={{ textAlign: 'center', marginTop: '32px' }}>
-                <button onClick={() => setPage(p => p + 1)}
-                  style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '12px 40px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer' }}>
-                  Charger plus ({total - illustrationsPage.length} restantes)
-                </button>
+          {/* GRILLE */}
+          {loading ? (
+            <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
+                {illustrationsPage.map(illu => (
+                  <IlluCard key={illu.id} illu={illu} url={getVisuelPresentation(illu.visuels)} jAi={collection.has(illu.id)} />
+                ))}
               </div>
-            )}
-          </>
-        )}
+
+              {illustrationsPage.length < total && (
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                  <button onClick={() => setPage(p => p + 1)}
+                    style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '12px 40px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer' }}>
+                    Charger plus ({total - illustrationsPage.length} restantes)
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* BANNIÈRE BAS */}
