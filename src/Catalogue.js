@@ -6,12 +6,12 @@ const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
 
 const BARRES = [
-  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+25).padStart(3,'0')}.jpg`) },
-  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+49).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+73).padStart(3,'0')}.jpg`) },
-  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+97).padStart(3,'0')}.jpg`) },
-  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`) },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.40 },
+  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+25).padStart(3,'0')}.jpg`), opacite: 0.30 },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+49).padStart(3,'0')}.jpg`), opacite: 0.20 },
+  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+73).padStart(3,'0')}.jpg`), opacite: 0.15 },
+  { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+97).padStart(3,'0')}.jpg`), opacite: 0.10 },
+  { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.05 },
 ];
 
 const BANNER_MAX = '1200px';
@@ -74,10 +74,17 @@ function Catalogue() {
   const total = illustrationsFiltrees.length;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
-  const getVisuelB = (visuels) => {
+  const getVisuelPresentation = (visuels, nom) => {
     if (!visuels) return null;
-    const url = visuels.B || visuels.b || visuels.presentation || null;
-    return cheminVersUrl(url);
+    // Cherche la clé qui contient "présentation" ou "presentation"
+    const cle = Object.keys(visuels).find(k =>
+      k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')
+    );
+    if (cle) return cheminVersUrl(visuels[cle]);
+    // Fallback sur B
+    const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
+    if (cleB) return cheminVersUrl(visuels[cleB]);
+    return null;
   };
 
   return (
@@ -166,29 +173,32 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* ZONE BARRES + CONTENU */}
-      <div style={{ position: 'relative', width: '100%', marginTop: '20px' }}>
-
-        {/* BARRES */}
+      {/* BARRES AVEC OPACITE DECROISSANTE */}
+      <div style={{ width: '100%', marginTop: '20px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
           {BARRES.map((barre, i) => (
             <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
               <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
               <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content' }}>
+              <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'}
+                style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
                 {[...barre.images, ...barre.images].map((img, j) => (
-                  <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', opacity: 0.5, display: 'block' }} />
+                  <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />
                 ))}
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* CONTENU PAR DESSUS */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', minHeight: '100%', zIndex: 10, padding: '20px' }}>
+      {/* CONTENU CATALOGUE SUR FOND NOIR */}
+      <div style={{ width: '100%', background: '#000', padding: '24px 20px 60px' }}>
+
+        {/* ENCART FILTRES */}
+        <div style={{ maxWidth: BANNER_MAX, margin: '0 auto 24px', background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)' }}>
 
           {/* FILTRES ANNEES */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {ANNEES.map(a => (
               <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)}>
                 {a}
@@ -197,38 +207,38 @@ function Catalogue() {
           </div>
 
           {/* COMPTEUR */}
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', textAlign: 'center', marginBottom: '20px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', textAlign: 'center' }}>
             {total} illustration{total > 1 ? 's' : ''}
             {categorie !== 'Tout' ? ` · ${categorie}` : ''}
             {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
           </p>
-
-          {/* GRILLE */}
-          {loading ? (
-            <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
-          ) : (
-            <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
-                {illustrationsPage.map(illu => (
-                  <IlluCard key={illu.id} illu={illu} url={getVisuelB(illu.visuels)} jAi={collection.has(illu.id)} />
-                ))}
-              </div>
-
-              {illustrationsPage.length < total && (
-                <div style={{ textAlign: 'center', marginTop: '32px' }}>
-                  <button onClick={() => setPage(p => p + 1)}
-                    style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '12px 40px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer' }}>
-                    Charger plus ({total - illustrationsPage.length} restantes)
-                  </button>
-                </div>
-              )}
-            </>
-          )}
         </div>
+
+        {/* GRILLE */}
+        {loading ? (
+          <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
+        ) : (
+          <>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
+              {illustrationsPage.map(illu => (
+                <IlluCard key={illu.id} illu={illu} url={getVisuelPresentation(illu.visuels, illu.nom)} jAi={collection.has(illu.id)} />
+              ))}
+            </div>
+
+            {illustrationsPage.length < total && (
+              <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                <button onClick={() => setPage(p => p + 1)}
+                  style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '12px 40px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer' }}>
+                  Charger plus ({total - illustrationsPage.length} restantes)
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* BANNIÈRE BAS */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2, marginTop: `${BARRES.length * (IMG_H + GAP)}px` }}>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
           <div onClick={() => window.open('https://www.instagram.com/kevin_teoart/', '_blank')} style={{ position: 'absolute', top: 0, left: 0, width: '33.33%', height: '100%', cursor: 'pointer' }} />
