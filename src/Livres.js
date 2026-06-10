@@ -4,7 +4,6 @@ import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
-
 const BANNER_MAX = '1200px';
 const SPEED = '80s';
 const IMG_W = 110;
@@ -26,9 +25,64 @@ function cheminVersUrl(chemin) {
   return `${R2}/${relatif.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 }
 
+// Vignette dossier sans visuel — premium aux couleurs du site
+function VignetteDossier({ item, taille = 150, onClick }) {
+  const cardRef = React.useRef(null);
+  const wrapRef = React.useRef(null);
 
-// Vignette livre/recueil avec visuel
-function VignetteAvecVisuel({ item, taille = 150, onClick, isRecueil = false }) {
+  const handleMouseMove = (e) => {
+    const el = cardRef.current;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 6}deg) rotateY(${dx * 6}deg) scale(1.05)`;
+    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(800px)';
+  };
+  const handleMouseLeave = () => {
+    if (cardRef.current) cardRef.current.style.transform = '';
+    if (wrapRef.current) wrapRef.current.style.transform = '';
+  };
+
+  return (
+    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
+      <div ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onClick={onClick}
+        style={{
+          width: `${taille}px`,
+          height: `${taille + 32}px`,
+          cursor: 'pointer',
+          borderRadius: '12px',
+          border: '1px solid rgba(255,210,80,0.4)',
+          background: 'linear-gradient(135deg, #0a0a0a 0%, #111 40%, #0d0d12 70%, #0a0a0a 100%)',
+          overflow: 'hidden',
+          position: 'relative',
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.1s ease, box-shadow 0.3s',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.7), 0 0 14px rgba(255,210,80,0.08)',
+          willChange: 'transform',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 30% 20%, rgba(255,210,80,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,212,212,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '14px', left: '14px', right: '14px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
+        <div style={{ position: 'absolute', bottom: '42px', left: '14px', right: '14px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
+        <div style={{ fontSize: taille > 120 ? '30px' : '22px', marginBottom: '10px', opacity: 0.75 }}>📁</div>
+        <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: taille > 120 ? '11px' : '9px', fontWeight: 'bold', textAlign: 'center', padding: '0 10px', lineHeight: '1.5', textShadow: '0 0 12px rgba(255,210,80,0.25)' }}>{item.nom}</p>
+        {item.annee && <p style={{ color: 'rgba(0,212,212,0.65)', fontSize: '10px', marginTop: '5px' }}>{item.annee}</p>}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30px', background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(255,210,80,0.12)' }}>
+          <p style={{ color: 'rgba(255,210,80,0.55)', fontSize: '9px', letterSpacing: '1px', textTransform: 'uppercase' }}>Dossier</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Vignette avec visuel
+function VignetteVisuel({ item, taille = 150, onClick, badge = null }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -52,71 +106,22 @@ function VignetteAvecVisuel({ item, taille = 150, onClick, isRecueil = false }) 
 
   return (
     <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
-      <div ref={cardRef}
-        className="teoart-card"
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={onClick}
-        style={{
-          width: `${taille}px`,
-          cursor: 'pointer',
-          borderRadius: '12px',
-          border: isRecueil ? '1px solid rgba(0,212,212,0.3)' : '1px solid rgba(255,255,255,0.1)',
-          background: '#111',
-          overflow: 'hidden',
-          position: 'relative',
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease, box-shadow 0.3s',
-          boxShadow: isRecueil
-            ? '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6), 0 0 12px rgba(0,212,212,0.08)'
-            : '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)',
-          willChange: 'transform',
-        }}>
-
+      <div ref={cardRef} className="teoart-card"
+        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClick}
+        style={{ width: `${taille}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
         {url
           ? <img src={url} alt={item.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
         }
-
-        {isRecueil && (
-          <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '4px', padding: '1px 5px', fontSize: '8px', color: '#00d4d4' }}>
-            Recueil
+        {badge && (
+          <div style={{ position: 'absolute', top: '6px', right: '6px', background: badge.bg, border: badge.border, borderRadius: '4px', padding: '1px 5px', fontSize: '8px', color: badge.color }}>
+            {badge.label}
           </div>
         )}
-
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
           <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
-          <p style={{ color: isRecueil ? '#00d4d4' : 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}{item.prix ? ` · ${item.prix} €` : ''}</p>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Vignette illustration (dans popup livre)
-function VignetteIllustration({ illu, taille = 110 }) {
-  const url = React.useMemo(() => {
-    if (!illu.visuels) return null;
-    const cle = Object.keys(illu.visuels).find(k =>
-      k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')
-    );
-    if (cle) return cheminVersUrl(illu.visuels[cle]);
-    if (illu.visuels['B']) return cheminVersUrl(illu.visuels['B']);
-    if (illu.visuels['b']) return cheminVersUrl(illu.visuels['b']);
-    return null;
-  }, [illu]);
-
-  return (
-    <div style={{ flexShrink: 0, width: `${taille}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a' }}>
-      {url
-        ? <img src={url} alt={illu.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
-        : <div style={{ width: '100%', height: `${taille}px`, background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '9px' }}>–</span>
-          </div>
-      }
-      <div style={{ padding: '4px 6px', background: 'rgba(0,0,0,0.8)' }}>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
       </div>
     </div>
   );
@@ -125,21 +130,22 @@ function VignetteIllustration({ illu, taille = 110 }) {
 function Livres() {
   const navigate = useNavigate();
   const [recueils, setRecueils] = React.useState([]);
-  const [livresAvecVisuel, setLivresAvecVisuel] = React.useState([]);
+  const [livresHorsSerie, setLivresHorsSerie] = React.useState([]);
+  const [tousLivres, setTousLivres] = React.useState([]);
   const [tousLesLivres, setTousLesLivres] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
-
-  // Popup recueil
-  const [popupRecueil, setPopupRecueil] = React.useState(null);
-  const [livresPopup, setLivresPopup] = React.useState([]);
-  // Livre ouvert dans popup (déplie les illustrations)
-  const [livreOuvert, setLivreOuvert] = React.useState(null);
-  const [illustrationsLivre, setIllustrationsLivre] = React.useState([]);
-  const [loadingIllus, setLoadingIllus] = React.useState(false);
-
-  // Nav
+  const [userId, setUserId] = React.useState(null);
+  const [collection, setCollection] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
+
+  // Popup recueil ou livre
+  const [popupItem, setPopupItem] = React.useState(null);
+  const [popupType, setPopupType] = React.useState(null); // 'recueil' | 'livre'
+  const [contenuPopup, setContenuPopup] = React.useState([]); // livres/dossiers du recueil
+  const [itemOuvert, setItemOuvert] = React.useState(null); // livre/dossier déplié
+  const [illustrationsOuvertes, setIllustrationsOuvertes] = React.useState([]);
+  const [loadingIllus, setLoadingIllus] = React.useState(false);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -149,53 +155,63 @@ function Livres() {
 
   React.useEffect(() => {
     const charger = async () => {
-      const { data: r } = await supabase
-        .from('recueils')
-        .select('id, nom, slug, annee, visuel_presentation')
-        .eq('statut', 'published')
-        .order('annee');
-      const { data: l } = await supabase
-        .from('livres')
-        .select('id, nom, slug, annee, recueils_ids, visuel_presentation')
-        .eq('statut', 'published')
-        .order('nom');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate('/'); return; }
+      setUserId(user.id);
+
+      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, prix, description').eq('statut', 'published').order('annee', { ascending: false });
+      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').eq('statut', 'published').order('nom');
+
       setRecueils(r || []);
       setTousLesLivres(l || []);
-      setLivresAvecVisuel((l || []).filter(li => li.visuel_presentation));
+      setLivresHorsSerie((l || []).filter(li => li.visuel_presentation && (!li.recueils_ids || li.recueils_ids.length === 0)));
+      setTousLivres((l || []).filter(li => li.visuel_presentation));
+
+      // Collection (j_ai / je_veux) — on réutilise une table dédiée collection_items
+      // Pour l'instant on stocke dans localStorage le temps de créer la table
       setLoading(false);
     };
     charger();
-  }, []);
+  }, [navigate]);
 
-  // Ouvrir popup recueil
   const ouvrirRecueil = (recueil) => {
-    const livresDuRecueil = tousLesLivres.filter(l =>
-      l.recueils_ids && l.recueils_ids.includes(recueil.id)
-    );
-    setLivresPopup(livresDuRecueil);
-    setPopupRecueil(recueil);
-    setLivreOuvert(null);
-    setIllustrationsLivre([]);
+    const livresDuRecueil = tousLesLivres.filter(l => l.recueils_ids && l.recueils_ids.includes(recueil.id));
+    setContenuPopup(livresDuRecueil);
+    setPopupItem(recueil);
+    setPopupType('recueil');
+    setItemOuvert(null);
+    setIllustrationsOuvertes([]);
   };
 
-  // Clic sur un livre dans le popup → charger ses illustrations
   const ouvrirLivre = async (livre) => {
-    if (livreOuvert?.id === livre.id) {
-      setLivreOuvert(null);
-      setIllustrationsLivre([]);
+    if (itemOuvert?.id === livre.id) {
+      setItemOuvert(null);
+      setIllustrationsOuvertes([]);
       return;
     }
-    setLivreOuvert(livre);
+    setItemOuvert(livre);
     setLoadingIllus(true);
-    setIllustrationsLivre([]);
+    setIllustrationsOuvertes([]);
     const { data } = await supabase
       .from('illustrations')
       .select('id, nom, visuels, annee, prix')
       .eq('statut', 'published')
       .contains('livres_ids', [livre.id])
       .order('nom');
-    setIllustrationsLivre(data || []);
+    setIllustrationsOuvertes(data || []);
     setLoadingIllus(false);
+  };
+
+  const toggleJAi = async (itemId, type) => {
+    const key = `${type}_${itemId}`;
+    const actuel = collection[key]?.j_ai || false;
+    setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: !actuel } }));
+  };
+
+  const toggleJeVeux = async (itemId, type) => {
+    const key = `${type}_${itemId}`;
+    const actuel = collection[key]?.je_veux || false;
+    setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: !actuel } }));
   };
 
   const P = isMobile ? 44 : 80;
@@ -205,7 +221,13 @@ function Livres() {
   const H_NAV = isMobile ? 80 : 120;
   const TAILLE_RECUEIL = isMobile ? 130 : 170;
   const TAILLE_LIVRE = isMobile ? 110 : 140;
-  const TAILLE_ILLUS = isMobile ? 90 : 110;
+  const TAILLE_ILLUS = isMobile ? 85 : 100;
+
+  const BtnAction = ({ actif, couleur, label, onClick }) => (
+    <button onClick={onClick} style={{ background: actif ? couleur : 'rgba(255,255,255,0.07)', border: `1px solid ${actif ? couleur : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '6px 12px', color: actif ? '#000' : 'rgba(255,255,255,0.6)', fontWeight: actif ? 'bold' : 'normal', fontSize: '12px', cursor: 'pointer' }}>
+      {label}
+    </button>
+  );
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -216,8 +238,7 @@ function Livres() {
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .teoart-card::before {
-          content: ''; position: absolute; top: -20%; left: -150%;
-          width: 80%; height: 140%;
+          content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%;
           background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
           transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
         }
@@ -230,7 +251,8 @@ function Livres() {
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-        .popup-livre { animation: slideDown 0.25s ease; }
+        .popup-anim { animation: slideDown 0.25s ease; }
+        .ligne-separateur { width: 100%; height: 1px; margin: 32px 0; }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -250,7 +272,7 @@ function Livres() {
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
-                  <div className="dropdown-item" onClick={() => { navigate('/catalogue'); }}>Toutes les catégories</div>
+                  <div className="dropdown-item" onClick={() => navigate('/catalogue')}>Toutes les catégories</div>
                 </div>
               )}
             </div>
@@ -272,8 +294,7 @@ function Livres() {
               <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'}
-                  style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
+                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
                   {[...barre.images, ...barre.images].map((img, j) => (
                     <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />
                   ))}
@@ -284,45 +305,45 @@ function Livres() {
         </div>
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '32px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
-
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
-            <>
+            <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+
               {/* SECTION RECUEILS */}
-              <div style={{ maxWidth: '1100px', margin: '0 auto 40px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(0,212,212,0.4))' }} />
-                  <p style={{ color: '#00d4d4', fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>Recueils</p>
-                  <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(0,212,212,0.4))' }} />
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
-                  {recueils.map(r => (
-                    <VignetteAvecVisuel key={r.id} item={r} taille={TAILLE_RECUEIL} isRecueil={true} onClick={() => ouvrirRecueil(r)} />
-                  ))}
-                </div>
+              <SectionTitre couleur="#00d4d4" label="Recueils" />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
+                {recueils.map(r => (
+                  <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
+                    badge={{ label: 'Recueil', bg: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.4)', color: '#00d4d4' }}
+                    onClick={() => ouvrirRecueil(r)} />
+                ))}
               </div>
 
               {/* SÉPARATEUR */}
-              <div style={{ maxWidth: '1100px', margin: '0 auto 32px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)' }} />
+              <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)', marginBottom: '40px' }} />
 
               {/* SECTION LIVRES HORS SÉRIE */}
-              {livresAvecVisuel.filter(l => !l.recueils_ids || l.recueils_ids.length === 0).length > 0 && (
-                <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.4))' }} />
-                    <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>Livres Hors Série</p>
-                    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(255,210,80,0.4))' }} />
+              {livresHorsSerie.length > 0 && (
+                <>
+                  <SectionTitre couleur="rgba(255,210,80,0.85)" label="Livres Hors Série" />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
+                    {livresHorsSerie.map(l => (
+                      <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE} onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
+                    ))}
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
-                    {livresAvecVisuel
-                      .filter(l => !l.recueils_ids || l.recueils_ids.length === 0)
-                      .map(l => (
-                        <VignetteAvecVisuel key={l.id} item={l} taille={TAILLE_LIVRE} isRecueil={false} onClick={() => navigate(`/livres/${l.slug || l.id}`)} />
-                      ))
-                    }
-                  </div>
-                </div>
+                  <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)', marginBottom: '40px' }} />
+                </>
               )}
-            </>
+
+              {/* SECTION TOUS LES LIVRES */}
+              <SectionTitre couleur="rgba(255,255,255,0.6)" label="Tous les livres" />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+                {tousLivres.map(l => (
+                  <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
+                    onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
+                ))}
+              </div>
+
+            </div>
           )}
         </div>
       </div>
@@ -337,78 +358,196 @@ function Livres() {
         </div>
       </div>
 
-      {/* POPUP RECUEIL */}
-      {popupRecueil && (
-        <div onClick={() => setPopupRecueil(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} className="popup-livre"
-            style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '860px', width: '100%', maxHeight: '88vh', overflowY: 'auto', position: 'relative', padding: '24px' }}>
+      {/* POPUP RECUEIL OU LIVRE */}
+      {popupItem && (
+        <div onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} className="popup-anim"
+            style={{ background: '#111', border: `1px solid ${popupType === 'recueil' ? 'rgba(0,212,212,0.3)' : 'rgba(255,210,80,0.25)'}`, borderRadius: '20px', maxWidth: '860px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '24px' }}>
 
-            <button onClick={() => setPopupRecueil(null)} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+            <button onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
 
-            {/* En-tête recueil */}
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap' }}>
-              {popupRecueil.visuel_presentation && (
-                <img src={cheminVersUrl(popupRecueil.visuel_presentation)} alt={popupRecueil.nom}
-                  style={{ width: '100px', borderRadius: '8px', flexShrink: 0 }} />
+            {/* En-tête */}
+            <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
+              {popupItem.visuel_presentation && (
+                <img src={cheminVersUrl(popupItem.visuel_presentation)} alt={popupItem.nom} style={{ width: '110px', borderRadius: '10px', flexShrink: 0 }} />
               )}
-              <div>
-                <p style={{ color: '#00d4d4', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Recueil</p>
-                <p style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold' }}>{popupRecueil.nom}</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{popupRecueil.annee} · {livresPopup.length} livre{livresPopup.length > 1 ? 's' : ''}</p>
+              <div style={{ flex: 1 }}>
+                <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
+                  {popupType === 'recueil' ? 'Recueil' : 'Livre'}
+                </p>
+                <p style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{popupItem.nom}</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '12px' }}>
+                  {popupItem.annee}
+                  {popupItem.prix ? ` · ${popupItem.prix} €` : ''}
+                  {popupType === 'recueil' ? ` · ${contenuPopup.length} livre${contenuPopup.length > 1 ? 's' : ''}` : ''}
+                </p>
+
+                {/* BOUTONS J'AI / JE VEUX / PANIER */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button onClick={() => toggleJAi(popupItem.id, popupType)}
+                    style={{ background: collection[`${popupType}_${popupItem.id}`]?.j_ai ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: collection[`${popupType}_${popupItem.id}`]?.j_ai ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: collection[`${popupType}_${popupItem.id}`]?.j_ai ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                    {collection[`${popupType}_${popupItem.id}`]?.j_ai ? "✓ J'ai" : "✕ J'ai"}
+                  </button>
+                  <button onClick={() => toggleJeVeux(popupItem.id, popupType)}
+                    style={{ background: collection[`${popupType}_${popupItem.id}`]?.je_veux ? 'rgba(255,77,125,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${collection[`${popupType}_${popupItem.id}`]?.je_veux ? 'rgba(255,77,125,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 12px', color: '#fff', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <svg viewBox="0 0 24 24" width="11" height="11">
+                      {collection[`${popupType}_${popupItem.id}`]?.je_veux
+                        ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+                        : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                      }
+                    </svg>
+                    Je veux
+                  </button>
+                  <button style={{ background: 'rgba(255,62,181,0.15)', border: '1px solid rgba(255,62,181,0.4)', borderRadius: '8px', padding: '6px 12px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer' }}>
+                    🛒 Panier
+                  </button>
+                </div>
+
+                {popupItem.description && (
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '12px' }}>{popupItem.description}</p>
+                )}
               </div>
             </div>
 
-            {/* Livres du recueil */}
-            {livresPopup.length === 0 ? (
-              <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', fontSize: '13px' }}>Aucun livre dans ce recueil.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {livresPopup.map(livre => (
-                  <div key={livre.id}>
-                    {/* Vignette livre */}
-                    <div onClick={() => ouvrirLivre(livre)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${livreOuvert?.id === livre.id ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.08)'}`, background: livreOuvert?.id === livre.id ? 'rgba(0,212,212,0.05)' : 'rgba(255,255,255,0.02)', transition: 'all .2s' }}>
-                      {livre.visuel_presentation
-                        ? <img src={cheminVersUrl(livre.visuel_presentation)} alt={livre.nom} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
-                        : <div style={{ width: '56px', height: '56px', borderRadius: '6px', background: 'linear-gradient(135deg, #0a0a0a, #111)', border: '1px solid rgba(255,210,80,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontSize: '18px', opacity: 0.5 }}>📁</span>
-                          </div>
-                      }
-                      <div style={{ flex: 1 }}>
-                        <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>{livre.nom}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{livre.annee}</p>
-                      </div>
-                      <span style={{ color: livreOuvert?.id === livre.id ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '18px', transition: 'transform .2s', display: 'block', transform: livreOuvert?.id === livre.id ? 'rotate(90deg)' : 'none' }}>›</span>
-                    </div>
-
-                    {/* Illustrations dépliées */}
-                    {livreOuvert?.id === livre.id && (
-                      <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.1)' }}>
-                        {loadingIllus ? (
-                          <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>
-                        ) : illustrationsLivre.length === 0 ? (
-                          <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>
-                        ) : (
-                          <>
-                            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                              {illustrationsLivre.length} illustration{illustrationsLivre.length > 1 ? 's' : ''}
-                            </p>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-start' }}>
-                              {illustrationsLivre.map(illu => (
-                                <VignetteIllustration key={illu.id} illu={illu} taille={TAILLE_ILLUS} />
-                              ))}
+            {/* CONTENU DU RECUEIL : livres + dossiers */}
+            {popupType === 'recueil' && contenuPopup.length > 0 && (
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Contenu du recueil</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {contenuPopup.map(livre => {
+                    const estDossier = !livre.visuel_presentation;
+                    const estOuvert = itemOuvert?.id === livre.id;
+                    return (
+                      <div key={livre.id}>
+                        <div onClick={() => ouvrirLivre(livre)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${estOuvert ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.07)'}`, background: estOuvert ? 'rgba(0,212,212,0.04)' : 'rgba(255,255,255,0.02)', transition: 'all .2s' }}>
+                          {estDossier ? (
+                            <div style={{ width: '56px', height: '56px', borderRadius: '8px', background: 'linear-gradient(135deg, #0a0a0a, #111)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: '20px', opacity: 0.7 }}>📁</span>
                             </div>
-                          </>
+                          ) : (
+                            <img src={cheminVersUrl(livre.visuel_presentation)} alt={livre.nom} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1 }}>
+                            <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>{livre.nom}</p>
+                            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
+                              {estDossier ? 'Dossier' : 'Livre'}{livre.annee ? ` · ${livre.annee}` : ''}
+                            </p>
+                          </div>
+                          <span style={{ color: estOuvert ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '18px', transition: 'transform .2s', display: 'block', transform: estOuvert ? 'rotate(90deg)' : 'none' }}>›</span>
+                        </div>
+
+                        {/* Illustrations dépliées */}
+                        {estOuvert && (
+                          <div style={{ marginTop: '8px', padding: '14px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.08)' }}>
+                            {loadingIllus ? (
+                              <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>
+                            ) : illustrationsOuvertes.length === 0 ? (
+                              <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>
+                            ) : (
+                              <>
+                                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                  {illustrationsOuvertes.length} illustration{illustrationsOuvertes.length > 1 ? 's' : ''}
+                                </p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  {illustrationsOuvertes.map(illu => {
+                                    const urlIllu = (() => {
+                                      if (!illu.visuels) return null;
+                                      const cle = Object.keys(illu.visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
+                                      if (cle) return cheminVersUrl(illu.visuels[cle]);
+                                      if (illu.visuels['B']) return cheminVersUrl(illu.visuels['B']);
+                                      if (illu.visuels['b']) return cheminVersUrl(illu.visuels['b']);
+                                      return null;
+                                    })();
+                                    return (
+                                      <div key={illu.id} style={{ flexShrink: 0, width: `${TAILLE_ILLUS}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a' }}>
+                                        {urlIllu
+                                          ? <img src={urlIllu} alt={illu.nom} style={{ width: '100%', height: `${TAILLE_ILLUS}px`, objectFit: 'cover', display: 'block' }} />
+                                          : <div style={{ width: '100%', height: `${TAILLE_ILLUS}px`, background: '#111' }} />
+                                        }
+                                        <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.8)' }}>
+                                          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            {/* CONTENU D'UN LIVRE SEUL */}
+            {popupType === 'livre' && (
+              <PopupContenuLivre livre={popupItem} taille={TAILLE_ILLUS} />
             )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SectionTitre({ couleur, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${couleur}66)` }} />
+      <p style={{ color: couleur, fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>{label}</p>
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to left, transparent, ${couleur}66)` }} />
+    </div>
+  );
+}
+
+function PopupContenuLivre({ livre, taille }) {
+  const [illustrations, setIllustrations] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    supabase.from('illustrations')
+      .select('id, nom, visuels, annee, prix')
+      .eq('statut', 'published')
+      .contains('livres_ids', [livre.id])
+      .order('nom')
+      .then(({ data }) => { setIllustrations(data || []); setLoading(false); });
+  }, [livre.id]);
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>;
+  if (illustrations.length === 0) return <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>;
+
+  return (
+    <div>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+        {illustrations.length} illustration{illustrations.length > 1 ? 's' : ''}
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {illustrations.map(illu => {
+          const urlIllu = (() => {
+            if (!illu.visuels) return null;
+            const cle = Object.keys(illu.visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
+            if (cle) return cheminVersUrl(illu.visuels[cle]);
+            if (illu.visuels['B']) return cheminVersUrl(illu.visuels['B']);
+            if (illu.visuels['b']) return cheminVersUrl(illu.visuels['b']);
+            return null;
+          })();
+          return (
+            <div key={illu.id} style={{ flexShrink: 0, width: `${taille}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a' }}>
+              {urlIllu
+                ? <img src={urlIllu} alt={illu.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
+                : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
+              }
+              <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.8)' }}>
+                <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
