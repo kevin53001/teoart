@@ -29,38 +29,43 @@ function cheminVersUrl(chemin) {
   return `${R2}/${encodeURIComponent(relatif).replaceAll('%2F', '/')}`;
 }
 
+// Extraire le nom du coloriste depuis le nom de fichier
+// Format : "Opaline - Cx - Valérie Liebermann.jpg" → "Valérie Liebermann"
+function extraireColoriste(chemin) {
+  if (!chemin) return null;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  // Pattern: "NomIllustration - Cx - NomColoriste.ext" ou "NomIllustration - C - NomColoriste.ext"
+  const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
+  if (match) return match[1].trim();
+  return null;
+}
+
 function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
   const result = [];
   const valeursAjoutees = new Set();
 
-  // Ordre : présentation, B/b, C/c — exclure A
-  const chercher = (motcle) => {
-    const cle = Object.keys(visuels).find(k => {
-      if (k.toUpperCase() === 'A') return false;
-      return k.toLowerCase() === motcle.toLowerCase() || k.toLowerCase().includes(motcle.toLowerCase());
-    });
-    if (cle && visuels[cle] && !valeursAjoutees.has(visuels[cle])) {
-      result.push(visuels[cle]);
-      valeursAjoutees.add(visuels[cle]);
+  // Présentation en premier
+  Object.entries(visuels).forEach(([k, v]) => {
+    if (k.toUpperCase() === 'A') return;
+    if ((k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')) && v && !valeursAjoutees.has(v)) {
+      result.push(v); valeursAjoutees.add(v);
     }
-  };
-
-  ['présentation', 'presentation'].forEach(chercher);
-  // Chercher B et b explicitement
+  });
+  // B exact (majuscule puis minuscule)
   ['B', 'b'].forEach(k => {
     if (visuels[k] && !valeursAjoutees.has(visuels[k])) {
-      result.push(visuels[k]);
-      valeursAjoutees.add(visuels[k]);
+      result.push(visuels[k]); valeursAjoutees.add(visuels[k]);
     }
   });
-  ['C', 'c'].forEach(k => {
-    if (visuels[k] && !valeursAjoutees.has(visuels[k])) {
-      result.push(visuels[k]);
-      valeursAjoutees.add(visuels[k]);
+  // C (toutes les clés C, C1, C2...)
+  Object.entries(visuels).forEach(([k, v]) => {
+    if (k.toUpperCase() === 'A') return;
+    if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) {
+      result.push(v); valeursAjoutees.add(v);
     }
   });
-  // Reste (hors A)
+  // Reste
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
     if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
@@ -75,6 +80,13 @@ function getVisuelPresentation(visuels) {
   if (visuels['B']) return cheminVersUrl(visuels['B']);
   if (visuels['b']) return cheminVersUrl(visuels['b']);
   return null;
+}
+
+// Savoir si un chemin correspond à un visuel C
+function estVisuelCChemin(chemin) {
+  if (!chemin) return false;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  return /\s*-\s*C\d*\s*[-\.]/i.test(nomFichier);
 }
 
 function Catalogue() {
@@ -104,8 +116,7 @@ function Catalogue() {
       const { data: illus } = await supabase
         .from('illustrations')
         .select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids')
-        .eq('statut', 'published')
-        .order('nom');
+        .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase
         .from('collection').select('illustration_id, j_ai, je_veux').eq('user_id', user.id);
       setIllustrations(illus || []);
@@ -124,10 +135,8 @@ function Catalogue() {
 
   const handleToggleJAi = (illuId, e) => {
     e && e.stopPropagation();
-    const estCoche = collection[illuId]?.j_ai || false;
-    if (estCoche && illustrationsInitiales.has(illuId)) {
-      setConfirmation({ illuId });
-      return;
+    if ((collection[illuId]?.j_ai || false) && illustrationsInitiales.has(illuId)) {
+      setConfirmation({ illuId }); return;
     }
     toggleJAi(illuId);
   };
@@ -159,14 +168,8 @@ function Catalogue() {
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
   const ouvrirPopup = (illu, index) => { setPopup(illu); setPopupIndex(index); };
-  const popupSuivant = () => {
-    const next = (popupIndex + 1) % illustrationsFiltrees.length;
-    setPopup(illustrationsFiltrees[next]); setPopupIndex(next);
-  };
-  const popupPrecedent = () => {
-    const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length;
-    setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev);
-  };
+  const popupSuivant = () => { const next = (popupIndex + 1) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[next]); setPopupIndex(next); };
+  const popupPrecedent = () => { const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev); };
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -202,12 +205,13 @@ function Catalogue() {
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
         .badge-panier { position: absolute; bottom: 26px; right: 4px; z-index: 20; cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 2px 6px rgba(255,62,181,0.5); }
         .badge-panier:hover { transform: scale(1.2); }
-        .badge-panier svg { width: 13px; height: 13px; }
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background .2s; z-index: 300; }
         .nav-arrow:hover { background: rgba(0,212,212,0.3); }
         @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .similaires-scroll { animation: scrollSim 25s linear infinite; display: flex; gap: 8px; width: max-content; }
         .similaires-scroll:hover { animation-play-state: paused; }
+        .visuel-zoom { cursor: zoom-in; transition: opacity .2s; }
+        .visuel-zoom:hover { opacity: 0.9; }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -323,7 +327,6 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* POPUP FICHE */}
       {popup && (
         <PopupFiche
           illu={popup}
@@ -341,9 +344,8 @@ function Catalogue() {
         />
       )}
 
-      {/* CONFIRMATION DÉCOCHAGE */}
       {confirmation && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
             <p style={{ fontSize: '28px', marginBottom: '12px' }}>🤔</p>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Attends, t'es sûr·e ?</p>
@@ -423,7 +425,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
           {jAi ? "✓ J'ai" : "✕ J'ai"}
         </div>
 
-        {/* COEUR */}
         <div onClick={onToggleJeVeux}
           style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
@@ -436,9 +437,8 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
           </svg>
         </div>
 
-        {/* PANIER — pastille rose */}
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
           </svg>
         </div>
@@ -453,31 +453,21 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
 }
 
 function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId }) {
-  const visuels = getVisuelsOrdonnes(illu.visuels).map(v => cheminVersUrl(v)).filter(Boolean);
+  const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
+  const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
   const [visuelActif, setVisuelActif] = React.useState(0);
+  const [zoomUrl, setZoomUrl] = React.useState(null);
   const [showPartagerColo, setShowPartagerColo] = React.useState(false);
   const [coloImage, setColoImage] = React.useState(null);
   const [coloDate, setColoDate] = React.useState('');
   const [coloEnvoi, setColoEnvoi] = React.useState(false);
   const [coloOk, setColoOk] = React.useState(false);
 
-  React.useEffect(() => { setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); }, [illu.id]);
+  React.useEffect(() => { setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomUrl(null); }, [illu.id]);
 
-  // Infos coloriste sur visuel C
-  const getInfoColoriste = (visuels) => {
-    if (!visuels) return null;
-    const cleC = Object.keys(visuels).find(k => k === 'C' || k === 'c');
-    if (!cleC) return null;
-    // Le champ coloriste est dans le chemin — chercher un champ dédié si disponible
-    return visuels[`${cleC}_coloriste`] || visuels['coloriste'] || null;
-  };
-  const coloriste = getInfoColoriste(illu.visuels);
-  const estVisuelC = visuelActif === visuels.findIndex(url => {
-    const v = illu.visuels;
-    if (!v) return false;
-    const cleC = Object.keys(v).find(k => k === 'C' || k === 'c');
-    return cleC && cheminVersUrl(v[cleC]) === url;
-  });
+  // Extraire coloriste du chemin du visuel actif
+  const cheminActif = visuelsChemins[visuelActif];
+  const coloriste = estVisuelCChemin(cheminActif) ? extraireColoriste(cheminActif) : null;
 
   const similaires = React.useMemo(() => {
     if (!illu.tags || illu.tags.length === 0) return [];
@@ -509,14 +499,22 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
     try {
       const ext = coloImage.name.split('.').pop();
       const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
-      if (!error) setColoOk(true);
+      await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
+      setColoOk(true);
     } catch (e) {}
     setColoEnvoi(false);
   };
 
   return (
     <>
+      {/* ZOOM PLEIN ÉCRAN */}
+      {zoomUrl && (
+        <div onClick={() => setZoomUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
+          <img src={zoomUrl} alt="" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
+          <button onClick={() => setZoomUrl(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+
       {/* FLÈCHES */}
       <div className="nav-arrow" style={{ left: '8px' }} onClick={(e) => { e.stopPropagation(); onPrecedent(); }}>‹</div>
       <div className="nav-arrow" style={{ right: '8px' }} onClick={(e) => { e.stopPropagation(); onSuivant(); }}>›</div>
@@ -532,11 +530,14 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
                 {visuels[visuelActif] && (
-                  <img src={visuels[visuelActif]} alt={illu.nom} style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
+                  <img src={visuels[visuelActif]} alt={illu.nom}
+                    className="visuel-zoom"
+                    onClick={() => setZoomUrl(visuels[visuelActif])}
+                    style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
                 )}
-                {/* COLORISTE sur visuel C */}
-                {estVisuelC && coloriste && (
-                  <div style={{ position: 'absolute', bottom: '12px', right: '8px', background: 'rgba(0,0,0,0.7)', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', color: 'rgba(255,255,255,0.7)' }}>
+                {/* COLORISTE */}
+                {coloriste && (
+                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                     Réalisé par {coloriste}
                   </div>
                 )}
@@ -557,7 +558,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
               {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
 
-              {/* BOUTONS */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>
                   {jAi ? "✓ J'ai" : "✕ J'ai"}
@@ -568,7 +568,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
                   </svg>
                   Je veux
                 </button>
-                {/* PARTAGER MON COLO */}
                 <button onClick={() => setShowPartagerColo(v => !v)} style={{ background: showPartagerColo ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${showPartagerColo ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 10px', color: showPartagerColo ? '#00d4d4' : 'rgba(255,255,255,0.6)', fontSize: '11px', cursor: 'pointer' }}>
                   🎨 Mon colo
                 </button>
@@ -577,14 +576,13 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
                 </button>
               </div>
 
-              {/* POPUP PARTAGER COLO */}
               {showPartagerColo && (
                 <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {coloOk ? (
                     <p style={{ color: '#00d4d4', fontSize: '12px', textAlign: 'center' }}>🎉 Ton coloriage a été partagé ! Merci {userPseudo} !</p>
                   ) : (
                     <>
-                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Partager sous le pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
+                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Partagé sous le pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
                       <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])}
                         style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }} />
                       <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
@@ -598,14 +596,12 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
                 </div>
               )}
 
-              {/* DESCRIPTION */}
               {illu.description && (
                 <div style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 12px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>{formatDescription(illu.description)}</p>
                 </div>
               )}
 
-              {/* TAGS */}
               {illu.tags && illu.tags.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {illu.tags.map((tag, i) => (
@@ -616,7 +612,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             </div>
           </div>
 
-          {/* SIMILAIRES AUTO-SCROLL */}
           {similaires.length > 0 && (
             <div style={{ padding: '0 24px 20px' }}>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
