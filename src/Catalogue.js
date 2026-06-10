@@ -89,6 +89,11 @@ function Catalogue() {
   const [categorie, setCategorie] = React.useState('Tout');
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
+  const [showLivres, setShowLivres] = React.useState(false);
+  const [recueilsNav, setRecueilsNav] = React.useState([]);
+  const [livresNavHS, setLivresNavHS] = React.useState([]);
+  const [recueilOuvertNav, setRecueilOuvertNav] = React.useState(null);
+  const [livresRecueilNav, setLivresRecueilNav] = React.useState([]);
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
   const [tri, setTri] = React.useState('az');
@@ -133,6 +138,11 @@ function Catalogue() {
       const coloMap = {};
       (colos || []).forEach(c => { coloMap[c.illustration_id] = true; });
       setColoriages(coloMap);
+      // Charger recueils et livres pour le menu nav
+      const { data: recs } = await supabase.from('recueils').select('id, nom, annee').eq('statut', 'published').order('annee');
+      const { data: livs } = await supabase.from('livres').select('id, nom, annee, slug, recueils_ids, visuel_presentation').eq('statut', 'published').order('nom');
+      setRecueilsNav(recs || []);
+      setLivresNavHS((livs || []).filter(l => l.visuel_presentation && (!l.recueils_ids || l.recueils_ids.length === 0)));
       setLoading(false);
     };
     charger();
@@ -282,7 +292,52 @@ function Catalogue() {
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/catalogue')} />
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
+            <div style={{ position: 'relative', marginTop: isMobile ? '18px' : '20px' }}>
+              <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
+                style={{ width: `${P}px`, height: `${P}px`, display: 'block' }}
+                onClick={() => { setShowLivres(v => !v); setRecueilOuvertNav(null); }} />
+              {showLivres && (
+                <div style={{ position: 'absolute', top: `${P + 6}px`, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.96)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '12px', padding: '6px', zIndex: 200, minWidth: '200px', maxHeight: '70vh', overflowY: 'auto' }}>
+                  {/* Voir tout */}
+                  <div onClick={() => { navigate('/livres'); setShowLivres(false); }}
+                    style={{ padding: '8px 12px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '4px' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,212,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    ✦ Voir tout
+                  </div>
+                  {/* Recueils */}
+                  {recueilsNav.map(r => (
+                    <div key={r.id}>
+                      <div onClick={() => setRecueilOuvertNav(recueilOuvertNav?.id === r.id ? null : r)}
+                        style={{ padding: '7px 12px', color: recueilOuvertNav?.id === r.id ? '#00d4d4' : 'rgba(255,255,255,0.75)', fontSize: '12px', cursor: 'pointer', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,212,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <span>📚 {r.nom}</span>
+                        <span style={{ opacity: 0.5, transform: recueilOuvertNav?.id === r.id ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>›</span>
+                      </div>
+                      {/* Sous-menu livres du recueil */}
+                      {recueilOuvertNav?.id === r.id && (
+                        <SousMenuRecueil recueilId={r.id} navigate={navigate} onClose={() => setShowLivres(false)} />
+                      )}
+                    </div>
+                  ))}
+                  {/* Livres hors série */}
+                  {livresNavHS.length > 0 && (
+                    <>
+                      <div style={{ height: '1px', background: 'rgba(255,210,80,0.15)', margin: '4px 8px' }} />
+                      {livresNavHS.map(l => (
+                        <div key={l.id} onClick={() => { navigate(`/livres/${l.slug || l.id}`); setShowLivres(false); }}
+                          style={{ padding: '7px 12px', color: 'rgba(255,210,80,0.7)', fontSize: '12px', cursor: 'pointer', borderRadius: '6px' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,210,80,0.08)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          📖 {l.nom}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0' }}>
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
@@ -869,6 +924,41 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
         </div>
       </div>
     </>
+  );
+}
+
+function SousMenuRecueil({ recueilId, navigate, onClose }) {
+  const [livres, setLivres] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    supabase.from('livres')
+      .select('id, nom, slug, annee')
+      .eq('statut', 'published')
+      .contains('recueils_ids', [recueilId])
+      .order('nom')
+      .then(({ data }) => { setLivres(data || []); setLoading(false); });
+  }, [recueilId]);
+
+  if (loading) return <div style={{ padding: '6px 20px', color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>...</div>;
+
+  return (
+    <div style={{ marginLeft: '12px', borderLeft: '1px solid rgba(0,212,212,0.2)', paddingLeft: '8px' }}>
+      <div onClick={() => { navigate('/livres'); onClose(); }}
+        style={{ padding: '5px 10px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', borderRadius: '5px' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,212,0.08)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+        ✦ Voir tout
+      </div>
+      {livres.map(l => (
+        <div key={l.id} onClick={() => { navigate(`/livres/${l.slug || l.id}`); onClose(); }}
+          style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.6)', fontSize: '11px', cursor: 'pointer', borderRadius: '5px' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          {l.nom}
+        </div>
+      ))}
+    </div>
   );
 }
 

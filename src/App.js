@@ -5,6 +5,7 @@ import Connexion from './Connexion';
 import Inscription from './Inscription';
 import Selection from './Selection';
 import Catalogue from './Catalogue';
+import Livres from './Livres';
 
 function App() {
   const [session, setSession] = React.useState(undefined);
@@ -24,6 +25,8 @@ function App() {
         <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/catalogue" />} />
         <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
         <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
+        <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />
+        <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
