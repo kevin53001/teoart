@@ -29,6 +29,7 @@ function cheminVersUrl(chemin) {
   return `${R2}/${encodeURIComponent(relatif).replaceAll('%2F', '/')}`;
 }
 
+// Exclure le visuel A (haute résolution locale)
 function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
   const ordre = ['présentation', 'presentation', 'B', 'b', 'C', 'c'];
@@ -39,21 +40,34 @@ function getVisuelsOrdonnes(visuels) {
       key.toLowerCase() === k.toLowerCase() ||
       key.toLowerCase().includes(k.toLowerCase())
     );
+    // Exclure la clé "A" (fichier haute résolution)
+    if (cle && cle.toUpperCase() === 'A') return;
     if (cle && visuels[cle] && !valeursAjoutees.has(visuels[cle])) {
       result.push(visuels[cle]);
       valeursAjoutees.add(visuels[cle]);
     }
   });
-  Object.values(visuels).forEach(v => {
+  Object.entries(visuels).forEach(([k, v]) => {
+    if (k.toUpperCase() === 'A') return; // exclure A
     if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
   });
   return result;
+}
+
+function getVisuelPresentation(visuels) {
+  if (!visuels) return null;
+  const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
+  if (cle) return cheminVersUrl(visuels[cle]);
+  const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
+  if (cleB) return cheminVersUrl(visuels[cleB]);
+  return null;
 }
 
 function Catalogue() {
   const navigate = useNavigate();
   const [illustrations, setIllustrations] = React.useState([]);
   const [collection, setCollection] = React.useState({});
+  const [illustrationsInitiales, setIllustrationsInitiales] = React.useState(new Set());
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
   const [annees, setAnnees] = React.useState([]);
@@ -61,7 +75,9 @@ function Catalogue() {
   const [recherche, setRecherche] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [popup, setPopup] = React.useState(null);
+  const [popupIndex, setPopupIndex] = React.useState(null);
   const [userId, setUserId] = React.useState(null);
+  const [confirmation, setConfirmation] = React.useState(null);
   const PAR_PAGE = 40;
 
   React.useEffect(() => {
@@ -70,7 +86,7 @@ function Catalogue() {
       setUserId(user.id);
       const { data: illus } = await supabase
         .from('illustrations')
-        .select('id, nom, annee, categorie, visuels, prix, description, tags')
+        .select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published')
         .order('nom');
       const { data: coll } = await supabase
@@ -79,17 +95,33 @@ function Catalogue() {
         .eq('user_id', user.id);
       setIllustrations(illus || []);
       const collMap = {};
-      (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux }; });
+      const initiales = new Set();
+      (coll || []).forEach(c => {
+        collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux };
+        if (c.j_ai) initiales.add(c.illustration_id); // cochées lors de la sélection initiale
+      });
       setCollection(collMap);
+      setIllustrationsInitiales(initiales);
       setLoading(false);
     };
     charger();
   }, []);
 
-  const toggleJAi = async (illuId, e) => {
+  const handleToggleJAi = (illuId, e) => {
     e && e.stopPropagation();
+    const estCoche = collection[illuId]?.j_ai || false;
+    if (estCoche && illustrationsInitiales.has(illuId)) {
+      // Avertissement si cochée automatiquement
+      setConfirmation({ illuId, type: 'jai' });
+      return;
+    }
+    toggleJAi(illuId);
+  };
+
+  const toggleJAi = async (illuId) => {
     const nouveau = !(collection[illuId]?.j_ai || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    if (!nouveau) setIllustrationsInitiales(prev => { const s = new Set(prev); s.delete(illuId); return s; });
     await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, je_veux: collection[illuId]?.je_veux || false });
   };
 
@@ -115,13 +147,23 @@ function Catalogue() {
   const total = illustrationsFiltrees.length;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
-  const getVisuelPresentation = (visuels) => {
-    if (!visuels) return null;
-    const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
-    if (cle) return cheminVersUrl(visuels[cle]);
-    const cleB = Object.keys(visuels).find(k => k === 'B' || k === 'b');
-    if (cleB) return cheminVersUrl(visuels[cleB]);
-    return null;
+  const ouvrirPopup = (illu, index) => {
+    setPopup(illu);
+    setPopupIndex(index);
+  };
+
+  const popupSuivant = () => {
+    if (popupIndex === null) return;
+    const next = (popupIndex + 1) % illustrationsFiltrees.length;
+    setPopup(illustrationsFiltrees[next]);
+    setPopupIndex(next);
+  };
+
+  const popupPrecedent = () => {
+    if (popupIndex === null) return;
+    const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length;
+    setPopup(illustrationsFiltrees[prev]);
+    setPopupIndex(prev);
   };
 
   return (
@@ -137,8 +179,7 @@ function Catalogue() {
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
         .teoart-card::before {
-          content: '';
-          position: absolute; top: -20%; left: -150%;
+          content: ''; position: absolute; top: -20%; left: -150%;
           width: 80%; height: 140%;
           background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
           transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
@@ -160,6 +201,11 @@ function Catalogue() {
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
         .badge-panier { position: absolute; bottom: 28px; right: 5px; z-index: 20; cursor: pointer; font-size: 12px; background: rgba(0,0,0,0.55); border-radius: 4px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
         .badge-panier:hover { background: rgba(0,212,212,0.3); }
+        .nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 16px; transition: background .2s; z-index: 10; }
+        .nav-arrow:hover { background: rgba(0,212,212,0.3); }
+        @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .similaires-scroll { animation: scrollSim 30s linear infinite; display: flex; gap: 8px; width: max-content; }
+        .similaires-scroll:hover { animation-play-state: paused; }
       `}</style>
 
       {/* CLOCHE */}
@@ -170,11 +216,9 @@ function Catalogue() {
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION FIXE */}
+      {/* NAVIGATION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-60px' }}>
         <div style={{ maxWidth: BANNER_MAX, width: '92%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative', height: '120px' }}>
-
-          {/* GAUCHE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginRight: '12px' }}>
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => navigate('/catalogue')} />
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
@@ -190,11 +234,7 @@ function Catalogue() {
               )}
             </div>
           </div>
-
-          {/* LOGO */}
           <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10 }} />
-
-          {/* DROITE */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginLeft: '12px' }}>
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: '80px', height: '80px' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: '80px', height: '80px', marginBottom: '-20px' }} onClick={() => {}} />
@@ -203,32 +243,15 @@ function Catalogue() {
         </div>
       </div>
 
-      {/* BARRE DE RECHERCHE — taille réduite, centrée */}
+      {/* RECHERCHE */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
-        <input
-          className="search-input"
-          type="text"
-          placeholder="🔍 Rechercher une illustration..."
-          value={recherche}
-          onChange={e => { setRecherche(e.target.value); setPage(1); }}
-          style={{
-            width: '300px',
-            maxWidth: '90%',
-            background: 'rgba(30,30,30,0.9)',
-            border: '1px solid rgba(0,212,212,0.25)',
-            borderRadius: '24px',
-            padding: '9px 16px',
-            color: '#fff',
-            fontSize: '12px',
-            backdropFilter: 'blur(10px)',
-          }}
-        />
+        <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
+          value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
+          style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
-      {/* ZONE BARRES + CONTENU */}
+      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
-
-        {/* BARRES */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             {BARRES.map((barre, i) => (
@@ -246,10 +269,7 @@ function Catalogue() {
           </div>
         </div>
 
-        {/* CONTENU */}
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
-
-          {/* ENCART FILTRES */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
             <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '16px 24px', backdropFilter: 'blur(10px)', display: 'inline-block' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -266,23 +286,18 @@ function Catalogue() {
             </div>
           </div>
 
-          {/* GRILLE */}
-          {loading ? (
-            <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
-          ) : (
+          {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
-                {illustrationsPage.map(illu => (
-                  <IlluCard
-                    key={illu.id}
-                    illu={illu}
+                {illustrationsPage.map((illu, idx) => (
+                  <IlluCard key={illu.id} illu={illu}
                     urlPresentation={getVisuelPresentation(illu.visuels)}
                     visuelsOrdonnes={getVisuelsOrdonnes(illu.visuels)}
                     jAi={collection[illu.id]?.j_ai || false}
                     jeVeux={collection[illu.id]?.je_veux || false}
-                    onToggleJAi={(e) => toggleJAi(illu.id, e)}
+                    onToggleJAi={(e) => handleToggleJAi(illu.id, e)}
                     onToggleJeVeux={(e) => toggleJeVeux(illu.id, e)}
-                    onClickPopup={() => setPopup(illu)}
+                    onClickPopup={() => ouvrirPopup(illu, idx)}
                   />
                 ))}
               </div>
@@ -316,12 +331,37 @@ function Catalogue() {
           illustrations={illustrations}
           jAi={collection[popup.id]?.j_ai || false}
           jeVeux={collection[popup.id]?.je_veux || false}
-          onToggleJAi={(e) => toggleJAi(popup.id, e)}
+          onToggleJAi={(e) => handleToggleJAi(popup.id, e)}
           onToggleJeVeux={(e) => toggleJeVeux(popup.id, e)}
           onClose={() => setPopup(null)}
           onOpenSimilaire={(illu) => setPopup(illu)}
-          collection={collection}
+          onSuivant={popupSuivant}
+          onPrecedent={popupPrecedent}
         />
+      )}
+
+      {/* MODAL CONFIRMATION */}
+      {confirmation && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
+            <p style={{ fontSize: '28px', marginBottom: '12px' }}>🤔</p>
+            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Attends, t'es sûr·e ?</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
+              Cette illustration fait partie d'un livre ou recueil que tu as sélectionné lors de ta première visite.<br /><br />
+              Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button onClick={() => setConfirmation(null)}
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>
+                Non, je la garde !
+              </button>
+              <button onClick={() => { toggleJAi(confirmation.illuId); setConfirmation(null); }}
+                style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px' }}>
+                Oui, je décoche
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -381,48 +421,32 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
 
   return (
     <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
-      <div
-        ref={cardRef}
-        className="teoart-card"
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={onClickPopup}
-        style={{
-          width: `${TAILLE}px`, cursor: 'pointer', borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.1)', background: '#111',
-          overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease, box-shadow 0.3s',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)',
-          willChange: 'transform',
-        }}>
+      <div ref={cardRef} className="teoart-card"
+        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClickPopup}
+        style={{ width: `${TAILLE}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
 
         {urlActuelle
-          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom}
-              className="card-img-fade"
+          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade"
               style={{ width: '100%', height: `${TAILLE}px`, objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: '100%', height: `${TAILLE}px`, background: '#111' }} />
         }
 
-        {/* BADGE J'AI */}
         <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>
-          {jAi ? '✓ J\'ai' : '✕ J\'ai'}
+          {jAi ? "✓ J'ai" : "✕ J'ai"}
         </div>
 
-        {/* COEUR JE VEUX — SVG pur, pas d'emoji */}
         <div onClick={onToggleJeVeux}
-          style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
+          style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox="0 0 24 24" width="16" height="16">
             {jeVeux
               ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
             }
           </svg>
         </div>
 
-        {/* PANIER */}
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">🛒</div>
 
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
@@ -434,16 +458,18 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
   );
 }
 
-function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire }) {
+function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent }) {
   const visuels = getVisuelsOrdonnes(illu.visuels).map(v => cheminVersUrl(v)).filter(Boolean);
   const [visuelActif, setVisuelActif] = React.useState(0);
+
+  React.useEffect(() => { setVisuelActif(0); }, [illu.id]);
 
   const similaires = React.useMemo(() => {
     if (!illu.tags || illu.tags.length === 0) return [];
     return illustrations
       .filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
       .sort((a, b) => b.tags.filter(t => illu.tags.includes(t)).length - a.tags.filter(t => illu.tags.includes(t)).length)
-      .slice(0, 15);
+      .slice(0, 20);
   }, [illu, illustrations]);
 
   const getVisuelPres = (visuels) => {
@@ -464,6 +490,11 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+
+      {/* FLECHES NAVIGATION */}
+      <div className="nav-arrow" style={{ left: '8px' }} onClick={(e) => { e.stopPropagation(); onPrecedent(); }}>‹</div>
+      <div className="nav-arrow" style={{ right: '8px' }} onClick={(e) => { e.stopPropagation(); onSuivant(); }}>›</div>
+
       <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '820px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
 
         <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
@@ -491,7 +522,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
             {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
 
-            {/* BOUTONS */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>
                 {jAi ? "✓ J'ai" : "✕ J'ai"}
@@ -510,9 +540,9 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
               </button>
             </div>
 
-            {/* DESCRIPTION — hauteur limitée */}
+            {/* DESCRIPTION — hauteur augmentée */}
             {illu.description && (
-              <div style={{ maxHeight: '80px', overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '8px 10px' }}>
+              <div style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 12px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>
                   {formatDescription(illu.description)}
                 </p>
@@ -523,37 +553,39 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, onToggleJAi, onToggleJeV
             {illu.tags && illu.tags.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                 {illu.tags.map((tag, i) => (
-                  <span key={i} style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', padding: '1px 6px', color: 'rgba(0,212,212,0.6)', fontSize: '9px' }}>
-                    {tag}
-                  </span>
+                  <span key={i} style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', padding: '1px 6px', color: 'rgba(0,212,212,0.6)', fontSize: '9px' }}>{tag}</span>
                 ))}
               </div>
             )}
           </div>
         </div>
 
-        {/* SIMILAIRES */}
+        {/* SIMILAIRES — défilement automatique */}
         {similaires.length > 0 && (
           <div style={{ padding: '0 24px 20px' }}>
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
-              {similaires.map(sim => {
-                const url = getVisuelPres(sim.visuels);
-                return (
-                  <div key={sim.id} onClick={() => { setVisuelActif(0); onOpenSimilaire(sim); }}
-                    style={{ flexShrink: 0, width: '80px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.35)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}>
-                    {url
-                      ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: '100%', height: '80px', background: 'rgba(255,255,255,0.02)' }} />
-                    }
-                    <div style={{ padding: '3px 5px' }}>
-                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
+            <div style={{ overflow: 'hidden', position: 'relative' }}>
+              <div style={{ position: 'absolute', left: 0, top: 0, width: '30px', height: '100%', background: 'linear-gradient(to right, #111, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', right: 0, top: 0, width: '30px', height: '100%', background: 'linear-gradient(to left, #111, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+              <div className="similaires-scroll">
+                {[...similaires, ...similaires].map((sim, idx) => {
+                  const url = getVisuelPres(sim.visuels);
+                  return (
+                    <div key={idx} onClick={() => onOpenSimilaire(sim)}
+                      style={{ flexShrink: 0, width: '80px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.35)'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}>
+                      {url
+                        ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
+                        : <div style={{ width: '100%', height: '80px', background: 'rgba(255,255,255,0.02)' }} />
+                      }
+                      <div style={{ padding: '3px 5px' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
