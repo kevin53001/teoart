@@ -211,8 +211,8 @@ function Catalogue() {
         .card-img-fade { animation: fadeImg 0.6s ease; }
         .badge-jai-actif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #00d4d4; color: #000; }
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
-        .badge-panier { position: absolute; bottom: 26px; right: 4px; z-index: 20; cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 2px 6px rgba(255,62,181,0.5); }
-        .badge-panier:hover { transform: scale(1.2); }
+        .badge-panier { position: absolute; bottom: 8px; right: 8px; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 3px 10px rgba(255,62,181,0.65); }
+        .badge-panier:hover { transform: scale(1.12); }
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background .2s; z-index: 300; }
         .nav-arrow:hover { background: rgba(0,212,212,0.3); }
         @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -495,8 +495,11 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, onToggl
         </div>
 
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1.4" fill="#000" />
+            <circle cx="19" cy="21" r="1.4" fill="#000" />
+            <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+            <path d="M8 11h11.5" />
           </svg>
         </div>
 
