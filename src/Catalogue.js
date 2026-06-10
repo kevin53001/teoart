@@ -93,7 +93,6 @@ function Catalogue() {
   const [recueilsNav, setRecueilsNav] = React.useState([]);
   const [livresNavHS, setLivresNavHS] = React.useState([]);
   const [recueilOuvertNav, setRecueilOuvertNav] = React.useState(null);
-  const [livresRecueilNav, setLivresRecueilNav] = React.useState([]);
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
   const [tri, setTri] = React.useState('az');
