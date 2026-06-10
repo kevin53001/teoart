@@ -26,60 +26,6 @@ function cheminVersUrl(chemin) {
 }
 
 // Vignette dossier sans visuel — premium aux couleurs du site
-function VignetteDossier({ item, taille = 150, onClick }) {
-  const cardRef = React.useRef(null);
-  const wrapRef = React.useRef(null);
-
-  const handleMouseMove = (e) => {
-    const el = cardRef.current;
-    const rect = el.getBoundingClientRect();
-    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    el.style.transform = `rotateX(${-dy * 6}deg) rotateY(${dx * 6}deg) scale(1.05)`;
-    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(800px)';
-  };
-  const handleMouseLeave = () => {
-    if (cardRef.current) cardRef.current.style.transform = '';
-    if (wrapRef.current) wrapRef.current.style.transform = '';
-  };
-
-  return (
-    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
-      <div ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onClick={onClick}
-        style={{
-          width: `${taille}px`,
-          height: `${taille + 32}px`,
-          cursor: 'pointer',
-          borderRadius: '12px',
-          border: '1px solid rgba(255,210,80,0.4)',
-          background: 'linear-gradient(135deg, #0a0a0a 0%, #111 40%, #0d0d12 70%, #0a0a0a 100%)',
-          overflow: 'hidden',
-          position: 'relative',
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease, box-shadow 0.3s',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.7), 0 0 14px rgba(255,210,80,0.08)',
-          willChange: 'transform',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 30% 20%, rgba(255,210,80,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,212,212,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '14px', left: '14px', right: '14px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
-        <div style={{ position: 'absolute', bottom: '42px', left: '14px', right: '14px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
-        <div style={{ fontSize: taille > 120 ? '30px' : '22px', marginBottom: '10px', opacity: 0.75 }}>📁</div>
-        <p style={{ color: 'rgba(255,255,255,0.88)', fontSize: taille > 120 ? '11px' : '9px', fontWeight: 'bold', textAlign: 'center', padding: '0 10px', lineHeight: '1.5', textShadow: '0 0 12px rgba(255,210,80,0.25)' }}>{item.nom}</p>
-        {item.annee && <p style={{ color: 'rgba(0,212,212,0.65)', fontSize: '10px', marginTop: '5px' }}>{item.annee}</p>}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30px', background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(255,210,80,0.12)' }}>
-          <p style={{ color: 'rgba(255,210,80,0.55)', fontSize: '9px', letterSpacing: '1px', textTransform: 'uppercase' }}>Dossier</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Vignette avec visuel
 function VignetteVisuel({ item, taille = 150, onClick, badge = null }) {
@@ -135,7 +81,6 @@ function Livres() {
   const [tousLesLivres, setTousLesLivres] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
-  const [userId, setUserId] = React.useState(null);
   const [collection, setCollection] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
 
@@ -157,7 +102,6 @@ function Livres() {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/'); return; }
-      setUserId(user.id);
 
       const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, prix, description').eq('statut', 'published').order('annee', { ascending: false });
       const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').eq('statut', 'published').order('nom');
@@ -222,12 +166,6 @@ function Livres() {
   const TAILLE_RECUEIL = isMobile ? 130 : 170;
   const TAILLE_LIVRE = isMobile ? 110 : 140;
   const TAILLE_ILLUS = isMobile ? 85 : 100;
-
-  const BtnAction = ({ actif, couleur, label, onClick }) => (
-    <button onClick={onClick} style={{ background: actif ? couleur : 'rgba(255,255,255,0.07)', border: `1px solid ${actif ? couleur : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '6px 12px', color: actif ? '#000' : 'rgba(255,255,255,0.6)', fontWeight: actif ? 'bold' : 'normal', fontSize: '12px', cursor: 'pointer' }}>
-      {label}
-    </button>
-  );
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
