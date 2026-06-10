@@ -26,7 +26,7 @@ const ANNEES = [2021, 2022, 2023, 2024, 2025, 2026];
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
-  return `${R2}/${encodeURIComponent(relatif).replaceAll('%2F', '/')}`;
+  return `${R2}/${relatif.split('/').map(segment => encodeURIComponent(segment)).join('/')}`;
 }
 
 function extraireColoriste(chemin) {
