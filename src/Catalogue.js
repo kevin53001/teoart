@@ -356,9 +356,9 @@ function Catalogue() {
                 {isMobile ? (
                   // Mobile : icônes compactes sur une ligne
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }} title="A→Z" style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
-                    <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }} title="Z→A" style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
-                    <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }} title="Récent" style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
+                    <button onClick={() => { setTri('az'); setPage(1); }} title="A→Z" style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
+                    <button onClick={() => { setTri('za'); setPage(1); }} title="Z→A" style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
+                    <button onClick={() => { setTri('recent'); setPage(1); }} title="Récent" style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
                     <button onClick={() => setVueCompacte(false)} title="Vue normale"
                       style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
                     <button onClick={() => setVueCompacte(true)} title="Vue compacte"
