@@ -28,7 +28,7 @@ function cheminVersUrl(chemin) {
 // Vignette dossier sans visuel — premium aux couleurs du site
 
 // Vignette avec visuel
-function VignetteVisuel({ item, taille = 150, onClick, badge = null }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -62,6 +62,25 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null }) {
         {badge && (
           <div style={{ position: 'absolute', top: '6px', right: '6px', background: badge.bg, border: badge.border, borderRadius: '4px', padding: '1px 5px', fontSize: '8px', color: badge.color }}>
             {badge.label}
+          </div>
+        )}
+        {/* BADGE J'AI */}
+        {onToggleJAi && (
+          <div onClick={e => { e.stopPropagation(); onToggleJAi(); }}
+            style={{ position: 'absolute', top: '5px', left: '5px', borderRadius: '4px', padding: '2px 5px', fontSize: '9px', fontWeight: 'bold', zIndex: 20, cursor: 'pointer', background: jAi ? '#00d4d4' : 'rgba(0,0,0,0.55)', color: jAi ? '#000' : 'rgba(255,255,255,0.45)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.4)' }}>
+            {jAi ? "✓ J'ai" : "✕ J'ai"}
+          </div>
+        )}
+        {/* COEUR JE VEUX */}
+        {onToggleJeVeux && (
+          <div onClick={e => { e.stopPropagation(); onToggleJeVeux(); }}
+            style={{ position: 'absolute', top: '4px', right: badge ? '50px' : '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              {jeVeux
+                ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+                : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
+              }
+            </svg>
           </div>
         )}
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
@@ -252,6 +271,10 @@ function Livres() {
                 {recueils.map(r => (
                   <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
                     badge={{ label: 'Recueil', bg: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.4)', color: '#00d4d4' }}
+                    jAi={collection[`recueil_${r.id}`]?.j_ai || false}
+                    jeVeux={collection[`recueil_${r.id}`]?.je_veux || false}
+                    onToggleJAi={() => toggleJAi(r.id, 'recueil')}
+                    onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
                     onClick={() => ouvrirRecueil(r)} />
                 ))}
               </div>
@@ -265,7 +288,12 @@ function Livres() {
                   <SectionTitre couleur="rgba(255,210,80,0.85)" label="Livres Hors Série" />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
                     {livresHorsSerie.map(l => (
-                      <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE} onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
+                      <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
+                        jAi={collection[`livre_${l.id}`]?.j_ai || false}
+                        jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
+                        onToggleJAi={() => toggleJAi(l.id, 'livre')}
+                        onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
+                        onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
                     ))}
                   </div>
                   <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)', marginBottom: '40px' }} />
@@ -277,6 +305,10 @@ function Livres() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
                 {tousLivres.map(l => (
                   <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
+                    jAi={collection[`livre_${l.id}`]?.j_ai || false}
+                    jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
+                    onToggleJAi={() => toggleJAi(l.id, 'livre')}
+                    onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
                     onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
                 ))}
               </div>
