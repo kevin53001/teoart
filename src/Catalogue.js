@@ -617,18 +617,21 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
   const [envoi, setEnvoi] = React.useState(false);
   const [ok, setOk] = React.useState(false);
 
-  const handleUpload = async () => {
-    if (!coloImage) return;
+  const handleUpload = async (avecImage = false) => {
     setEnvoi(true);
     try {
-      const ext = coloImage.name.split('.').pop();
-      const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-      await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(`coloriages/${nomFichier}`);
+      let imageUrl = null;
+      if (avecImage && coloImage) {
+        const ext = coloImage.name.split('.').pop();
+        const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
+        await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(`coloriages/${nomFichier}`);
+        imageUrl = urlData.publicUrl;
+      }
       await supabase.from('coloriages').upsert({
         user_id: userId,
         illustration_id: illu.id,
-        image_url: urlData.publicUrl,
+        image_url: imageUrl,
         date_coloriage: coloDate || null,
       });
       setOk(true);
@@ -654,14 +657,18 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
               style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', display: 'block', width: '100%' }} />
             <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
               style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button onClick={onClose}
-                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 18px', color: 'rgba(255,255,255,0.5)', fontSize: '12px', cursor: 'pointer' }}>
-                Annuler
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => handleUpload(false)} disabled={envoi}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>
+                ✓ Sans image
               </button>
-              <button onClick={handleUpload} disabled={!coloImage || envoi}
-                style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))', border: 'none', borderRadius: '8px', padding: '8px 18px', color: '#000', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>
-                {envoi ? 'Envoi...' : 'Partager 🎨'}
+              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi}
+                style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1 }}>
+                🎨 Avec image
+              </button>
+              <button onClick={onClose}
+                style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '8px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer' }}>
+                Annuler
               </button>
             </div>
           </>
@@ -748,18 +755,21 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
     ));
   };
 
-  const handlePartagerColo = async () => {
-    if (!coloImage) return;
+  const handlePartagerColo = async (avecImage = false) => {
     setColoEnvoi(true);
     try {
-      const ext = coloImage.name.split('.').pop();
-      const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
-      await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
+      let imageUrl = null;
+      if (avecImage && coloImage) {
+        const ext = coloImage.name.split('.').pop();
+        const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
+        await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
+        imageUrl = urlData.publicUrl;
+      }
       await supabase.from('coloriages').upsert({
         user_id: userId,
         illustration_id: illu.id,
-        image_url: urlData.publicUrl,
+        image_url: imageUrl,
         date_coloriage: coloDate || null,
       });
       setColoOk(true);
@@ -855,10 +865,20 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                         style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }} />
                       <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
                         style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '11px' }} />
-                      <button onClick={handlePartagerColo} disabled={!coloImage || coloEnvoi}
-                        style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '6px', padding: '7px', color: '#fff', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', opacity: coloEnvoi ? 0.6 : 1 }}>
-                        {coloEnvoi ? 'Envoi...' : 'Partager 🎨'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <button onClick={() => handlePartagerColo(false)} disabled={coloEnvoi}
+                          style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '7px', color: '#fff', fontSize: '10px', cursor: 'pointer', opacity: coloEnvoi ? 0.6 : 1 }}>
+                          ✓ Valider sans image
+                        </button>
+                        <button onClick={() => handlePartagerColo(true)} disabled={!coloImage || coloEnvoi}
+                          style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, #00d4d4, #0099aa)' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '7px', color: coloImage ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '10px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: coloEnvoi ? 0.6 : 1 }}>
+                          🎨 Valider avec image
+                        </button>
+                        <button onClick={() => setShowPartagerColo(false)}
+                          style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '7px 10px', color: 'rgba(255,100,100,0.7)', fontSize: '10px', cursor: 'pointer' }}>
+                          Annuler
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>
