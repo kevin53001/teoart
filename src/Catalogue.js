@@ -699,13 +699,21 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
     if (!coloId) return;
     const charger = async () => {
       const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
-      const { data: c } = await supabase
+      const { data: commentsRaw } = await supabase
         .from('commentaires_coloriages')
-        .select('id, texte, created_at, user_id, profils(pseudo)')
+        .select('id, texte, created_at, user_id')
         .eq('coloriage_id', coloId)
         .order('created_at', { ascending: true });
       setLikes(l || []);
-      setCommentaires(c || []);
+      if (commentsRaw && commentsRaw.length > 0) {
+        const userIds = [...new Set(commentsRaw.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
+        const profilsMap = {};
+        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
+      } else {
+        setCommentaires([]);
+      }
     };
     charger();
   }, [coloId]);
@@ -727,9 +735,9 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
     const { data } = await supabase
       .from('commentaires_coloriages')
       .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
-      .select('id, texte, created_at, user_id, profils(pseudo)')
+      .select('id, texte, created_at, user_id')
       .single();
-    if (data) setCommentaires(prev => [...prev, data]);
+    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
     setTexte('');
     setEnvoi(false);
   };
@@ -762,7 +770,7 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
           {commentaires.map(c => (
             <div key={c.id} className="zoom-commentaire">
               <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                {c.profils?.pseudo || 'Anonyme'}
+                {c.pseudo || 'Anonyme'}
               </span>
               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: '1.4' }}>{c.texte}</span>
             </div>
@@ -841,16 +849,28 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       // Charger coloriages partagés (avec image_url) pour cette illustration
       const { data: colos } = await supabase
         .from('coloriages')
-        .select('id, image_url, user_id, profils(pseudo)')
+        .select('id, image_url, user_id')
         .eq('illustration_id', illu.id)
         .not('image_url', 'is', null)
         .order('created_at', { ascending: true });
-      setColosPropres((colos || []).map(c => ({
-        id: c.id,
-        image_url: c.image_url,
-        user_id: c.user_id,
-        pseudo: c.profils?.pseudo || 'Anonyme',
-      })));
+
+      if (colos && colos.length > 0) {
+        const userIds = colos.map(c => c.user_id);
+        const { data: profils } = await supabase
+          .from('profils')
+          .select('id, pseudo')
+          .in('id', userIds);
+        const profilsMap = {};
+        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        setColosPropres(colos.map(c => ({
+          id: c.id,
+          image_url: c.image_url,
+          user_id: c.user_id,
+          pseudo: profilsMap[c.user_id] || 'Anonyme',
+        })));
+      } else {
+        setColosPropres([]);
+      }
     };
 
     charger();
