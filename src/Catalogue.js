@@ -964,6 +964,23 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       });
       setColoOk(true);
       onColoUploaded();
+      // Rafraîchir les coloriages affichés dans la popup
+      const { data: colosRefresh } = await supabase
+        .from('coloriages')
+        .select('id, image_url, user_id')
+        .eq('illustration_id', illu.id)
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: true });
+      if (colosRefresh && colosRefresh.length > 0) {
+        const userIds = [...new Set(colosRefresh.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
+        const profilsMap = {};
+        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        setColosPropres(colosRefresh.map(c => ({
+          id: c.id, image_url: c.image_url, user_id: c.user_id,
+          pseudo: profilsMap[c.user_id] || 'Anonyme',
+        })));
+      }
     } catch (e) { console.error(e); }
     setColoEnvoi(false);
   };
