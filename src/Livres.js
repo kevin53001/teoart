@@ -30,38 +30,6 @@ function cheminVersUrl(chemin) {
 // Vignette dossier sans visuel — premium aux couleurs du site
 
 // Vignette dossier premium — aux couleurs du site
-function VignetteDossierPremium({ item, taille = 120, onClick, ouvert = false }) {
-  const cardRef = React.useRef(null);
-  const wrapRef = React.useRef(null);
-  const handleMouseMove = (e) => {
-    const el = cardRef.current;
-    const rect = el.getBoundingClientRect();
-    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    el.style.transform = `rotateX(${-dy * 6}deg) rotateY(${dx * 6}deg) scale(1.05)`;
-    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(800px)';
-  };
-  const handleMouseLeave = () => {
-    if (cardRef.current) cardRef.current.style.transform = '';
-    if (wrapRef.current) wrapRef.current.style.transform = '';
-  };
-  return (
-    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
-      <div ref={cardRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} onClick={onClick}
-        style={{ width: `${taille}px`, height: `${taille + 30}px`, cursor: 'pointer', borderRadius: '12px', border: `1px solid ${ouvert ? 'rgba(0,212,212,0.5)' : 'rgba(255,210,80,0.4)'}`, background: 'linear-gradient(135deg, #0a0a0a 0%, #111 40%, #0d0d12 70%, #0a0a0a 100%)', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: ouvert ? '0 0 16px rgba(0,212,212,0.2)' : '0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(255,210,80,0.08)', willChange: 'transform', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 30% 20%, rgba(255,210,80,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,212,212,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
-        <div style={{ position: 'absolute', bottom: '34px', left: '10px', right: '10px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
-        <div style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.75 }}>📁</div>
-        <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '10px', fontWeight: 'bold', textAlign: 'center', padding: '0 8px', lineHeight: '1.4', textShadow: '0 0 10px rgba(255,210,80,0.25)' }}>{item.nom}</p>
-        {item.annee && <p style={{ color: 'rgba(0,212,212,0.6)', fontSize: '9px', marginTop: '4px' }}>{item.annee}</p>}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '28px', background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(255,210,80,0.12)' }}>
-          <p style={{ color: ouvert ? 'rgba(0,212,212,0.7)' : 'rgba(255,210,80,0.55)', fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase' }}>{ouvert ? '▲ Fermer' : '▼ Ouvrir'}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Vignette avec visuel
 function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux }) {
@@ -139,7 +107,6 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
 function Livres() {
   const navigate = useNavigate();
   const [recueils, setRecueils] = React.useState([]);
-  const [livresHorsSerie, setLivresHorsSerie] = React.useState([]);
   const [tousLivres, setTousLivres] = React.useState([]);
   const [tousLesLivres, setTousLesLivres] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -173,7 +140,6 @@ function Livres() {
 
       setRecueils(r || []);
       setTousLesLivres(l || []);
-      setLivresHorsSerie((l || []).filter(li => li.visuel_presentation && (!li.recueils_ids || li.recueils_ids.length === 0)));
       setTousLivres((l || []).filter(li => li.visuel_presentation));
 
       // Charger collection_livres
