@@ -464,7 +464,7 @@ function Catalogue() {
           userPseudo={userPseudo}
           userId={userId}
           onColoUploaded={() => handleColoUploaded(popup.id)}
-          onOuvrirLivre={(livre) => { navigate('/livres'); }}
+          onOuvrirLivre={(item) => { navigate('/livres', { state: { ouvrirItem: item } }); }}
         />
       )}
 
@@ -686,29 +686,35 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 
   React.useEffect(() => {
     setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomUrl(null);
-    // Charger les vrais livres (avec visuel) de cette illustration
-    if (illu.livres_ids && illu.livres_ids.length > 0) {
-      supabase.from('livres')
-        .select('id, nom, visuel_presentation')
-        .in('id', illu.livres_ids)
-        .not('visuel_presentation', 'is', null)
-        .then(({ data }) => setLivresIllu(data || []));
-    } else {
-      setLivresIllu([]);
-    }
-    // Charger recueils si pas de livres avec visuel
-    if (illu.recueils_ids && illu.recueils_ids.length > 0) {
-      supabase.from('recueils')
-        .select('id, nom, visuel_presentation')
-        .in('id', illu.recueils_ids)
-        .then(({ data }) => {
-          setLivresIllu(prev => {
-            const ids = new Set(prev.map(l => l.id));
-            const recueilsFiltres = (data || []).filter(r => !ids.has(r.id));
-            return [...prev, ...recueilsFiltres];
-          });
+    setLivresIllu([]);
+
+    const chargerLivresEtRecueils = async () => {
+      const resultats = [];
+
+      // Charger les vrais livres avec visuel
+      if (illu.livres_ids && illu.livres_ids.length > 0) {
+        const { data: livres } = await supabase.from('livres')
+          .select('id, nom, visuel_presentation, slug')
+          .in('id', illu.livres_ids)
+          .not('visuel_presentation', 'is', null);
+        (livres || []).forEach(l => resultats.push({ ...l, type: 'livre' }));
+      }
+
+      // Charger les recueils
+      if (illu.recueils_ids && illu.recueils_ids.length > 0) {
+        const { data: recueils } = await supabase.from('recueils')
+          .select('id, nom, visuel_presentation, slug')
+          .in('id', illu.recueils_ids);
+        const idsDejaAjoutes = new Set(resultats.map(r => r.id));
+        (recueils || []).forEach(r => {
+          if (!idsDejaAjoutes.has(r.id)) resultats.push({ ...r, type: 'recueil' });
         });
-    }
+      }
+
+      setLivresIllu(resultats);
+    };
+
+    chargerLivresEtRecueils();
   }, [illu.id, illu.livres_ids, illu.recueils_ids]);
 
   const ouvrirZoom = (index) => { setZoomIndex(index); setZoomUrl(visuels[index]); };

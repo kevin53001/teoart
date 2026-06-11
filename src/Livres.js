@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -106,6 +106,7 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
 
 function Livres() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [recueils, setRecueils] = React.useState([]);
   const [tousLivres, setTousLivres] = React.useState([]);
   const [tousLesLivres, setTousLesLivres] = React.useState([]);
@@ -181,9 +182,26 @@ function Livres() {
 
       setCollection(collMap);
       setLoading(false);
+
+      // Ouvrir automatiquement la fiche si on vient d'une illustration
+      if (location.state?.ouvrirItem) {
+        const item = location.state.ouvrirItem;
+        if (item.type === 'recueil') {
+          const recueilTrouve = (r || []).find(rec => rec.id === item.id);
+          if (recueilTrouve) {
+            const livresDuRecueil = (l || []).filter(li => li.recueils_ids && li.recueils_ids.includes(recueilTrouve.id));
+            setContenuPopup(livresDuRecueil);
+            setPopupItem(recueilTrouve);
+            setPopupType('recueil');
+          }
+        } else {
+          const livreTrouve = (l || []).find(li => li.id === item.id);
+          if (livreTrouve) { setPopupItem(livreTrouve); setPopupType('livre'); }
+        }
+      }
     };
     charger();
-  }, [navigate]);
+  }, [navigate, location.state]);
 
   const ouvrirRecueil = (recueil) => {
     const livresDuRecueil = tousLesLivres.filter(l => l.recueils_ids && l.recueils_ids.includes(recueil.id));
