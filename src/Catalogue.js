@@ -264,11 +264,22 @@ function Catalogue() {
         .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background .2s; z-index: 300; }
         .nav-arrow:hover { background: rgba(0,212,212,0.3); }
         @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .similaires-scroll { animation: scrollSim 25s linear infinite; display: flex; gap: 8px; width: max-content; }
+        .similaires-scroll { animation: scrollSim 45s linear infinite; display: flex; gap: 8px; width: max-content; }
         .similaires-scroll:hover { animation-play-state: paused; }
         .visuel-zoom { cursor: zoom-in; transition: opacity .2s; }
         .visuel-zoom:hover { opacity: 0.9; }
         .btn-vue { width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; font-size: 14px; }
+        .miniature-colo { position: relative; }
+        .miniature-colo-badge { position: absolute; top: -4px; right: -4px; background: rgba(255,210,80,0.9); border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-size: 8px; z-index: 5; }
+        .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }
+        .zoom-like-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.5); font-size: 12px; transition: color .2s; padding: 0; }
+        .zoom-like-btn.actif { color: #ff4d7d; }
+        .zoom-like-btn:hover { color: #ff4d7d; }
+        .zoom-commentaire-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 11px; width: 100%; resize: none; font-family: inherit; }
+        .zoom-commentaire-input:focus { outline: none; border-color: rgba(0,212,212,0.4); }
+        .zoom-commentaire-input::placeholder { color: rgba(255,255,255,0.3); }
+        .zoom-commentaire { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .zoom-commentaire:last-child { border-bottom: none; }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -337,7 +348,6 @@ function Catalogue() {
           {/* ENCARTS */}
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '24px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
 
-            {/* ENCART TRI + VUE — gauche sur desktop, haut sur mobile */}
             {!isMobile && (
               <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -352,7 +362,6 @@ function Catalogue() {
               </div>
             )}
 
-            {/* ENCART ANNÉES — milieu sur desktop */}
             <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '14px', padding: isMobile ? '10px 12px' : '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: isMobile ? '6px' : '10px', justifyContent: 'center', width: isMobile ? '100%' : 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '6px' : '8px', flexWrap: 'wrap' }}>
                 {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)} style={{ fontSize: isMobile ? '11px' : '12px', padding: isMobile ? '3px 8px' : '4px 12px' }}>{a}</button>)}
@@ -365,7 +374,6 @@ function Catalogue() {
               </p>
             </div>
 
-            {/* ENCART FILTRES COLLECTION — droite sur desktop */}
             {!isMobile && (
               <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -382,7 +390,6 @@ function Catalogue() {
               </div>
             )}
 
-            {/* VERSION MOBILE — tri + filtres sur une ligne */}
             {isMobile && (
               <>
                 <div style={{ ...encartStyle, padding: '8px 10px', gap: '6px', width: '100%' }}>
@@ -570,7 +577,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
           </svg>
         </div>
 
-        {/* PALETTE — bas gauche de l'image */}
         <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
             {aColorié ? (
@@ -593,7 +599,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
           </svg>
         </div>
 
-        {/* PANIER */}
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" />
@@ -678,12 +683,129 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
   );
 }
 
+// ─── COMPOSANT SOCIAL ZOOM ───────────────────────────────────────────────────
+// Gère likes + commentaires pour un coloriage donné dans la vue zoom plein écran
+
+function ZoomSocial({ coloriage, userId, userPseudo }) {
+  const [likes, setLikes] = React.useState([]);
+  const [commentaires, setCommentaires] = React.useState([]);
+  const [texte, setTexte] = React.useState('');
+  const [envoi, setEnvoi] = React.useState(false);
+
+  const coloId = coloriage?.id;
+  const jaLike = likes.some(l => l.user_id === userId);
+
+  React.useEffect(() => {
+    if (!coloId) return;
+    const charger = async () => {
+      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
+      const { data: c } = await supabase
+        .from('commentaires_coloriages')
+        .select('id, texte, created_at, user_id, profils(pseudo)')
+        .eq('coloriage_id', coloId)
+        .order('created_at', { ascending: true });
+      setLikes(l || []);
+      setCommentaires(c || []);
+    };
+    charger();
+  }, [coloId]);
+
+  const toggleLike = async () => {
+    if (!coloId || !userId) return;
+    if (jaLike) {
+      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!texte.trim() || !coloId || !userId) return;
+    setEnvoi(true);
+    const { data } = await supabase
+      .from('commentaires_coloriages')
+      .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
+      .select('id, texte, created_at, user_id, profils(pseudo)')
+      .single();
+    if (data) setCommentaires(prev => [...prev, data]);
+    setTexte('');
+    setEnvoi(false);
+  };
+
+  if (!coloriage) return null;
+
+  return (
+    <div className="zoom-social">
+      {/* Ligne likes */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button className={`zoom-like-btn${jaLike ? ' actif' : ''}`} onClick={toggleLike}>
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            {jaLike
+              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+            }
+          </svg>
+          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? 'J\'aime ✓' : 'J\'aime'}</span>
+        </button>
+        {coloriage.pseudo && (
+          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>
+            🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriage.pseudo}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Commentaires existants */}
+      {commentaires.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
+          {commentaires.map(c => (
+            <div key={c.id} className="zoom-commentaire">
+              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {c.profils?.pseudo || 'Anonyme'}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: '1.4' }}>{c.texte}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Saisie commentaire */}
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+        <textarea
+          className="zoom-commentaire-input"
+          rows={1}
+          placeholder="Ajouter un commentaire…"
+          value={texte}
+          onChange={e => setTexte(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
+          style={{ flex: 1 }}
+        />
+        <button
+          onClick={envoyerCommentaire}
+          disabled={!texte.trim() || envoi}
+          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', transition: 'all .2s', whiteSpace: 'nowrap' }}>
+          Envoyer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── POPUP FICHE ─────────────────────────────────────────────────────────────
+
 function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded, onOuvrirLivre }) {
   const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
+
+  // coloriages partagés (avec image_url) pour cette illustration
+  const [colosPropres, setColosPropres] = React.useState([]); // { id, image_url, pseudo, user_id }
+
   const [visuelActif, setVisuelActif] = React.useState(0);
-  const [zoomUrl, setZoomUrl] = React.useState(null);
-  const [zoomIndex, setZoomIndex] = React.useState(0);
+  // index global sur [visuels normaux... + colosPropres...]
+  const totalVisuels = visuels.length + colosPropres.length;
+
+  const [zoomIndex, setZoomIndex] = React.useState(null); // null = pas de zoom
   const [showPartagerColo, setShowPartagerColo] = React.useState(false);
   const [coloImage, setColoImage] = React.useState(null);
   const [coloDate, setColoDate] = React.useState('');
@@ -692,13 +814,12 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
   const [livresIllu, setLivresIllu] = React.useState([]);
 
   React.useEffect(() => {
-    setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomUrl(null);
-    setLivresIllu([]);
+    setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null);
+    setLivresIllu([]); setColosPropres([]);
 
-    const chargerLivresEtRecueils = async () => {
+    const charger = async () => {
+      // Charger livres/recueils
       const resultats = [];
-
-      // Charger les vrais livres avec visuel
       if (illu.livres_ids && illu.livres_ids.length > 0) {
         const { data: livres } = await supabase.from('livres')
           .select('id, nom, visuel_presentation, slug')
@@ -706,8 +827,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           .not('visuel_presentation', 'is', null);
         (livres || []).forEach(l => resultats.push({ ...l, type: 'livre' }));
       }
-
-      // Charger les recueils
       if (illu.recueils_ids && illu.recueils_ids.length > 0) {
         const { data: recueils } = await supabase.from('recueils')
           .select('id, nom, visuel_presentation, slug')
@@ -717,16 +836,45 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           if (!idsDejaAjoutes.has(r.id)) resultats.push({ ...r, type: 'recueil' });
         });
       }
-
       setLivresIllu(resultats);
+
+      // Charger coloriages partagés (avec image_url) pour cette illustration
+      const { data: colos } = await supabase
+        .from('coloriages')
+        .select('id, image_url, user_id, profils(pseudo)')
+        .eq('illustration_id', illu.id)
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: true });
+      setColosPropres((colos || []).map(c => ({
+        id: c.id,
+        image_url: c.image_url,
+        user_id: c.user_id,
+        pseudo: c.profils?.pseudo || 'Anonyme',
+      })));
     };
 
-    chargerLivresEtRecueils();
+    charger();
   }, [illu.id, illu.livres_ids, illu.recueils_ids]);
 
-  const ouvrirZoom = (index) => { setZoomIndex(index); setZoomUrl(visuels[index]); };
-  const zoomSuivant = (e) => { e.stopPropagation(); const next = (zoomIndex + 1) % visuels.length; setZoomIndex(next); setZoomUrl(visuels[next]); };
-  const zoomPrecedent = (e) => { e.stopPropagation(); const prev = (zoomIndex - 1 + visuels.length) % visuels.length; setZoomIndex(prev); setZoomUrl(visuels[prev]); };
+  // Helpers pour obtenir l'URL et le type du visuel actif
+  const getUrlVisuelActif = (index) => {
+    if (index < visuels.length) return visuels[index];
+    const coloIdx = index - visuels.length;
+    return colosPropres[coloIdx]?.image_url || null;
+  };
+
+  const getColoActif = (index) => {
+    if (index < visuels.length) return null;
+    return colosPropres[index - visuels.length] || null;
+  };
+
+  // Pour le zoom : visuel actif dans la vue zoom (peut différer de visuelActif)
+  const urlZoom = zoomIndex !== null ? getUrlVisuelActif(zoomIndex) : null;
+  const coloZoom = zoomIndex !== null ? getColoActif(zoomIndex) : null;
+
+  const ouvrirZoom = (index) => { setZoomIndex(index); };
+  const zoomSuivant = (e) => { e.stopPropagation(); setZoomIndex(i => (i + 1) % totalVisuels); };
+  const zoomPrecedent = (e) => { e.stopPropagation(); setZoomIndex(i => (i - 1 + totalVisuels) % totalVisuels); };
 
   const cheminActif = visuelsChemins[visuelActif];
   const coloriste = estVisuelCChemin(cheminActif) ? extraireColoriste(cheminActif) : null;
@@ -780,15 +928,35 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 
   return (
     <>
-      {zoomUrl && (
-        <div onClick={() => setZoomUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
-          <img src={zoomUrl} alt="" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
-          <button onClick={() => setZoomUrl(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>✕</button>
-          {visuels.length > 1 && (
+      {/* VUE ZOOM PLEIN ÉCRAN */}
+      {zoomIndex !== null && (
+        <div onClick={() => setZoomIndex(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
+
+          {/* Image */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }}
+            onClick={e => e.stopPropagation()}>
+            {urlZoom && (
+              <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />
+            )}
+          </div>
+
+          {/* Zone sociale — visible seulement pour les coloriages partagés */}
+          {coloZoom && (
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
+              <ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
+            </div>
+          )}
+
+          <button onClick={() => setZoomIndex(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 10 }}>✕</button>
+          {totalVisuels > 1 && (
             <>
-              <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-              <button onClick={zoomSuivant} style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
-              <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{zoomIndex + 1} / {visuels.length}</p>
+              <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>
+              <button onClick={zoomSuivant} style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>›</button>
+              <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                {zoomIndex + 1} / {totalVisuels}
+                {coloZoom ? ' 🎨' : ''}
+              </p>
             </>
           )}
         </div>
@@ -803,29 +971,57 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
 
           <div style={{ padding: '24px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            {/* COLONNE GAUCHE — visuels */}
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
-                {visuels[visuelActif] && (
-                  <img src={visuels[visuelActif]} alt={illu.nom} className="visuel-zoom"
+                {getUrlVisuelActif(visuelActif) && (
+                  <img
+                    src={getUrlVisuelActif(visuelActif)}
+                    alt={illu.nom}
+                    className="visuel-zoom"
                     onClick={() => ouvrirZoom(visuelActif)}
-                    style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
+                    style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }}
+                  />
                 )}
-                {coloriste && (
+                {/* Badge coloriste sur visuels C normaux */}
+                {visuelActif < visuels.length && coloriste && (
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                     Réalisé par {coloriste}
                   </div>
                 )}
+                {/* Badge pseudo sur coloriages partagés */}
+                {visuelActif >= visuels.length && getColoActif(visuelActif) && (
+                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    🎨 {getColoActif(visuelActif).pseudo}
+                  </div>
+                )}
               </div>
-              {visuels.length > 1 && (
+
+              {/* MINIATURES — visuels normaux + coloriages */}
+              {totalVisuels > 1 && (
                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                  {/* Visuels normaux */}
                   {visuels.map((url, i) => (
-                    <img key={i} src={url} alt="" onClick={() => setVisuelActif(i)}
+                    <img key={`v-${i}`} src={url} alt="" onClick={() => setVisuelActif(i)}
                       style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.4 }} />
                   ))}
+                  {/* Coloriages partagés */}
+                  {colosPropres.map((colo, i) => {
+                    const idxGlobal = visuels.length + i;
+                    return (
+                      <div key={`colo-${i}`} className="miniature-colo" onClick={() => setVisuelActif(idxGlobal)}
+                        style={{ position: 'relative', flexShrink: 0 }}>
+                        <img src={colo.image_url} alt={`Coloriage de ${colo.pseudo}`}
+                          style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${idxGlobal === visuelActif ? 'rgba(255,210,80,0.8)' : 'transparent'}`, opacity: idxGlobal === visuelActif ? 1 : 0.45, display: 'block' }} />
+                        <div className="miniature-colo-badge">🎨</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
+            {/* COLONNE DROITE — infos */}
             <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
@@ -890,7 +1086,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                 </div>
               )}
 
-              {/* LIVRES/RECUEILS CLIQUABLES */}
               {livresIllu.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>
