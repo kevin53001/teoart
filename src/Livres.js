@@ -19,6 +19,8 @@ const BARRES = [
   { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.05 },
 ];
 
+const CATEGORIES = ['Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
@@ -26,6 +28,40 @@ function cheminVersUrl(chemin) {
 }
 
 // Vignette dossier sans visuel — premium aux couleurs du site
+
+// Vignette dossier premium — aux couleurs du site
+function VignetteDossierPremium({ item, taille = 120, onClick, ouvert = false }) {
+  const cardRef = React.useRef(null);
+  const wrapRef = React.useRef(null);
+  const handleMouseMove = (e) => {
+    const el = cardRef.current;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 6}deg) rotateY(${dx * 6}deg) scale(1.05)`;
+    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(800px)';
+  };
+  const handleMouseLeave = () => {
+    if (cardRef.current) cardRef.current.style.transform = '';
+    if (wrapRef.current) wrapRef.current.style.transform = '';
+  };
+  return (
+    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
+      <div ref={cardRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} onClick={onClick}
+        style={{ width: `${taille}px`, height: `${taille + 30}px`, cursor: 'pointer', borderRadius: '12px', border: `1px solid ${ouvert ? 'rgba(0,212,212,0.5)' : 'rgba(255,210,80,0.4)'}`, background: 'linear-gradient(135deg, #0a0a0a 0%, #111 40%, #0d0d12 70%, #0a0a0a 100%)', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: ouvert ? '0 0 16px rgba(0,212,212,0.2)' : '0 2px 8px rgba(0,0,0,0.6), 0 0 14px rgba(255,210,80,0.08)', willChange: 'transform', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 30% 20%, rgba(255,210,80,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(0,212,212,0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '10px', left: '10px', right: '10px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
+        <div style={{ position: 'absolute', bottom: '34px', left: '10px', right: '10px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.35), transparent)' }} />
+        <div style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.75 }}>📁</div>
+        <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '10px', fontWeight: 'bold', textAlign: 'center', padding: '0 8px', lineHeight: '1.4', textShadow: '0 0 10px rgba(255,210,80,0.25)' }}>{item.nom}</p>
+        {item.annee && <p style={{ color: 'rgba(0,212,212,0.6)', fontSize: '9px', marginTop: '4px' }}>{item.annee}</p>}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '28px', background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid rgba(255,210,80,0.12)' }}>
+          <p style={{ color: ouvert ? 'rgba(0,212,212,0.7)' : 'rgba(255,210,80,0.55)', fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase' }}>{ouvert ? '▲ Fermer' : '▼ Ouvrir'}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Vignette avec visuel
 function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux }) {
@@ -100,6 +136,7 @@ function Livres() {
   const [tousLesLivres, setTousLesLivres] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
+  const [userId, setUserId] = React.useState(null);
   const [collection, setCollection] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
 
@@ -121,6 +158,7 @@ function Livres() {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/'); return; }
+      setUserId(user.id);
 
       const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, prix, description').eq('statut', 'published').order('annee', { ascending: false });
       const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').eq('statut', 'published').order('nom');
@@ -130,8 +168,11 @@ function Livres() {
       setLivresHorsSerie((l || []).filter(li => li.visuel_presentation && (!li.recueils_ids || li.recueils_ids.length === 0)));
       setTousLivres((l || []).filter(li => li.visuel_presentation));
 
-      // Collection (j_ai / je_veux) — on réutilise une table dédiée collection_items
-      // Pour l'instant on stocke dans localStorage le temps de créer la table
+      // Charger collection_livres
+      const { data: coll } = await supabase.from('collection_livres').select('item_id, item_type, j_ai, je_veux').eq('user_id', user.id);
+      const collMap = {};
+      (coll || []).forEach(c => { collMap[`${c.item_type}_${c.item_id}`] = { j_ai: c.j_ai, je_veux: c.je_veux }; });
+      setCollection(collMap);
       setLoading(false);
     };
     charger();
@@ -168,13 +209,17 @@ function Livres() {
   const toggleJAi = async (itemId, type) => {
     const key = `${type}_${itemId}`;
     const actuel = collection[key]?.j_ai || false;
-    setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: !actuel } }));
+    const nouveau = !actuel;
+    setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: nouveau } }));
+    await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: nouveau, je_veux: collection[key]?.je_veux || false });
   };
 
   const toggleJeVeux = async (itemId, type) => {
     const key = `${type}_${itemId}`;
     const actuel = collection[key]?.je_veux || false;
-    setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: !actuel } }));
+    const nouveau = !actuel;
+    setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: nouveau } }));
+    await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: collection[key]?.j_ai || false, je_veux: nouveau });
   };
 
   const P = isMobile ? 44 : 80;
@@ -229,7 +274,10 @@ function Livres() {
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => setShowCategories(v => !v)} />
               {showCategories && (
                 <div className="dropdown-cat">
-                  <div className="dropdown-item" onClick={() => navigate('/catalogue')}>Toutes les catégories</div>
+                  <div className="dropdown-item" onClick={() => { navigate('/catalogue'); setShowCategories(false); }}>Toutes les catégories</div>
+                  {CATEGORIES.map(cat => (
+                    <div key={cat} className="dropdown-item" onClick={() => { navigate('/catalogue'); setShowCategories(false); }}>{cat}</div>
+                  ))}
                 </div>
               )}
             </div>
@@ -270,7 +318,6 @@ function Livres() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
                 {recueils.map(r => (
                   <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
-                    badge={{ label: 'Recueil', bg: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.4)', color: '#00d4d4' }}
                     jAi={collection[`recueil_${r.id}`]?.j_ai || false}
                     jeVeux={collection[`recueil_${r.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(r.id, 'recueil')}
@@ -382,44 +429,36 @@ function Livres() {
             {/* CONTENU DU RECUEIL : livres + dossiers */}
             {popupType === 'recueil' && contenuPopup.length > 0 && (
               <div>
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Contenu du recueil</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px' }}>Contenu du recueil</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' }}>
                   {contenuPopup.map(livre => {
                     const estDossier = !livre.visuel_presentation;
                     const estOuvert = itemOuvert?.id === livre.id;
                     return (
-                      <div key={livre.id}>
-                        <div onClick={() => ouvrirLivre(livre)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${estOuvert ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.07)'}`, background: estOuvert ? 'rgba(0,212,212,0.04)' : 'rgba(255,255,255,0.02)', transition: 'all .2s' }}>
-                          {estDossier ? (
-                            <div style={{ width: '56px', height: '56px', borderRadius: '8px', background: 'linear-gradient(135deg, #0a0a0a, #111)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <span style={{ fontSize: '20px', opacity: 0.7 }}>📁</span>
-                            </div>
-                          ) : (
-                            <img src={cheminVersUrl(livre.visuel_presentation)} alt={livre.nom} style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
-                          )}
-                          <div style={{ flex: 1 }}>
-                            <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>{livre.nom}</p>
-                            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
-                              {estDossier ? 'Dossier' : 'Livre'}{livre.annee ? ` · ${livre.annee}` : ''}
-                            </p>
-                          </div>
-                          <span style={{ color: estOuvert ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '18px', transition: 'transform .2s', display: 'block', transform: estOuvert ? 'rotate(90deg)' : 'none' }}>›</span>
-                        </div>
+                      <div key={livre.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* Vignette cliquable */}
+                        {estDossier ? (
+                          <VignetteDossierPremium item={livre} taille={120} onClick={() => ouvrirLivre(livre)} ouvert={estOuvert} />
+                        ) : (
+                          <VignetteVisuel item={livre} taille={120} onClick={() => ouvrirLivre(livre)}
+                            jAi={collection[`livre_${livre.id}`]?.j_ai || false}
+                            jeVeux={collection[`livre_${livre.id}`]?.je_veux || false}
+                            onToggleJAi={() => toggleJAi(livre.id, 'livre')}
+                            onToggleJeVeux={() => toggleJeVeux(livre.id, 'livre')}
+                          />
+                        )}
 
                         {/* Illustrations dépliées */}
                         {estOuvert && (
-                          <div style={{ marginTop: '8px', padding: '14px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.08)' }}>
+                          <div style={{ width: '120px', padding: '8px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', border: '1px solid rgba(0,212,212,0.1)', maxHeight: '300px', overflowY: 'auto' }}>
                             {loadingIllus ? (
-                              <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>
+                              <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '10px' }}>...</p>
                             ) : illustrationsOuvertes.length === 0 ? (
-                              <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>
+                              <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '10px' }}>Vide</p>
                             ) : (
                               <>
-                                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                  {illustrationsOuvertes.length} illustration{illustrationsOuvertes.length > 1 ? 's' : ''}
-                                </p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', marginBottom: '6px', textAlign: 'center' }}>{illustrationsOuvertes.length} illus.</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   {illustrationsOuvertes.map(illu => {
                                     const urlIllu = (() => {
                                       if (!illu.visuels) return null;
@@ -430,14 +469,9 @@ function Livres() {
                                       return null;
                                     })();
                                     return (
-                                      <div key={illu.id} style={{ flexShrink: 0, width: `${TAILLE_ILLUS}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a' }}>
-                                        {urlIllu
-                                          ? <img src={urlIllu} alt={illu.nom} style={{ width: '100%', height: `${TAILLE_ILLUS}px`, objectFit: 'cover', display: 'block' }} />
-                                          : <div style={{ width: '100%', height: `${TAILLE_ILLUS}px`, background: '#111' }} />
-                                        }
-                                        <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.8)' }}>
-                                          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
-                                        </div>
+                                      <div key={illu.id} style={{ borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                        {urlIllu ? <img src={urlIllu} alt={illu.nom} style={{ width: '100%', height: '60px', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '60px', background: '#111' }} />}
+                                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '7px', padding: '2px 4px', background: 'rgba(0,0,0,0.8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
                                       </div>
                                     );
                                   })}

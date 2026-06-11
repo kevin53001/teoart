@@ -335,9 +335,9 @@ function Catalogue() {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
           {/* ENCARTS */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '24px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
 
-            {/* LIGNE 1 — Années (pleine largeur, compact) */}
+            {/* ENCART ANNÉES */}
             <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '14px', padding: isMobile ? '10px 12px' : '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: isMobile ? '6px' : '10px', justifyContent: 'center', width: isMobile ? '100%' : 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '6px' : '8px', flexWrap: 'wrap' }}>
                 {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)} style={{ fontSize: isMobile ? '11px' : '12px', padding: isMobile ? '3px 8px' : '4px 12px' }}>{a}</button>)}
@@ -350,71 +350,56 @@ function Catalogue() {
               </p>
             </div>
 
-            {/* LIGNE 2 — Tri+Vue | Filtres collection */}
-            <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}>
-
-              {/* Tri + Vue */}
-              <div style={{ ...encartStyle, flex: isMobile ? 1 : 'unset', padding: isMobile ? '8px 10px' : '12px 16px', gap: '6px' }}>
-                {isMobile ? (
-                  // Mobile : icônes compactes sur une ligne
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setTri('az'); setPage(1); }} title="A→Z" style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
-                    <button onClick={() => { setTri('za'); setPage(1); }} title="Z→A" style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
-                    <button onClick={() => { setTri('recent'); setPage(1); }} title="Récent" style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
-                    <button onClick={() => setVueCompacte(false)} title="Vue normale"
-                      style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                    <button onClick={() => setVueCompacte(true)} title="Vue compacte"
-                      style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+            {/* ENCART TRI + VUE */}
+            <div style={{ ...encartStyle, padding: isMobile ? '8px 10px' : '12px 16px', gap: '6px', width: isMobile ? '100%' : 'auto' }}>
+              {isMobile ? (
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                  <button onClick={() => { setTri('az'); setPage(1); }} style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
+                  <button onClick={() => { setTri('za'); setPage(1); }} style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
+                  <button onClick={() => { setTri('recent'); setPage(1); }} style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
+                  <button onClick={() => setVueCompacte(false)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
+                  <button onClick={() => setVueCompacte(true)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
+                    <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
+                    <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
                   </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
-                      <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
-                      <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                      <button className="btn-vue" onClick={() => setVueCompacte(false)}
-                        style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                      <button className="btn-vue" onClick={() => setVueCompacte(true)}
-                        style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Filtres collection */}
-              <div style={{ ...encartStyle, flex: isMobile ? 1 : 'unset', padding: isMobile ? '8px 10px' : '12px 16px', gap: '6px' }}>
-                {isMobile ? (
-                  // Mobile : icônes seulement sur une ligne
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setFiltreCollection('tout'); setPage(1); }} title="Tout"
-                      style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'tout' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'tout' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'tout' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✦</button>
-                    <button onClick={() => { setFiltreCollection('jai'); setPage(1); }} title="J'ai"
-                      style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'jai' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'jai' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jai' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✓</button>
-                    <button onClick={() => { setFiltreCollection('japas'); setPage(1); }} title="J'ai pas"
-                      style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'japas' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'japas' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'japas' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✕</button>
-                    <button onClick={() => { setFiltreCollection('jeveux'); setPage(1); }} title="Je veux"
-                      style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'jeveux' ? 'rgba(255,77,125,0.2)' : 'transparent', border: filtreCollection === 'jeveux' ? '1px solid rgba(255,77,125,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jeveux' ? '#ff4d7d' : 'rgba(255,255,255,0.5)' }}>♡</button>
-                    <button onClick={() => { setFiltreCollection('colorie'); setPage(1); }} title="Colorié"
-                      style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.2)' : 'transparent', border: filtreCollection === 'colorie' ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)' }}>🎨</button>
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
+                    <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
                   </div>
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
-                      <button style={btnFiltreStyle(filtreCollection === 'jai')} onClick={() => { setFiltreCollection('jai'); setPage(1); }}>✓ J'ai</button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
-                      <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                      <button style={btnFiltreStyle(filtreCollection === 'colorie')} onClick={() => { setFiltreCollection('colorie'); setPage(1); }}>🎨 Colorié</button>
-                    </div>
-                  </>
-                )}
-              </div>
+                </>
+              )}
+            </div>
+
+            {/* ENCART FILTRES COLLECTION */}
+            <div style={{ ...encartStyle, padding: isMobile ? '8px 10px' : '12px 16px', gap: '6px', width: isMobile ? '100%' : 'auto' }}>
+              {isMobile ? (
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
+                  <button onClick={() => { setFiltreCollection('tout'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'tout' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'tout' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'tout' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✦</button>
+                  <button onClick={() => { setFiltreCollection('jai'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'jai' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'jai' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jai' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✓</button>
+                  <button onClick={() => { setFiltreCollection('japas'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'japas' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'japas' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'japas' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✕</button>
+                  <button onClick={() => { setFiltreCollection('jeveux'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'jeveux' ? 'rgba(255,77,125,0.2)' : 'transparent', border: filtreCollection === 'jeveux' ? '1px solid rgba(255,77,125,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jeveux' ? '#ff4d7d' : 'rgba(255,255,255,0.5)' }}>♡</button>
+                  <button onClick={() => { setFiltreCollection('colorie'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.2)' : 'transparent', border: filtreCollection === 'colorie' ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)' }}>🎨</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
+                    <button style={btnFiltreStyle(filtreCollection === 'jai')} onClick={() => { setFiltreCollection('jai'); setPage(1); }}>✓ J'ai</button>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
+                    <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <button style={btnFiltreStyle(filtreCollection === 'colorie')} onClick={() => { setFiltreCollection('colorie'); setPage(1); }}>🎨 Colorié</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
