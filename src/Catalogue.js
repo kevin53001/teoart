@@ -629,9 +629,20 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
       if (avecImage && coloImage) {
         const ext = coloImage.name.split('.').pop();
         const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-        await supabase.storage.from('avatars').upload(`coloriages/${nomFichier}`, coloImage, { upsert: true });
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(`coloriages/${nomFichier}`);
-        imageUrl = urlData.publicUrl;
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(coloImage);
+        });
+        const response = await fetch('/api/upload-colo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        imageUrl = data.url;
       }
       await supabase.from('coloriages').upsert({
         user_id: userId,
@@ -641,7 +652,7 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
       });
       setOk(true);
       setTimeout(() => { onUploaded(); }, 1200);
-    } catch (e) {}
+    } catch (e) { console.error(e); }
     setEnvoi(false);
   };
 
@@ -929,10 +940,21 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       let imageUrl = null;
       if (avecImage && coloImage) {
         const ext = coloImage.name.split('.').pop();
-        const nomFichier = `coloriages/${userId}_${illu.id}_${Date.now()}.${ext}`;
-        await supabase.storage.from('avatars').upload(nomFichier, coloImage, { upsert: true });
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
-        imageUrl = urlData.publicUrl;
+        const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(coloImage);
+        });
+        const response = await fetch('/api/upload-colo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        imageUrl = data.url;
       }
       await supabase.from('coloriages').upsert({
         user_id: userId,
@@ -942,7 +964,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       });
       setColoOk(true);
       onColoUploaded();
-    } catch (e) {}
+    } catch (e) { console.error(e); }
     setColoEnvoi(false);
   };
 
