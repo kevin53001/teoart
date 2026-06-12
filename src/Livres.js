@@ -256,7 +256,14 @@ function Livres() {
         .contains('recueils_ids', [recueil.id]);
       const illuIds = (illus || []).map(i => i.id);
       if (illuIds.length > 0) {
-        const toutesOui = illuIds.every(id => collectionIllus[id]?.j_ai);
+        const { data: collLiveR } = await supabase
+          .from('collection')
+          .select('illustration_id')
+          .eq('user_id', userId)
+          .eq('j_ai', true)
+          .in('illustration_id', illuIds);
+        const cochesSetR = new Set((collLiveR || []).map(c => c.illustration_id));
+        const toutesOui = illuIds.every(id => cochesSetR.has(id));
         if (toutesOui) {
           setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
           await supabase.from('collection_livres').upsert(
@@ -287,16 +294,26 @@ function Livres() {
     setIllustrationsOuvertes(illus);
     setLoadingIllus(false);
 
-    // BUG 2 : si toutes les illustrations sont j_ai et que le livre ne l'est pas encore → cocher auto
+    // BUG 2 : requete Supabase directe pour eviter stale closure sur collectionIllus
     if (illus.length > 0) {
-      const toutesOui = illus.every(i => collectionIllus[i.id]?.j_ai);
       const key = `livre_${livre.id}`;
-      if (toutesOui && !collection[key]?.j_ai) {
-        setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
-        await supabase.from('collection_livres').upsert(
-          { user_id: userId, item_id: livre.id, item_type: 'livre', j_ai: true, je_veux: collection[key]?.je_veux || false },
-          { onConflict: 'user_id,item_id,item_type' }
-        );
+      if (!collection[key]?.j_ai) {
+        const illuIds = illus.map(i => i.id);
+        const { data: collLive } = await supabase
+          .from('collection')
+          .select('illustration_id')
+          .eq('user_id', userId)
+          .eq('j_ai', true)
+          .in('illustration_id', illuIds);
+        const cochesSet = new Set((collLive || []).map(c => c.illustration_id));
+        const toutesOui = illuIds.every(id => cochesSet.has(id));
+        if (toutesOui) {
+          setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
+          await supabase.from('collection_livres').upsert(
+            { user_id: userId, item_id: livre.id, item_type: 'livre', j_ai: true, je_veux: collection[key]?.je_veux || false },
+            { onConflict: 'user_id,item_id,item_type' }
+          );
+        }
       }
     }
   };
