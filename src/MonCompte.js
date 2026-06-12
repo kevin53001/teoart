@@ -59,7 +59,7 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
       {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>{label}</span>}
       <div style={{ flex: 1, height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, background: couleur, borderRadius: `${hauteur}px`, transition: `width 2s cubic-bezier(0.4,0,0.2,1) ${delai}ms` }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, background: couleur, borderRadius: `${hauteur}px`, transition: `width 2s cubic-bezier(0.4,0,0.2,1) ${delai}ms`, backgroundImage: couleur.startsWith('linear') ? couleur : 'none', backgroundColor: !couleur.startsWith('linear') ? couleur : 'transparent' }} />
       </div>
       {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '36px', textAlign: 'right', flexShrink: 0 }}>{affiche}%</span>}
     </div>
@@ -111,14 +111,20 @@ function SectionMaCollection({ userId, totalIllus }) {
   const [recueilsOuverts, setRecueilsOuverts] = React.useState({});
   const [livresOuverts, setLivresOuverts] = React.useState({});
 
-  // Couleurs dégradées par index (du plus intense au plus léger)
-  const getCouleurAnnee = (idx, total) => {
-    const ratio = total <= 1 ? 1 : 1 - (idx / (total - 1)) * 0.7;
-    const r = Math.round(0 * ratio);
-    const g = Math.round(212 * ratio);
-    const b = Math.round(212 * ratio);
-    return `rgb(${r},${g},${b})`;
-  };
+  // Arc-en-ciel pour les jauges
+  const COULEURS_ARC = [
+    '#ff3eb5', // rose
+    '#ff6b35', // orange
+    '#ffd250', // or
+    '#a8e063', // vert clair
+    '#00d4d4', // cyan
+    '#4a9eff', // bleu
+    '#9b59b6', // violet
+  ];
+  const getCouleurAnnee = (idx, total) => COULEURS_ARC[idx % COULEURS_ARC.length];
+
+  // IDs exclus des années (affichés à part)
+  const EXCLUS = new Set(['recueil_recueil de noel_2026', 'livre_colormefree']);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -150,39 +156,109 @@ function SectionMaCollection({ userId, totalIllus }) {
         // parAnnee contient TOUTES les années/recueils/livres
         const parAnnee = {};
 
-        (toutesIllus || []).forEach(illu => {
-          const annee = illu.annee || 'Sans année';
-          if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
-          totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
-          (illu.livres_ids || []).forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
-          (illu.recueils_ids || []).forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
+        // Structure hors-années (Recueil de Noël, Color Me Free...)
+        const horsAnnees = {}; // rid ou lid -> { type, info, illus: Set, livres: {} }
 
+        // Initialiser les entrées hors-années
+        EXCLUS.forEach(eid => {
+          if (recueilsMap[eid]) horsAnnees[eid] = { type: 'recueil', info: recueilsMap[eid], illuIds: new Set(), livres: {} };
+          if (livresMap[eid]) horsAnnees[eid] = { type: 'livre', info: livresMap[eid], illuIds: new Set() };
+        });
+
+        // Set pour dédupliquer par année
+        const illusParAnnee = {}; // annee -> Set d'ids
+
+        (toutesIllus || []).forEach(illu => {
           const illuPossedee = illuIds.has(illu.id) ? { ...illu, aColorie: colosSet.has(illu.id) } : null;
 
-          if (illu.recueils_ids && illu.recueils_ids.length > 0) {
-            illu.recueils_ids.forEach(rid => {
+          // Recueils exclus
+          const ridsExclus = (illu.recueils_ids || []).filter(rid => EXCLUS.has(rid));
+          const ridsNormaux = (illu.recueils_ids || []).filter(rid => !EXCLUS.has(rid));
+          const lidsExclus = (illu.livres_ids || []).filter(lid => EXCLUS.has(lid));
+          const lidsNormaux = (illu.livres_ids || []).filter(lid => !EXCLUS.has(lid));
+
+          // Remplir hors-années
+          ridsExclus.forEach(rid => {
+            if (!horsAnnees[rid]) return;
+            horsAnnees[rid].illuIds.add(illu.id);
+            (illu.livres_ids || []).forEach(lid => {
+              if (!livresMap[lid]) return;
+              if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
+                if (!horsAnnees[rid].livres[lid]) horsAnnees[rid].livres[lid] = { info: livresMap[lid], illuIds: new Set() };
+                horsAnnees[rid].livres[lid].illuIds.add(illu.id);
+                if (illuPossedee) {
+                  if (!horsAnnees[rid].livres[lid].illus) horsAnnees[rid].livres[lid].illus = [];
+                  if (!horsAnnees[rid].livres[lid].illus.find(i => i.id === illu.id))
+                    horsAnnees[rid].livres[lid].illus.push(illuPossedee);
+                }
+              }
+            });
+            if (illuPossedee) {
+              if (!horsAnnees[rid].illus) horsAnnees[rid].illus = [];
+              if (!horsAnnees[rid].illus.find(i => i.id === illu.id))
+                horsAnnees[rid].illus.push(illuPossedee);
+            }
+          });
+          lidsExclus.forEach(lid => {
+            if (!horsAnnees[lid]) return;
+            horsAnnees[lid].illuIds.add(illu.id);
+            if (illuPossedee) {
+              if (!horsAnnees[lid].illus) horsAnnees[lid].illus = [];
+              if (!horsAnnees[lid].illus.find(i => i.id === illu.id))
+                horsAnnees[lid].illus.push(illuPossedee);
+            }
+          });
+
+          // Si toutes les recueils/livres sont exclus, ne pas mettre dans les années
+          const toutExclu = ridsNormaux.length === 0 && lidsNormaux.length === 0 &&
+            (ridsExclus.length > 0 || lidsExclus.length > 0);
+          if (toutExclu) {
+            // Comptabiliser quand même pour totaux hors-années
+            ridsExclus.forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
+            lidsExclus.forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
+            return; // Ne pas mettre dans parAnnee
+          }
+
+          // Années normales — dédupliquer par année
+          const annee = illu.annee || 'Sans année';
+          if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
+          if (!illusParAnnee[annee]) illusParAnnee[annee] = new Set();
+          if (!illusParAnnee[annee].has(illu.id)) {
+            illusParAnnee[annee].add(illu.id);
+            totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
+          }
+          (illu.livres_ids || []).forEach(lid => { if (!EXCLUS.has(lid)) totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
+          (illu.recueils_ids || []).forEach(rid => { if (!EXCLUS.has(rid)) totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
+
+          if (ridsNormaux.length > 0) {
+            ridsNormaux.forEach(rid => {
               if (!recueilsMap[rid]) return;
-              if (!parAnnee[annee].recueils[rid]) parAnnee[annee].recueils[rid] = { info: recueilsMap[rid], livres: {} };
-              // Livres dans ce recueil
-              (illu.livres_ids || []).forEach(lid => {
+              if (!parAnnee[annee].recueils[rid]) parAnnee[annee].recueils[rid] = { info: recueilsMap[rid], livres: {}, illuIds: new Set() };
+              parAnnee[annee].recueils[rid].illuIds.add(illu.id);
+              lidsNormaux.forEach(lid => {
                 if (!livresMap[lid]) return;
                 if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
-                  if (!parAnnee[annee].recueils[rid].livres[lid]) parAnnee[annee].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [] };
-                  if (illuPossedee) parAnnee[annee].recueils[rid].livres[lid].illus.push(illuPossedee);
+                  if (!parAnnee[annee].recueils[rid].livres[lid]) parAnnee[annee].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+                  if (!parAnnee[annee].recueils[rid].livres[lid].illuIds.has(illu.id)) {
+                    parAnnee[annee].recueils[rid].livres[lid].illuIds.add(illu.id);
+                    if (illuPossedee) parAnnee[annee].recueils[rid].livres[lid].illus.push(illuPossedee);
+                  }
                 }
               });
             });
           } else {
-            // Illustrations hors recueil — rangées par livre parent (dossier hors série)
-            (illu.livres_ids || []).forEach(lid => {
+            lidsNormaux.forEach(lid => {
               if (!livresMap[lid]) return;
-              if (!parAnnee[annee].horsSerieParent[lid]) parAnnee[annee].horsSerieParent[lid] = { info: livresMap[lid], illus: [] };
-              if (illuPossedee) parAnnee[annee].horsSerieParent[lid].illus.push(illuPossedee);
+              if (!parAnnee[annee].horsSerieParent[lid]) parAnnee[annee].horsSerieParent[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+              if (!parAnnee[annee].horsSerieParent[lid].illuIds.has(illu.id)) {
+                parAnnee[annee].horsSerieParent[lid].illuIds.add(illu.id);
+                if (illuPossedee) parAnnee[annee].horsSerieParent[lid].illus.push(illuPossedee);
+              }
             });
           }
         });
 
-        setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil });
+        setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil, horsAnnees });
       } catch(e) { console.error('SectionMaCollection error:', e); }
       setLoading(false);
     };
@@ -192,7 +268,7 @@ function SectionMaCollection({ userId, totalIllus }) {
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (!data) return null;
 
-  const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil } = data;
+  const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil, horsAnnees } = data;
   const anneesSorted = Object.keys(parAnnee).filter(a => totauxAnnee[a] > 0).sort((a, b) => b - a);
 
   return (
@@ -335,6 +411,76 @@ function SectionMaCollection({ userId, totalIllus }) {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {/* ENTRÉES HORS-ANNÉES : Recueil de Noël, Color Me Free... */}
+      {horsAnnees && Object.values(horsAnnees).map((entree, idx) => {
+        const eid = entree.info.id;
+        const totalE = totauxRecueil[eid] || totauxLivre[eid] || 1;
+        const jaiE = entree.illus ? entree.illus.length : 0;
+        const colorieE = entree.illus ? entree.illus.filter(i => i.aColorie).length : 0;
+        const pctJaiE = (jaiE / totalE) * 100;
+        const pctColoE = (colorieE / totalE) * 100;
+        const ouvert = anneesOuvertes[`ha_${eid}`];
+        const couleur = COULEURS_ARC[(anneesSorted.length + idx) % COULEURS_ARC.length];
+
+        return (
+          <div key={`ha_${eid}`} style={{ border: `1px solid rgba(255,210,80,0.25)`, borderRadius: '12px', overflow: 'hidden' }}>
+            <div onClick={() => setAnneesOuvertes(p => ({ ...p, [`ha_${eid}`]: !p[`ha_${eid}`] }))}
+              style={{ padding: '12px 16px', cursor: 'pointer', background: ouvert ? 'rgba(255,210,80,0.06)' : 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {entree.info.visuel_presentation
+                ? <img src={cheminVersUrl(entree.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+                : <span style={{ fontSize: '20px' }}>📁</span>}
+              <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '14px', fontWeight: 'bold', minWidth: '120px' }}>{entree.info.nom}</span>
+              <div style={{ flex: 1 }}>
+                <JaugeDouble pctJai={pctJaiE} pctColorie={pctColoE} pctJeVeux={0} hauteur={8} showLabels={false} />
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiE}/{totalE}</span>
+              <span style={{ color: ouvert ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+            </div>
+            {ouvert && entree.type === 'recueil' && (
+              <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {Object.values(entree.livres || {}).map((livreData, lIdx) => {
+                  const lid = livreData.info.id;
+                  const totalL = totauxLivre[lid] || 1;
+                  const jaiL = livreData.illus ? livreData.illus.length : 0;
+                  const colorieL = livreData.illus ? livreData.illus.filter(i => i.aColorie).length : 0;
+                  const ouvertL = livresOuverts[`ha_${lid}`];
+                  const estDossier = !livreData.info.visuel_presentation;
+                  return (
+                    <div key={lid} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                      <div onClick={() => setLivresOuverts(p => ({ ...p, [`ha_${lid}`]: !p[`ha_${lid}`] }))}
+                        style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
+                          : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
+                          <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
+                        <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                      </div>
+                      {ouvertL && jaiL > 0 && (
+                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {livreData.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
+                        </div>
+                      )}
+                      {ouvertL && jaiL === 0 && (
+                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'center' }}>Aucune illustration possédée</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {ouvert && entree.type === 'livre' && entree.illus && (
+              <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {entree.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
               </div>
             )}
           </div>
