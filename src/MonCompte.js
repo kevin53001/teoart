@@ -42,9 +42,8 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
   const [affiche, setAffiche] = React.useState(0);
   React.useEffect(() => {
     const t1 = setTimeout(() => setAnim(pct), 200 + delai);
-    // Compteur qui monte progressivement
     let start = null;
-    const duree = 2000;
+    const duree = 2200;
     const step = (ts) => {
       if (!start) start = ts;
       const prog = Math.min((ts - start) / duree, 1);
@@ -55,13 +54,19 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [pct, delai]);
 
+  const barreHauteur = showLabel ? Math.max(hauteur, 22) : hauteur;
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
       {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>{label}</span>}
-      <div style={{ flex: 1, height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, background: couleur, borderRadius: `${hauteur}px`, transition: `width 2s cubic-bezier(0.4,0,0.2,1) ${delai}ms`, backgroundImage: couleur.startsWith('linear') ? couleur : 'none', backgroundColor: !couleur.startsWith('linear') ? couleur : 'transparent' }} />
+      <div style={{ flex: 1, height: `${barreHauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${barreHauteur}px`, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, backgroundImage: couleur, borderRadius: `${barreHauteur}px`, transition: `width 2.2s cubic-bezier(0.4,0,0.2,1) ${delai}ms`, minWidth: anim > 0 ? '40px' : '0' }} />
+        {showLabel && (
+          <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '10px' }}>
+            <span style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', zIndex: 2 }}>{affiche}%</span>
+          </div>
+        )}
       </div>
-      {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '36px', textAlign: 'right', flexShrink: 0 }}>{affiche}%</span>}
     </div>
   );
 }
@@ -223,12 +228,14 @@ function SectionMaCollection({ userId, totalIllus }) {
           const annee = illu.annee || 'Sans année';
           if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
           if (!illusParAnnee[annee]) illusParAnnee[annee] = new Set();
+          // Comptabiliser une seule fois par année même si dans plusieurs livres/recueils
           if (!illusParAnnee[annee].has(illu.id)) {
             illusParAnnee[annee].add(illu.id);
             totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
           }
-          (illu.livres_ids || []).forEach(lid => { if (!EXCLUS.has(lid)) totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
-          (illu.recueils_ids || []).forEach(rid => { if (!EXCLUS.has(rid)) totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
+          // Totaux livres/recueils : dédupliqués par livre/recueil
+          lidsNormaux.forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
+          ridsNormaux.forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
 
           if (ridsNormaux.length > 0) {
             ridsNormaux.forEach(rid => {
