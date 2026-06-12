@@ -757,6 +757,54 @@ function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
   );
 }
 
+
+function LogoPremium({ onClick, isMobile, L }) {
+  const ref = React.useRef(null);
+  const wrapRef = React.useRef(null);
+
+  const handleMouseMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 8}deg) rotateY(${dx * 8}deg) scale(1.08)`;
+    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(600px)';
+  };
+  const handleMouseLeave = () => {
+    if (ref.current) { ref.current.style.transform = ''; ref.current.classList.remove('shining-logo'); }
+    if (wrapRef.current) wrapRef.current.style.transform = '';
+  };
+  const handleMouseEnter = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove('shining-logo'); void el.offsetWidth; el.classList.add('shining-logo');
+  };
+
+  return (
+    <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
+      <img
+        ref={ref}
+        src={`${R2}/site/Logo.png`}
+        alt="logo"
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onClick}
+        style={{
+          width: `${L}px`, height: `${L}px`, borderRadius: '50%',
+          border: `${isMobile ? 3 : 4}px solid #000`,
+          boxShadow: '0 0 0 3px #00d4d4',
+          objectFit: 'cover', cursor: 'pointer',
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.1s ease, box-shadow 0.3s',
+          willChange: 'transform',
+        }}
+      />
+    </div>
+  );
+}
+
 function MonCompte() {
   const navigate = useNavigate();
   const [userId, setUserId] = React.useState(null);
@@ -829,6 +877,9 @@ function MonCompte() {
         @keyframes btn-shine { 0% { left: -150%; } 100% { left: 220%; } }
         .btn-onglet:hover { transform: scale(1.04); }
         .btn-onglet.actif { transform: scale(1.07); }
+        .shining-logo { position: relative; overflow: hidden; }
+        .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
+        @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -852,7 +903,7 @@ function MonCompte() {
               )}
             </div>
           </div>
-          <img src={`${R2}/site/Logo.png`} alt="logo" onClick={() => navigate('/presentation')} style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', zIndex: 10, flexShrink: 0, cursor: 'pointer' }} />
+          <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />

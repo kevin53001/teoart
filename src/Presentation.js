@@ -211,84 +211,121 @@ function Presentation() {
 }
 
 function EncartPresentation({ enc, idx, isMobile }) {
+  const [ouvert, setOuvert] = React.useState(false);
   const images = enc.images_urls || [];
   const texte = enc.texte || '';
   const titre = enc.titre || '';
   const aTexte = texte.trim().length > 0;
   const aImages = images.length > 0;
   const imageAGauche = idx % 2 === 0;
+  const premiereImage = images[0] || null;
+  const texteApercu = texte.slice(0, 120).trim() + (texte.length > 120 ? '...' : '');
 
   return (
-    <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
-      {/* Titre */}
-      {titre && (
-        <h2 style={{ color: '#00d4d4', fontSize: isMobile ? '20px' : '26px', fontWeight: 'bold', textAlign: 'center', marginBottom: '24px', letterSpacing: '1px' }}>
-          {titre}
-        </h2>
-      )}
-
-      {/* Encart texte + images : image flottante, texte qui s'étend */}
-      {aTexte && aImages && !isMobile && (
-        <div>
-          <img
-            src={images[0]}
-            alt=""
-            style={{
-              width: '40%',
-              borderRadius: '12px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              float: imageAGauche ? 'left' : 'right',
-              marginRight: imageAGauche ? '24px' : '0',
-              marginLeft: imageAGauche ? '0' : '24px',
-              marginBottom: '16px',
-            }}
-          />
-          {images.slice(1).map((url, i) => (
-            <img key={i+1} src={url} alt="" style={{
-              width: '40%',
-              borderRadius: '12px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              float: imageAGauche ? 'left' : 'right',
-              marginRight: imageAGauche ? '24px' : '0',
-              marginLeft: imageAGauche ? '0' : '24px',
-              marginBottom: '16px',
-              display: 'block',
-            }} />
-          ))}
-          <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
-            {texte}
-          </p>
-          <div style={{ clear: 'both' }} />
+    <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s`, cursor: 'pointer' }}>
+      {/* EN-TÊTE TOUJOURS VISIBLE — clic pour ouvrir/fermer */}
+      <div onClick={() => setOuvert(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: '16px', userSelect: 'none' }}>
+        {/* Miniature */}
+        {premiereImage && (
+          <img src={premiereImage} alt="" style={{
+            width: isMobile ? '60px' : '80px',
+            height: isMobile ? '60px' : '80px',
+            objectFit: 'cover',
+            borderRadius: '10px',
+            flexShrink: 0,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            filter: ouvert ? 'none' : 'brightness(0.75)',
+            transition: 'filter 0.3s',
+          }} />
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {titre && (
+            <h2 style={{ color: '#00d4d4', fontSize: isMobile ? '17px' : '22px', fontWeight: 'bold', marginBottom: '6px', letterSpacing: '0.5px' }}>
+              {titre}
+            </h2>
+          )}
+          {!ouvert && aTexte && (
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.6', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {texteApercu}
+            </p>
+          )}
         </div>
-      )}
+        {/* Flèche */}
+        <div style={{
+          color: '#00d4d4', fontSize: '22px', flexShrink: 0,
+          transition: 'transform 0.3s ease',
+          transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)',
+        }}>›</div>
+      </div>
 
-      {/* Mobile : image au-dessus du texte */}
-      {aTexte && aImages && isMobile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {images.map((url, i) => (
-            <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-          ))}
-          <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '14px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
-            {texte}
-          </p>
+      {/* CONTENU DÉROULÉ */}
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: ouvert ? '9000px' : '0',
+        transition: ouvert ? 'max-height 0.6s ease-in' : 'max-height 0.3s ease-out',
+        opacity: ouvert ? 1 : 0,
+        transitionProperty: 'max-height, opacity',
+        transitionDuration: ouvert ? '0.5s, 0.4s' : '0.3s, 0.2s',
+      }}>
+        <div style={{ paddingTop: '24px' }}>
+
+          {/* Texte + images : image flottante */}
+          {aTexte && aImages && !isMobile && (
+            <div>
+              <img src={images[0]} alt="" style={{
+                width: '40%', borderRadius: '12px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                float: imageAGauche ? 'left' : 'right',
+                marginRight: imageAGauche ? '24px' : '0',
+                marginLeft: imageAGauche ? '0' : '24px',
+                marginBottom: '16px',
+              }} />
+              {images.slice(1).map((url, i) => (
+                <img key={i+1} src={url} alt="" style={{
+                  width: '40%', borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  float: imageAGauche ? 'left' : 'right',
+                  marginRight: imageAGauche ? '24px' : '0',
+                  marginLeft: imageAGauche ? '0' : '24px',
+                  marginBottom: '16px', display: 'block',
+                }} />
+              ))}
+              <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
+                {texte}
+              </p>
+              <div style={{ clear: 'both' }} />
+            </div>
+          )}
+
+          {/* Mobile : images puis texte */}
+          {aTexte && aImages && isMobile && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {images.map((url, i) => (
+                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+              ))}
+              <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '14px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>{texte}</p>
+            </div>
+          )}
+
+          {/* Texte seul */}
+          {aTexte && !aImages && (
+            <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
+              {texte}
+            </p>
+          )}
+
+          {/* Images seules */}
+          {!aTexte && aImages && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {images.map((url, i) => (
+                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+              ))}
+            </div>
+          )}
+
         </div>
-      )}
-
-      {/* Encart texte seul */}
-      {aTexte && !aImages && (
-        <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-          {texte}
-        </p>
-      )}
-
-      {/* Encart images seules : une par ligne */}
-      {!aTexte && aImages && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {images.map((url, i) => (
-            <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
