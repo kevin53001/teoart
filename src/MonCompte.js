@@ -230,51 +230,54 @@ function SectionMaCollection({ userId, totalIllus }) {
           // Une illustration peut apparaître dans plusieurs années si dans des recueils/livres différents
 
           // Traiter les recueils normaux
-          if (ridsNormaux.length > 0) {
-            ridsNormaux.forEach(rid => {
-              if (!recueilsMap[rid]) return;
-              const anneeRecueil = String(recueilsMap[rid].annee || illu.annee || 'Sans année');
-              if (!parAnnee[anneeRecueil]) parAnnee[anneeRecueil] = { recueils: {}, horsSerieParent: {} };
-              if (!illusParAnnee[anneeRecueil]) illusParAnnee[anneeRecueil] = new Set();
-              if (!illusParAnnee[anneeRecueil].has(illu.id)) {
-                illusParAnnee[anneeRecueil].add(illu.id);
-                totauxAnnee[anneeRecueil] = (totauxAnnee[anneeRecueil] || 0) + 1;
-              }
-              totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1;
-              if (!parAnnee[anneeRecueil].recueils[rid]) parAnnee[anneeRecueil].recueils[rid] = { info: recueilsMap[rid], livres: {}, illuIds: new Set() };
-              parAnnee[anneeRecueil].recueils[rid].illuIds.add(illu.id);
-              lidsNormaux.forEach(lid => {
-                if (!livresMap[lid]) return;
-                if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
-                  totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
-                  if (!parAnnee[anneeRecueil].recueils[rid].livres[lid]) parAnnee[anneeRecueil].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
-                  if (!parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.has(illu.id)) {
-                    parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.add(illu.id);
-                    if (illuPossedee) parAnnee[anneeRecueil].recueils[rid].livres[lid].illus.push(illuPossedee);
-                  }
-                }
-              });
-            });
-          } else if (lidsNormaux.length > 0) {
-            // Dossiers/livres hors recueil : utiliser l'année du livre
+          ridsNormaux.forEach(rid => {
+            if (!recueilsMap[rid]) return;
+            const anneeRecueil = String(recueilsMap[rid].annee || illu.annee || 'Sans année');
+            if (!parAnnee[anneeRecueil]) parAnnee[anneeRecueil] = { recueils: {}, horsSerieParent: {} };
+            if (!illusParAnnee[anneeRecueil]) illusParAnnee[anneeRecueil] = new Set();
+            if (!illusParAnnee[anneeRecueil].has(illu.id)) {
+              illusParAnnee[anneeRecueil].add(illu.id);
+              totauxAnnee[anneeRecueil] = (totauxAnnee[anneeRecueil] || 0) + 1;
+            }
+            totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1;
+            if (!parAnnee[anneeRecueil].recueils[rid]) parAnnee[anneeRecueil].recueils[rid] = { info: recueilsMap[rid], livres: {}, illuIds: new Set() };
+            parAnnee[anneeRecueil].recueils[rid].illuIds.add(illu.id);
             lidsNormaux.forEach(lid => {
               if (!livresMap[lid]) return;
-              const anneeLivre = String(livresMap[lid].annee || illu.annee || 'Sans année');
-              if (!parAnnee[anneeLivre]) parAnnee[anneeLivre] = { recueils: {}, horsSerieParent: {} };
-              if (!illusParAnnee[anneeLivre]) illusParAnnee[anneeLivre] = new Set();
-              if (!illusParAnnee[anneeLivre].has(illu.id)) {
-                illusParAnnee[anneeLivre].add(illu.id);
-                totauxAnnee[anneeLivre] = (totauxAnnee[anneeLivre] || 0) + 1;
-              }
-              totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
-              if (!parAnnee[anneeLivre].horsSerieParent[lid]) parAnnee[anneeLivre].horsSerieParent[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
-              if (!parAnnee[anneeLivre].horsSerieParent[lid].illuIds.has(illu.id)) {
-                parAnnee[anneeLivre].horsSerieParent[lid].illuIds.add(illu.id);
-                if (illuPossedee) parAnnee[anneeLivre].horsSerieParent[lid].illus.push(illuPossedee);
+              if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
+                totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
+                if (!parAnnee[anneeRecueil].recueils[rid].livres[lid]) parAnnee[anneeRecueil].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+                if (!parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.has(illu.id)) {
+                  parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.add(illu.id);
+                  if (illuPossedee) parAnnee[anneeRecueil].recueils[rid].livres[lid].illus.push(illuPossedee);
+                }
               }
             });
-          } else {
-            // Illustrations sans livre ni recueil : utiliser leur propre année
+          });
+
+          // Traiter les livres hors recueil (TOUJOURS, même si l'illustration a aussi des recueils)
+          lidsNormaux.forEach(lid => {
+            if (!livresMap[lid]) return;
+            // Ignorer si ce livre appartient à un recueil déjà traité
+            const ridsduLivre = (livresMap[lid].recueils_ids || []).filter(rid => ridsNormaux.includes(rid));
+            if (ridsduLivre.length > 0) return; // déjà rangé dans le recueil
+            const anneeLivre = String(livresMap[lid].annee || illu.annee || 'Sans année');
+            if (!parAnnee[anneeLivre]) parAnnee[anneeLivre] = { recueils: {}, horsSerieParent: {} };
+            if (!illusParAnnee[anneeLivre]) illusParAnnee[anneeLivre] = new Set();
+            if (!illusParAnnee[anneeLivre].has(illu.id)) {
+              illusParAnnee[anneeLivre].add(illu.id);
+              totauxAnnee[anneeLivre] = (totauxAnnee[anneeLivre] || 0) + 1;
+            }
+            totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
+            if (!parAnnee[anneeLivre].horsSerieParent[lid]) parAnnee[anneeLivre].horsSerieParent[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+            if (!parAnnee[anneeLivre].horsSerieParent[lid].illuIds.has(illu.id)) {
+              parAnnee[anneeLivre].horsSerieParent[lid].illuIds.add(illu.id);
+              if (illuPossedee) parAnnee[anneeLivre].horsSerieParent[lid].illus.push(illuPossedee);
+            }
+          });
+
+          // Illustrations sans livre ni recueil
+          if (ridsNormaux.length === 0 && lidsNormaux.length === 0) {
             const annee = String(illu.annee || 'Sans année');
             if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
             if (!illusParAnnee[annee]) illusParAnnee[annee] = new Set();
