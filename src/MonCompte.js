@@ -36,30 +36,51 @@ function getVisuelPresentation(visuels) {
   return null;
 }
 
-// ─── JAUGE DOUBLE ────────────────────────────────────────────────────────────
-function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 10, showLabels = true }) {
-  const [animJai, setAnimJai] = React.useState(0);
-  const [animColorie, setAnimColorie] = React.useState(0);
-  const [animJeVeux, setAnimJeVeux] = React.useState(0);
+// ─── JAUGE (une barre par couleur, compteur animé) ───────────────────────────
+function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = true }) {
+  const [anim, setAnim] = React.useState(0);
+  const [affiche, setAffiche] = React.useState(0);
   React.useEffect(() => {
-    const t = setTimeout(() => { setAnimJai(pctJai); setAnimColorie(pctColorie); setAnimJeVeux(pctJeVeux); }, 100);
-    return () => clearTimeout(t);
-  }, [pctJai, pctColorie, pctJeVeux]);
+    const t1 = setTimeout(() => setAnim(pct), 200 + delai);
+    // Compteur qui monte progressivement
+    let start = null;
+    const duree = 2000;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const prog = Math.min((ts - start) / duree, 1);
+      setAffiche(Math.round(prog * pct));
+      if (prog < 1) requestAnimationFrame(step);
+    };
+    const t2 = setTimeout(() => requestAnimationFrame(step), 200 + delai);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [pct, delai]);
 
   return (
-    <div style={{ width: '100%' }}>
-      <div style={{ width: '100%', height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden', position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${animJai}%`, background: 'linear-gradient(90deg, #00d4d4, #00aaaa)', borderRadius: `${hauteur}px`, transition: 'width 1.2s cubic-bezier(0.4,0,0.2,1)' }} />
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${animColorie}%`, background: 'linear-gradient(90deg, rgba(255,210,80,0.7), rgba(255,180,40,0.7))', borderRadius: `${hauteur}px`, transition: 'width 1.4s cubic-bezier(0.4,0,0.2,1)', mixBlendMode: 'screen' }} />
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${animJeVeux}%`, background: 'linear-gradient(90deg, rgba(255,62,181,0.5), rgba(255,62,181,0.3))', borderRadius: `${hauteur}px`, transition: 'width 1.0s cubic-bezier(0.4,0,0.2,1)', mixBlendMode: 'screen' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+      {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>{label}</span>}
+      <div style={{ flex: 1, height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, background: couleur, borderRadius: `${hauteur}px`, transition: `width 2s cubic-bezier(0.4,0,0.2,1) ${delai}ms` }} />
       </div>
-      {showLabels && (
-        <div style={{ display: 'flex', gap: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-          <span style={{ color: '#00d4d4', fontSize: '10px' }}>✓ {pctJai.toFixed(0)}% J'ai</span>
-          <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '10px' }}>🎨 {pctColorie.toFixed(0)}% Colorié</span>
-          <span style={{ color: '#ff3eb5', fontSize: '10px' }}>♡ {pctJeVeux.toFixed(0)}% Je veux</span>
-        </div>
-      )}
+      {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '36px', textAlign: 'right', flexShrink: 0 }}>{affiche}%</span>}
+    </div>
+  );
+}
+
+function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = true }) {
+  if (showLabels) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+        <UneBarre pct={pctJai} couleur="linear-gradient(90deg,#00d4d4,#00aaaa)" label="✓ J'ai" delai={0} hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)" label="🎨 Colorié" delai={200} hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#ff3eb5,#cc2090)" label="♡ Je veux" delai={400} hauteur={hauteur} showLabel={true} />
+      </div>
+    );
+  }
+  // Version compacte (sans labels) pour les sous-niveaux
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%' }}>
+      <UneBarre pct={pctJai} couleur="linear-gradient(90deg,#00d4d4,#00aaaa)" label="" delai={0} hauteur={Math.max(4, hauteur-2)} showLabel={false} />
+      {pctColorie > 0 && <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)" label="" delai={0} hauteur={Math.max(3, hauteur-3)} showLabel={false} />}
     </div>
   );
 }
@@ -90,73 +111,78 @@ function SectionMaCollection({ userId, totalIllus }) {
   const [recueilsOuverts, setRecueilsOuverts] = React.useState({});
   const [livresOuverts, setLivresOuverts] = React.useState({});
 
+  // Couleurs dégradées par index (du plus intense au plus léger)
+  const getCouleurAnnee = (idx, total) => {
+    const ratio = total <= 1 ? 1 : 1 - (idx / (total - 1)) * 0.7;
+    const r = Math.round(0 * ratio);
+    const g = Math.round(212 * ratio);
+    const b = Math.round(212 * ratio);
+    return `rgb(${r},${g},${b})`;
+  };
+
   React.useEffect(() => {
     const charger = async () => {
       try {
-      // Toutes les illustrations que j'ai
-      const { data: collIllus } = await supabase.from('collection')
-        .select('illustration_id, j_ai, je_veux').eq('user_id', userId).eq('j_ai', true);
-      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', userId);
-      const colosSet = new Set((colos || []).map(c => c.illustration_id));
-      const illuIds = (collIllus || []).map(c => c.illustration_id);
+        // Illustrations possédées
+        const { data: collIllus } = await supabase.from('collection')
+          .select('illustration_id').eq('user_id', userId).eq('j_ai', true);
+        const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', userId);
+        const colosSet = new Set((colos || []).map(c => c.illustration_id));
+        const illuIds = new Set((collIllus || []).map(c => c.illustration_id));
 
-      if (illuIds.length === 0) { setData({ annees: [] }); setLoading(false); return; }
+        // Tous les livres et recueils
+        const { data: tousLivres } = await supabase.from('livres').select('id, nom, annee, visuel_presentation, recueils_ids').eq('statut', 'published');
+        const { data: tousRecueils } = await supabase.from('recueils').select('id, nom, annee, visuel_presentation').eq('statut', 'published');
 
-      // Charger les illustrations par batch de 200
-      let illus = [];
-      for (let i = 0; i < illuIds.length; i += 200) {
-        const batch = illuIds.slice(i, i + 200);
-        const { data } = await supabase.from('illustrations')
-          .select('id, nom, annee, visuels, livres_ids, recueils_ids').in('id', batch).order('nom');
-        illus = illus.concat(data || []);
-      }
+        // Toutes les illustrations publiées (pour totaux et structure)
+        const { data: toutesIllus } = await supabase.from('illustrations')
+          .select('id, nom, annee, visuels, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
 
-      // Charger tous les livres et recueils pour avoir les noms
-      const { data: tousLivres } = await supabase.from('livres').select('id, nom, annee, visuel_presentation, recueils_ids').eq('statut', 'published');
-      const { data: tousRecueils } = await supabase.from('recueils').select('id, nom, annee, visuel_presentation').eq('statut', 'published');
+        const livresMap = {};
+        (tousLivres || []).forEach(l => { livresMap[l.id] = l; });
+        const recueilsMap = {};
+        (tousRecueils || []).forEach(r => { recueilsMap[r.id] = r; });
 
-      // Charger le total d'illustrations par année/livre/recueil pour les jauges
-      const { data: toutesIllus } = await supabase.from('illustrations').select('id, annee, livres_ids, recueils_ids').eq('statut', 'published');
+        // Totaux et structure complète
+        const totauxAnnee = {};
+        const totauxLivre = {};
+        const totauxRecueil = {};
+        // parAnnee contient TOUTES les années/recueils/livres
+        const parAnnee = {};
 
-      const livresMap = {};
-      (tousLivres || []).forEach(l => { livresMap[l.id] = l; });
-      const recueilsMap = {};
-      (tousRecueils || []).forEach(r => { recueilsMap[r.id] = r; });
+        (toutesIllus || []).forEach(illu => {
+          const annee = illu.annee || 'Sans année';
+          if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
+          totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
+          (illu.livres_ids || []).forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
+          (illu.recueils_ids || []).forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
 
-      // Organiser par année
-      const parAnnee = {};
-      (illus || []).forEach(illu => {
-        const annee = illu.annee || 'Sans année';
-        if (!parAnnee[annee]) parAnnee[annee] = { illus: [], livres: {}, recueils: {} };
-        parAnnee[annee].illus.push({ ...illu, aColorie: colosSet.has(illu.id) });
+          const illuPossedee = illuIds.has(illu.id) ? { ...illu, aColorie: colosSet.has(illu.id) } : null;
 
-        // Organiser par recueil
-        (illu.recueils_ids || []).forEach(rid => {
-          if (!recueilsMap[rid]) return;
-          if (!parAnnee[annee].recueils[rid]) parAnnee[annee].recueils[rid] = { info: recueilsMap[rid], livres: {}, illus: [] };
-          // Organiser par livre dans le recueil
-          (illu.livres_ids || []).forEach(lid => {
-            if (!livresMap[lid]) return;
-            if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
-              if (!parAnnee[annee].recueils[rid].livres[lid]) parAnnee[annee].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [] };
-              parAnnee[annee].recueils[rid].livres[lid].illus.push({ ...illu, aColorie: colosSet.has(illu.id) });
-            }
-          });
+          if (illu.recueils_ids && illu.recueils_ids.length > 0) {
+            illu.recueils_ids.forEach(rid => {
+              if (!recueilsMap[rid]) return;
+              if (!parAnnee[annee].recueils[rid]) parAnnee[annee].recueils[rid] = { info: recueilsMap[rid], livres: {} };
+              // Livres dans ce recueil
+              (illu.livres_ids || []).forEach(lid => {
+                if (!livresMap[lid]) return;
+                if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
+                  if (!parAnnee[annee].recueils[rid].livres[lid]) parAnnee[annee].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [] };
+                  if (illuPossedee) parAnnee[annee].recueils[rid].livres[lid].illus.push(illuPossedee);
+                }
+              });
+            });
+          } else {
+            // Illustrations hors recueil — rangées par livre parent (dossier hors série)
+            (illu.livres_ids || []).forEach(lid => {
+              if (!livresMap[lid]) return;
+              if (!parAnnee[annee].horsSerieParent[lid]) parAnnee[annee].horsSerieParent[lid] = { info: livresMap[lid], illus: [] };
+              if (illuPossedee) parAnnee[annee].horsSerieParent[lid].illus.push(illuPossedee);
+            });
+          }
         });
-      });
 
-      // Totaux pour jauges
-      const totauxAnnee = {};
-      const totauxLivre = {};
-      const totauxRecueil = {};
-      (toutesIllus || []).forEach(illu => {
-        const a = illu.annee || 'Sans année';
-        totauxAnnee[a] = (totauxAnnee[a] || 0) + 1;
-        (illu.livres_ids || []).forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
-        (illu.recueils_ids || []).forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
-      });
-
-      setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil });
+        setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil });
       } catch(e) { console.error('SectionMaCollection error:', e); }
       setLoading(false);
     };
@@ -164,90 +190,103 @@ function SectionMaCollection({ userId, totalIllus }) {
   }, [userId]);
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
-  if (!data || Object.keys(data.parAnnee).length === 0) return <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Aucune illustration dans ta collection.</p>;
+  if (!data) return null;
 
   const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil } = data;
-  const anneesSorted = Object.keys(parAnnee).sort((a, b) => b - a);
+  const anneesSorted = Object.keys(parAnnee).filter(a => totauxAnnee[a] > 0).sort((a, b) => b - a);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {anneesSorted.map(annee => {
+      {anneesSorted.map((annee, anneeIdx) => {
         const anneeData = parAnnee[annee];
         const totalAnnee = totauxAnnee[annee] || 1;
-        const jaiAnnee = anneeData.illus.length;
-        const colorieAnnee = anneeData.illus.filter(i => i.aColorie).length;
+        // Compter illustrations possédées cette année
+        const jaiAnnee = Object.values(anneeData.recueils).reduce((acc, r) =>
+          acc + Object.values(r.livres).reduce((a, l) => a + l.illus.length, 0), 0)
+          + Object.values(anneeData.horsSerieParent || {}).reduce((a, l) => a + l.illus.length, 0);
+        const colorieAnnee = Object.values(anneeData.recueils).reduce((acc, r) =>
+          acc + Object.values(r.livres).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0), 0)
+          + Object.values(anneeData.horsSerieParent || {}).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0);
         const pctJai = (jaiAnnee / totalAnnee) * 100;
         const pctColo = (colorieAnnee / totalAnnee) * 100;
         const ouvert = anneesOuvertes[annee];
+        const couleurAnnee = getCouleurAnnee(anneeIdx, anneesSorted.length);
 
         return (
-          <div key={annee} style={{ border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', overflow: 'hidden' }}>
-            {/* Ligne année */}
+          <div key={annee} style={{ border: `1px solid rgba(0,212,212,0.2)`, borderRadius: '12px', overflow: 'hidden' }}>
             <div onClick={() => setAnneesOuvertes(p => ({ ...p, [annee]: !p[annee] }))}
               style={{ padding: '12px 16px', cursor: 'pointer', background: ouvert ? 'rgba(0,212,212,0.06)' : 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ color: ouvert ? '#00d4d4' : 'rgba(255,255,255,0.6)', fontSize: '15px', fontWeight: 'bold', minWidth: '50px' }}>{annee}</span>
+              <span style={{ color: couleurAnnee, fontSize: '15px', fontWeight: 'bold', minWidth: '50px' }}>{annee}</span>
               <div style={{ flex: 1 }}>
                 <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={0} hauteur={8} showLabels={false} />
               </div>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiAnnee}/{totalAnnee}</span>
-              <span style={{ color: ouvert ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+              <span style={{ color: ouvert ? couleurAnnee : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
             </div>
 
             {ouvert && (
               <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Recueils de cette année */}
-                {Object.values(anneeData.recueils).map(recueilData => {
+                {/* Recueils */}
+                {Object.values(anneeData.recueils).map((recueilData, rIdx) => {
                   const rid = recueilData.info.id;
                   const totalR = totauxRecueil[rid] || 1;
-                  const illusRecueil = Object.values(recueilData.livres).flatMap(l => l.illus);
-                  const jaiR = illusRecueil.length;
-                  const colorieR = illusRecueil.filter(i => i.aColorie).length;
+                  const jaiR = Object.values(recueilData.livres).reduce((a, l) => a + l.illus.length, 0);
+                  const colorieR = Object.values(recueilData.livres).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0);
                   const ouvertR = recueilsOuverts[rid];
+                  const nRecueils = Object.values(anneeData.recueils).length;
+                  const couleurR = getCouleurAnnee(rIdx, nRecueils);
 
                   return (
-                    <div key={rid} style={{ border: '1px solid rgba(0,212,212,0.15)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div key={rid} style={{ border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', overflow: 'hidden' }}>
                       <div onClick={() => setRecueilsOuverts(p => ({ ...p, [rid]: !p[rid] }))}
                         style={{ padding: '10px 14px', cursor: 'pointer', background: ouvertR ? 'rgba(0,212,212,0.04)' : 'transparent', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {recueilData.info.visuel_presentation
                           ? <img src={cheminVersUrl(recueilData.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
                         <div style={{ flex: 1 }}>
-                          <p style={{ color: '#00d4d4', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>{recueilData.info.nom}</p>
+                          <p style={{ color: couleurR, fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>{recueilData.info.nom}</p>
                           <JaugeDouble pctJai={(jaiR/totalR)*100} pctColorie={(colorieR/totalR)*100} pctJeVeux={0} hauteur={6} showLabels={false} />
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
-                        <span style={{ color: ouvertR ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
+                        <span style={{ color: ouvertR ? couleurR : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
 
                       {ouvertR && (
                         <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {Object.values(recueilData.livres).map(livreData => {
+                          {Object.values(recueilData.livres).map((livreData, lIdx) => {
                             const lid = livreData.info.id;
                             const totalL = totauxLivre[lid] || 1;
                             const jaiL = livreData.illus.length;
                             const colorieL = livreData.illus.filter(i => i.aColorie).length;
                             const ouvertL = livresOuverts[lid];
                             const estDossier = !livreData.info.visuel_presentation;
+                            const nLivres = Object.values(recueilData.livres).length;
+                            const couleurL = getCouleurAnnee(lIdx, nLivres);
 
                             return (
-                              <div key={lid} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                              <div key={lid} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', overflow: 'hidden' }}>
                                 <div onClick={() => setLivresOuverts(p => ({ ...p, [lid]: !p[lid] }))}
                                   style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   {estDossier
                                     ? <span style={{ fontSize: '16px' }}>📁</span>
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
                                   <div style={{ flex: 1 }}>
-                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
+                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : couleurL, fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
                                     <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
                                   </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
-                                  <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                                  <span style={{ color: ouvertL ? couleurL : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                                 </div>
-                                {ouvertL && (
+                                {ouvertL && jaiL > 0 && (
                                   <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                     {livreData.illus.map(illu => (
                                       <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />
                                     ))}
+                                  </div>
+                                )}
+                                {ouvertL && jaiL === 0 && (
+                                  <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
+                                    <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'center' }}>Aucune illustration possédée</p>
                                   </div>
                                 )}
                               </div>
@@ -259,18 +298,43 @@ function SectionMaCollection({ userId, totalIllus }) {
                   );
                 })}
 
-                {/* Illustrations sans recueil */}
-                {(() => {
-                  const illusSansRecueil = anneeData.illus.filter(i => !i.recueils_ids || i.recueils_ids.length === 0);
-                  if (illusSansRecueil.length === 0) return null;
+                {/* Hors série — dossiers sans recueil parent, affichés seulement s'ils ont des illus */}
+                {Object.values(anneeData.horsSerieParent || {}).filter(l => l.illus.length > 0 || totauxLivre[l.info.id] > 0).map((livreData, lIdx) => {
+                  const lid = livreData.info.id;
+                  const totalL = totauxLivre[lid] || 1;
+                  const jaiL = livreData.illus.length;
+                  const colorieL = livreData.illus.filter(i => i.aColorie).length;
+                  const ouvertL = livresOuverts[`hs_${lid}`];
+                  const estDossier = !livreData.info.visuel_presentation;
+
                   return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
-                      {illusSansRecueil.map(illu => (
-                        <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />
-                      ))}
+                    <div key={`hs_${lid}`} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                      <div onClick={() => setLivresOuverts(p => ({ ...p, [`hs_${lid}`]: !p[`hs_${lid}`] }))}
+                        style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
+                          : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
+                          <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
+                        <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                      </div>
+                      {ouvertL && jaiL > 0 && (
+                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {livreData.illus.map(illu => (
+                            <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />
+                          ))}
+                        </div>
+                      )}
+                      {ouvertL && jaiL === 0 && (
+                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'center' }}>Aucune illustration possédée</p>
+                        </div>
+                      )}
                     </div>
                   );
-                })()}
+                })}
               </div>
             )}
           </div>
@@ -675,6 +739,31 @@ function SectionMesColoriages({ userId, userPseudo }) {
   );
 }
 
+// ─── BOUTON ONGLET avec effet premium ────────────────────────────────────────
+function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
+  const ref = React.useRef(null);
+  const handleMouseEnter = () => {
+    const el = ref.current;
+    el.classList.remove('shining'); void el.offsetWidth; el.classList.add('shining');
+  };
+  return (
+    <button ref={ref} className={`btn-onglet${actif ? ' actif' : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onClick={onClick}
+      style={{
+        background: actif
+          ? `linear-gradient(135deg, rgba(${couleurRgb},0.35), rgba(${couleurRgb},0.15))`
+          : `linear-gradient(135deg, rgba(${couleurRgb},0.18), rgba(${couleurRgb},0.08))`,
+        border: `1px solid rgba(${couleurRgb},${actif ? '0.8' : '0.45'})`,
+        color: couleur,
+        boxShadow: actif ? `0 0 18px rgba(${couleurRgb},0.3), 0 4px 12px rgba(0,0,0,0.5)` : `0 2px 8px rgba(0,0,0,0.4)`,
+        transform: actif ? 'scale(1.07)' : 'scale(1)',
+      }}>
+      {label}
+    </button>
+  );
+}
+
 // ─── PAGE PRINCIPALE ─────────────────────────────────────────────────────────
 function MonCompte() {
   const navigate = useNavigate();
@@ -727,12 +816,13 @@ function MonCompte() {
   const pctColo = stats.totalIllus > 0 ? (stats.colorie / stats.totalIllus) * 100 : 0;
   const pctJeVeux = stats.totalIllus > 0 ? (stats.jeVeux / stats.totalIllus) * 100 : 0;
 
-  const btnOnglet = (id, label, couleur, borderColor) => (
-    <button onClick={() => { setOnglet(id); setShowFavoris(false); }}
-      style={{ background: onglet === id ? `rgba(${couleur},0.15)` : 'rgba(255,255,255,0.04)', border: `1px solid ${onglet === id ? `rgba(${couleur},0.6)` : 'rgba(255,255,255,0.1)'}`, borderRadius: '12px', padding: isMobile ? '10px 14px' : '12px 24px', color: onglet === id ? `rgb(${couleur})` : 'rgba(255,255,255,0.6)', fontSize: isMobile ? '12px' : '13px', cursor: 'pointer', fontWeight: onglet === id ? 'bold' : 'normal', transition: 'all .2s' }}>
-      {label}
-    </button>
-  );
+  const BTNS_CONFIG = [
+    { id: 'collection',  label: '📚 Ma Collection',    couleur: '#ff3eb5',              couleurRgb: '255,62,181' },
+    { id: 'favoris',     label: '♡ Mes Favoris',       couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'coloriages',  label: '🎨 Mes Coloriages',   couleur: '#00d4d4',              couleurRgb: '0,212,212' },
+    { id: 'infos',       label: '👤 Mes Infos',         couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'commandes',   label: '🛒 Mes Commandes',    couleur: '#ff3eb5',              couleurRgb: '255,62,181' },
+  ];
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -747,6 +837,12 @@ function MonCompte() {
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
+        .btn-onglet { position: relative; overflow: hidden; border-radius: 14px; padding: 12px 20px; cursor: pointer; font-size: 13px; font-weight: bold; transition: transform .2s, box-shadow .2s; flex: 1; min-width: 120px; }
+        .btn-onglet::before { content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%; background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 75%, transparent 100%); transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen; }
+        .btn-onglet.shining::before { animation: btn-shine 0.8s ease-in-out forwards; }
+        @keyframes btn-shine { 0% { left: -150%; } 100% { left: 220%; } }
+        .btn-onglet:hover { transform: scale(1.04); }
+        .btn-onglet.actif { transform: scale(1.07); }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -816,47 +912,54 @@ function MonCompte() {
 
               {/* JAUGE GLOBALE */}
               <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '16px 20px' }}>
-                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={14} showLabels={true} />
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '6px' }}>
+                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={12} showLabels={true} />
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '8px' }}>
                   {stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} favoris
                 </p>
               </div>
 
               {/* BOUTONS ONGLETS */}
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {btnOnglet('collection', '📚 Ma Collection', '0,212,212', 'rgba(0,212,212,0.6)')}
-                <button onClick={() => { setShowFavoris(true); setOnglet(null); }}
-                  style={{ background: showFavoris ? 'rgba(255,62,181,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${showFavoris ? 'rgba(255,62,181,0.6)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '12px', padding: isMobile ? '10px 14px' : '12px 24px', color: showFavoris ? '#ff3eb5' : 'rgba(255,255,255,0.6)', fontSize: isMobile ? '12px' : '13px', cursor: 'pointer', fontWeight: showFavoris ? 'bold' : 'normal', transition: 'all .2s' }}>
-                  ♡ Mes Favoris
-                </button>
-                {btnOnglet('coloriages', '🎨 Mes Coloriages', '255,210,80', 'rgba(255,210,80,0.6)')}
-                {btnOnglet('infos', '👤 Mes Infos', '255,255,255', 'rgba(255,255,255,0.4)')}
-                {btnOnglet('commandes', '🛒 Mes Commandes', '255,210,80', 'rgba(255,210,80,0.6)')}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+                {BTNS_CONFIG.map(btn => {
+                  const actif = btn.id === 'favoris' ? showFavoris : onglet === btn.id;
+                  return (
+                    <BoutonOnglet key={btn.id}
+                      label={btn.label}
+                      couleur={btn.couleur}
+                      couleurRgb={btn.couleurRgb}
+                      actif={actif}
+                      onClick={() => {
+                        if (btn.id === 'favoris') { setShowFavoris(true); setOnglet(null); }
+                        else { setOnglet(btn.id); setShowFavoris(false); }
+                      }}
+                    />
+                  );
+                })}
               </div>
 
               {/* CONTENU ONGLET */}
               {onglet === 'collection' && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}>
                   <SectionMaCollection userId={userId} totalIllus={stats.totalIllus} />
                 </div>
               )}
               {showFavoris && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
                   <SectionMesFavoris userId={userId} />
                 </div>
               )}
               {onglet === 'coloriages' && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}>
                   <SectionMesColoriages userId={userId} userPseudo={userPseudo} />
                 </div>
               )}
               {onglet === 'infos' && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
                   <SectionMesInfos userId={userId} />
                 </div>
               )}
               {onglet === 'commandes' && (
-                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}>
                   <SectionMesCommandes userId={userId} />
                 </div>
               )}
