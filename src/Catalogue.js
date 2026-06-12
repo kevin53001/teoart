@@ -149,7 +149,54 @@ function Catalogue() {
   const toggleJAi = async (illuId) => {
     const nouveau = !(collection[illuId]?.j_ai || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false });
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+
+    // BUG 2 : si on vient de cocher j_ai, verifier si les livres/recueils contenant cette illustration sont maintenant complets
+    if (nouveau) {
+      const illu = illustrations.find(i => i.id === illuId);
+      if (!illu) return;
+      const tousItems = [
+        ...(illu.livres_ids || []).map(id => ({ id, type: 'livre' })),
+        ...(illu.recueils_ids || []).map(id => ({ id, type: 'recueil' })),
+      ];
+      for (const { id: itemId, type } of tousItems) {
+        const champ = type === 'livre' ? 'livres_ids' : 'recueils_ids';
+        // Toutes les illustrations de ce livre/recueil
+        const { data: illusItem } = await supabase
+          .from('illustrations')
+          .select('id')
+          .eq('statut', 'published')
+          .contains(champ, [itemId]);
+        const illuIds = (illusItem || []).map(i => i.id);
+        if (illuIds.length === 0) continue;
+        // Combien sont cochees j_ai en base
+        const { data: cochees } = await supabase
+          .from('collection')
+          .select('illustration_id')
+          .eq('user_id', userId)
+          .eq('j_ai', true)
+          .in('illustration_id', illuIds);
+        if ((cochees || []).length === illuIds.length) {
+          // Toutes cochees => cocher le livre/recueil si pas deja fait
+          const { data: existant } = await supabase
+            .from('collection_livres')
+            .select('j_ai, je_veux')
+            .eq('user_id', userId)
+            .eq('item_id', itemId)
+            .eq('item_type', type)
+            .maybeSingle();
+          if (!existant?.j_ai) {
+            await supabase.from('collection_livres').upsert(
+              { user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false },
+              { onConflict: 'user_id,item_id,item_type' }
+            );
+          }
+        }
+      }
+    }
   };
 
   const toggleJeVeux = async (illuId, e) => {
@@ -694,9 +741,6 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
   );
 }
 
-// ─── COMPOSANT SOCIAL ZOOM ───────────────────────────────────────────────────
-// Gère likes + commentaires pour un coloriage donné dans la vue zoom plein écran
-
 function ZoomSocial({ coloriage, userId, userPseudo }) {
   const [likes, setLikes] = React.useState([]);
   const [commentaires, setCommentaires] = React.useState([]);
@@ -757,7 +801,6 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
 
   return (
     <div className="zoom-social">
-      {/* Ligne likes */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button className={`zoom-like-btn${jaLike ? ' actif' : ''}`} onClick={toggleLike}>
           <svg viewBox="0 0 24 24" width="16" height="16">
@@ -766,7 +809,7 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
               : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
             }
           </svg>
-          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? 'J\'aime ✓' : 'J\'aime'}</span>
+          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
         </button>
         {coloriage.pseudo && (
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>
@@ -774,35 +817,22 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
           </span>
         )}
       </div>
-
-      {/* Commentaires existants */}
       {commentaires.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
           {commentaires.map(c => (
             <div key={c.id} className="zoom-commentaire">
-              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                {c.pseudo || 'Anonyme'}
-              </span>
+              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo || 'Anonyme'}</span>
               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: '1.4' }}>{c.texte}</span>
             </div>
           ))}
         </div>
       )}
-
-      {/* Saisie commentaire */}
       <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-        <textarea
-          className="zoom-commentaire-input"
-          rows={1}
-          placeholder="Ajouter un commentaire…"
-          value={texte}
+        <textarea className="zoom-commentaire-input" rows={1} placeholder="Ajouter un commentaire…" value={texte}
           onChange={e => setTexte(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
-          style={{ flex: 1 }}
-        />
-        <button
-          onClick={envoyerCommentaire}
-          disabled={!texte.trim() || envoi}
+          style={{ flex: 1 }} />
+        <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi}
           style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', transition: 'all .2s', whiteSpace: 'nowrap' }}>
           Envoyer
         </button>
@@ -811,20 +841,13 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
   );
 }
 
-// ─── POPUP FICHE ─────────────────────────────────────────────────────────────
-
 function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded, onOuvrirLivre }) {
   const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
-
-  // coloriages partagés (avec image_url) pour cette illustration
-  const [colosPropres, setColosPropres] = React.useState([]); // { id, image_url, pseudo, user_id }
-
+  const [colosPropres, setColosPropres] = React.useState([]);
   const [visuelActif, setVisuelActif] = React.useState(0);
-  // index global sur [visuels normaux... + colosPropres...]
   const totalVisuels = visuels.length + colosPropres.length;
-
-  const [zoomIndex, setZoomIndex] = React.useState(null); // null = pas de zoom
+  const [zoomIndex, setZoomIndex] = React.useState(null);
   const [showPartagerColo, setShowPartagerColo] = React.useState(false);
   const [coloImage, setColoImage] = React.useState(null);
   const [coloDate, setColoDate] = React.useState('');
@@ -835,85 +858,49 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
   React.useEffect(() => {
     setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null);
     setLivresIllu([]); setColosPropres([]);
-
     const charger = async () => {
-      // Charger livres/recueils
       const resultats = [];
       if (illu.livres_ids && illu.livres_ids.length > 0) {
-        const { data: livres } = await supabase.from('livres')
-          .select('id, nom, visuel_presentation, slug')
-          .in('id', illu.livres_ids)
-          .not('visuel_presentation', 'is', null);
+        const { data: livres } = await supabase.from('livres').select('id, nom, visuel_presentation, slug').in('id', illu.livres_ids).not('visuel_presentation', 'is', null);
         (livres || []).forEach(l => resultats.push({ ...l, type: 'livre' }));
       }
       if (illu.recueils_ids && illu.recueils_ids.length > 0) {
-        const { data: recueils } = await supabase.from('recueils')
-          .select('id, nom, visuel_presentation, slug')
-          .in('id', illu.recueils_ids);
+        const { data: recueils } = await supabase.from('recueils').select('id, nom, visuel_presentation, slug').in('id', illu.recueils_ids);
         const idsDejaAjoutes = new Set(resultats.map(r => r.id));
-        (recueils || []).forEach(r => {
-          if (!idsDejaAjoutes.has(r.id)) resultats.push({ ...r, type: 'recueil' });
-        });
+        (recueils || []).forEach(r => { if (!idsDejaAjoutes.has(r.id)) resultats.push({ ...r, type: 'recueil' }); });
       }
       setLivresIllu(resultats);
-
-      // Charger coloriages partagés (avec image_url) pour cette illustration
-      const { data: colos } = await supabase
-        .from('coloriages')
-        .select('id, image_url, user_id')
-        .eq('illustration_id', illu.id)
-        .not('image_url', 'is', null)
-        .order('created_at', { ascending: true });
-
+      const { data: colos } = await supabase.from('coloriages').select('id, image_url, user_id').eq('illustration_id', illu.id).not('image_url', 'is', null).order('created_at', { ascending: true });
       if (colos && colos.length > 0) {
         const userIds = colos.map(c => c.user_id);
-        const { data: profils } = await supabase
-          .from('profils')
-          .select('id, pseudo')
-          .in('id', userIds);
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
         const profilsMap = {};
         (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
-        setColosPropres(colos.map(c => ({
-          id: c.id,
-          image_url: c.image_url,
-          user_id: c.user_id,
-          pseudo: profilsMap[c.user_id] || 'Anonyme',
-        })));
-      } else {
-        setColosPropres([]);
-      }
+        setColosPropres(colos.map(c => ({ id: c.id, image_url: c.image_url, user_id: c.user_id, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
+      } else { setColosPropres([]); }
     };
-
     charger();
   }, [illu.id, illu.livres_ids, illu.recueils_ids]);
 
-  // Helpers pour obtenir l'URL et le type du visuel actif
   const getUrlVisuelActif = (index) => {
     if (index < visuels.length) return visuels[index];
-    const coloIdx = index - visuels.length;
-    return colosPropres[coloIdx]?.image_url || null;
+    return colosPropres[index - visuels.length]?.image_url || null;
   };
-
   const getColoActif = (index) => {
     if (index < visuels.length) return null;
     return colosPropres[index - visuels.length] || null;
   };
-
-  // Pour le zoom : visuel actif dans la vue zoom (peut différer de visuelActif)
   const urlZoom = zoomIndex !== null ? getUrlVisuelActif(zoomIndex) : null;
   const coloZoom = zoomIndex !== null ? getColoActif(zoomIndex) : null;
-
   const ouvrirZoom = (index) => { setZoomIndex(index); };
   const zoomSuivant = (e) => { e.stopPropagation(); setZoomIndex(i => (i + 1) % totalVisuels); };
   const zoomPrecedent = (e) => { e.stopPropagation(); setZoomIndex(i => (i - 1 + totalVisuels) % totalVisuels); };
-
   const cheminActif = visuelsChemins[visuelActif];
   const coloriste = estVisuelCChemin(cheminActif) ? extraireColoriste(cheminActif) : null;
 
   const similaires = React.useMemo(() => {
     if (!illu.tags || illu.tags.length === 0) return [];
-    return illustrations
-      .filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
+    return illustrations.filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
       .sort((a, b) => b.tags.filter(t => illu.tags.includes(t)).length - a.tags.filter(t => illu.tags.includes(t)).length)
       .slice(0, 20);
   }, [illu, illustrations]);
@@ -956,30 +943,16 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
         if (!response.ok) throw new Error(data.error);
         imageUrl = data.url;
       }
-      await supabase.from('coloriages').upsert({
-        user_id: userId,
-        illustration_id: illu.id,
-        image_url: imageUrl,
-        date_coloriage: coloDate || null,
-      });
+      await supabase.from('coloriages').upsert({ user_id: userId, illustration_id: illu.id, image_url: imageUrl, date_coloriage: coloDate || null });
       setColoOk(true);
       onColoUploaded();
-      // Rafraîchir les coloriages affichés dans la popup
-      const { data: colosRefresh } = await supabase
-        .from('coloriages')
-        .select('id, image_url, user_id')
-        .eq('illustration_id', illu.id)
-        .not('image_url', 'is', null)
-        .order('created_at', { ascending: true });
+      const { data: colosRefresh } = await supabase.from('coloriages').select('id, image_url, user_id').eq('illustration_id', illu.id).not('image_url', 'is', null).order('created_at', { ascending: true });
       if (colosRefresh && colosRefresh.length > 0) {
         const userIds = [...new Set(colosRefresh.map(c => c.user_id))];
         const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
         const profilsMap = {};
         (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
-        setColosPropres(colosRefresh.map(c => ({
-          id: c.id, image_url: c.image_url, user_id: c.user_id,
-          pseudo: profilsMap[c.user_id] || 'Anonyme',
-        })));
+        setColosPropres(colosRefresh.map(c => ({ id: c.id, image_url: c.image_url, user_id: c.user_id, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
       }
     } catch (e) { console.error(e); }
     setColoEnvoi(false);
@@ -987,35 +960,23 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 
   return (
     <>
-      {/* VUE ZOOM PLEIN ÉCRAN */}
       {zoomIndex !== null && (
         <div onClick={() => setZoomIndex(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
-
-          {/* Image */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }}
-            onClick={e => e.stopPropagation()}>
-            {urlZoom && (
-              <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />
-            )}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            {urlZoom && <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />}
           </div>
-
-          {/* Zone sociale — visible seulement pour les coloriages partagés */}
           {coloZoom && (
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
               <ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
             </div>
           )}
-
           <button onClick={() => setZoomIndex(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 10 }}>✕</button>
           {totalVisuels > 1 && (
             <>
               <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>
               <button onClick={zoomSuivant} style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>›</button>
-              <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-                {zoomIndex + 1} / {totalVisuels}
-                {coloZoom ? ' 🎨' : ''}
-              </p>
+              <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{zoomIndex + 1} / {totalVisuels}{coloZoom ? ' 🎨' : ''}</p>
             </>
           )}
         </div>
@@ -1026,50 +987,35 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px' }}>
         <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', maxWidth: '820px', width: '100%', maxHeight: '88vh', overflowY: 'auto', position: 'relative' }}>
-
           <button onClick={onClose} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer', zIndex: 10 }}>✕</button>
-
           <div style={{ padding: '24px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-            {/* COLONNE GAUCHE — visuels */}
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
                 {getUrlVisuelActif(visuelActif) && (
-                  <img
-                    src={getUrlVisuelActif(visuelActif)}
-                    alt={illu.nom}
-                    className="visuel-zoom"
-                    onClick={() => ouvrirZoom(visuelActif)}
-                    style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }}
-                  />
+                  <img src={getUrlVisuelActif(visuelActif)} alt={illu.nom} className="visuel-zoom" onClick={() => ouvrirZoom(visuelActif)}
+                    style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
                 )}
-                {/* Badge coloriste sur visuels C normaux */}
                 {visuelActif < visuels.length && coloriste && (
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                     Réalisé par {coloriste}
                   </div>
                 )}
-                {/* Badge pseudo sur coloriages partagés */}
                 {visuelActif >= visuels.length && getColoActif(visuelActif) && (
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                     🎨 {getColoActif(visuelActif).pseudo}
                   </div>
                 )}
               </div>
-
-              {/* MINIATURES — visuels normaux + coloriages */}
               {totalVisuels > 1 && (
                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                  {/* Visuels normaux */}
                   {visuels.map((url, i) => (
                     <img key={`v-${i}`} src={url} alt="" onClick={() => setVisuelActif(i)}
                       style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${i === visuelActif ? '#00d4d4' : 'transparent'}`, opacity: i === visuelActif ? 1 : 0.4 }} />
                   ))}
-                  {/* Coloriages partagés */}
                   {colosPropres.map((colo, i) => {
                     const idxGlobal = visuels.length + i;
                     return (
-                      <div key={`colo-${i}`} className="miniature-colo" onClick={() => setVisuelActif(idxGlobal)}
-                        style={{ position: 'relative', flexShrink: 0 }}>
+                      <div key={`colo-${i}`} className="miniature-colo" onClick={() => setVisuelActif(idxGlobal)} style={{ position: 'relative', flexShrink: 0 }}>
                         <img src={colo.image_url} alt={`Coloriage de ${colo.pseudo}`}
                           style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${idxGlobal === visuelActif ? 'rgba(255,210,80,0.8)' : 'transparent'}`, opacity: idxGlobal === visuelActif ? 1 : 0.45, display: 'block' }} />
                         <div className="miniature-colo-badge">🎨</div>
@@ -1079,13 +1025,10 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                 </div>
               )}
             </div>
-
-            {/* COLONNE DROITE — infos */}
             <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
               {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
-
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>
                   {jAi ? "✓ J'ai" : "✕ J'ai"}
@@ -1108,7 +1051,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   Panier
                 </button>
               </div>
-
               {showPartagerColo && (
                 <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {coloOk ? (
@@ -1116,35 +1058,22 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   ) : (
                     <>
                       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Partagé sous le pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
-                      <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])}
-                        style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }} />
-                      <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
-                        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '11px' }} />
+                      <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }} />
+                      <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '11px' }} />
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <button onClick={() => handlePartagerColo(false)} disabled={coloEnvoi}
-                          style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '7px', color: '#fff', fontSize: '10px', cursor: 'pointer', opacity: coloEnvoi ? 0.6 : 1 }}>
-                          ✓ Valider sans image
-                        </button>
-                        <button onClick={() => handlePartagerColo(true)} disabled={!coloImage || coloEnvoi}
-                          style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, #00d4d4, #0099aa)' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '7px', color: coloImage ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '10px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: coloEnvoi ? 0.6 : 1 }}>
-                          🎨 Valider avec image
-                        </button>
-                        <button onClick={() => setShowPartagerColo(false)}
-                          style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '7px 10px', color: 'rgba(255,100,100,0.7)', fontSize: '10px', cursor: 'pointer' }}>
-                          Annuler
-                        </button>
+                        <button onClick={() => handlePartagerColo(false)} disabled={coloEnvoi} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '7px', color: '#fff', fontSize: '10px', cursor: 'pointer', opacity: coloEnvoi ? 0.6 : 1 }}>✓ Valider sans image</button>
+                        <button onClick={() => handlePartagerColo(true)} disabled={!coloImage || coloEnvoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, #00d4d4, #0099aa)' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '7px', color: coloImage ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '10px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: coloEnvoi ? 0.6 : 1 }}>🎨 Valider avec image</button>
+                        <button onClick={() => setShowPartagerColo(false)} style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '7px 10px', color: 'rgba(255,100,100,0.7)', fontSize: '10px', cursor: 'pointer' }}>Annuler</button>
                       </div>
                     </>
                   )}
                 </div>
               )}
-
               {illu.description && (
                 <div style={{ maxHeight: '160px', overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 12px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>{formatDescription(illu.description)}</p>
                 </div>
               )}
-
               {livresIllu.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>
@@ -1156,7 +1085,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   ))}
                 </div>
               )}
-
               {illu.tags && illu.tags.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {illu.tags.map((tag, i) => (
@@ -1166,7 +1094,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
               )}
             </div>
           </div>
-
           {similaires.length > 0 && (
             <div style={{ padding: '0 24px 20px' }}>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations similaires</p>
@@ -1198,6 +1125,5 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
     </>
   );
 }
-
 
 export default Catalogue;
