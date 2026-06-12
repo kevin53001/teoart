@@ -153,8 +153,8 @@ function Presentation() {
             </div>
           </div>
 
-          {/* LOGO PREMIUM — clique vers /catalogue depuis /presentation */}
-          <LogoPremium navigate={() => navigate('/catalogue')} isMobile={isMobile} L={L} />
+          {/* LOGO PREMIUM — clique vers /presentation */}
+          <LogoPremium navigate={() => navigate('/presentation')} isMobile={isMobile} L={L} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
@@ -216,6 +216,7 @@ function EncartPresentation({ enc, idx, isMobile }) {
   const titre = enc.titre || '';
   const aTexte = texte.trim().length > 0;
   const aImages = images.length > 0;
+  const imageAGauche = idx % 2 === 0;
 
   return (
     <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
@@ -226,37 +227,50 @@ function EncartPresentation({ enc, idx, isMobile }) {
         </h2>
       )}
 
-      {/* Encart texte + images : alternance gauche/droite */}
-      {aTexte && aImages && (
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'flex-start' }}>
-          {/* Image à gauche pour idx pair, à droite pour idx impair */}
-          {!isMobile && idx % 2 === 0 && (
-            <div style={{ flex: '0 0 40%' }}>
-              {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', marginBottom: i < images.length - 1 ? '12px' : 0, boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-              ))}
-            </div>
-          )}
-          <div style={{ flex: 1 }}>
-            <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
-              {texte}
-            </p>
-          </div>
-          {!isMobile && idx % 2 !== 0 && (
-            <div style={{ flex: '0 0 40%' }}>
-              {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', marginBottom: i < images.length - 1 ? '12px' : 0, boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-              ))}
-            </div>
-          )}
-          {/* Mobile : image après texte */}
-          {isMobile && (
-            <div style={{ width: '100%' }}>
-              {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', marginBottom: i < images.length - 1 ? '12px' : 0, boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-              ))}
-            </div>
-          )}
+      {/* Encart texte + images : image flottante, texte qui s'étend */}
+      {aTexte && aImages && !isMobile && (
+        <div>
+          <img
+            src={images[0]}
+            alt=""
+            style={{
+              width: '40%',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              float: imageAGauche ? 'left' : 'right',
+              marginRight: imageAGauche ? '24px' : '0',
+              marginLeft: imageAGauche ? '0' : '24px',
+              marginBottom: '16px',
+            }}
+          />
+          {images.slice(1).map((url, i) => (
+            <img key={i+1} src={url} alt="" style={{
+              width: '40%',
+              borderRadius: '12px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              float: imageAGauche ? 'left' : 'right',
+              marginRight: imageAGauche ? '24px' : '0',
+              marginLeft: imageAGauche ? '0' : '24px',
+              marginBottom: '16px',
+              display: 'block',
+            }} />
+          ))}
+          <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
+            {texte}
+          </p>
+          <div style={{ clear: 'both' }} />
+        </div>
+      )}
+
+      {/* Mobile : image au-dessus du texte */}
+      {aTexte && aImages && isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {images.map((url, i) => (
+            <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+          ))}
+          <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '14px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
+            {texte}
+          </p>
         </div>
       )}
 
