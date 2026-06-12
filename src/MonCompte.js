@@ -92,6 +92,7 @@ function SectionMaCollection({ userId, totalIllus }) {
 
   React.useEffect(() => {
     const charger = async () => {
+      try {
       // Toutes les illustrations que j'ai
       const { data: collIllus } = await supabase.from('collection')
         .select('illustration_id, j_ai, je_veux').eq('user_id', userId).eq('j_ai', true);
@@ -101,9 +102,14 @@ function SectionMaCollection({ userId, totalIllus }) {
 
       if (illuIds.length === 0) { setData({ annees: [] }); setLoading(false); return; }
 
-      // Charger les illustrations avec leurs livres/recueils
-      const { data: illus } = await supabase.from('illustrations')
-        .select('id, nom, annee, visuels, livres_ids, recueils_ids').in('id', illuIds).order('nom');
+      // Charger les illustrations par batch de 200
+      let illus = [];
+      for (let i = 0; i < illuIds.length; i += 200) {
+        const batch = illuIds.slice(i, i + 200);
+        const { data } = await supabase.from('illustrations')
+          .select('id, nom, annee, visuels, livres_ids, recueils_ids').in('id', batch).order('nom');
+        illus = illus.concat(data || []);
+      }
 
       // Charger tous les livres et recueils pour avoir les noms
       const { data: tousLivres } = await supabase.from('livres').select('id, nom, annee, visuel_presentation, recueils_ids').eq('statut', 'published');
@@ -151,6 +157,7 @@ function SectionMaCollection({ userId, totalIllus }) {
       });
 
       setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil });
+      } catch(e) { console.error('SectionMaCollection error:', e); }
       setLoading(false);
     };
     charger();
