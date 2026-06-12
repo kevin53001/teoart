@@ -319,7 +319,7 @@ function Livres() {
         .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
-        .badge-panier-v { position: absolute; bottom: 28px; right: 6px; z-index: 20; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 2px 8px rgba(255,62,181,0.6); }
+        .badge-panier-v { position: absolute; bottom: 6px; right: 6px; z-index: 20; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 2px 8px rgba(255,62,181,0.6); }
         .badge-panier-v:hover { transform: scale(1.15); }
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
