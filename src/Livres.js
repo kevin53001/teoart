@@ -294,32 +294,25 @@ function Livres() {
     setIllustrationsOuvertes(illus);
     setLoadingIllus(false);
 
-    // BUG 2 DEBUG
-    console.log('[BUG2] ouvrirLivre:', livre.nom, '| nb illus:', illus.length);
+    // BUG 2 : requete Supabase directe pour eviter stale closure sur collectionIllus
     if (illus.length > 0) {
       const key = `livre_${livre.id}`;
-      console.log('[BUG2] collection[key]?.j_ai:', collection[key]?.j_ai);
       if (!collection[key]?.j_ai) {
         const illuIds = illus.map(i => i.id);
-        console.log('[BUG2] illuIds:', illuIds);
-        const { data: collLive, error: collLiveError } = await supabase
+        const { data: collLive } = await supabase
           .from('collection')
           .select('illustration_id')
           .eq('user_id', userId)
           .eq('j_ai', true)
           .in('illustration_id', illuIds);
-        console.log('[BUG2] collLive:', collLive, '| error:', collLiveError);
         const cochesSet = new Set((collLive || []).map(c => c.illustration_id));
         const toutesOui = illuIds.every(id => cochesSet.has(id));
-        console.log('[BUG2] cochesSet size:', cochesSet.size, '/ illuIds length:', illuIds.length, '| toutesOui:', toutesOui);
         if (toutesOui) {
-          console.log('[BUG2] => Cochage automatique du livre!');
           setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
-          const { error: upsertError } = await supabase.from('collection_livres').upsert(
+          await supabase.from('collection_livres').upsert(
             { user_id: userId, item_id: livre.id, item_type: 'livre', j_ai: true, je_veux: collection[key]?.je_veux || false },
             { onConflict: 'user_id,item_id,item_type' }
           );
-          console.log('[BUG2] upsert error:', upsertError);
         }
       }
     }
@@ -595,3 +588,138 @@ function Livres() {
                       }
                     </svg>
                     Je veux
+                  </button>
+                  <button style={{ background: '#ff3eb5', border: 'none', borderRadius: '8px', padding: '6px 12px', color: '#000', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+                      <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                    </svg>
+                    Panier
+                  </button>
+                </div>
+                {popupItem.description && (
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '12px' }}>{popupItem.description}</p>
+                )}
+              </div>
+            </div>
+
+            {/* CONTENU DU RECUEIL */}
+            {popupType === 'recueil' && contenuPopup.length > 0 && (
+              <div>
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px' }}>Contenu du recueil</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {contenuPopup.map(livre => {
+                    const estDossier = !livre.visuel_presentation;
+                    const estOuvert = itemOuvert?.id === livre.id;
+                    return (
+                      <div key={livre.id}>
+                        <div onClick={() => ouvrirLivre(livre)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '12px', cursor: 'pointer', border: `1px solid ${estOuvert ? 'rgba(0,212,212,0.4)' : estDossier ? 'rgba(255,210,80,0.25)' : 'rgba(255,255,255,0.08)'}`, background: estOuvert ? 'rgba(0,212,212,0.04)' : 'rgba(255,255,255,0.02)', transition: 'all .2s' }}>
+                          {estDossier ? (
+                            <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'linear-gradient(135deg, #0a0a0a, #111)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: '18px', opacity: 0.8 }}>📁</span>
+                            </div>
+                          ) : (
+                            <img src={cheminVersUrl(livre.visuel_presentation)} alt={livre.nom} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1 }}>
+                            <p style={{ color: estDossier ? 'rgba(255,210,80,0.85)' : '#fff', fontSize: '13px', fontWeight: 'bold' }}>{livre.nom}</p>
+                            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>{estDossier ? 'Dossier' : 'Livre'}{livre.annee ? ` · ${livre.annee}` : ''}</p>
+                          </div>
+                          <span style={{ color: estOuvert ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '18px', transition: 'transform .2s', transform: estOuvert ? 'rotate(90deg)' : 'none' }}>›</span>
+                        </div>
+
+                        {/* Illustrations dépliées avec badges */}
+                        {estOuvert && (
+                          <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.08)' }}>
+                            {loadingIllus ? (
+                              <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>
+                            ) : illustrationsOuvertes.length === 0 ? (
+                              <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>
+                            ) : (
+                              <>
+                                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                  {illustrationsOuvertes.length} illustration{illustrationsOuvertes.length > 1 ? 's' : ''}
+                                </p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  {illustrationsOuvertes.map(illu => (
+                                    <VignetteIllu key={illu.id} illu={illu} taille={TAILLE_ILLUS}
+                                      jAi={collectionIllus[illu.id]?.j_ai || false}
+                                      jeVeux={collectionIllus[illu.id]?.je_veux || false}
+                                      aColorie={coloriages[illu.id] || false}
+                                      onToggleJAi={() => toggleJAiIllu(illu.id)}
+                                      onToggleJeVeux={() => toggleJeVeuxIllu(illu.id)}
+                                    />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* CONTENU D'UN LIVRE SEUL */}
+            {popupType === 'livre' && (
+              <PopupContenuLivre livre={popupItem} taille={TAILLE_ILLUS}
+                collectionIllus={collectionIllus} coloriages={coloriages}
+                onToggleJAi={toggleJAiIllu} onToggleJeVeux={toggleJeVeuxIllu} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectionTitre({ couleur, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${couleur}66)` }} />
+      <p style={{ color: couleur, fontSize: '13px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>{label}</p>
+      <div style={{ flex: 1, height: '1px', background: `linear-gradient(to left, transparent, ${couleur}66)` }} />
+    </div>
+  );
+}
+
+function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggleJAi, onToggleJeVeux }) {
+  const [illustrations, setIllustrations] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    supabase.from('illustrations')
+      .select('id, nom, visuels, annee, prix')
+      .eq('statut', 'published')
+      .contains('livres_ids', [livre.id])
+      .order('nom')
+      .then(({ data }) => { setIllustrations(data || []); setLoading(false); });
+  }, [livre.id]);
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center', fontSize: '12px' }}>Chargement...</p>;
+  if (illustrations.length === 0) return <p style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: '12px' }}>Aucune illustration trouvée.</p>;
+
+  return (
+    <div>
+      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+        {illustrations.length} illustration{illustrations.length > 1 ? 's' : ''}
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {illustrations.map(illu => (
+          <VignetteIllu key={illu.id} illu={illu} taille={taille}
+            jAi={collectionIllus?.[illu.id]?.j_ai || false}
+            jeVeux={collectionIllus?.[illu.id]?.je_veux || false}
+            aColorie={coloriages?.[illu.id] || false}
+            onToggleJAi={() => onToggleJAi && onToggleJAi(illu.id)}
+            onToggleJeVeux={() => onToggleJeVeux && onToggleJeVeux(illu.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default Livres;
