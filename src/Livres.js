@@ -154,8 +154,8 @@ function Livres() {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [userId, setUserId] = React.useState(null);
   const [collection, setCollection] = React.useState({});
-  const [collectionIllus, setCollectionIllus] = React.useState({}); // collection illustrations
-  const [coloriages, setColoriages] = React.useState({}); // coloriages illustrations
+  const [collectionIllus, setCollectionIllus] = React.useState({});
+  const [coloriages, setColoriages] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
 
   const [popupItem, setPopupItem] = React.useState(null);
@@ -266,11 +266,32 @@ function Livres() {
     setLoadingIllus(false);
   };
 
+  // ✅ FIX BUG 1 : onConflict explicite pour que l'upsert mette à jour au lieu d'insérer
   const toggleJAi = async (itemId, type) => {
     const key = `${type}_${itemId}`;
-    const nouveau = !(collection[key]?.j_ai || false);
+    const actuel = collection[key] || {};
+    const nouveau = !(actuel.j_ai || false);
+
+    // Mise à jour optimiste
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: nouveau } }));
-    await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: nouveau, je_veux: collection[key]?.je_veux || false });
+
+    const { error } = await supabase.from('collection_livres').upsert(
+      {
+        user_id: userId,
+        item_id: itemId,
+        item_type: type,
+        j_ai: nouveau,
+        je_veux: actuel.je_veux || false,
+      },
+      { onConflict: 'user_id,item_id,item_type' }
+    );
+
+    if (error) {
+      console.error('Erreur upsert collection_livres (j_ai) :', error);
+      // Rollback optimiste en cas d'erreur
+      setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: actuel.j_ai || false } }));
+      return;
+    }
 
     // Cocher/décocher automatiquement toutes les illustrations du recueil/livre
     try {
@@ -292,34 +313,57 @@ function Livres() {
           j_ai_auto: nouveau,
           je_veux: collectionIllus[illuId]?.je_veux || false,
         }));
-        await supabase.from('collection').upsert(upserts);
-        // Mettre à jour le state local
+        await supabase.from('collection').upsert(upserts, { onConflict: 'user_id,illustration_id' });
         setCollectionIllus(prev => {
           const next = { ...prev };
           illuIds.forEach(id => { next[id] = { ...prev[id], j_ai: nouveau, j_ai_auto: nouveau }; });
           return next;
         });
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Erreur cascade illustrations :', e); }
   };
 
+  // ✅ FIX BUG 1 : onConflict explicite sur toggleJeVeux aussi
   const toggleJeVeux = async (itemId, type) => {
     const key = `${type}_${itemId}`;
-    const nouveau = !(collection[key]?.je_veux || false);
+    const actuel = collection[key] || {};
+    const nouveau = !(actuel.je_veux || false);
+
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: nouveau } }));
-    await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: collection[key]?.j_ai || false, je_veux: nouveau });
+
+    const { error } = await supabase.from('collection_livres').upsert(
+      {
+        user_id: userId,
+        item_id: itemId,
+        item_type: type,
+        j_ai: actuel.j_ai || false,
+        je_veux: nouveau,
+      },
+      { onConflict: 'user_id,item_id,item_type' }
+    );
+
+    if (error) {
+      console.error('Erreur upsert collection_livres (je_veux) :', error);
+      setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: actuel.je_veux || false } }));
+    }
   };
 
   const toggleJAiIllu = async (illuId) => {
     const nouveau = !(collectionIllus[illuId]?.j_ai || false);
     setCollectionIllus(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collectionIllus[illuId]?.je_veux || false });
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collectionIllus[illuId]?.je_veux || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
   };
 
   const toggleJeVeuxIllu = async (illuId) => {
     const nouveau = !(collectionIllus[illuId]?.je_veux || false);
     setCollectionIllus(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collectionIllus[illuId]?.j_ai || false, j_ai_auto: collectionIllus[illuId]?.j_ai_auto || false });
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collectionIllus[illuId]?.j_ai || false, j_ai_auto: collectionIllus[illuId]?.j_ai_auto || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
   };
 
   const P = isMobile ? 44 : 80;
