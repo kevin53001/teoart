@@ -71,7 +71,9 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
   );
 }
 
-function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = true }) {
+function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = true, couleurBarre = null }) {
+  // Si couleurBarre fournie, utiliser cette couleur pour la barre J'ai
+  const cJai = couleurBarre || "linear-gradient(90deg,#00d4d4,#00aaaa)";
   if (showLabels) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
@@ -81,10 +83,10 @@ function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = 
       </div>
     );
   }
-  // Version compacte (sans labels) pour les sous-niveaux
+  // Version compacte avec couleur arc-en-ciel
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%' }}>
-      <UneBarre pct={pctJai} couleur="linear-gradient(90deg,#00d4d4,#00aaaa)" label="" delai={0} hauteur={Math.max(4, hauteur-2)} showLabel={false} />
+      <UneBarre pct={pctJai} couleur={cJai} label="" delai={0} hauteur={Math.max(4, hauteur-2)} showLabel={false} />
       {pctColorie > 0 && <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)" label="" delai={0} hauteur={Math.max(3, hauteur-3)} showLabel={false} />}
     </div>
   );
@@ -224,44 +226,62 @@ function SectionMaCollection({ userId, totalIllus }) {
             return; // Ne pas mettre dans parAnnee
           }
 
-          // Années normales — dédupliquer par année
-          const annee = illu.annee || 'Sans année';
-          if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
-          if (!illusParAnnee[annee]) illusParAnnee[annee] = new Set();
-          // Comptabiliser une seule fois par année même si dans plusieurs livres/recueils
-          if (!illusParAnnee[annee].has(illu.id)) {
-            illusParAnnee[annee].add(illu.id);
-            totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
-          }
-          // Totaux livres/recueils : dédupliqués par livre/recueil
-          lidsNormaux.forEach(lid => { totauxLivre[lid] = (totauxLivre[lid] || 0) + 1; });
-          ridsNormaux.forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
+          // Grouper par année du recueil/livre (pas de l'illustration)
+          // Une illustration peut apparaître dans plusieurs années si dans des recueils/livres différents
 
+          // Traiter les recueils normaux
           if (ridsNormaux.length > 0) {
             ridsNormaux.forEach(rid => {
               if (!recueilsMap[rid]) return;
-              if (!parAnnee[annee].recueils[rid]) parAnnee[annee].recueils[rid] = { info: recueilsMap[rid], livres: {}, illuIds: new Set() };
-              parAnnee[annee].recueils[rid].illuIds.add(illu.id);
+              const anneeRecueil = String(recueilsMap[rid].annee || illu.annee || 'Sans année');
+              if (!parAnnee[anneeRecueil]) parAnnee[anneeRecueil] = { recueils: {}, horsSerieParent: {} };
+              if (!illusParAnnee[anneeRecueil]) illusParAnnee[anneeRecueil] = new Set();
+              if (!illusParAnnee[anneeRecueil].has(illu.id)) {
+                illusParAnnee[anneeRecueil].add(illu.id);
+                totauxAnnee[anneeRecueil] = (totauxAnnee[anneeRecueil] || 0) + 1;
+              }
+              totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1;
+              if (!parAnnee[anneeRecueil].recueils[rid]) parAnnee[anneeRecueil].recueils[rid] = { info: recueilsMap[rid], livres: {}, illuIds: new Set() };
+              parAnnee[anneeRecueil].recueils[rid].illuIds.add(illu.id);
               lidsNormaux.forEach(lid => {
                 if (!livresMap[lid]) return;
                 if (livresMap[lid].recueils_ids && livresMap[lid].recueils_ids.includes(rid)) {
-                  if (!parAnnee[annee].recueils[rid].livres[lid]) parAnnee[annee].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
-                  if (!parAnnee[annee].recueils[rid].livres[lid].illuIds.has(illu.id)) {
-                    parAnnee[annee].recueils[rid].livres[lid].illuIds.add(illu.id);
-                    if (illuPossedee) parAnnee[annee].recueils[rid].livres[lid].illus.push(illuPossedee);
+                  totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
+                  if (!parAnnee[anneeRecueil].recueils[rid].livres[lid]) parAnnee[anneeRecueil].recueils[rid].livres[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+                  if (!parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.has(illu.id)) {
+                    parAnnee[anneeRecueil].recueils[rid].livres[lid].illuIds.add(illu.id);
+                    if (illuPossedee) parAnnee[anneeRecueil].recueils[rid].livres[lid].illus.push(illuPossedee);
                   }
                 }
               });
             });
-          } else {
+          } else if (lidsNormaux.length > 0) {
+            // Dossiers/livres hors recueil : utiliser l'année du livre
             lidsNormaux.forEach(lid => {
               if (!livresMap[lid]) return;
-              if (!parAnnee[annee].horsSerieParent[lid]) parAnnee[annee].horsSerieParent[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
-              if (!parAnnee[annee].horsSerieParent[lid].illuIds.has(illu.id)) {
-                parAnnee[annee].horsSerieParent[lid].illuIds.add(illu.id);
-                if (illuPossedee) parAnnee[annee].horsSerieParent[lid].illus.push(illuPossedee);
+              const anneeLivre = String(livresMap[lid].annee || illu.annee || 'Sans année');
+              if (!parAnnee[anneeLivre]) parAnnee[anneeLivre] = { recueils: {}, horsSerieParent: {} };
+              if (!illusParAnnee[anneeLivre]) illusParAnnee[anneeLivre] = new Set();
+              if (!illusParAnnee[anneeLivre].has(illu.id)) {
+                illusParAnnee[anneeLivre].add(illu.id);
+                totauxAnnee[anneeLivre] = (totauxAnnee[anneeLivre] || 0) + 1;
+              }
+              totauxLivre[lid] = (totauxLivre[lid] || 0) + 1;
+              if (!parAnnee[anneeLivre].horsSerieParent[lid]) parAnnee[anneeLivre].horsSerieParent[lid] = { info: livresMap[lid], illus: [], illuIds: new Set() };
+              if (!parAnnee[anneeLivre].horsSerieParent[lid].illuIds.has(illu.id)) {
+                parAnnee[anneeLivre].horsSerieParent[lid].illuIds.add(illu.id);
+                if (illuPossedee) parAnnee[anneeLivre].horsSerieParent[lid].illus.push(illuPossedee);
               }
             });
+          } else {
+            // Illustrations sans livre ni recueil : utiliser leur propre année
+            const annee = String(illu.annee || 'Sans année');
+            if (!parAnnee[annee]) parAnnee[annee] = { recueils: {}, horsSerieParent: {} };
+            if (!illusParAnnee[annee]) illusParAnnee[annee] = new Set();
+            if (!illusParAnnee[annee].has(illu.id)) {
+              illusParAnnee[annee].add(illu.id);
+              totauxAnnee[annee] = (totauxAnnee[annee] || 0) + 1;
+            }
           }
         });
 
@@ -300,12 +320,12 @@ function SectionMaCollection({ userId, totalIllus }) {
           <div key={annee} style={{ border: `1px solid rgba(0,212,212,0.2)`, borderRadius: '12px', overflow: 'hidden' }}>
             <div onClick={() => setAnneesOuvertes(p => ({ ...p, [annee]: !p[annee] }))}
               style={{ padding: '12px 16px', cursor: 'pointer', background: ouvert ? 'rgba(0,212,212,0.06)' : 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ color: couleurAnnee, fontSize: '15px', fontWeight: 'bold', minWidth: '50px' }}>{annee}</span>
+              <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '15px', fontWeight: 'bold', minWidth: '50px' }}>{annee}</span>
               <div style={{ flex: 1 }}>
-                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={0} hauteur={8} showLabels={false} />
+                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={0} hauteur={8} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurAnnee},${couleurAnnee}aa)`} />
               </div>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiAnnee}/{totalAnnee}</span>
-              <span style={{ color: ouvert ? couleurAnnee : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
+              <span style={{ color: ouvert ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
             </div>
 
             {ouvert && (
@@ -328,8 +348,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                           ? <img src={cheminVersUrl(recueilData.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
                         <div style={{ flex: 1 }}>
-                          <p style={{ color: couleurR, fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>{recueilData.info.nom}</p>
-                          <JaugeDouble pctJai={(jaiR/totalR)*100} pctColorie={(colorieR/totalR)*100} pctJeVeux={0} hauteur={6} showLabels={false} />
+                          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>{recueilData.info.nom}</p>
+                          <JaugeDouble pctJai={(jaiR/totalR)*100} pctColorie={(colorieR/totalR)*100} pctJeVeux={0} hauteur={6} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurR},${couleurR}aa)`} />
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
                         <span style={{ color: ouvertR ? couleurR : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
@@ -355,8 +375,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                                     ? <span style={{ fontSize: '16px' }}>📁</span>
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
                                   <div style={{ flex: 1 }}>
-                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : couleurL, fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
-                                    <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
+                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
+                                    <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurL},${couleurL}aa)`} />
                                   </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                                   <span style={{ color: ouvertL ? couleurL : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
