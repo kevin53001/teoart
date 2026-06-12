@@ -263,6 +263,7 @@ function SectionMaCollection({ userId, totalIllus }) {
       setLoading(false);
     };
     charger();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
@@ -425,8 +426,6 @@ function SectionMaCollection({ userId, totalIllus }) {
         const pctJaiE = (jaiE / totalE) * 100;
         const pctColoE = (colorieE / totalE) * 100;
         const ouvert = anneesOuvertes[`ha_${eid}`];
-        const couleur = COULEURS_ARC[(anneesSorted.length + idx) % COULEURS_ARC.length];
-
         return (
           <div key={`ha_${eid}`} style={{ border: `1px solid rgba(255,210,80,0.25)`, borderRadius: '12px', overflow: 'hidden' }}>
             <div onClick={() => setAnneesOuvertes(p => ({ ...p, [`ha_${eid}`]: !p[`ha_${eid}`] }))}
