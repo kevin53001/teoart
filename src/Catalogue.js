@@ -154,17 +154,15 @@ function Catalogue() {
       { onConflict: 'user_id,illustration_id' }
     );
 
-    // BUG 2 : si on vient de cocher j_ai, verifier si les livres/recueils contenant cette illustration sont maintenant complets
-    if (nouveau) {
-      const illu = illustrations.find(i => i.id === illuId);
-      if (!illu) return;
+    // BUG 2 : cocheage/decochage auto livre/recueil selon etat des illustrations
+    const illu = illustrations.find(i => i.id === illuId);
+    if (illu) {
       const tousItems = [
         ...(illu.livres_ids || []).map(id => ({ id, type: 'livre' })),
         ...(illu.recueils_ids || []).map(id => ({ id, type: 'recueil' })),
       ];
       for (const { id: itemId, type } of tousItems) {
         const champ = type === 'livre' ? 'livres_ids' : 'recueils_ids';
-        // Toutes les illustrations de ce livre/recueil
         const { data: illusItem } = await supabase
           .from('illustrations')
           .select('id')
@@ -172,28 +170,33 @@ function Catalogue() {
           .contains(champ, [itemId]);
         const illuIds = (illusItem || []).map(i => i.id);
         if (illuIds.length === 0) continue;
-        // Combien sont cochees j_ai en base
         const { data: cochees } = await supabase
           .from('collection')
           .select('illustration_id')
           .eq('user_id', userId)
           .eq('j_ai', true)
           .in('illustration_id', illuIds);
-        if ((cochees || []).length === illuIds.length) {
-          // Toutes cochees => cocher le livre/recueil si pas deja fait
-          const { data: existant } = await supabase
-            .from('collection_livres')
-            .select('j_ai, je_veux')
-            .eq('user_id', userId)
-            .eq('item_id', itemId)
-            .eq('item_type', type)
-            .maybeSingle();
-          if (!existant?.j_ai) {
-            await supabase.from('collection_livres').upsert(
-              { user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false },
-              { onConflict: 'user_id,item_id,item_type' }
-            );
-          }
+        const nbCoches = (cochees || []).length;
+        const { data: existant } = await supabase
+          .from('collection_livres')
+          .select('j_ai, je_veux')
+          .eq('user_id', userId)
+          .eq('item_id', itemId)
+          .eq('item_type', type)
+          .maybeSingle();
+
+        if (nouveau && nbCoches === illuIds.length && !existant?.j_ai) {
+          // Toutes cochees => cocher le livre/recueil
+          await supabase.from('collection_livres').upsert(
+            { user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false },
+            { onConflict: 'user_id,item_id,item_type' }
+          );
+        } else if (!nouveau && existant?.j_ai) {
+          // On vient de decocher une illustration => decocher le livre/recueil
+          await supabase.from('collection_livres').upsert(
+            { user_id: userId, item_id: itemId, item_type: type, j_ai: false, je_veux: existant?.je_veux || false },
+            { onConflict: 'user_id,item_id,item_type' }
+          );
         }
       }
     }
