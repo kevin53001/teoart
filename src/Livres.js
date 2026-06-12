@@ -294,25 +294,32 @@ function Livres() {
     setIllustrationsOuvertes(illus);
     setLoadingIllus(false);
 
-    // BUG 2 : requete Supabase directe pour eviter stale closure sur collectionIllus
+    // BUG 2 DEBUG
+    console.log('[BUG2] ouvrirLivre:', livre.nom, '| nb illus:', illus.length);
     if (illus.length > 0) {
       const key = `livre_${livre.id}`;
+      console.log('[BUG2] collection[key]?.j_ai:', collection[key]?.j_ai);
       if (!collection[key]?.j_ai) {
         const illuIds = illus.map(i => i.id);
-        const { data: collLive } = await supabase
+        console.log('[BUG2] illuIds:', illuIds);
+        const { data: collLive, error: collLiveError } = await supabase
           .from('collection')
           .select('illustration_id')
           .eq('user_id', userId)
           .eq('j_ai', true)
           .in('illustration_id', illuIds);
+        console.log('[BUG2] collLive:', collLive, '| error:', collLiveError);
         const cochesSet = new Set((collLive || []).map(c => c.illustration_id));
         const toutesOui = illuIds.every(id => cochesSet.has(id));
+        console.log('[BUG2] cochesSet size:', cochesSet.size, '/ illuIds length:', illuIds.length, '| toutesOui:', toutesOui);
         if (toutesOui) {
+          console.log('[BUG2] => Cochage automatique du livre!');
           setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
-          await supabase.from('collection_livres').upsert(
+          const { error: upsertError } = await supabase.from('collection_livres').upsert(
             { user_id: userId, item_id: livre.id, item_type: 'livre', j_ai: true, je_veux: collection[key]?.je_veux || false },
             { onConflict: 'user_id,item_id,item_type' }
           );
+          console.log('[BUG2] upsert error:', upsertError);
         }
       }
     }
