@@ -271,6 +271,36 @@ function Livres() {
     const nouveau = !(collection[key]?.j_ai || false);
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: nouveau } }));
     await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: nouveau, je_veux: collection[key]?.je_veux || false });
+
+    // Cocher/décocher automatiquement toutes les illustrations du recueil/livre
+    try {
+      let illuIds = [];
+      if (type === 'recueil') {
+        const { data: illus } = await supabase.from('illustrations')
+          .select('id').eq('statut', 'published').contains('recueils_ids', [itemId]);
+        illuIds = (illus || []).map(i => i.id);
+      } else if (type === 'livre') {
+        const { data: illus } = await supabase.from('illustrations')
+          .select('id').eq('statut', 'published').contains('livres_ids', [itemId]);
+        illuIds = (illus || []).map(i => i.id);
+      }
+      if (illuIds.length > 0) {
+        const upserts = illuIds.map(illuId => ({
+          user_id: userId,
+          illustration_id: illuId,
+          j_ai: nouveau,
+          j_ai_auto: nouveau,
+          je_veux: collectionIllus[illuId]?.je_veux || false,
+        }));
+        await supabase.from('collection').upsert(upserts);
+        // Mettre à jour le state local
+        setCollectionIllus(prev => {
+          const next = { ...prev };
+          illuIds.forEach(id => { next[id] = { ...prev[id], j_ai: nouveau, j_ai_auto: nouveau }; });
+          return next;
+        });
+      }
+    } catch (e) { console.error(e); }
   };
 
   const toggleJeVeux = async (itemId, type) => {
