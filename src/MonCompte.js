@@ -150,7 +150,7 @@ function SectionMaCollection({ userId, totalIllus }) {
         (illu.recueils_ids || []).forEach(rid => { totauxRecueil[rid] = (totauxRecueil[rid] || 0) + 1; });
       });
 
-      setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil, colosSet });
+      setData({ parAnnee, totauxAnnee, totauxLivre, totauxRecueil });
       setLoading(false);
     };
     charger();
@@ -159,7 +159,7 @@ function SectionMaCollection({ userId, totalIllus }) {
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (!data || Object.keys(data.parAnnee).length === 0) return <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Aucune illustration dans ta collection.</p>;
 
-  const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil, colosSet } = data;
+  const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil } = data;
   const anneesSorted = Object.keys(parAnnee).sort((a, b) => b - a);
 
   return (
@@ -495,6 +495,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
 
   React.useEffect(() => {
     chargerColos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const chargerColos = async () => {
