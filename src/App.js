@@ -7,6 +7,7 @@ import Selection from './Selection';
 import Catalogue from './Catalogue';
 import Livres from './Livres';
 import MonCompte from './MonCompte';
+import Presentation from './Presentation';
 
 function App() {
   const [session, setSession] = React.useState(undefined);
@@ -29,6 +30,7 @@ function App() {
         <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />
         <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
         <Route path="/mon-compte" element={session ? <MonCompte /> : <Navigate to="/" />} />
+        <Route path="/presentation" element={session ? <Presentation /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
