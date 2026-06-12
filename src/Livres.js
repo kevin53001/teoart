@@ -238,13 +238,34 @@ function Livres() {
     charger();
   }, [navigate, location.state]);
 
-  const ouvrirRecueil = (recueil) => {
+  const ouvrirRecueil = async (recueil) => {
     const livresDuRecueil = tousLesLivres.filter(l => l.recueils_ids && l.recueils_ids.includes(recueil.id));
     setContenuPopup(livresDuRecueil);
     setPopupItem(recueil);
     setPopupType('recueil');
     setItemOuvert(null);
     setIllustrationsOuvertes([]);
+
+    // BUG 2 : si toutes les illustrations du recueil sont j_ai et que le recueil ne l'est pas encore → cocher auto
+    const key = `recueil_${recueil.id}`;
+    if (!collection[key]?.j_ai) {
+      const { data: illus } = await supabase
+        .from('illustrations')
+        .select('id')
+        .eq('statut', 'published')
+        .contains('recueils_ids', [recueil.id]);
+      const illuIds = (illus || []).map(i => i.id);
+      if (illuIds.length > 0) {
+        const toutesOui = illuIds.every(id => collectionIllus[id]?.j_ai);
+        if (toutesOui) {
+          setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
+          await supabase.from('collection_livres').upsert(
+            { user_id: userId, item_id: recueil.id, item_type: 'recueil', j_ai: true, je_veux: collection[key]?.je_veux || false },
+            { onConflict: 'user_id,item_id,item_type' }
+          );
+        }
+      }
+    }
   };
 
   const ouvrirLivre = async (livre) => {
@@ -262,8 +283,22 @@ function Livres() {
       .eq('statut', 'published')
       .contains('livres_ids', [livre.id])
       .order('nom');
-    setIllustrationsOuvertes(data || []);
+    const illus = data || [];
+    setIllustrationsOuvertes(illus);
     setLoadingIllus(false);
+
+    // BUG 2 : si toutes les illustrations sont j_ai et que le livre ne l'est pas encore → cocher auto
+    if (illus.length > 0) {
+      const toutesOui = illus.every(i => collectionIllus[i.id]?.j_ai);
+      const key = `livre_${livre.id}`;
+      if (toutesOui && !collection[key]?.j_ai) {
+        setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: true } }));
+        await supabase.from('collection_livres').upsert(
+          { user_id: userId, item_id: livre.id, item_type: 'livre', j_ai: true, je_veux: collection[key]?.je_veux || false },
+          { onConflict: 'user_id,item_id,item_type' }
+        );
+      }
+    }
   };
 
   // ✅ FIX BUG 1 : onConflict explicite pour que l'upsert mette à jour au lieu d'insérer
