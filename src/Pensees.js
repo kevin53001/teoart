@@ -306,8 +306,8 @@ function Pensees() {
         .donut-zone {
           position: relative;
           width: min(96vw, 1120px);
-          height: 540px;
-          margin-top: 68px;
+          height: 500px;
+          margin-top: 42px;
           margin: 0 auto;
           perspective: 1000px;
           overflow: visible;
@@ -331,7 +331,7 @@ function Pensees() {
         .donut-stage {
           position: absolute;
           left: 50%;
-          top: 63%;
+          top: 59%;
           width: 980px;
           height: 430px;
           transform: translate(-50%, -50%);
@@ -353,6 +353,7 @@ function Pensees() {
         .fiche-wrap:hover { filter: brightness(1.12); }
         .fiche-face {
           position: absolute;
+          pointer-events: none;
           inset: 0;
           border-radius: 15px;
           background:
@@ -404,6 +405,7 @@ function Pensees() {
         }
         .fiche-edge {
           position: absolute;
+          pointer-events: none;
           left: 100%;
           top: 4px;
           width: 16px;
@@ -434,11 +436,13 @@ function Pensees() {
         .fiche-led {
           position: absolute;
           top: 10px;
-          width: 10px;
-          height: 10px;
+          width: 9px;
+          height: 9px;
           border-radius: 50%;
           z-index: 8;
         }
+        .fiche-led.left { left: 10px; }
+        .fiche-led.right { right: 10px; }
 
         .popup-page {
           width: 500px;
@@ -465,7 +469,7 @@ function Pensees() {
         }
 
         @media (max-width: 600px) {
-          .donut-zone { height: 410px; margin-top: 48px; }
+          .donut-zone { height: 380px; margin-top: 30px; }
           .donut-stage { width: 530px; height: 310px; }
           .fiche-wrap {
             width: 84px;
@@ -556,7 +560,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             ) : (
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
-                <div style={{ textAlign: 'center', marginTop: isMobile ? '-58px' : '-96px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-86px' : '-132px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
@@ -805,9 +809,15 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
               >
                 <div className="fiche-face front">
                   <div
-                    className="fiche-led"
+                    className="fiche-led left"
                     style={{
-                      [sin < 0 ? 'left' : 'right']: '-4px',
+                      background: lue ? '#ff3eb5' : '#4dff72',
+                      boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
+                    }}
+                  />
+                  <div
+                    className="fiche-led right"
+                    style={{
                       background: lue ? '#ff3eb5' : '#4dff72',
                       boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
                     }}
@@ -816,9 +826,15 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
                 </div>
                 <div className="fiche-face back">
                   <div
-                    className="fiche-led"
+                    className="fiche-led left"
                     style={{
-                      [sin < 0 ? 'left' : 'right']: '-4px',
+                      background: lue ? '#ff3eb5' : '#4dff72',
+                      boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
+                    }}
+                  />
+                  <div
+                    className="fiche-led right"
+                    style={{
                       background: lue ? '#ff3eb5' : '#4dff72',
                       boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
                     }}
