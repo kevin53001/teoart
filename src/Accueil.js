@@ -193,7 +193,7 @@ function LogoPremium({ onClick, isMobile, L }) {
 function Accueil() {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
-  const [userId, setUserId] = React.useState(null);
+  // const [userId, setUserId] = React.useState(null);
   const [stats, setStats] = React.useState({ totalIllus: 0, jAi: 0, colorie: 0, jeVeux: 0 });
   const [nouveautes, setNouveautes] = React.useState([]);
   const [coloriages, setColoriages] = React.useState([]);
@@ -223,7 +223,7 @@ function Accueil() {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/'); return; }
-      setUserId(user.id);
+      // setUserId(user.id);
 
       // Stats collection
       const { count: total } = await supabase.from('illustrations').select('id', { count: 'exact', head: true }).eq('statut', 'published');
