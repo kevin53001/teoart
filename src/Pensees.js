@@ -119,6 +119,7 @@ function calculArc(nb) {
 function Pensees() {
   const navigate = useNavigate();
   const [pensees, setPensees] = React.useState([]);
+  const [vues, setVues] = React.useState({});
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
@@ -158,6 +159,18 @@ function Pensees() {
 
       if (error) console.error(error);
       setPensees(data || []);
+
+      if (user) {
+        const { data: vuesData } = await supabase
+          .from('pensees_vues')
+          .select('pensee_id')
+          .eq('user_id', user.id);
+
+        const vuesMap = {};
+        (vuesData || []).forEach(v => { vuesMap[v.pensee_id] = true; });
+        setVues(vuesMap);
+      }
+
       setLoading(false);
     };
     charger();
@@ -194,9 +207,16 @@ function Pensees() {
     setSending(false);
   };
 
-  const ouvrirPopup = (pensee) => {
+  const ouvrirPopup = async (pensee) => {
     setPopup(pensee);
     setPagePopup(0);
+
+    if (userId && pensee?.id && !vues[pensee.id]) {
+      setVues(prev => ({ ...prev, [pensee.id]: true }));
+      await supabase
+        .from('pensees_vues')
+        .upsert({ user_id: userId, pensee_id: pensee.id }, { onConflict: 'user_id,pensee_id' });
+    }
   };
 
   const pagesPopup = React.useMemo(() => {
@@ -236,7 +256,7 @@ function Pensees() {
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
-        .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
+        .dropdown-item:hover { background: rgba(0,212,212,0.15); color: var(--author-color, #00d4d4); }
         .logo-premium { position: relative; overflow: hidden; }
         .logo-premium::before {
           content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%;
@@ -264,8 +284,8 @@ function Pensees() {
           color: #fff;
           font-weight: 800;
           font-size: 13px;
-          padding: 11px 28px;
-          border-radius: 10px;
+          padding: 10px 28px;
+          border-radius: 8px;
           cursor: pointer;
           box-shadow: 0 0 18px rgba(255,62,181,0.14), inset 0 0 18px rgba(255,62,181,0.10);
           backdrop-filter: blur(8px);
@@ -280,7 +300,7 @@ function Pensees() {
         .donut-zone {
           position: relative;
           width: min(96vw, 1120px);
-          height: 470px;
+          height: 430px;
           margin: 0 auto;
           perspective: 1000px;
           overflow: visible;
@@ -369,11 +389,11 @@ function Pensees() {
           position: relative;
           z-index: 2;
           margin-top: 14px;
-          color: #00d4d4;
+          color: var(--author-color, #00d4d4);
           font-size: 12px;
           line-height: 1.2;
           font-weight: 700;
-          text-shadow: 0 0 10px rgba(0,212,212,0.28);
+          text-shadow: 0 0 10px color-mix(in srgb, var(--author-color, #00d4d4) 30%, transparent);
         }
         .fiche-edge {
           position: absolute;
@@ -404,6 +424,16 @@ function Pensees() {
         }
         .donut-help { display: none; }
 
+        .fiche-led {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          z-index: 8;
+        }
+
         .popup-page {
           width: 500px;
           height: 812px;
@@ -429,7 +459,7 @@ function Pensees() {
         }
 
         @media (max-width: 600px) {
-          .donut-zone { height: 360px; }
+          .donut-zone { height: 330px; }
           .donut-stage { width: 530px; height: 310px; }
           .fiche-wrap {
             width: 84px;
@@ -497,23 +527,18 @@ function Pensees() {
           </div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '28px 14px 60px' : '40px 20px 70px', minHeight: `${BARRES.length * (IMG_H + GAP) + 90}px` }}>
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '28px 14px 60px' : '40px 20px 70px', minHeight: `${BARRES.length * (IMG_H + GAP) + 20}px` }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            <div className="premium-card" style={{ padding: isMobile ? '16px' : '20px 28px', margin: '0 auto 22px', textAlign: 'center', maxWidth: '900px' }}>
-              <h1 style={{ color: '#00d4d4', fontSize: isMobile ? '18px' : '23px', letterSpacing: '1px', marginBottom: '10px', textShadow: '0 0 16px rgba(0,212,212,0.35)' }}>
-                MES PENSÉES
-              </h1>
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '12px' : '13px', lineHeight: 1.65, maxWidth: '820px', margin: '0 auto', whiteSpace: 'pre-line' }}>
+            <h1 style={{ color: '#00d4d4', fontSize: isMobile ? '18px' : '23px', letterSpacing: '1px', marginBottom: '12px', textAlign: 'center', textShadow: '0 0 16px rgba(0,212,212,0.35)' }}>
+              MES PENSÉES
+            </h1>
+
+            <div className="premium-card" style={{ padding: isMobile ? '14px 16px' : '18px 26px', margin: '0 auto 18px', textAlign: 'center', maxWidth: '900px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '12px' : '13px', lineHeight: 1.6, maxWidth: '820px', margin: '0 auto', whiteSpace: 'pre-line' }}>
                 J'aime dessiner, mais il m'arrive aussi de jouer avec les mots. Alors, de temps en temps, je dépose ici quelques pensées, quelques souvenirs, des histoires ou simplement des émotions que j'avais envie de partager. Je ne suis pas écrivain, juste quelqu'un qui aime explorer cet univers à sa façon.
 
 Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfois, ou au contraire y découvrir des regards différents du vôtre. Et si l'inspiration vous rend visite, vous pouvez également partager vos propres écrits et ajouter votre voix à ce drôle de carnet collectif.
               </p>
-            </div>
-
-            <div style={{ textAlign: 'center', marginBottom: isMobile ? '24px' : '26px', position: 'relative', zIndex: 20 }}>
-              <button className="btn-nuage" onClick={() => setShowForm(true)}>
-                Ajouter ma pensée
-              </button>
             </div>
 
             {loading ? (
@@ -523,7 +548,14 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                 Aucune pensée publiée pour le moment.
               </div>
             ) : (
-              <RoueDonut pensees={pensees} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
+              <>
+                <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-86px' : '-118px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                  <button className="btn-nuage" onClick={() => setShowForm(true)}>
+                    Ajouter ma pensée
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -574,6 +606,8 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(36,19,12,0.52)' }}>{pagePopup + 1} / {pagesPopup.length}</span>
                   <button onClick={pageSuivante} disabled={pagePopup >= pagesPopup.length - 1} style={navPageBtn(pagePopup < pagesPopup.length - 1)}>›</button>
                 </div>
+
+                <PenseeSocial pensee={popup} userId={userId} pseudo={pseudo} />
               </div>
             </div>
           </div>
@@ -663,22 +697,41 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
   );
 }
 
-function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
+function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const zoneRef = React.useRef(null);
   const rafRef = React.useRef(null);
   const rotationRef = React.useRef(0);
   const speedRef = React.useRef(0);
   const [rotation, setRotation] = React.useState(0);
 
+  const visibles = pensees.slice(0, Math.min(pensees.length, 90));
+  const count = visibles.length || 1;
+  const arc = calculArc(count);
+  const canLoop = arc >= 360;
+  const limit = canLoop ? 999999 : Math.max(0, arc / 2 - 18);
+
   React.useEffect(() => {
     const animate = () => {
-      rotationRef.current += speedRef.current;
+      let next = rotationRef.current + speedRef.current;
+
+      if (!canLoop) {
+        if (next > limit) {
+          next = limit;
+          speedRef.current *= 0.12;
+        }
+        if (next < -limit) {
+          next = -limit;
+          speedRef.current *= 0.12;
+        }
+      }
+
+      rotationRef.current = next;
       setRotation(rotationRef.current);
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [canLoop, limit]);
 
   const handleMouseMove = (e) => {
     const rect = zoneRef.current?.getBoundingClientRect();
@@ -686,19 +739,16 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
     const center = rect.left + rect.width / 2;
     const dist = (e.clientX - center) / (rect.width / 2);
     const deadZone = Math.abs(dist) < 0.08 ? 0 : dist;
-    speedRef.current = Math.max(-1, Math.min(1, deadZone)) * 0.72;
+    speedRef.current = Math.max(-1, Math.min(1, deadZone)) * 0.55;
   };
 
   const handleMouseLeave = () => {
     speedRef.current = 0;
   };
 
-  const visibles = pensees.slice(0, Math.min(pensees.length, 90));
-  const count = visibles.length || 1;
-  const arc = calculArc(count);
   const radiusX = isMobile ? 210 : 430;
-  const radiusY = isMobile ? 86 : 170;
-  const minCardGap = isMobile ? 13 : 15;
+  const radiusY = isMobile ? 82 : 156;
+  const smallCountSpread = count < 18 ? (isMobile ? 18 : 24) : 0;
 
   return (
     <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
@@ -711,18 +761,17 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
           const sin = Math.sin(rad);
           const cos = Math.cos(rad);
 
-          const x = sin * radiusX;
+          const x = sin * radiusX + (count < 18 ? (i - (count - 1) / 2) * smallCountSpread : 0);
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
-          const scale = 0.58 + frontFactor * 0.48;
-          const rotateY = sin * -44;
-          const lift = frontFactor > 0.93 ? -16 : 0;
-          const overlapFix = count < 16 ? (i - (count - 1) / 2) * minCardGap : 0;
+          const scale = 0.50 + frontFactor * 0.56;
+          const rotateY = sin * -34;
+          const lift = frontFactor > 0.92 ? -18 : 0;
 
-          const zIndex = Math.round(2000 + frontFactor * 4000 + (sin + 1) * 5);
-          const opacity = 0.25 + frontFactor * 0.75;
+          const zIndex = Math.round(1000 + frontFactor * 5000 + (i / 100));
+          const opacity = 0.28 + frontFactor * 0.72;
           const couleur = couleurPensee(pensee);
-          const isFront = frontFactor > 0.82;
+          const lue = !!vues[pensee.id];
 
           return (
             <React.Fragment key={pensee.id}>
@@ -730,9 +779,9 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
                 className="fiche-reflet"
                 style={{
                   '--accent': couleur,
-                  transform: `translate(${x + overlapFix}px, ${y + 86}px) scale(${scale}, ${scale * 0.72})`,
-                  opacity: isFront ? 0.18 : 0.05,
-                  zIndex: Math.max(1, zIndex - 1000),
+                  transform: `translate(${x}px, ${y + 82}px) scale(${scale}, ${scale * 0.64})`,
+                  opacity: frontFactor > 0.72 ? 0.16 : 0.04,
+                  zIndex: Math.max(1, zIndex - 1200),
                 }}
               />
               <div
@@ -740,16 +789,19 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
                 onClick={() => ouvrirPopup(pensee)}
                 style={{
                   '--accent': couleur,
-                  transform: `translate(${x + overlapFix}px, ${y + lift}px) scale(${scale}) rotateY(${rotateY}deg)`,
+                  '--author-color': couleur,
+                  transform: `translate(${x}px, ${y + lift}px) scale(${scale}) rotateY(${rotateY}deg)`,
                   zIndex,
                   opacity,
                   pointerEvents: opacity < 0.42 ? 'none' : 'auto',
                 }}
               >
                 <div className="fiche-face front">
+                  <div className="fiche-led" style={{ background: lue ? '#ff3eb5' : '#4dff72', boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72' }} />
                   <FicheTexte pensee={pensee} />
                 </div>
                 <div className="fiche-face back">
+                  <div className="fiche-led" style={{ background: lue ? '#ff3eb5' : '#4dff72', boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72' }} />
                   <FicheTexte pensee={pensee} />
                 </div>
                 <div className="fiche-edge" />
@@ -758,7 +810,6 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
           );
         })}
       </div>
-
     </div>
   );
 }
@@ -769,6 +820,184 @@ function FicheTexte({ pensee }) {
       <div className="fiche-title">{pensee.titre}</div>
       <div className="fiche-author">par {pensee.auteur || 'Anonyme'}</div>
     </>
+  );
+}
+
+function PenseeSocial({ pensee, userId, pseudo }) {
+  const [likes, setLikes] = React.useState([]);
+  const [commentaires, setCommentaires] = React.useState([]);
+  const [texte, setTexte] = React.useState('');
+  const [parentId, setParentId] = React.useState(null);
+  const [envoi, setEnvoi] = React.useState(false);
+
+  const penseeId = pensee?.id;
+  const jaime = likes.some(l => l.user_id === userId);
+
+  React.useEffect(() => {
+    const charger = async () => {
+      if (!penseeId) return;
+
+      const { data: likesData } = await supabase
+        .from('likes_pensees')
+        .select('user_id')
+        .eq('pensee_id', penseeId);
+
+      setLikes(likesData || []);
+
+      const { data: commentsRaw } = await supabase
+        .from('commentaires_pensees')
+        .select('id, texte, user_id, parent_id, created_at')
+        .eq('pensee_id', penseeId)
+        .order('created_at', { ascending: true });
+
+      if (commentsRaw && commentsRaw.length > 0) {
+        const uids = [...new Set(commentsRaw.map(c => c.user_id).filter(Boolean))];
+        let profilsMap = {};
+        if (uids.length > 0) {
+          const { data: profils } = await supabase
+            .from('profils')
+            .select('id, pseudo, prenom')
+            .in('id', uids);
+          (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo || p.prenom || 'Anonyme'; });
+        }
+        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
+      } else {
+        setCommentaires([]);
+      }
+    };
+
+    charger();
+  }, [penseeId]);
+
+  const toggleLike = async () => {
+    if (!penseeId || !userId) return;
+
+    if (jaime) {
+      await supabase
+        .from('likes_pensees')
+        .delete()
+        .eq('pensee_id', penseeId)
+        .eq('user_id', userId);
+
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      await supabase
+        .from('likes_pensees')
+        .insert({ pensee_id: penseeId, user_id: userId });
+
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!texte.trim() || !penseeId || !userId) return;
+
+    setEnvoi(true);
+    const { data } = await supabase
+      .from('commentaires_pensees')
+      .insert({
+        pensee_id: penseeId,
+        user_id: userId,
+        parent_id: parentId,
+        texte: texte.trim(),
+      })
+      .select('id, texte, user_id, parent_id, created_at')
+      .single();
+
+    if (data) {
+      setCommentaires(prev => [...prev, { ...data, pseudo: pseudo || 'Anonyme' }]);
+      setTexte('');
+      setParentId(null);
+    }
+
+    setEnvoi(false);
+  };
+
+  const racines = commentaires.filter(c => !c.parent_id);
+  const reponsesDe = (id) => commentaires.filter(c => c.parent_id === id);
+
+  return (
+    <div style={{
+      marginTop: '14px',
+      borderTop: '1px solid rgba(36,19,12,0.12)',
+      paddingTop: '12px',
+      color: '#24130c',
+      fontSize: '12px',
+    }}>
+      <button
+        onClick={toggleLike}
+        style={{
+          border: 'none',
+          background: jaime ? 'rgba(255,62,181,0.18)' : 'rgba(36,19,12,0.08)',
+          color: jaime ? '#c01870' : '#24130c',
+          padding: '6px 12px',
+          borderRadius: '999px',
+          cursor: 'pointer',
+          fontWeight: 800,
+          marginBottom: '8px',
+        }}
+      >
+        ♥ {likes.length} {jaime ? "J'aime" : "Aimer"}
+      </button>
+
+      <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '8px' }}>
+        {racines.map(c => (
+          <div key={c.id} style={{ background: 'rgba(36,19,12,0.06)', borderRadius: '10px', padding: '7px 9px' }}>
+            <strong>{c.pseudo}</strong>
+            <p style={{ whiteSpace: 'pre-wrap', marginTop: '3px' }}>{c.texte}</p>
+            <button onClick={() => setParentId(c.id)} style={{ background: 'none', border: 'none', color: '#008b9a', cursor: 'pointer', fontSize: '11px', marginTop: '3px' }}>Répondre</button>
+
+            {reponsesDe(c.id).map(r => (
+              <div key={r.id} style={{ marginTop: '6px', marginLeft: '14px', borderLeft: '2px solid rgba(0,212,212,0.25)', paddingLeft: '8px' }}>
+                <strong>{r.pseudo}</strong>
+                <p style={{ whiteSpace: 'pre-wrap', marginTop: '3px' }}>{r.texte}</p>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {parentId && (
+        <div style={{ color: '#008b9a', fontSize: '11px', marginBottom: '5px' }}>
+          Réponse en cours
+          <button onClick={() => setParentId(null)} style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#c01870' }}>annuler</button>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <textarea
+          value={texte}
+          onChange={e => setTexte(e.target.value)}
+          placeholder="Ajouter un commentaire..."
+          rows={1}
+          style={{
+            flex: 1,
+            border: '1px solid rgba(36,19,12,0.15)',
+            background: 'rgba(255,255,255,0.50)',
+            borderRadius: '8px',
+            padding: '7px 9px',
+            resize: 'none',
+            fontFamily: 'inherit',
+            color: '#24130c',
+          }}
+        />
+        <button
+          onClick={envoyerCommentaire}
+          disabled={!texte.trim() || envoi}
+          style={{
+            border: 'none',
+            background: texte.trim() ? '#00d4d4' : 'rgba(36,19,12,0.12)',
+            color: texte.trim() ? '#000' : 'rgba(36,19,12,0.35)',
+            borderRadius: '8px',
+            padding: '0 12px',
+            fontWeight: 800,
+            cursor: texte.trim() ? 'pointer' : 'default',
+          }}
+        >
+          OK
+        </button>
+      </div>
+    </div>
   );
 }
 
