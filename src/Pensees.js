@@ -594,8 +594,8 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                   </p>
                 </div>
 
-                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
-                  <p style={{ width: '100%', fontSize: isMobile ? '13px' : '13.6px', lineHeight: 1.38, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ width: '100%', fontSize: isMobile ? '13px' : '13.6px', lineHeight: 1.38, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 'auto 0' }}>
                     {pagesPopup[pagePopup]}
                   </p>
                 </div>
