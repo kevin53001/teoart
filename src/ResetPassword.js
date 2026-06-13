@@ -29,7 +29,7 @@ function PasswordInput({ value, onChange, placeholder, onKeyDown, onFocus, onBlu
         onChange={onChange}
         placeholder={placeholder}
         onKeyDown={onKeyDown}
-        style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 40px 10px 14px', color: '#fff', fontSize: '14px', outline: 'none' }}
+        style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 40px 10px 14px', color: '#fff', fontSize: '14px', outline: 'none' }}
         onFocus={onFocus}
         onBlur={onBlur}
       />
