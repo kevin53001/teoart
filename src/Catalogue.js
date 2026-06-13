@@ -1159,13 +1159,13 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                     const url = getVisuelPres(sim.visuels);
                     return (
                       <div key={idx} onClick={() => onOpenSimilaire(sim)}
-                        style={{ flexShrink: 0, width: '80px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
+                        style={{ flexShrink: 0, width: '160px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.35)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}>
-                        {url ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '80px', objectFit: 'cover', display: 'block' }} />
-                          : <div style={{ width: '100%', height: '80px', background: 'rgba(255,255,255,0.02)' }} />}
-                        <div style={{ padding: '3px 5px' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
+                        {url ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }} />
+                          : <div style={{ width: '100%', height: '160px', background: 'rgba(255,255,255,0.02)' }} />}
+                        <div style={{ padding: '4px 7px' }}>
+                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
                         </div>
                       </div>
                     );
