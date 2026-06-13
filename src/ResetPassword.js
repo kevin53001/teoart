@@ -89,7 +89,7 @@ function ResetPassword() {
       setErreur(error.message);
     } else {
       setSucces(true);
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(async () => { await supabase.auth.signOut(); navigate('/'); }, 3000);
     }
   };
 
