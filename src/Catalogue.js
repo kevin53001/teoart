@@ -381,6 +381,10 @@ function Catalogue() {
         .shining-logo { position: relative; overflow: hidden; }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
