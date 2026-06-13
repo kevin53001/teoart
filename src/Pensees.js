@@ -584,21 +584,25 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             <button onClick={() => setPopup(null)} style={{ position: 'absolute', top: '-18px', right: '-18px', width: '38px', height: '38px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.82)', color: '#fff', fontSize: '20px', cursor: 'pointer', zIndex: 5 }}>×</button>
 
             <div className="popup-page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-              <div style={{ padding: isMobile ? '34px 30px' : '48px 54px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                  <h2 style={{ fontSize: isMobile ? '23px' : '30px', lineHeight: 1.1, marginBottom: '8px' }}>{popup.titre}</h2>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(36,19,12,0.62)' }}>par {popup.auteur || 'Anonyme'}</p>
+              <div style={{ padding: isMobile ? '22px 24px 18px' : '26px 34px 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', marginBottom: '10px', minHeight: '18px' }}>
+                  <h2 style={{ fontSize: isMobile ? '10px' : '11px', lineHeight: 1.2, fontWeight: 800, color: 'rgba(36,19,12,0.58)', maxWidth: '55%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {popup.titre}
+                  </h2>
+                  <p style={{ fontSize: isMobile ? '9px' : '10px', lineHeight: 1.2, fontWeight: 700, color: 'rgba(36,19,12,0.46)', maxWidth: '42%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                    {popup.auteur || 'Anonyme'}
+                  </p>
                 </div>
 
-                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-                  <p style={{ fontSize: isMobile ? '15px' : '17px', lineHeight: 1.78, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e' }}>
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
+                  <p style={{ width: '100%', fontSize: isMobile ? '14px' : '15px', lineHeight: 1.55, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
                     {pagesPopup[pagePopup]}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
                   <button onClick={pagePrecedente} disabled={pagePopup === 0} style={navPageBtn(pagePopup !== 0)}>‹</button>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(36,19,12,0.52)' }}>{pagePopup + 1} / {pagesPopup.length}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(36,19,12,0.52)' }}>{pagePopup + 1} / {pagesPopup.length}</span>
                   <button onClick={pageSuivante} disabled={pagePopup >= pagesPopup.length - 1} style={navPageBtn(pagePopup < pagesPopup.length - 1)}>›</button>
                 </div>
 
@@ -939,9 +943,9 @@ function PenseeSocial({ pensee, userId, pseudo }) {
 
   return (
     <div style={{
-      marginTop: '14px',
+      marginTop: '8px',
       borderTop: '1px solid rgba(36,19,12,0.12)',
-      paddingTop: '12px',
+      paddingTop: '8px',
       color: '#24130c',
       fontSize: '12px',
     }}>
@@ -961,7 +965,7 @@ function PenseeSocial({ pensee, userId, pseudo }) {
         ♥ {likes.length} {jaime ? "J'aime" : "Aimer"}
       </button>
 
-      <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '8px' }}>
+      <div style={{ maxHeight: '82px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '8px' }}>
         {racines.map(c => (
           <div key={c.id} style={{ background: 'rgba(36,19,12,0.06)', borderRadius: '10px', padding: '7px 9px' }}>
             <strong>{c.pseudo}</strong>
