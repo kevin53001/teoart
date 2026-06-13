@@ -433,7 +433,7 @@ function Pensees() {
           width: 500px;
           height: 812px;
           max-width: calc(100vw - 34px);
-          max-height: calc(100vh - 120px);
+          max-height: calc(100vh - 80px);
           aspect-ratio: 500 / 812;
           background:
             radial-gradient(circle at 25% 15%, rgba(255,255,255,0.98), rgba(255,247,228,0.97) 46%, rgba(232,211,178,0.98) 100%);
