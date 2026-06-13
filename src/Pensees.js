@@ -8,6 +8,7 @@ const SPEED = '80s';
 const IMG_W = 110;
 const IMG_H = 150;
 const GAP = 6;
+const KEVIN_CYAN = '#00d4d4';
 
 const BARRES = [
   { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.40 },
@@ -19,6 +20,12 @@ const BARRES = [
 ];
 
 const CATEGORIES = ['Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+
+const COULEURS_VISITEURS = [
+  '#ff4d6d', '#ff7a3d', '#ffd250', '#a8e063', '#4cd964',
+  '#2ecc71', '#5dade2', '#7b61ff', '#9b59b6', '#d96cff',
+  '#ff3eb5', '#ff8fb3', '#ff6f61', '#c0c0c0', '#f5f5f5'
+];
 
 function LogoPremium({ navigate, isMobile, L }) {
   const ref = React.useRef(null);
@@ -88,6 +95,27 @@ function decouperTexte(texte, taille = 820) {
   return blocs.length ? blocs : [''];
 }
 
+function couleurPensee(pensee) {
+  if (pensee.couleur) return pensee.couleur;
+  if (pensee.source === 'kevin') return KEVIN_CYAN;
+  return COULEURS_VISITEURS[Math.abs(hashString(pensee.id || pensee.titre || '')) % COULEURS_VISITEURS.length];
+}
+
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+  return h;
+}
+
+function calculArc(nb) {
+  if (nb <= 1) return 0;
+  if (nb <= 10) return 78;
+  if (nb <= 20) return 128;
+  if (nb <= 30) return 188;
+  if (nb <= 50) return 278;
+  return 360;
+}
+
 function Pensees() {
   const navigate = useNavigate();
   const [pensees, setPensees] = React.useState([]);
@@ -99,6 +127,7 @@ function Pensees() {
   const [showForm, setShowForm] = React.useState(false);
   const [titreForm, setTitreForm] = React.useState('');
   const [texteForm, setTexteForm] = React.useState('');
+  const [couleurForm, setCouleurForm] = React.useState(COULEURS_VISITEURS[0]);
   const [sending, setSending] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [userId, setUserId] = React.useState(null);
@@ -139,6 +168,8 @@ function Pensees() {
     setSending(true);
     setMessage('');
 
+    const couleurChoisie = couleurForm === KEVIN_CYAN ? COULEURS_VISITEURS[0] : couleurForm;
+
     const { error } = await supabase.from('pensees').insert({
       titre: titreForm.trim(),
       texte: texteForm.trim(),
@@ -147,6 +178,7 @@ function Pensees() {
       source: 'visiteur',
       statut: 'en_attente',
       ordre: 9999,
+      couleur: couleurChoisie,
     });
 
     if (error) {
@@ -155,6 +187,7 @@ function Pensees() {
       setMessage("Pensée envoyée. Elle apparaîtra après validation.");
       setTitreForm('');
       setTexteForm('');
+      setCouleurForm(COULEURS_VISITEURS[0]);
       setTimeout(() => setShowForm(false), 1400);
     }
 
@@ -225,137 +258,179 @@ function Pensees() {
           box-shadow: 0 20px 55px rgba(0,0,0,0.55), 0 0 22px rgba(0,212,212,0.10);
         }
 
+        .btn-nuage {
+          position: relative;
+          border: 0;
+          background: linear-gradient(120deg, rgba(255,210,80,0.98), rgba(255,142,90,0.98), rgba(255,62,181,0.98));
+          color: #090909;
+          font-weight: 900;
+          font-size: 14px;
+          padding: 15px 34px;
+          border-radius: 999px;
+          cursor: pointer;
+          box-shadow: 0 12px 34px rgba(255,62,181,0.25), 0 0 22px rgba(255,210,80,0.12);
+          transition: transform .2s ease, filter .2s ease;
+        }
+        .btn-nuage:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.08); }
+        .btn-nuage::before,
+        .btn-nuage::after {
+          content: '';
+          position: absolute;
+          background: inherit;
+          border-radius: 50%;
+          z-index: -1;
+          filter: blur(0.1px);
+        }
+        .btn-nuage::before { width: 42px; height: 42px; left: 18px; top: -13px; }
+        .btn-nuage::after { width: 54px; height: 54px; right: 22px; top: -20px; }
+
         .donut-zone {
           position: relative;
-          width: min(94vw, 980px);
+          width: min(96vw, 1120px);
           height: 650px;
           margin: 0 auto;
-          perspective: 1250px;
+          perspective: 1000px;
           overflow: visible;
           user-select: none;
         }
-        .donut-shadow {
+        .donut-floor {
           position: absolute;
           left: 50%;
-          top: 60%;
-          width: min(84vw, 760px);
-          height: 190px;
+          top: 58%;
+          width: min(96vw, 1080px);
+          height: 470px;
           transform: translate(-50%, -50%);
+          background:
+            radial-gradient(ellipse at center, rgba(0,212,212,0.14), transparent 28%),
+            radial-gradient(ellipse at 40% 64%, rgba(255,62,181,0.10), transparent 34%),
+            linear-gradient(to bottom, rgba(20,14,10,0.18), rgba(0,0,0,0.30));
           border-radius: 50%;
-          background: radial-gradient(ellipse at center, rgba(0,212,212,0.16), rgba(255,62,181,0.10) 42%, rgba(0,0,0,0) 72%);
-          filter: blur(4px);
+          filter: blur(0.2px);
           pointer-events: none;
         }
         .donut-stage {
           position: absolute;
           left: 50%;
           top: 55%;
-          width: 760px;
-          height: 500px;
-          transform-style: preserve-3d;
-          transform: translate(-50%, -50%) rotateX(10deg);
-          border-radius: 50%;
-        }
-        .donut-hole {
-          position: absolute;
-          left: 50%;
-          top: 58%;
-          width: 260px;
-          height: 118px;
-          transform: translate(-50%, -50%) translateZ(20px);
-          border-radius: 50%;
-          background: radial-gradient(ellipse at center, rgba(0,0,0,0.98), rgba(0,0,0,0.82) 58%, rgba(0,212,212,0.16) 78%, rgba(255,210,80,0.13) 100%);
-          border: 1px solid rgba(0,212,212,0.25);
-          box-shadow: inset 0 0 44px rgba(0,0,0,0.95), 0 0 34px rgba(0,212,212,0.13);
-          z-index: 600;
-          pointer-events: none;
-        }
-        .donut-info {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 190px;
+          width: 980px;
+          height: 430px;
           transform: translate(-50%, -50%);
-          text-align: center;
-          color: rgba(255,255,255,0.58);
-          font-size: 11px;
-          line-height: 1.35;
-          z-index: 620;
-          pointer-events: none;
+          transform-style: preserve-3d;
         }
 
-        .fiche-donut {
+        .fiche-wrap {
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 74px;
-          height: 250px;
-          margin-left: -37px;
-          margin-top: -125px;
-          transform-origin: 37px 125px;
-          border-radius: 10px;
-          background: radial-gradient(circle at 26% 10%, rgba(255,255,255,0.98), rgba(255,248,231,0.98) 48%, rgba(230,211,178,0.98) 100%);
-          border: 1px solid rgba(255,255,255,0.55);
-          border-top: 7px solid var(--accent);
-          box-shadow: 0 18px 28px rgba(0,0,0,0.42);
-          cursor: pointer;
-          transition: transform .22s ease, filter .2s ease, box-shadow .2s ease, z-index .2s ease;
-          overflow: hidden;
+          width: 142px;
+          height: 230px;
+          margin-left: -71px;
+          margin-top: -115px;
           transform-style: preserve-3d;
+          cursor: pointer;
+          transition: filter .18s ease;
         }
-        .fiche-donut:hover {
-          filter: brightness(1.12);
-          box-shadow: 0 25px 46px rgba(0,0,0,0.58), 0 0 30px rgba(0,212,212,0.22);
-          z-index: 900 !important;
+        .fiche-wrap:hover { filter: brightness(1.12); }
+        .fiche-face {
+          position: absolute;
+          inset: 0;
+          border-radius: 15px;
+          background:
+            radial-gradient(circle at 28% 18%, rgba(255,255,255,0.035), transparent 38%),
+            linear-gradient(145deg, rgba(24,24,24,0.98), rgba(4,4,4,0.99));
+          border: 1px solid rgba(255,255,255,0.08);
+          border-top: 7px solid var(--accent);
+          box-shadow:
+            0 22px 46px rgba(0,0,0,0.66),
+            0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+            0 0 24px color-mix(in srgb, var(--accent) 18%, transparent);
+          overflow: hidden;
+          backface-visibility: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          padding: 20px 14px;
         }
-        .fiche-donut::before {
+        .fiche-face.back { transform: rotateY(180deg); }
+        .fiche-face::before {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, rgba(0,0,0,0.10), transparent 24%, transparent 76%, rgba(0,0,0,0.13));
+          background: linear-gradient(90deg, rgba(255,255,255,0.035), transparent 28%, transparent 72%, rgba(0,0,0,0.34));
           pointer-events: none;
         }
-        .fiche-contenu {
-          position: absolute;
-          left: 0;
-          right: 0;
-          top: 26px;
-          padding: 10px 8px;
-          text-align: center;
-          opacity: 0;
-          transform: translateY(12px);
-          transition: opacity .2s ease, transform .2s ease;
-          pointer-events: none;
-        }
-        .fiche-donut:hover .fiche-contenu {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .fiche-titre {
-          color: #1c100b;
-          font-weight: 900;
-          font-size: 13px;
-          line-height: 1.08;
-          margin-bottom: 6px;
-          max-height: 76px;
-          overflow: hidden;
-        }
-        .fiche-auteur {
-          color: rgba(28,16,11,0.62);
-          font-size: 9px;
+        .fiche-title {
+          position: relative;
+          z-index: 2;
+          color: #fff;
+          font-size: 17px;
+          line-height: 1.18;
           font-weight: 800;
+          max-height: 86px;
+          overflow: hidden;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.75);
         }
-
-        .donut-controls {
+        .fiche-author {
+          position: relative;
+          z-index: 2;
+          margin-top: 14px;
+          color: #00d4d4;
+          font-size: 12px;
+          line-height: 1.2;
+          font-weight: 700;
+          text-shadow: 0 0 10px rgba(0,212,212,0.28);
+        }
+        .fiche-edge {
+          position: absolute;
+          left: 100%;
+          top: 4px;
+          width: 16px;
+          height: calc(100% - 8px);
+          transform-origin: left center;
+          transform: rotateY(90deg);
+          background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, #000), rgba(8,8,8,0.98));
+          border-radius: 0 8px 8px 0;
+          box-shadow: inset 0 0 16px rgba(0,0,0,0.8);
+        }
+        .fiche-reflet {
           position: absolute;
           left: 50%;
-          bottom: 16px;
+          top: 50%;
+          width: 128px;
+          height: 190px;
+          margin-left: -64px;
+          margin-top: 108px;
+          transform-origin: top center;
+          border-radius: 15px;
+          background: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
+          opacity: 0.18;
+          filter: blur(3px);
+          pointer-events: none;
+        }
+        .donut-help {
+          position: absolute;
+          left: 50%;
+          bottom: 20px;
           transform: translateX(-50%);
-          color: rgba(255,255,255,0.45);
-          font-size: 12px;
+          color: rgba(255,255,255,0.72);
+          font-size: 15px;
           text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
           width: 100%;
           pointer-events: none;
+          text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+        }
+        .donut-help::before,
+        .donut-help::after {
+          content: '';
+          width: 76px;
+          height: 1px;
+          background: rgba(255,255,255,0.65);
         }
 
         .popup-page {
@@ -384,21 +459,20 @@ function Pensees() {
 
         @media (max-width: 600px) {
           .donut-zone { height: 490px; }
-          .donut-stage { width: 480px; height: 340px; transform: translate(-50%, -50%) rotateX(10deg); }
-          .donut-hole { width: 160px; height: 76px; }
-          .donut-info { width: 128px; font-size: 9px; }
-          .fiche-donut {
-            width: 48px;
-            height: 164px;
-            margin-left: -24px;
-            margin-top: -82px;
-            transform-origin: 24px 82px;
-            border-radius: 8px;
+          .donut-stage { width: 530px; height: 310px; }
+          .fiche-wrap {
+            width: 84px;
+            height: 145px;
+            margin-left: -42px;
+            margin-top: -72px;
           }
-          .fiche-contenu { top: 14px; padding: 8px 5px; }
-          .fiche-titre { font-size: 9px; max-height: 54px; }
-          .fiche-auteur { font-size: 7px; }
-          .donut-controls { bottom: 0; font-size: 10px; }
+          .fiche-face { border-radius: 10px; padding: 12px 8px; border-top-width: 5px; }
+          .fiche-edge { width: 10px; }
+          .fiche-title { font-size: 10px; max-height: 52px; }
+          .fiche-author { font-size: 8px; margin-top: 8px; }
+          .fiche-reflet { width: 72px; height: 108px; margin-left: -36px; margin-top: 70px; }
+          .donut-help { font-size: 11px; bottom: 0; gap: 8px; }
+          .donut-help::before, .donut-help::after { width: 36px; }
         }
       `}</style>
 
@@ -454,32 +528,18 @@ function Pensees() {
         </div>
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '28px 14px 60px' : '40px 20px 70px', minHeight: `${BARRES.length * (IMG_H + GAP) + 360}px` }}>
-          <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
-            <div className="premium-card" style={{ padding: isMobile ? '18px' : '24px 30px', margin: '0 auto 18px', textAlign: 'center' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div className="premium-card" style={{ padding: isMobile ? '18px' : '24px 30px', margin: '0 auto 22px', textAlign: 'center' }}>
               <h1 style={{ color: '#fff', fontSize: isMobile ? '24px' : '34px', letterSpacing: '1px', marginBottom: '10px', textShadow: '0 0 16px rgba(0,212,212,0.22)' }}>
                 MES PENSÉES
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '13px' : '15px', lineHeight: 1.75, maxWidth: '760px', margin: '0 auto' }}>
-                Une roue de petites fiches. Fais glisser ton curseur à gauche ou à droite : plus tu t'éloignes du centre, plus elle tourne vite.
-                Arrête-toi sur une fiche pour la lire, puis clique pour l'ouvrir.
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '13px' : '15px', lineHeight: 1.75, maxWidth: '780px', margin: '0 auto' }}>
+                Les pensées qu'on garde parfois dans un coin de page. Certaines viennent de Kevin Teo'Art, d'autres peuvent venir des visiteurs.
               </p>
             </div>
 
-            <div style={{ textAlign: 'center', marginBottom: isMobile ? '18px' : '20px' }}>
-              <button
-                onClick={() => setShowForm(true)}
-                style={{
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  background: 'linear-gradient(90deg, rgba(255,210,80,0.95), rgba(255,62,181,0.95))',
-                  color: '#000',
-                  fontWeight: 'bold',
-                  fontSize: '13px',
-                  padding: '12px 24px',
-                  borderRadius: '999px',
-                  cursor: 'pointer',
-                  boxShadow: '0 10px 28px rgba(255,62,181,0.18)',
-                }}
-              >
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '24px' : '26px', position: 'relative', zIndex: 20 }}>
+              <button className="btn-nuage" onClick={() => setShowForm(true)}>
                 Ajouter ma pensée
               </button>
             </div>
@@ -563,11 +623,11 @@ function Pensees() {
             padding: '20px',
           }}
         >
-          <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '520px', maxWidth: '96vw', padding: '24px', position: 'relative' }}>
+          <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '540px', maxWidth: '96vw', padding: '24px', position: 'relative' }}>
             <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}>×</button>
             <h2 style={{ color: '#fff', marginBottom: '14px', fontSize: '24px' }}>Ajouter ma pensée</h2>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.6, marginBottom: '18px' }}>
-              Elle sera envoyée avec ton pseudo et apparaîtra après validation.
+              Elle sera envoyée avec ton pseudo et apparaîtra après validation. Le cyan est réservé aux pensées de Kevin Teo'Art.
             </p>
 
             <input
@@ -584,6 +644,27 @@ function Pensees() {
               rows={8}
               style={{ ...inputStyle, resize: 'vertical', minHeight: '170px', lineHeight: 1.6 }}
             />
+
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '13px', fontWeight: 700, marginBottom: '10px' }}>Couleur de la fiche</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                {COULEURS_VISITEURS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setCouleurForm(c)}
+                    aria-label={`Couleur ${c}`}
+                    style={{
+                      height: '34px',
+                      borderRadius: '999px',
+                      border: couleurForm === c ? '3px solid #fff' : '1px solid rgba(255,255,255,0.20)',
+                      background: c,
+                      cursor: 'pointer',
+                      boxShadow: couleurForm === c ? `0 0 18px ${c}` : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
 
             {message && <p style={{ color: message.includes('Impossible') ? '#ff6b6b' : '#00d4d4', fontSize: '13px', marginBottom: '12px' }}>{message}</p>}
 
@@ -613,14 +694,14 @@ function Pensees() {
 function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
   const zoneRef = React.useRef(null);
   const rafRef = React.useRef(null);
-  const angleRef = React.useRef(0);
+  const rotationRef = React.useRef(0);
   const speedRef = React.useRef(0);
-  const [angle, setAngle] = React.useState(0);
+  const [rotation, setRotation] = React.useState(0);
 
   React.useEffect(() => {
     const animate = () => {
-      angleRef.current += speedRef.current;
-      setAngle(angleRef.current);
+      rotationRef.current += speedRef.current;
+      setRotation(rotationRef.current);
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
@@ -632,58 +713,91 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
     if (!rect) return;
     const center = rect.left + rect.width / 2;
     const dist = (e.clientX - center) / (rect.width / 2);
-    speedRef.current = Math.max(-1, Math.min(1, dist)) * 0.85;
+    const deadZone = Math.abs(dist) < 0.08 ? 0 : dist;
+    speedRef.current = Math.max(-1, Math.min(1, deadZone)) * 0.72;
   };
 
   const handleMouseLeave = () => {
     speedRef.current = 0;
   };
 
-  const visibles = pensees.slice(0, Math.min(pensees.length, 32));
+  const visibles = pensees.slice(0, Math.min(pensees.length, 90));
   const count = visibles.length || 1;
-  const radiusX = isMobile ? 178 : 292;
-  const radiusY = isMobile ? 72 : 118;
-  const lift = isMobile ? 34 : 52;
+  const arc = calculArc(count);
+  const radiusX = isMobile ? 210 : 430;
+  const radiusY = isMobile ? 86 : 170;
+  const minCardGap = isMobile ? 13 : 15;
 
   return (
     <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-      <div className="donut-shadow" />
+      <div className="donut-floor" />
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
-          const base = (360 / count) * i + angle;
-          const normalized = ((base % 360) + 360) % 360;
-          const front = normalized > 330 || normalized < 30;
-          const back = normalized > 150 && normalized < 210;
-          const z = front ? 820 : back ? 30 : 260 + Math.round(Math.cos((normalized * Math.PI) / 180) * 120);
-          const accent = i % 3 === 0 ? '#00d4d4' : i % 3 === 1 ? '#ff3eb5' : '#ffd250';
+          const localAngle = count === 1 ? 0 : -arc / 2 + (arc / (count - 1)) * i;
+          const angle = localAngle + rotation;
+          const rad = (angle * Math.PI) / 180;
+          const sin = Math.sin(rad);
+          const cos = Math.cos(rad);
+
+          const x = sin * radiusX;
+          const y = -cos * radiusY;
+          const frontFactor = (cos + 1) / 2;
+          const sideFactor = Math.abs(sin);
+          const scale = 0.58 + frontFactor * 0.48;
+          const rotateY = sin * -44;
+          const lift = frontFactor > 0.93 ? -16 : 0;
+          const overlapFix = count < 16 ? (i - (count - 1) / 2) * minCardGap : 0;
+
+          const zIndex = Math.round(2000 + frontFactor * 4000 + (sin + 1) * 5);
+          const opacity = 0.25 + frontFactor * 0.75;
+          const couleur = couleurPensee(pensee);
+          const isFront = frontFactor > 0.82;
 
           return (
-            <div
-              key={pensee.id}
-              className="fiche-donut"
-              onClick={() => ouvrirPopup(pensee)}
-              style={{
-                '--accent': accent,
-                transform: `translate(${Math.sin((base * Math.PI) / 180) * radiusX}px, ${-Math.cos((base * Math.PI) / 180) * radiusY}px) translateZ(${front ? lift : 0}px) rotateY(${Math.sin((base * Math.PI) / 180) * 34}deg) rotateZ(${Math.sin((base * Math.PI) / 180) * 6}deg)`,
-                zIndex: z,
-                opacity: back ? 0.48 : 1,
-              }}
-            >
-              <div className="fiche-contenu">
-                <div className="fiche-titre">{pensee.titre}</div>
-                <div className="fiche-auteur">par {pensee.auteur || 'Anonyme'}</div>
+            <React.Fragment key={pensee.id}>
+              <div
+                className="fiche-reflet"
+                style={{
+                  '--accent': couleur,
+                  transform: `translate(${x + overlapFix}px, ${y + 86}px) scale(${scale}, ${scale * 0.72})`,
+                  opacity: isFront ? 0.18 : 0.05,
+                  zIndex: Math.max(1, zIndex - 1000),
+                }}
+              />
+              <div
+                className="fiche-wrap"
+                onClick={() => ouvrirPopup(pensee)}
+                style={{
+                  '--accent': couleur,
+                  transform: `translate(${x + overlapFix}px, ${y + lift}px) scale(${scale}) rotateY(${rotateY}deg)`,
+                  zIndex,
+                  opacity,
+                  pointerEvents: opacity < 0.42 ? 'none' : 'auto',
+                }}
+              >
+                <div className="fiche-face front">
+                  <FicheTexte pensee={pensee} />
+                </div>
+                <div className="fiche-face back">
+                  <FicheTexte pensee={pensee} />
+                </div>
+                <div className="fiche-edge" />
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
-        <div className="donut-hole">
-          <div className="donut-info">
-            Déplace le curseur<br />à gauche ou à droite
-          </div>
-        </div>
       </div>
-      <div className="donut-controls">Les fiches sont debout · Survole une tranche pour l’ouvrir</div>
+      <div className="donut-help">Déplace le curseur à droite ou à gauche pour faire tourner la roue</div>
     </div>
+  );
+}
+
+function FicheTexte({ pensee }) {
+  return (
+    <>
+      <div className="fiche-title">{pensee.titre}</div>
+      <div className="fiche-author">par {pensee.auteur || 'Anonyme'}</div>
+    </>
   );
 }
 
