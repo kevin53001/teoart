@@ -46,7 +46,9 @@ function BandeauPromo() {
   const items = [...PALIERS_PROMO, ...PALIERS_PROMO, ...PALIERS_PROMO];
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 0 0', position: 'relative', zIndex: 40, overflow: 'hidden' }}>
-      <div style={{ maxWidth: BANNER_MAX, width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)' }}>
+      <div style={{ maxWidth: '860px', width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)', position: 'relative' }}>
+        {/* Effet scintillant */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%)', animation: 'shimmerPromo 3s ease-in-out infinite', pointerEvents: 'none', zIndex: 2 }} />
         <div style={{ display: 'flex', animation: 'scrollPromo 22s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
           {items.map((p, i) => (
             <span key={i} style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', padding: '0 48px', letterSpacing: '0.5px' }}>
@@ -329,6 +331,7 @@ function Catalogue() {
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         @keyframes scrollPromo { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
+        @keyframes shimmerPromo { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(200%); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
@@ -416,19 +419,7 @@ function Catalogue() {
                       onClick={() => selectionnerCategorie(cat)}>{cat}</button>
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
-                  {/* Sous-menu Patreon 2026 */}
-                  <button className={`dropdown-item${sousCategorie ? ' actif' : ''}`}
-                    style={{ color: sousCategorie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                    onClick={e => { e.stopPropagation(); setShowPatreon(v => !v); setShowCategories(false); }}>
-                    <span>⭐ Patreon 2026</span>
-                    <span style={{ fontSize: '10px', opacity: 0.6 }}>›</span>
-                  </button>
-                </div>
-              )}
-              {/* Sous-menu mois Patreon */}
-              {showPatreon && (
-                <div className="dropdown-patreon" style={{ left: isMobile ? '50%' : '110%', top: isMobile ? '52px' : '0', transform: isMobile ? 'translateX(-50%)' : 'none' }} onClick={e => e.stopPropagation()}>
-                  <p className="dropdown-titre-patreon">Patreon 2026</p>
+                  <p className="dropdown-titre-patreon">⭐ Patreon 2026</p>
                   {moisPatreon.map(mois => (
                     <button key={mois} className={`dropdown-item-patreon${sousCategorie === mois ? ' actif' : ''}`}
                       onClick={() => selectionnerPatreon(mois)}>
@@ -476,10 +467,10 @@ function Catalogue() {
           </div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '24px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
           {/* ENCARTS */}
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '24px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '12px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
             {!isMobile && (
               <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -992,15 +983,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
             <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
-              {/* POINT 10 : badge Patreon en or, cliquable */}
-              {illu.sous_categorie_patreon && (
-                <button onClick={() => onFiltrerPatreon && onFiltrerPatreon(illu.sous_categorie_patreon)}
-                  style={{ alignSelf: 'flex-start', background: 'rgba(255,210,80,0.12)', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '20px', padding: '3px 10px', color: 'rgba(255,210,80,0.95)', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.22)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.7)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.45)'; }}>
-                  ⭐ {illu.sous_categorie_patreon}
-                </button>
-              )}
               {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>{jAi ? "✓ J'ai" : "✕ J'ai"}</button>
@@ -1038,15 +1020,24 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>{formatDescription(illu.description)}</p>
                 </div>
               )}
-              {livresIllu.length > 0 && (
+              {/* POINT 10 : ligne Dans: avec badge Patreon intégré */}
+              {(livresIllu.length > 0 || illu.sous_categorie_patreon) && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>
+                  {livresIllu.length > 0 && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>}
                   {livresIllu.map(l => (
                     <button key={l.id} onClick={() => { onClose(); if (onOuvrirLivre) onOuvrirLivre(l); }}
                       style={{ background: 'rgba(0,212,212,0.08)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '6px', padding: '2px 8px', color: '#00d4d4', fontSize: '10px', cursor: 'pointer' }}>
                       📚 {l.nom}
                     </button>
                   ))}
+                  {illu.sous_categorie_patreon && (
+                    <button onClick={() => onFiltrerPatreon && onFiltrerPatreon(illu.sous_categorie_patreon)}
+                      style={{ background: 'rgba(255,210,80,0.12)', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '6px', padding: '2px 8px', color: 'rgba(255,210,80,0.95)', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all .2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.22)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.7)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.45)'; }}>
+                      ⭐ {illu.sous_categorie_patreon}
+                    </button>
+                  )}
                 </div>
               )}
               {illu.tags && illu.tags.length > 0 && (
