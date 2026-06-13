@@ -18,12 +18,32 @@ const IMG_H = 150;
 const GAP = 6;
 const SPEED = '80s';
 
+function EyeIcon({ visible }) {
+  return visible ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+}
+
 function Connexion() {
   const navigate = useNavigate();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [resetEmail, setResetEmail] = React.useState('');
+  const [showReset, setShowReset] = React.useState(false);
+  const [resetLoading, setResetLoading] = React.useState(false);
+  const [resetMsg, setResetMsg] = React.useState('');
 
   const handleConnexion = async () => {
     setError('');
@@ -45,6 +65,21 @@ function Connexion() {
       navigate('/catalogue');
     } else {
       navigate('/selection');
+    }
+  };
+
+  const handleReset = async () => {
+    if (!resetEmail.trim()) { setResetMsg('Saisis ton adresse email.'); return; }
+    setResetLoading(true);
+    setResetMsg('');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      setResetMsg('Une erreur est survenue. Vérifie ton adresse email.');
+    } else {
+      setResetMsg('Email envoyé ! Vérifie ta boîte mail.');
     }
   };
 
@@ -131,8 +166,58 @@ function Connexion() {
 
             <input type="email" placeholder="Adresse email" value={email} onChange={e => setEmail(e.target.value)}
               style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '8px', padding: '12px 14px', color: '#fff', marginBottom: '12px', fontSize: '14px' }} />
-            <input type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)}
-              style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '8px', padding: '12px 14px', color: '#fff', marginBottom: '16px', fontSize: '14px' }} />
+
+            {/* Champ mot de passe avec œil */}
+            <div style={{ position: 'relative', marginBottom: '8px' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Mot de passe"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleConnexion(); }}
+                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '8px', padding: '12px 40px 12px 14px', color: '#fff', fontSize: '14px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: showPassword ? '#00d4d4' : 'rgba(255,255,255,0.35)', padding: 0, display: 'flex', alignItems: 'center' }}
+              >
+                <EyeIcon visible={showPassword} />
+              </button>
+            </div>
+
+            {/* Lien mot de passe oublié */}
+            <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+              <span
+                onClick={() => { setShowReset(v => !v); setResetMsg(''); setResetEmail(''); }}
+                style={{ color: 'rgba(0,212,212,0.6)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>
+                Mot de passe oublié ?
+              </span>
+            </div>
+
+            {/* Formulaire reset inline */}
+            {showReset && (
+              <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '10px', padding: '14px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>Saisis ton email pour recevoir un lien de réinitialisation.</p>
+                <input
+                  type="email"
+                  placeholder="Ton adresse email"
+                  value={resetEmail}
+                  onChange={e => setResetEmail(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleReset(); }}
+                  style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '13px' }}
+                />
+                {resetMsg && (
+                  <p style={{ color: resetMsg.includes('envoyé') ? '#00d4d4' : '#ff6b6b', fontSize: '12px' }}>{resetMsg}</p>
+                )}
+                <button
+                  onClick={handleReset}
+                  disabled={resetLoading}
+                  style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '9px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', opacity: resetLoading ? 0.6 : 1 }}>
+                  {resetLoading ? 'Envoi...' : 'Envoyer le lien'}
+                </button>
+              </div>
+            )}
 
             <button onClick={handleConnexion} disabled={loading}
               style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginBottom: '12px', transition: 'opacity .2s', opacity: loading ? 0.6 : 1 }}>
