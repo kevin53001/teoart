@@ -313,21 +313,6 @@ function Pensees() {
           overflow: visible;
           user-select: none;
         }
-        .donut-floor {
-          position: absolute;
-          left: 50%;
-          top: 58%;
-          width: min(96vw, 1080px);
-          height: 470px;
-          transform: translate(-50%, -50%);
-          background:
-            radial-gradient(ellipse at center, rgba(0,212,212,0.14), transparent 28%),
-            radial-gradient(ellipse at 40% 64%, rgba(255,62,181,0.10), transparent 34%),
-            linear-gradient(to bottom, rgba(20,14,10,0.18), rgba(0,0,0,0.30));
-          border-radius: 50%;
-          filter: blur(0.2px);
-          pointer-events: none;
-        }
         .donut-stage {
           position: absolute;
           left: 50%;
@@ -560,7 +545,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             ) : (
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
-                <div style={{ textAlign: 'center', marginTop: isMobile ? '-150px' : '-200px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-86px' : '-132px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
@@ -763,7 +748,6 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
 
   return (
     <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-      <div className="donut-floor" />
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
           const localAngle = count === 1 ? 0 : -arc / 2 + (arc / (count - 1)) * i;
