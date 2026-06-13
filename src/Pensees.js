@@ -306,8 +306,8 @@ function Pensees() {
         .donut-zone {
           position: relative;
           width: min(96vw, 1120px);
-          height: 455px;
-          margin-top: 26px;
+          height: 540px;
+          margin-top: 68px;
           margin: 0 auto;
           perspective: 1000px;
           overflow: visible;
@@ -331,7 +331,7 @@ function Pensees() {
         .donut-stage {
           position: absolute;
           left: 50%;
-          top: 61%;
+          top: 63%;
           width: 980px;
           height: 430px;
           transform: translate(-50%, -50%);
@@ -434,8 +434,8 @@ function Pensees() {
         .fiche-led {
           position: absolute;
           top: 10px;
-          width: 9px;
-          height: 9px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           z-index: 8;
         }
@@ -465,7 +465,7 @@ function Pensees() {
         }
 
         @media (max-width: 600px) {
-          .donut-zone { height: 340px; margin-top: 18px; }
+          .donut-zone { height: 410px; margin-top: 48px; }
           .donut-stage { width: 530px; height: 310px; }
           .fiche-wrap {
             width: 84px;
@@ -556,7 +556,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             ) : (
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
-                <div style={{ textAlign: 'center', marginTop: isMobile ? '-58px' : '-82px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-58px' : '-96px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
@@ -714,7 +714,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const count = visibles.length || 1;
   const arc = calculArc(count);
   const canLoop = arc >= 360;
-  const ficheMarge = count < 12 ? 58 : count < 24 ? 46 : 34;
+  const ficheMarge = count < 12 ? 95 : count < 24 ? 82 : count < 40 ? 62 : 42;
   const limit = canLoop ? 999999 : Math.max(0, arc / 2 + ficheMarge);
 
   React.useEffect(() => {
@@ -755,7 +755,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
 
   const radiusX = isMobile ? 210 : 430;
   const radiusY = isMobile ? 82 : 156;
-  const smallCountSpread = count < 18 ? (isMobile ? 18 : 24) : 0;
+  const smallCountSpread = count < 18 ? (isMobile ? 28 : 42) : 0;
 
   return (
     <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
@@ -771,11 +771,11 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
           const x = sin * radiusX + (count < 18 ? (i - (count - 1) / 2) * smallCountSpread : 0);
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
-          const scale = 0.50 + frontFactor * 0.56;
+          const scale = 0.52 + frontFactor * 0.44;
           const rotateY = sin * -34;
           const lift = frontFactor > 0.92 ? -18 : 0;
 
-          const zIndex = Math.round(1000 + frontFactor * 5000 + (i / 100));
+          const zIndex = Math.round(1000 + frontFactor * 7000 - Math.abs(sin) * 900 + (i / 100));
           const opacity = 0.28 + frontFactor * 0.72;
           const couleur = couleurPensee(pensee);
           const lue = !!vues[pensee.id];
@@ -787,7 +787,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
                 style={{
                   '--accent': couleur,
                   transform: `translate(${x}px, ${y + 82}px) scale(${scale}, ${scale * 0.64})`,
-                  opacity: frontFactor > 0.72 ? 0.16 : 0.04,
+                  opacity: frontFactor > 0.72 ? 0.10 : 0.025,
                   zIndex: Math.max(1, zIndex - 1200),
                 }}
               />
@@ -800,14 +800,14 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
                   transform: `translate(${x}px, ${y + lift}px) scale(${scale}) rotateY(${rotateY}deg)`,
                   zIndex,
                   opacity,
-                  pointerEvents: opacity < 0.42 ? 'none' : 'auto',
+                  pointerEvents: 'auto',
                 }}
               >
                 <div className="fiche-face front">
                   <div
                     className="fiche-led"
                     style={{
-                      [sin < 0 ? 'left' : 'right']: '10px',
+                      [sin < 0 ? 'left' : 'right']: '-4px',
                       background: lue ? '#ff3eb5' : '#4dff72',
                       boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
                     }}
@@ -818,7 +818,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
                   <div
                     className="fiche-led"
                     style={{
-                      [sin < 0 ? 'left' : 'right']: '10px',
+                      [sin < 0 ? 'left' : 'right']: '-4px',
                       background: lue ? '#ff3eb5' : '#4dff72',
                       boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
                     }}
