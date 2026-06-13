@@ -20,58 +20,78 @@ const BARRES = [
 
 const CATEGORIES = ['Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
 
-const COULEURS_TITRE = [
-  '#00d4d4',
-  '#ff3eb5',
-  'rgba(255,210,80,0.95)',
-];
+const COULEURS_TITRE = ['#00d4d4', '#ff3eb5', 'rgba(255,210,80,0.95)'];
 
 function LogoPremium({ navigate, isMobile, L }) {
   const ref = React.useRef(null);
   const wrapRef = React.useRef(null);
-
   const handleMouseMove = (e) => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     const rect = el.getBoundingClientRect();
     const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
     const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
     el.style.transform = `rotateX(${-dy * 8}deg) rotateY(${dx * 8}deg) scale(1.08)`;
     if (wrapRef.current) wrapRef.current.style.transform = 'perspective(600px)';
   };
-
   const handleMouseLeave = () => {
     if (ref.current) { ref.current.style.transform = ''; ref.current.classList.remove('shining-logo'); }
     if (wrapRef.current) wrapRef.current.style.transform = '';
   };
-
   const handleMouseEnter = () => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     el.classList.remove('shining-logo'); void el.offsetWidth; el.classList.add('shining-logo');
+  };
+  return (
+    <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
+      <img ref={ref} src={`${R2}/site/Logo.png`} alt="logo"
+        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        onClick={() => navigate('/presentation')}
+        style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', cursor: 'pointer', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', willChange: 'transform', position: 'relative' }}
+      />
+    </div>
+  );
+}
+
+function PopupImage({ images, indexDepart, onClose }) {
+  const [index, setIndex] = React.useState(indexDepart);
+  const touchStartX = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'ArrowRight') setIndex(i => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') setIndex(i => (i - 1 + images.length) % images.length);
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [images.length, onClose]);
+
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) setIndex(i => (i + 1) % images.length);
+      else setIndex(i => (i - 1 + images.length) % images.length);
+    }
+    touchStartX.current = null;
   };
 
   return (
-    <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
-      <img
-        ref={ref}
-        src={`${R2}/site/Logo.png`}
-        alt="logo"
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={() => navigate('/presentation')}
-        style={{
-          width: `${L}px`, height: `${L}px`, borderRadius: '50%',
-          border: `${isMobile ? 3 : 4}px solid #000`,
-          boxShadow: '0 0 0 3px #00d4d4',
-          objectFit: 'cover', cursor: 'pointer',
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease, box-shadow 0.3s',
-          willChange: 'transform',
-          position: 'relative',
-        }}
-      />
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.96)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <button onClick={onClose} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '30px', cursor: 'pointer', zIndex: 10, lineHeight: 1 }}>✕</button>
+      <img src={images[index]} alt="" onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '90vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: '10px', display: 'block', boxShadow: '0 8px 40px rgba(0,0,0,0.8)' }} />
+      {images.length > 1 && (
+        <>
+          <button onClick={e => { e.stopPropagation(); setIndex(i => (i - 1 + images.length) % images.length); }}
+            style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+          <button onClick={e => { e.stopPropagation(); setIndex(i => (i + 1) % images.length); }}
+            style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+          <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{index + 1} / {images.length}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -91,10 +111,7 @@ function Presentation() {
 
   React.useEffect(() => {
     const charger = async () => {
-      const { data } = await supabase
-        .from('presentation')
-        .select('*')
-        .order('ordre', { ascending: true });
+      const { data } = await supabase.from('presentation').select('*').order('ordre', { ascending: true });
       setEncarts(data || []);
       setLoading(false);
     };
@@ -122,39 +139,21 @@ function Presentation() {
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
-        .encart-pres {
-          background: rgba(0,0,0,0.45);
-          backdrop-filter: blur(2px);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 20px;
-          overflow: hidden;
-          margin-bottom: 32px;
-          transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
-        }
-        .encart-pres:hover {
-          border-color: rgba(255,255,255,0.18);
-          box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
-          transform: translateY(-2px);
-        }
+        .encart-pres { background: rgba(0,0,0,0.45); backdrop-filter: blur(2px); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; overflow: hidden; margin-bottom: 32px; transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s; }
+        .encart-pres:hover { border-color: rgba(255,255,255,0.18); box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08); transform: translateY(-2px); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .encart-anim { animation: fadeIn 0.6s ease forwards; }
-        .apercu-gradient {
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          position: relative;
-        }
+        .apercu-gradient { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .img-encart { cursor: zoom-in; transition: transform 0.2s, filter 0.2s; border-radius: 12px; }
+        .img-encart:hover { transform: scale(1.02); filter: brightness(1.1); }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
-      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
@@ -172,9 +171,7 @@ function Presentation() {
               )}
             </div>
           </div>
-
           <LogoPremium navigate={() => navigate('/presentation')} isMobile={isMobile} L={L} />
-
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/pensees')} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
@@ -183,7 +180,6 @@ function Presentation() {
         </div>
       </div>
 
-      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -214,7 +210,6 @@ function Presentation() {
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -229,6 +224,7 @@ function Presentation() {
 
 function EncartPresentation({ enc, idx, isMobile }) {
   const [ouvert, setOuvert] = React.useState(false);
+  const [popup, setPopup] = React.useState(null); // index image dans popup
   const images = enc.images_urls || [];
   const texte = enc.texte || '';
   const titre = enc.titre || '';
@@ -238,154 +234,87 @@ function EncartPresentation({ enc, idx, isMobile }) {
   const premiereImage = images[0] || null;
   const couleurTitre = COULEURS_TITRE[idx % COULEURS_TITRE.length];
 
+  const ouvrirPopup = (e, i) => { e.stopPropagation(); setPopup(i); };
+
   return (
-    <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
-
-      {/* BANDEAU TITRE */}
-      {titre && (
-        <div
-          onClick={() => setOuvert(v => !v)}
-          style={{
-            background: couleurTitre,
-            padding: isMobile ? '12px 16px' : '14px 24px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            userSelect: 'none',
-          }}>
-          <h2 style={{
-            color: '#000',
-            fontSize: isMobile ? '17px' : '22px',
-            fontWeight: 'bold',
-            letterSpacing: '0.5px',
-            margin: 0,
-          }}>
-            {titre}
-          </h2>
-          <div style={{
-            color: 'rgba(0,0,0,0.6)',
-            fontSize: '24px',
-            flexShrink: 0,
-            transition: 'transform 0.3s ease',
-            transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)',
-            lineHeight: 1,
-          }}>›</div>
-        </div>
+    <>
+      {popup !== null && (
+        <PopupImage images={images} indexDepart={popup} onClose={() => setPopup(null)} />
       )}
 
-      {/* APERÇU RÉDUIT (encart fermé) */}
-      {!ouvert && (
-        <div
-          onClick={() => setOuvert(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '16px',
-            padding: isMobile ? '14px 16px' : '18px 24px',
-            cursor: 'pointer',
-          }}>
-          {premiereImage && (
-            <img src={premiereImage} alt="" style={{
-              width: isMobile ? '56px' : '72px',
-              height: isMobile ? '56px' : '72px',
-              objectFit: 'cover',
-              borderRadius: '8px',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              filter: 'brightness(0.8)',
-            }} />
-          )}
-          {aTexte && (
-            <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-              <p className="apercu-gradient" style={{
-                color: 'rgba(255,255,255,0.45)',
-                fontSize: isMobile ? '12px' : '13px',
-                lineHeight: '1.65',
-                margin: 0,
-              }}>
-                {texte}
-              </p>
-              {/* Dégradé sur la dernière ligne */}
-              <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '28px',
-                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))',
-                pointerEvents: 'none',
-              }} />
-            </div>
-          )}
-        </div>
-      )}
+      <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
 
-      {/* CONTENU DÉROULÉ */}
-      <div style={{
-        overflow: 'hidden',
-        maxHeight: ouvert ? '9000px' : '0',
-        transition: ouvert ? 'max-height 0.6s ease-in' : 'max-height 0.3s ease-out',
-        opacity: ouvert ? 1 : 0,
-        transitionProperty: 'max-height, opacity',
-        transitionDuration: ouvert ? '0.5s, 0.4s' : '0.3s, 0.2s',
-      }}>
-        <div style={{ padding: isMobile ? '16px 16px 24px' : '24px 24px 32px' }}>
+        {/* BANDEAU TITRE */}
+        {titre && (
+          <div onClick={() => setOuvert(v => !v)} style={{ background: couleurTitre, padding: isMobile ? '8px 16px' : '10px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', userSelect: 'none', minHeight: isMobile ? '42px' : '50px' }}>
+            <h2 style={{ color: '#000', fontSize: isMobile ? '16px' : '20px', fontWeight: 'bold', letterSpacing: '0.5px', margin: 0, textAlign: 'center', flex: 1 }}>
+              {titre}
+            </h2>
+            <div style={{ color: '#fff', fontSize: '30px', position: 'absolute', right: '16px', top: '50%', transform: ouvert ? 'translateY(-50%) rotate(90deg)' : 'translateY(-50%) rotate(0deg)', transition: 'transform 0.3s ease', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>›</div>
+          </div>
+        )}
 
-          {aTexte && aImages && !isMobile && (
-            <div>
-              <img src={images[0]} alt="" style={{
-                width: '40%', borderRadius: '12px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                float: imageAGauche ? 'left' : 'right',
-                marginRight: imageAGauche ? '24px' : '0',
-                marginLeft: imageAGauche ? '0' : '24px',
-                marginBottom: '16px',
-              }} />
-              {images.slice(1).map((url, i) => (
-                <img key={i+1} src={url} alt="" style={{
-                  width: '40%', borderRadius: '12px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                  float: imageAGauche ? 'left' : 'right',
-                  marginRight: imageAGauche ? '24px' : '0',
-                  marginLeft: imageAGauche ? '0' : '24px',
-                  marginBottom: '16px', display: 'block',
-                }} />
-              ))}
-              <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>
-                {texte}
-              </p>
-              <div style={{ clear: 'both' }} />
-            </div>
-          )}
+        {/* APERÇU RÉDUIT */}
+        {!ouvert && (
+          <div onClick={() => setOuvert(true)} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: isMobile ? '14px 16px' : '18px 24px', cursor: 'pointer' }}>
+            {premiereImage && (
+              <img src={premiereImage} alt="" style={{ width: isMobile ? '56px' : '72px', height: isMobile ? '56px' : '72px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.5)', filter: 'brightness(0.8)' }} />
+            )}
+            {aTexte && (
+              <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+                <p className="apercu-gradient" style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.65', margin: 0 }}>
+                  {texte}
+                </p>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '28px', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))', pointerEvents: 'none' }} />
+              </div>
+            )}
+          </div>
+        )}
 
-          {aTexte && aImages && isMobile && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-              ))}
-              <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '14px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>{texte}</p>
-            </div>
-          )}
+        {/* CONTENU DÉROULÉ */}
+        <div style={{ overflow: 'hidden', maxHeight: ouvert ? '9000px' : '0', opacity: ouvert ? 1 : 0, transitionProperty: 'max-height, opacity', transitionDuration: ouvert ? '0.5s, 0.4s' : '0.3s, 0.2s', transition: ouvert ? 'max-height 0.6s ease-in, opacity 0.4s' : 'max-height 0.3s ease-out, opacity 0.2s' }}>
+          <div style={{ padding: isMobile ? '16px 16px 24px' : '24px 24px 32px' }}>
 
-          {aTexte && !aImages && (
-            <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
-              {texte}
-            </p>
-          )}
+            {aTexte && aImages && !isMobile && (
+              <div>
+                <img src={images[0]} alt="" className="img-encart" onClick={e => ouvrirPopup(e, 0)}
+                  style={{ width: '40%', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', float: imageAGauche ? 'left' : 'right', marginRight: imageAGauche ? '24px' : '0', marginLeft: imageAGauche ? '0' : '24px', marginBottom: '16px' }} />
+                {images.slice(1).map((url, i) => (
+                  <img key={i+1} src={url} alt="" className="img-encart" onClick={e => ouvrirPopup(e, i + 1)}
+                    style={{ width: '40%', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', float: imageAGauche ? 'left' : 'right', marginRight: imageAGauche ? '24px' : '0', marginLeft: imageAGauche ? '0' : '24px', marginBottom: '16px', display: 'block' }} />
+                ))}
+                <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>{texte}</p>
+                <div style={{ clear: 'both' }} />
+              </div>
+            )}
 
-          {!aTexte && aImages && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {images.map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: '100%', borderRadius: '12px', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
-              ))}
-            </div>
-          )}
+            {aTexte && aImages && isMobile && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {images.map((url, i) => (
+                  <img key={i} src={url} alt="" className="img-encart" onClick={e => ouvrirPopup(e, i)}
+                    style={{ width: '100%', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+                ))}
+                <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: '14px', lineHeight: '1.85', whiteSpace: 'pre-wrap' }}>{texte}</p>
+              </div>
+            )}
 
+            {aTexte && !aImages && (
+              <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap', textAlign: 'center' }}>{texte}</p>
+            )}
+
+            {!aTexte && aImages && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {images.map((url, i) => (
+                  <img key={i} src={url} alt="" className="img-encart" onClick={e => ouvrirPopup(e, i)}
+                    style={{ width: '100%', display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+                ))}
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
