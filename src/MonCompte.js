@@ -36,6 +36,7 @@ function getVisuelPresentation(visuels) {
   return null;
 }
 
+// ─── POINT 1 : labels blancs, police plus grande ───────────────────────────
 function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = true }) {
   const [anim, setAnim] = React.useState(0);
   const [affiche, setAffiche] = React.useState(0);
@@ -52,15 +53,21 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
     const t2 = setTimeout(() => requestAnimationFrame(step), 200 + delai);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [pct, delai]);
-  const barreHauteur = showLabel ? Math.max(hauteur, 22) : hauteur;
+  const barreHauteur = showLabel ? Math.max(hauteur, 26) : hauteur;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-      {showLabel && <span style={{ color: couleur, fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>{label}</span>}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+      {showLabel && (
+        // POINT 1 : couleur blanc (#fff), fontSize 14px (au lieu de 11px et couleur variable)
+        <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold', minWidth: '120px', flexShrink: 0 }}>
+          {label}
+        </span>
+      )}
       <div style={{ flex: 1, height: `${barreHauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${barreHauteur}px`, overflow: 'hidden', position: 'relative' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${anim}%`, backgroundImage: couleur, borderRadius: `${barreHauteur}px`, transition: `width 2.2s cubic-bezier(0.4,0,0.2,1) ${delai}ms`, minWidth: anim > 0 ? '40px' : '0' }} />
         {showLabel && (
-          <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '10px' }}>
-            <span style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', zIndex: 2 }}>{affiche}%</span>
+          <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '12px' }}>
+            {/* POINT 1 : pourcentage en blanc, fontSize 13px */}
+            <span style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.9)', zIndex: 2 }}>{affiche}%</span>
           </div>
         )}
       </div>
@@ -72,16 +79,17 @@ function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = 
   const cJai = couleurBarre || "linear-gradient(90deg,#00d4d4,#00aaaa)";
   if (showLabels) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-        <UneBarre pct={pctJai} couleur="linear-gradient(90deg,#00d4d4,#00aaaa)" label="✓ J'ai" delai={0} hauteur={hauteur} showLabel={true} />
-        <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)" label="🎨 Colorié" delai={200} hauteur={hauteur} showLabel={true} />
-        <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#ff3eb5,#cc2090)" label="♡ Je veux" delai={400} hauteur={hauteur} showLabel={true} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+        <UneBarre pct={pctJai}    couleur="linear-gradient(90deg,#00d4d4,#00aaaa)"   label="✓ J'ai"    delai={0}   hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)"  label="🎨 Colorié" delai={200} hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#ff3eb5,#cc2090)"   label="♡ Je veux" delai={400} hauteur={hauteur} showLabel={true} />
       </div>
     );
   }
+  // Sans labels : barres compactes sans jauge (utilisées dans Ma Collection)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%' }}>
-      <UneBarre pct={pctJai} couleur={cJai} label="" delai={0} hauteur={Math.max(4, hauteur-2)} showLabel={false} />
+      <UneBarre pct={pctJai}    couleur={cJai} label="" delai={0} hauteur={Math.max(4, hauteur-2)} showLabel={false} />
       {pctColorie > 0 && <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)" label="" delai={0} hauteur={Math.max(3, hauteur-3)} showLabel={false} />}
     </div>
   );
@@ -123,7 +131,6 @@ function SectionMaCollection({ userId, totalIllus }) {
         const colosSet = new Set((colos || []).map(c => c.illustration_id));
         const illuIds = new Set((collIllus || []).map(c => c.illustration_id));
 
-        // ✅ PATCH 1 : inclure statut 'dossier' en plus de 'published'
         const { data: tousLivres } = await supabase.from('livres').select('id, nom, annee, visuel_presentation, recueils_ids').in('statut', ['published', 'dossier']);
         const { data: tousRecueils } = await supabase.from('recueils').select('id, nom, annee, visuel_presentation').eq('statut', 'published');
         const { data: toutesIllus } = await supabase.from('illustrations').select('id, nom, annee, visuels, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
@@ -254,10 +261,6 @@ function SectionMaCollection({ userId, totalIllus }) {
         const totalAnnee = totauxAnnee[annee] || 1;
         const jaiAnnee = Object.values(anneeData.recueils).reduce((acc, r) => acc + Object.values(r.livres).reduce((a, l) => a + l.illus.length, 0), 0)
           + Object.values(anneeData.horsSerieParent || {}).reduce((a, l) => a + l.illus.length, 0);
-        const colorieAnnee = Object.values(anneeData.recueils).reduce((acc, r) => acc + Object.values(r.livres).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0), 0)
-          + Object.values(anneeData.horsSerieParent || {}).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0);
-        const pctJai = (jaiAnnee / totalAnnee) * 100;
-        const pctColo = (colorieAnnee / totalAnnee) * 100;
         const ouvert = anneesOuvertes[annee];
         const couleurAnnee = getCouleurAnnee(anneeIdx);
 
@@ -266,8 +269,9 @@ function SectionMaCollection({ userId, totalIllus }) {
             <div onClick={() => setAnneesOuvertes(p => ({ ...p, [annee]: !p[annee] }))}
               style={{ padding: '12px 16px', cursor: 'pointer', background: ouvert ? 'rgba(0,212,212,0.06)' : 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '15px', fontWeight: 'bold', minWidth: '50px' }}>{annee}</span>
-              <div style={{ flex: 1 }}>
-                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={0} hauteur={8} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurAnnee},${couleurAnnee}aa)`} />
+              {/* POINT 2 : plus de JaugeDouble ici — juste la barre de progression couleur année */}
+              <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${(jaiAnnee / totalAnnee) * 100}%`, background: `linear-gradient(90deg,${couleurAnnee},${couleurAnnee}aa)`, borderRadius: '6px', transition: 'width 1.2s ease' }} />
               </div>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiAnnee}/{totalAnnee}</span>
               <span style={{ color: ouvert ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
@@ -275,13 +279,11 @@ function SectionMaCollection({ userId, totalIllus }) {
 
             {ouvert && (
               <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {Object.values(anneeData.recueils).map((recueilData, rIdx) => {
+                {Object.values(anneeData.recueils).map((recueilData) => {
                   const rid = recueilData.info.id;
                   const totalR = totauxRecueil[rid] || 1;
                   const jaiR = Object.values(recueilData.livres).reduce((a, l) => a + l.illus.length, 0);
-                  const colorieR = Object.values(recueilData.livres).reduce((a, l) => a + l.illus.filter(i => i.aColorie).length, 0);
                   const ouvertR = recueilsOuverts[rid];
-                  const couleurR = getCouleurAnnee(rIdx);
                   return (
                     <div key={rid} style={{ border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', overflow: 'hidden' }}>
                       <div onClick={() => setRecueilsOuverts(p => ({ ...p, [rid]: !p[rid] }))}
@@ -289,12 +291,10 @@ function SectionMaCollection({ userId, totalIllus }) {
                         {recueilData.info.visuel_presentation
                           ? <img src={cheminVersUrl(recueilData.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>{recueilData.info.nom}</p>
-                          <JaugeDouble pctJai={(jaiR/totalR)*100} pctColorie={(colorieR/totalR)*100} pctJeVeux={0} hauteur={6} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurR},${couleurR}aa)`} />
-                        </div>
+                        {/* POINT 2 : pas de JaugeDouble sur recueil — nom + compteur uniquement */}
+                        <p style={{ flex: 1, color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold' }}>{recueilData.info.nom}</p>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
-                        <span style={{ color: ouvertR ? couleurR : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
+                        <span style={{ color: ouvertR ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
                       {ouvertR && (
                         <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -302,7 +302,6 @@ function SectionMaCollection({ userId, totalIllus }) {
                             const lid = livreData.info.id;
                             const totalL = totauxLivre[lid] || 1;
                             const jaiL = livreData.illus.length;
-                            const colorieL = livreData.illus.filter(i => i.aColorie).length;
                             const ouvertL = livresOuverts[lid];
                             const estDossier = !livreData.info.visuel_presentation;
                             const couleurL = getCouleurAnnee(lIdx);
@@ -312,10 +311,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                                   style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                                  <div style={{ flex: 1 }}>
-                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
-                                    <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} couleurBarre={`linear-gradient(90deg,${couleurL},${couleurL}aa)`} />
-                                  </div>
+                                  {/* POINT 2 : pas de JaugeDouble sur livre — nom + compteur uniquement */}
+                                  <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px' }}>{livreData.info.nom}</p>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                                   <span style={{ color: ouvertL ? couleurL : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                                 </div>
@@ -338,12 +335,10 @@ function SectionMaCollection({ userId, totalIllus }) {
                   );
                 })}
 
-                {/* ✅ PATCH 2 : filtre corrigé — afficher tous les dossiers avec des illustrations (même sans en posséder) */}
                 {Object.values(anneeData.horsSerieParent || {}).filter(l => totauxLivre[l.info.id] > 0).map((livreData, lIdx) => {
                   const lid = livreData.info.id;
                   const totalL = totauxLivre[lid] || 1;
                   const jaiL = livreData.illus.length;
-                  const colorieL = livreData.illus.filter(i => i.aColorie).length;
                   const ouvertL = livresOuverts[`hs_${lid}`];
                   const estDossier = !livreData.info.visuel_presentation;
                   return (
@@ -352,10 +347,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                         style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
-                          <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
-                        </div>
+                        {/* POINT 2 : pas de JaugeDouble sur livre hors-série — nom + compteur */}
+                        <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px' }}>{livreData.info.nom}</p>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
@@ -382,9 +375,6 @@ function SectionMaCollection({ userId, totalIllus }) {
         const eid = entree.info.id;
         const totalE = totauxRecueil[eid] || totauxLivre[eid] || 1;
         const jaiE = entree.illus ? entree.illus.length : 0;
-        const colorieE = entree.illus ? entree.illus.filter(i => i.aColorie).length : 0;
-        const pctJaiE = (jaiE / totalE) * 100;
-        const pctColoE = (colorieE / totalE) * 100;
         const ouvert = anneesOuvertes[`ha_${eid}`];
         return (
           <div key={`ha_${eid}`} style={{ border: `1px solid rgba(255,210,80,0.25)`, borderRadius: '12px', overflow: 'hidden' }}>
@@ -393,10 +383,8 @@ function SectionMaCollection({ userId, totalIllus }) {
               {entree.info.visuel_presentation
                 ? <img src={cheminVersUrl(entree.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                 : <span style={{ fontSize: '20px' }}>📁</span>}
-              <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '14px', fontWeight: 'bold', minWidth: '120px' }}>{entree.info.nom}</span>
-              <div style={{ flex: 1 }}>
-                <JaugeDouble pctJai={pctJaiE} pctColorie={pctColoE} pctJeVeux={0} hauteur={8} showLabels={false} />
-              </div>
+              {/* POINT 2 : pas de JaugeDouble sur hors-années — nom + compteur */}
+              <span style={{ flex: 1, color: 'rgba(255,210,80,0.9)', fontSize: '14px', fontWeight: 'bold' }}>{entree.info.nom}</span>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiE}/{totalE}</span>
               <span style={{ color: ouvert ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
             </div>
@@ -406,7 +394,6 @@ function SectionMaCollection({ userId, totalIllus }) {
                   const lid = livreData.info.id;
                   const totalL = totauxLivre[lid] || 1;
                   const jaiL = livreData.illus ? livreData.illus.length : 0;
-                  const colorieL = livreData.illus ? livreData.illus.filter(i => i.aColorie).length : 0;
                   const ouvertL = livresOuverts[`ha_${lid}`];
                   const estDossier = !livreData.info.visuel_presentation;
                   return (
@@ -415,10 +402,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                         style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', marginBottom: '3px' }}>{livreData.info.nom}</p>
-                          <JaugeDouble pctJai={(jaiL/totalL)*100} pctColorie={(colorieL/totalL)*100} pctJeVeux={0} hauteur={5} showLabels={false} />
-                        </div>
+                        <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px' }}>{livreData.info.nom}</p>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
@@ -490,6 +474,7 @@ function SectionMesFavoris({ userId }) {
   );
 }
 
+// ─── POINT 4 : Mes Infos — refonte 2 colonnes ──────────────────────────────
 function SectionMesInfos({ userId }) {
   const [profil, setProfil] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -498,8 +483,18 @@ function SectionMesInfos({ userId }) {
   const [avatarFile, setAvatarFile] = React.useState(null);
   const [avatarPreview, setAvatarPreview] = React.useState(null);
 
+  // POINT 5 : états pour la réinitialisation du mot de passe
+  const [resetEmail, setResetEmail] = React.useState('');
+  const [resetEnvoye, setResetEnvoye] = React.useState(false);
+  const [resetLoading, setResetLoading] = React.useState(false);
+  const [resetErreur, setResetErreur] = React.useState('');
+
   React.useEffect(() => {
-    supabase.from('profils').select('*').eq('id', userId).single().then(({ data }) => { setProfil(data || {}); setLoading(false); });
+    supabase.from('profils').select('*').eq('id', userId).single().then(({ data }) => {
+      setProfil(data || {});
+      setResetEmail(data?.email || '');
+      setLoading(false);
+    });
   }, [userId]);
 
   const handleAvatarChange = (e) => {
@@ -528,37 +523,126 @@ function SectionMesInfos({ userId }) {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  // POINT 5 : envoi du mail de réinitialisation
+  const handleReset = async () => {
+    if (!resetEmail.trim()) { setResetErreur('Adresse email requise.'); return; }
+    setResetLoading(true); setResetErreur('');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: 'https://kevinteoart.fr/reset-password',
+    });
+    setResetLoading(false);
+    if (error) { setResetErreur(error.message); }
+    else { setResetEnvoye(true); }
+  };
+
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
 
+  const styleInput = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', outline: 'none', width: '100%' };
+  const styleLabel = { color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', display: 'block' };
+
   const champ = (label, key, type = 'text') => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</label>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <label style={styleLabel}>{label}</label>
       <input type={type} value={profil[key] || ''} onChange={e => setProfil(p => ({ ...p, [key]: e.target.value }))}
-        style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', outline: 'none' }}
-        onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+        style={styleInput}
+        onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
     </div>
   );
 
+  const styleEncart = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '12px' };
+  const styleTitreEncart = { color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ position: 'relative' }}>
-          <img src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`} alt="avatar" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)' }} />
+    // POINT 4 : layout 2 colonnes — gauche 2/3, droite 1/3
+    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+      {/* ── Colonne gauche : 3 encarts ── */}
+      <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+        {/* Encart 1 : Identité */}
+        <div style={styleEncart}>
+          <p style={styleTitreEncart}>👤 Identité</p>
+          {champ('Pseudo', 'pseudo')}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {champ('Prénom', 'prenom')}
+            {champ('Nom', 'nom')}
+          </div>
+          {champ('Téléphone', 'telephone', 'tel')}
         </div>
-        <div>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '6px' }}>Photo de profil</p>
-          <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }} />
+
+        {/* Encart 2 : Mot de passe + reset */}
+        <div style={styleEncart}>
+          <p style={styleTitreEncart}>🔒 Mot de passe</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+            Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={styleLabel}>Email</label>
+            <input
+              type="email"
+              value={resetEmail}
+              onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
+              style={styleInput}
+              onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              placeholder="ton@email.com"
+            />
+          </div>
+          {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
+          {resetEnvoye
+            ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
+            : (
+              <button onClick={handleReset} disabled={resetLoading}
+                style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
+                {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
+              </button>
+            )
+          }
+        </div>
+
+        {/* Encart 3 : Adresse */}
+        <div style={styleEncart}>
+          <p style={styleTitreEncart}>📍 Adresse</p>
+          {champ('Adresse', 'adresse')}
+          {champ('Complément', 'complement')}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+            {champ('Code postal', 'code_postal')}
+            {champ('Ville', 'ville')}
+          </div>
+          {champ('Pays', 'pays')}
+        </div>
+
+        {/* Bouton sauvegarder */}
+        <button onClick={handleSave} disabled={saving}
+          style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 28px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .3s' }}>
+          {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+        </button>
+      </div>
+
+      {/* ── Colonne droite : photo de profil pleine hauteur ── */}
+      <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ ...styleEncart, alignItems: 'center', gap: '16px', height: '100%' }}>
+          <p style={styleTitreEncart}>🖼 Photo de profil</p>
+          <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+            <img
+              src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
+              alt="avatar"
+              style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
+            />
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>JPG, PNG · recommandé 400×400px</p>
+          <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '8px 14px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
+            📷 Choisir une photo
+            <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+          </label>
+          {avatarPreview && (
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center' }}>
+              Nouvelle photo sélectionnée.<br/>Clique sur "Sauvegarder" pour confirmer.
+            </p>
+          )}
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-        {champ('Pseudo', 'pseudo')}{champ('Prénom', 'prenom')}{champ('Nom', 'nom')}
-        {champ('Téléphone', 'telephone', 'tel')}{champ('Adresse', 'adresse')}{champ('Complément', 'complement')}
-        {champ('Code postal', 'code_postal')}{champ('Ville', 'ville')}{champ('Pays', 'pays')}
-      </div>
-      <button onClick={handleSave} disabled={saving}
-        style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '10px 24px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .3s' }}>
-        {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder'}
-      </button>
     </div>
   );
 }
@@ -757,7 +841,6 @@ function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
   );
 }
 
-
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
   const wrapRef = React.useRef(null);
@@ -852,10 +935,10 @@ function MonCompte() {
 
   const BTNS_CONFIG = [
     { id: 'collection', label: '📚 Ma Collection', couleur: '#ff3eb5', couleurRgb: '255,62,181' },
-    { id: 'favoris', label: '♡ Mes Favoris', couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'favoris',    label: '♡ Mes Favoris',    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
     { id: 'coloriages', label: '🎨 Mes Coloriages', couleur: '#00d4d4', couleurRgb: '0,212,212' },
-    { id: 'infos', label: '👤 Mes Infos', couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
-    { id: 'commandes', label: '🛒 Mes Commandes', couleur: '#ff3eb5', couleurRgb: '255,62,181' },
+    { id: 'infos',      label: '👤 Mes Infos',      couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'commandes',  label: '🛒 Mes Commandes',  couleur: '#ff3eb5', couleurRgb: '255,62,181' },
   ];
 
   return (
@@ -930,27 +1013,38 @@ function MonCompte() {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '32px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {avatarUrl && <img src={avatarUrl} alt="avatar" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)' }} />}
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px' }}>Mon Compte</p>
-                  <p style={{ color: '#fff', fontSize: '22px', fontWeight: 'bold' }}>Ma Collection · {userPseudo}</p>
-                </div>
+
+              {/* ── POINT 6 : Titre centré, une seule ligne blanche ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
+                {avatarUrl && (
+                  <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
+                )}
+                <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  MON COMPTE — Ma Collection {userPseudo} Kevin Teo'Art
+                </p>
               </div>
-              <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '16px 20px' }}>
-                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={12} showLabels={true} />
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '8px' }}>{stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} favoris</p>
+
+              {/* ── Triple jauge globale (point 1 déjà appliqué dans UneBarre) ── */}
+              <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '18px 24px' }}>
+                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={14} showLabels={true} />
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '10px', textAlign: 'center' }}>
+                  {stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} favoris
+                </p>
               </div>
+
+              {/* ── Boutons onglets ── */}
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                 {BTNS_CONFIG.map(btn => {
                   const actif = btn.id === 'favoris' ? showFavoris : onglet === btn.id;
-                  return <BoutonOnglet key={btn.id} label={btn.label} couleur={btn.couleur} couleurRgb={btn.couleurRgb} actif={actif} onClick={() => { if (btn.id === 'favoris') { setShowFavoris(true); setOnglet(null); } else { setOnglet(btn.id); setShowFavoris(false); } }} />;
+                  return <BoutonOnglet key={btn.id} label={btn.label} couleur={btn.couleur} couleurRgb={btn.couleurRgb} actif={actif}
+                    onClick={() => { if (btn.id === 'favoris') { setShowFavoris(true); setOnglet(null); } else { setOnglet(btn.id); setShowFavoris(false); } }} />;
                 })}
               </div>
+
               {onglet === 'collection' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMaCollection userId={userId} totalIllus={stats.totalIllus} /></div>}
-              {showFavoris && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesFavoris userId={userId} /></div>}
+              {showFavoris         && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesFavoris userId={userId} /></div>}
               {onglet === 'coloriages' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesColoriages userId={userId} userPseudo={userPseudo} /></div>}
-              {onglet === 'infos' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesInfos userId={userId} /></div>}
+              {onglet === 'infos'   && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesInfos userId={userId} /></div>}
               {onglet === 'commandes' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesCommandes userId={userId} /></div>}
             </div>
           )}
