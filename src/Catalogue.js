@@ -174,6 +174,17 @@ function Catalogue() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  React.useEffect(() => {
+    const blockContext = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    const blockDrag = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    document.addEventListener('contextmenu', blockContext);
+    document.addEventListener('dragstart', blockDrag);
+    return () => {
+      document.removeEventListener('contextmenu', blockContext);
+      document.removeEventListener('dragstart', blockDrag);
+    };
+  }, []);
+
   // Fermer dropdowns au clic extérieur
   React.useEffect(() => {
     const handler = () => { setShowCategories(false); setShowPatreonMenu(false); };
@@ -395,9 +406,7 @@ function Catalogue() {
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
-        img { -webkit-user-drag: none; user-drag: none; }
-        * { -webkit-user-select: none; user-select: none; }
-        input, textarea { -webkit-user-select: text; user-select: text; }
+
       `}</style>
 
       <button onClick={async () => { const { supabase: sb } = await import('./supabase'); await sb.auth.signOut(); window.location.href = '/'; }} style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>
@@ -447,7 +456,7 @@ function Catalogue() {
           </div>
           <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/pensees')} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/mon-compte')} />
           </div>

@@ -557,6 +557,16 @@ function Livres() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  React.useEffect(() => {
+    const blockContext = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    const blockDrag = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    document.addEventListener('contextmenu', blockContext);
+    document.addEventListener('dragstart', blockDrag);
+    return () => {
+      document.removeEventListener('contextmenu', blockContext);
+      document.removeEventListener('dragstart', blockDrag);
+    };
+  }, []);
 
   React.useEffect(() => {
     const charger = async () => {
