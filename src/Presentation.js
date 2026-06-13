@@ -20,6 +20,12 @@ const BARRES = [
 
 const CATEGORIES = ['Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
 
+const COULEURS_TITRE = [
+  '#00d4d4',
+  '#ff3eb5',
+  'rgba(255,210,80,0.95)',
+];
+
 function LogoPremium({ navigate, isMobile, L }) {
   const ref = React.useRef(null);
   const wrapRef = React.useRef(null);
@@ -114,17 +120,31 @@ function Presentation() {
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
-        .logo-premium { position: relative; overflow: hidden; }
-        .logo-premium::before {
-          content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%;
-          background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.04) 10%, rgba(255,225,110,0.12) 25%, rgba(255,235,150,0.18) 40%, rgba(255,245,170,0.12) 50%, rgba(255,235,140,0.14) 62%, rgba(255,220,100,0.08) 75%, rgba(255,210,80,0.03) 88%, transparent 100%);
-          transform: skewX(-28deg); z-index: 20; pointer-events: none; mix-blend-mode: screen; border-radius: 50%;
-        }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
-        .encart-pres { background: rgba(0,0,0,0.45); backdrop-filter: blur(2px); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 32px; margin-bottom: 32px; }
+        .encart-pres {
+          background: rgba(0,0,0,0.45);
+          backdrop-filter: blur(2px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 20px;
+          overflow: hidden;
+          margin-bottom: 32px;
+          transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+        }
+        .encart-pres:hover {
+          border-color: rgba(255,255,255,0.18);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+          transform: translateY(-2px);
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .encart-anim { animation: fadeIn 0.6s ease forwards; }
+        .apercu-gradient {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          position: relative;
+        }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -153,11 +173,10 @@ function Presentation() {
             </div>
           </div>
 
-          {/* LOGO PREMIUM — clique vers /presentation */}
           <LogoPremium navigate={() => navigate('/presentation')} isMobile={isMobile} L={L} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/pensees')} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/mon-compte')} />
           </div>
@@ -166,7 +185,6 @@ function Presentation() {
 
       {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
-        {/* Barres défilantes en fond */}
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             {BARRES.map((barre, i) => (
@@ -183,7 +201,6 @@ function Presentation() {
           </div>
         </div>
 
-        {/* CONTENU */}
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '40px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 300}px` }}>
           {loading ? (
             <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>
@@ -219,45 +236,91 @@ function EncartPresentation({ enc, idx, isMobile }) {
   const aImages = images.length > 0;
   const imageAGauche = idx % 2 === 0;
   const premiereImage = images[0] || null;
-  const texteApercu = texte.slice(0, 120).trim() + (texte.length > 120 ? '...' : '');
+  const couleurTitre = COULEURS_TITRE[idx % COULEURS_TITRE.length];
 
   return (
-    <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s`, cursor: 'pointer' }}>
-      {/* EN-TÊTE TOUJOURS VISIBLE — clic pour ouvrir/fermer */}
-      <div onClick={() => setOuvert(v => !v)}
-        style={{ display: 'flex', alignItems: 'center', gap: '16px', userSelect: 'none' }}>
-        {/* Miniature */}
-        {premiereImage && (
-          <img src={premiereImage} alt="" style={{
-            width: isMobile ? '60px' : '80px',
-            height: isMobile ? '60px' : '80px',
-            objectFit: 'cover',
-            borderRadius: '10px',
+    <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
+
+      {/* BANDEAU TITRE */}
+      {titre && (
+        <div
+          onClick={() => setOuvert(v => !v)}
+          style={{
+            background: couleurTitre,
+            padding: isMobile ? '12px 16px' : '14px 24px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            userSelect: 'none',
+          }}>
+          <h2 style={{
+            color: '#000',
+            fontSize: isMobile ? '17px' : '22px',
+            fontWeight: 'bold',
+            letterSpacing: '0.5px',
+            margin: 0,
+          }}>
+            {titre}
+          </h2>
+          <div style={{
+            color: 'rgba(0,0,0,0.6)',
+            fontSize: '24px',
             flexShrink: 0,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-            filter: ouvert ? 'none' : 'brightness(0.75)',
-            transition: 'filter 0.3s',
-          }} />
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {titre && (
-            <h2 style={{ color: '#00d4d4', fontSize: isMobile ? '17px' : '22px', fontWeight: 'bold', marginBottom: '6px', letterSpacing: '0.5px' }}>
-              {titre}
-            </h2>
+            transition: 'transform 0.3s ease',
+            transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)',
+            lineHeight: 1,
+          }}>›</div>
+        </div>
+      )}
+
+      {/* APERÇU RÉDUIT (encart fermé) */}
+      {!ouvert && (
+        <div
+          onClick={() => setOuvert(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '16px',
+            padding: isMobile ? '14px 16px' : '18px 24px',
+            cursor: 'pointer',
+          }}>
+          {premiereImage && (
+            <img src={premiereImage} alt="" style={{
+              width: isMobile ? '56px' : '72px',
+              height: isMobile ? '56px' : '72px',
+              objectFit: 'cover',
+              borderRadius: '8px',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              filter: 'brightness(0.8)',
+            }} />
           )}
-          {!ouvert && aTexte && (
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.6', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {texteApercu}
-            </p>
+          {aTexte && (
+            <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+              <p className="apercu-gradient" style={{
+                color: 'rgba(255,255,255,0.45)',
+                fontSize: isMobile ? '12px' : '13px',
+                lineHeight: '1.65',
+                margin: 0,
+              }}>
+                {texte}
+              </p>
+              {/* Dégradé sur la dernière ligne */}
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '28px',
+                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))',
+                pointerEvents: 'none',
+              }} />
+            </div>
           )}
         </div>
-        {/* Flèche */}
-        <div style={{
-          color: '#00d4d4', fontSize: '22px', flexShrink: 0,
-          transition: 'transform 0.3s ease',
-          transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)',
-        }}>›</div>
-      </div>
+      )}
 
       {/* CONTENU DÉROULÉ */}
       <div style={{
@@ -268,9 +331,8 @@ function EncartPresentation({ enc, idx, isMobile }) {
         transitionProperty: 'max-height, opacity',
         transitionDuration: ouvert ? '0.5s, 0.4s' : '0.3s, 0.2s',
       }}>
-        <div style={{ paddingTop: '24px' }}>
+        <div style={{ padding: isMobile ? '16px 16px 24px' : '24px 24px 32px' }}>
 
-          {/* Texte + images : image flottante */}
           {aTexte && aImages && !isMobile && (
             <div>
               <img src={images[0]} alt="" style={{
@@ -298,7 +360,6 @@ function EncartPresentation({ enc, idx, isMobile }) {
             </div>
           )}
 
-          {/* Mobile : images puis texte */}
           {aTexte && aImages && isMobile && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {images.map((url, i) => (
@@ -308,14 +369,12 @@ function EncartPresentation({ enc, idx, isMobile }) {
             </div>
           )}
 
-          {/* Texte seul */}
           {aTexte && !aImages && (
             <p style={{ color: 'rgba(255,255,255,0.92)', fontSize: isMobile ? '14px' : '16px', lineHeight: '1.85', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
               {texte}
             </p>
           )}
 
-          {/* Images seules */}
           {!aTexte && aImages && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {images.map((url, i) => (
