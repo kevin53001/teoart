@@ -93,16 +93,6 @@ function ResetPassword() {
     }
   };
 
-  const inputStyle = {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '10px',
-    padding: '10px 14px',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none'
-  };
-
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
 
