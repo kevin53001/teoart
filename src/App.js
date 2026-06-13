@@ -8,6 +8,7 @@ import Catalogue from './Catalogue';
 import Livres from './Livres';
 import MonCompte from './MonCompte';
 import Presentation from './Presentation';
+import Pensees from './Pensees';
 import ResetPassword from './ResetPassword';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
         <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
         <Route path="/mon-compte" element={session ? <MonCompte /> : <Navigate to="/" />} />
         <Route path="/presentation" element={session ? <Presentation /> : <Navigate to="/" />} />
+        <Route path="/pensees" element={session ? <Pensees /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
