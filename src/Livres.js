@@ -487,23 +487,49 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
 function VisuelsItem({ item }) {
   const visuels = [item.visuel_presentation, item.visuel_front, item.visuel_back].filter(Boolean);
   const [idx, setIdx] = React.useState(0);
+  const [zoom, setZoom] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') setZoom(false); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
   if (visuels.length === 0) return (
     <div style={{ width: '110px', height: '110px', borderRadius: '10px', background: 'linear-gradient(135deg,#0a0a0a,#1a1a1a)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       <span style={{ fontSize: '40px' }}>📁</span>
     </div>
   );
+
   return (
-    <div style={{ flexShrink: 0 }}>
-      <img src={cheminVersUrl(visuels[idx])} alt={item.nom} style={{ width: '110px', borderRadius: '10px', display: 'block', marginBottom: '6px' }} />
-      {visuels.length > 1 && (
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {visuels.map((v, i) => (
-            <img key={i} src={cheminVersUrl(v)} alt="" onClick={() => setIdx(i)}
-              style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: `2px solid ${i === idx ? '#00d4d4' : 'transparent'}`, opacity: i === idx ? 1 : 0.4 }} />
-          ))}
+    <>
+      {zoom && (
+        <div onClick={() => setZoom(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <button onClick={() => setZoom(false)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '30px', cursor: 'pointer', zIndex: 10000 }}>✕</button>
+          <img src={cheminVersUrl(visuels[idx])} alt="" onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '90vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: '10px', display: 'block' }} />
+          {visuels.length > 1 && <>
+            <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + visuels.length) % visuels.length); }}
+              style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>‹</button>
+            <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % visuels.length); }}
+              style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>›</button>
+            <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px', zIndex: 10000 }}>{idx + 1} / {visuels.length}</p>
+          </>}
         </div>
       )}
-    </div>
+      <div style={{ flexShrink: 0 }}>
+        <img src={cheminVersUrl(visuels[idx])} alt={item.nom} onClick={() => setZoom(true)}
+          style={{ width: '110px', borderRadius: '10px', display: 'block', marginBottom: '6px', cursor: 'zoom-in' }} />
+        {visuels.length > 1 && (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {visuels.map((v, i) => (
+              <img key={i} src={cheminVersUrl(v)} alt="" onClick={() => setIdx(i)}
+                style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: `2px solid ${i === idx ? '#00d4d4' : 'transparent'}`, opacity: i === idx ? 1 : 0.4 }} />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
