@@ -716,7 +716,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const clampRotation = React.useCallback((value) => {
     if (canLoop) return value;
     return Math.max(-limit, Math.min(limit, value));
-  }, [canLoop, clampRotation]);
+  }, [canLoop, limit]);
 
   React.useEffect(() => {
     const animate = () => {
@@ -736,7 +736,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [canLoop, clampRotation]);
+  }, [canLoop, limit]);
 
   const handleMouseMove = (e) => {
     const rect = zoneRef.current?.getBoundingClientRect();
