@@ -14,18 +14,20 @@ function ResetPassword() {
   const [tokenValide, setTokenValide] = React.useState(false);
 
   React.useEffect(() => {
-    // Supabase met le token dans le hash de l'URL : #access_token=...&type=recovery
-    const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
-      // Laisser Supabase parser le hash automatiquement
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          setTokenValide(true);
-        }
-      });
-      return () => subscription.unsubscribe();
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type');
+
+    if (tokenHash && type === 'recovery') {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        .then(({ error }) => {
+          if (error) {
+            setErreur('Lien invalide ou expiré. Demande un nouveau lien depuis Mes Infos.');
+          } else {
+            setTokenValide(true);
+          }
+        });
     } else {
-      // Pas de token dans l'URL — lien invalide ou expiré
       setErreur('Lien invalide ou expiré. Demande un nouveau lien depuis Mes Infos.');
     }
   }, []);
