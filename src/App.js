@@ -10,6 +10,7 @@ import MonCompte from './MonCompte';
 import Presentation from './Presentation';
 import Pensees from './Pensees';
 import ResetPassword from './ResetPassword';
+import Accueil from './Accueil';
 
 function App() {
   const [session, setSession] = React.useState(undefined);
@@ -54,6 +55,7 @@ function App() {
         <Route path="/presentation" element={session ? <Presentation /> : <Navigate to="/" />} />
         <Route path="/pensees" element={session ? <Pensees /> : <Navigate to="/" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/accueil" element={session ? <Accueil /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );
