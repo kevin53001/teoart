@@ -742,7 +742,6 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
           const x = sin * radiusX;
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
-          const sideFactor = Math.abs(sin);
           const scale = 0.58 + frontFactor * 0.48;
           const rotateY = sin * -44;
           const lift = frontFactor > 0.93 ? -16 : 0;
