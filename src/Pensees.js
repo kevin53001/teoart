@@ -433,7 +433,7 @@ function Pensees() {
           width: 500px;
           height: 812px;
           max-width: calc(100vw - 34px);
-          max-height: calc(100vh - 70px);
+          max-height: calc(100vh - 26px);
           aspect-ratio: 500 / 812;
           background:
             radial-gradient(circle at 25% 15%, rgba(255,255,255,0.98), rgba(255,247,228,0.97) 46%, rgba(232,211,178,0.98) 100%);
@@ -471,7 +471,7 @@ function Pensees() {
         }
       `}</style>
 
-      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
+      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '18px' }}>🔔</div>
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
@@ -584,23 +584,23 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             <button onClick={() => setPopup(null)} style={{ position: 'absolute', top: '-18px', right: '-18px', width: '38px', height: '38px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.82)', color: '#fff', fontSize: '20px', cursor: 'pointer', zIndex: 5 }}>×</button>
 
             <div className="popup-page" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-              <div style={{ padding: isMobile ? '22px 24px 18px' : '26px 34px 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', marginBottom: '10px', minHeight: '18px' }}>
-                  <h2 style={{ fontSize: isMobile ? '10px' : '11px', lineHeight: 1.2, fontWeight: 800, color: 'rgba(36,19,12,0.58)', maxWidth: '55%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ padding: isMobile ? '16px 20px 12px' : '18px 28px 14px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', marginBottom: '6px', minHeight: '14px' }}>
+                  <h2 style={{ fontSize: isMobile ? '8px' : '9px', lineHeight: 1.2, fontWeight: 800, color: 'rgba(36,19,12,0.58)', maxWidth: '55%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {popup.titre}
                   </h2>
-                  <p style={{ fontSize: isMobile ? '9px' : '10px', lineHeight: 1.2, fontWeight: 700, color: 'rgba(36,19,12,0.46)', maxWidth: '42%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                  <p style={{ fontSize: isMobile ? '8px' : '9px', lineHeight: 1.2, fontWeight: 700, color: 'rgba(36,19,12,0.46)', maxWidth: '42%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
                     {popup.auteur || 'Anonyme'}
                   </p>
                 </div>
 
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'stretch' }}>
-                  <p style={{ width: '100%', fontSize: isMobile ? '14px' : '15px', lineHeight: 1.55, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
+                  <p style={{ width: '100%', fontSize: isMobile ? '13px' : '13.6px', lineHeight: 1.38, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
                     {pagesPopup[pagePopup]}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
                   <button onClick={pagePrecedente} disabled={pagePopup === 0} style={navPageBtn(pagePopup !== 0)}>‹</button>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(36,19,12,0.52)' }}>{pagePopup + 1} / {pagesPopup.length}</span>
                   <button onClick={pageSuivante} disabled={pagePopup >= pagesPopup.length - 1} style={navPageBtn(pagePopup < pagesPopup.length - 1)}>›</button>
@@ -629,7 +629,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           }}
         >
           <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '540px', maxWidth: '96vw', padding: '24px', position: 'relative' }}>
-            <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '22px', cursor: 'pointer' }}>×</button>
+            <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>×</button>
             <h2 style={{ color: '#fff', marginBottom: '14px', fontSize: '24px' }}>Ajouter ma pensée</h2>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.6, marginBottom: '18px' }}>
               Elle sera envoyée avec ton pseudo et apparaîtra après validation. Le cyan est réservé aux pensées de Kevin Teo'Art.
@@ -943,11 +943,11 @@ function PenseeSocial({ pensee, userId, pseudo }) {
 
   return (
     <div style={{
-      marginTop: '8px',
+      marginTop: '4px',
       borderTop: '1px solid rgba(36,19,12,0.12)',
-      paddingTop: '8px',
+      paddingTop: '4px',
       color: '#24130c',
-      fontSize: '12px',
+      fontSize: '11px',
     }}>
       <button
         onClick={toggleLike}
@@ -955,17 +955,17 @@ function PenseeSocial({ pensee, userId, pseudo }) {
           border: 'none',
           background: jaime ? 'rgba(255,62,181,0.18)' : 'rgba(36,19,12,0.08)',
           color: jaime ? '#c01870' : '#24130c',
-          padding: '6px 12px',
+          padding: '4px 10px',
           borderRadius: '999px',
           cursor: 'pointer',
           fontWeight: 800,
-          marginBottom: '8px',
+          marginBottom: '4px',
         }}
       >
         ♥ {likes.length} {jaime ? "J'aime" : "Aimer"}
       </button>
 
-      <div style={{ maxHeight: '82px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '8px' }}>
+      <div style={{ maxHeight: '46px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '8px' }}>
         {racines.map(c => (
           <div key={c.id} style={{ background: 'rgba(36,19,12,0.06)', borderRadius: '10px', padding: '7px 9px' }}>
             <strong>{c.pseudo}</strong>
@@ -1041,13 +1041,13 @@ const inputStyle = {
 
 function navPageBtn(actif) {
   return {
-    width: '36px',
-    height: '36px',
+    width: '30px',
+    height: '30px',
     borderRadius: '50%',
     border: actif ? '1px solid rgba(36,19,12,0.25)' : '1px solid rgba(36,19,12,0.08)',
     background: actif ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.14)',
     color: actif ? '#24130c' : 'rgba(36,19,12,0.25)',
-    fontSize: '22px',
+    fontSize: '18px',
     cursor: actif ? 'pointer' : 'default',
     display: 'inline-flex',
     alignItems: 'center',
