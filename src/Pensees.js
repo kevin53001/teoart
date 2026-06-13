@@ -259,35 +259,28 @@ function Pensees() {
         }
 
         .btn-nuage {
-          position: relative;
-          border: 0;
-          background: linear-gradient(120deg, rgba(255,210,80,0.98), rgba(255,142,90,0.98), rgba(255,62,181,0.98));
-          color: #090909;
-          font-weight: 900;
-          font-size: 14px;
-          padding: 15px 34px;
-          border-radius: 999px;
+          border: 1px solid rgba(255,62,181,0.42);
+          background: rgba(255,62,181,0.18);
+          color: #fff;
+          font-weight: 800;
+          font-size: 13px;
+          padding: 11px 28px;
+          border-radius: 10px;
           cursor: pointer;
-          box-shadow: 0 12px 34px rgba(255,62,181,0.25), 0 0 22px rgba(255,210,80,0.12);
-          transition: transform .2s ease, filter .2s ease;
+          box-shadow: 0 0 18px rgba(255,62,181,0.14), inset 0 0 18px rgba(255,62,181,0.10);
+          backdrop-filter: blur(8px);
+          transition: transform .2s ease, background .2s ease, border-color .2s ease;
         }
-        .btn-nuage:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.08); }
-        .btn-nuage::before,
-        .btn-nuage::after {
-          content: '';
-          position: absolute;
-          background: inherit;
-          border-radius: 50%;
-          z-index: -1;
-          filter: blur(0.1px);
+        .btn-nuage:hover {
+          transform: translateY(-2px);
+          background: rgba(255,62,181,0.28);
+          border-color: rgba(255,62,181,0.70);
         }
-        .btn-nuage::before { width: 42px; height: 42px; left: 18px; top: -13px; }
-        .btn-nuage::after { width: 54px; height: 54px; right: 22px; top: -20px; }
 
         .donut-zone {
           position: relative;
           width: min(96vw, 1120px);
-          height: 650px;
+          height: 470px;
           margin: 0 auto;
           perspective: 1000px;
           overflow: visible;
@@ -409,29 +402,7 @@ function Pensees() {
           filter: blur(3px);
           pointer-events: none;
         }
-        .donut-help {
-          position: absolute;
-          left: 50%;
-          bottom: 20px;
-          transform: translateX(-50%);
-          color: rgba(255,255,255,0.72);
-          font-size: 15px;
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-          width: 100%;
-          pointer-events: none;
-          text-shadow: 0 2px 8px rgba(0,0,0,0.9);
-        }
-        .donut-help::before,
-        .donut-help::after {
-          content: '';
-          width: 76px;
-          height: 1px;
-          background: rgba(255,255,255,0.65);
-        }
+        .donut-help { display: none; }
 
         .popup-page {
           width: 500px;
@@ -458,7 +429,7 @@ function Pensees() {
         }
 
         @media (max-width: 600px) {
-          .donut-zone { height: 490px; }
+          .donut-zone { height: 360px; }
           .donut-stage { width: 530px; height: 310px; }
           .fiche-wrap {
             width: 84px;
@@ -471,8 +442,7 @@ function Pensees() {
           .fiche-title { font-size: 10px; max-height: 52px; }
           .fiche-author { font-size: 8px; margin-top: 8px; }
           .fiche-reflet { width: 72px; height: 108px; margin-left: -36px; margin-top: 70px; }
-          .donut-help { font-size: 11px; bottom: 0; gap: 8px; }
-          .donut-help::before, .donut-help::after { width: 36px; }
+
         }
       `}</style>
 
@@ -527,14 +497,16 @@ function Pensees() {
           </div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '28px 14px 60px' : '40px 20px 70px', minHeight: `${BARRES.length * (IMG_H + GAP) + 360}px` }}>
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '28px 14px 60px' : '40px 20px 70px', minHeight: `${BARRES.length * (IMG_H + GAP) + 90}px` }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            <div className="premium-card" style={{ padding: isMobile ? '18px' : '24px 30px', margin: '0 auto 22px', textAlign: 'center' }}>
-              <h1 style={{ color: '#fff', fontSize: isMobile ? '24px' : '34px', letterSpacing: '1px', marginBottom: '10px', textShadow: '0 0 16px rgba(0,212,212,0.22)' }}>
+            <div className="premium-card" style={{ padding: isMobile ? '16px' : '20px 28px', margin: '0 auto 22px', textAlign: 'center', maxWidth: '900px' }}>
+              <h1 style={{ color: '#00d4d4', fontSize: isMobile ? '18px' : '23px', letterSpacing: '1px', marginBottom: '10px', textShadow: '0 0 16px rgba(0,212,212,0.35)' }}>
                 MES PENSÉES
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '13px' : '15px', lineHeight: 1.75, maxWidth: '780px', margin: '0 auto' }}>
-                Les pensées qu'on garde parfois dans un coin de page. Certaines viennent de Kevin Teo'Art, d'autres peuvent venir des visiteurs.
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '12px' : '13px', lineHeight: 1.65, maxWidth: '820px', margin: '0 auto', whiteSpace: 'pre-line' }}>
+                J'aime dessiner, mais il m'arrive aussi de jouer avec les mots. Alors, de temps en temps, je dépose ici quelques pensées, quelques souvenirs, des histoires ou simplement des émotions que j'avais envie de partager. Je ne suis pas écrivain, juste quelqu'un qui aime explorer cet univers à sa façon.
+
+Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfois, ou au contraire y découvrir des regards différents du vôtre. Et si l'inspiration vous rend visite, vous pouvez également partager vos propres écrits et ajouter votre voix à ce drôle de carnet collectif.
               </p>
             </div>
 
@@ -786,7 +758,7 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
           );
         })}
       </div>
-      <div className="donut-help">Déplace le curseur à droite ou à gauche pour faire tourner la roue</div>
+
     </div>
   );
 }
