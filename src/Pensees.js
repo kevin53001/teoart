@@ -249,22 +249,22 @@ function Pensees() {
         .donut-stage {
           position: absolute;
           left: 50%;
-          top: 53%;
+          top: 55%;
           width: 760px;
-          height: 760px;
+          height: 500px;
           transform-style: preserve-3d;
-          transform: translate(-50%, -50%) rotateX(64deg);
+          transform: translate(-50%, -50%) rotateX(10deg);
           border-radius: 50%;
         }
         .donut-hole {
           position: absolute;
           left: 50%;
-          top: 50%;
-          width: 240px;
-          height: 240px;
+          top: 58%;
+          width: 260px;
+          height: 118px;
           transform: translate(-50%, -50%) translateZ(20px);
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(0,0,0,0.98), rgba(0,0,0,0.78) 58%, rgba(0,212,212,0.16) 78%, rgba(255,210,80,0.13) 100%);
+          background: radial-gradient(ellipse at center, rgba(0,0,0,0.98), rgba(0,0,0,0.82) 58%, rgba(0,212,212,0.16) 78%, rgba(255,210,80,0.13) 100%);
           border: 1px solid rgba(0,212,212,0.25);
           box-shadow: inset 0 0 44px rgba(0,0,0,0.95), 0 0 34px rgba(0,212,212,0.13);
           z-index: 600;
@@ -275,7 +275,7 @@ function Pensees() {
           left: 50%;
           top: 50%;
           width: 190px;
-          transform: translate(-50%, -50%) rotateX(-64deg);
+          transform: translate(-50%, -50%);
           text-align: center;
           color: rgba(255,255,255,0.58);
           font-size: 11px;
@@ -288,24 +288,22 @@ function Pensees() {
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 86px;
-          height: 260px;
-          margin-left: -43px;
-          margin-top: -236px;
-          transform-origin: 43px 236px;
-          border-radius: 11px 11px 7px 7px;
+          width: 74px;
+          height: 250px;
+          margin-left: -37px;
+          margin-top: -125px;
+          transform-origin: 37px 125px;
+          border-radius: 10px;
           background: radial-gradient(circle at 26% 10%, rgba(255,255,255,0.98), rgba(255,248,231,0.98) 48%, rgba(230,211,178,0.98) 100%);
           border: 1px solid rgba(255,255,255,0.55);
           border-top: 7px solid var(--accent);
           box-shadow: 0 18px 28px rgba(0,0,0,0.42);
           cursor: pointer;
-          transition: height .22s ease, margin-top .22s ease, filter .2s ease, box-shadow .2s ease, z-index .2s ease;
+          transition: transform .22s ease, filter .2s ease, box-shadow .2s ease, z-index .2s ease;
           overflow: hidden;
           transform-style: preserve-3d;
         }
         .fiche-donut:hover {
-          height: 312px;
-          margin-top: -288px;
           filter: brightness(1.12);
           box-shadow: 0 25px 46px rgba(0,0,0,0.58), 0 0 30px rgba(0,212,212,0.22);
           z-index: 900 !important;
@@ -325,13 +323,13 @@ function Pensees() {
           padding: 10px 8px;
           text-align: center;
           opacity: 0;
-          transform: rotateX(-64deg) translateY(12px);
+          transform: translateY(12px);
           transition: opacity .2s ease, transform .2s ease;
           pointer-events: none;
         }
         .fiche-donut:hover .fiche-contenu {
           opacity: 1;
-          transform: rotateX(-64deg) translateY(0);
+          transform: translateY(0);
         }
         .fiche-titre {
           color: #1c100b;
@@ -386,20 +384,16 @@ function Pensees() {
 
         @media (max-width: 600px) {
           .donut-zone { height: 490px; }
-          .donut-stage { width: 480px; height: 480px; transform: translate(-50%, -50%) rotateX(64deg); }
-          .donut-hole { width: 150px; height: 150px; }
+          .donut-stage { width: 480px; height: 340px; transform: translate(-50%, -50%) rotateX(10deg); }
+          .donut-hole { width: 160px; height: 76px; }
           .donut-info { width: 128px; font-size: 9px; }
           .fiche-donut {
-            width: 58px;
-            height: 168px;
-            margin-left: -29px;
-            margin-top: -154px;
-            transform-origin: 29px 154px;
-            border-radius: 8px 8px 5px 5px;
-          }
-          .fiche-donut:hover {
-            height: 205px;
-            margin-top: -191px;
+            width: 48px;
+            height: 164px;
+            margin-left: -24px;
+            margin-top: -82px;
+            transform-origin: 24px 82px;
+            border-radius: 8px;
           }
           .fiche-contenu { top: 14px; padding: 8px 5px; }
           .fiche-titre { font-size: 9px; max-height: 54px; }
@@ -647,7 +641,9 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
 
   const visibles = pensees.slice(0, Math.min(pensees.length, 32));
   const count = visibles.length || 1;
-  const radius = isMobile ? 156 : 246;
+  const radiusX = isMobile ? 178 : 292;
+  const radiusY = isMobile ? 72 : 118;
+  const lift = isMobile ? 34 : 52;
 
   return (
     <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
@@ -668,9 +664,9 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
               onClick={() => ouvrirPopup(pensee)}
               style={{
                 '--accent': accent,
-                transform: `rotateZ(${base}deg) translateY(-${radius}px)`,
+                transform: `translate(${Math.sin((base * Math.PI) / 180) * radiusX}px, ${-Math.cos((base * Math.PI) / 180) * radiusY}px) translateZ(${front ? lift : 0}px) rotateY(${Math.sin((base * Math.PI) / 180) * 34}deg) rotateZ(${Math.sin((base * Math.PI) / 180) * 6}deg)`,
                 zIndex: z,
-                opacity: back ? 0.64 : 1,
+                opacity: back ? 0.48 : 1,
               }}
             >
               <div className="fiche-contenu">
@@ -686,7 +682,7 @@ function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
           </div>
         </div>
       </div>
-      <div className="donut-controls">Survole une fiche pour la lever · Clique pour lire</div>
+      <div className="donut-controls">Les fiches sont debout · Survole une tranche pour l’ouvrir</div>
     </div>
   );
 }
