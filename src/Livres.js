@@ -568,7 +568,7 @@ function Livres() {
       setUserPseudo(profil?.pseudo || 'Anonyme');
 
       const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, prix, description').eq('statut', 'published').order('annee', { ascending: false });
-      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').eq('statut', 'published').order('nom');
+      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').in('statut', ['published', 'dossier']).order('nom');
 
       // Toutes les illustrations pour la PopupFiche (similaires)
       const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
