@@ -1046,7 +1046,7 @@ function SectionMesInfos({ userId }) {
     if (!resetEmail.trim()) { setResetErreur('Adresse email requise.'); return; }
     setResetLoading(true); setResetErreur('');
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-      redirectTo: 'https://kevinteoart.fr/reset-password',
+      redirectTo: 'https://www.kevinteoart.fr/reset-password',
     });
     setResetLoading(false);
     if (error) { setResetErreur(error.message); }
