@@ -94,7 +94,6 @@ function Pensees() {
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
-  const [activeIndex, setActiveIndex] = React.useState(0);
   const [popup, setPopup] = React.useState(null);
   const [pagePopup, setPagePopup] = React.useState(0);
   const [showForm, setShowForm] = React.useState(false);
@@ -134,14 +133,6 @@ function Pensees() {
     };
     charger();
   }, []);
-
-  React.useEffect(() => {
-    if (!pensees.length) return;
-    const t = setInterval(() => {
-      setActiveIndex(prev => (prev + 1) % pensees.length);
-    }, 4200);
-    return () => clearInterval(t);
-  }, [pensees.length]);
 
   const envoyerPensee = async () => {
     if (!titreForm.trim() || !texteForm.trim() || !userId) return;
@@ -222,43 +213,153 @@ function Pensees() {
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
 
-        @keyframes cardFloatA { 0%,100% { margin-top: 0px; } 50% { margin-top: -10px; } }
-        @keyframes cardFloatB { 0%,100% { margin-top: -6px; } 50% { margin-top: 8px; } }
-        @keyframes cardFloatC { 0%,100% { margin-top: 8px; } 50% { margin-top: -6px; } }
-        @keyframes glowPulse { 0%,100% { box-shadow: 0 0 18px rgba(0,212,212,0.14), inset 0 0 28px rgba(255,210,80,0.05); } 50% { box-shadow: 0 0 34px rgba(255,62,181,0.18), inset 0 0 40px rgba(0,212,212,0.05); } }
+        .premium-card {
+          background: rgba(0,0,0,0.82);
+          border: 1px solid rgba(0,212,212,0.28);
+          border-radius: 18px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+        }
+        .premium-card:hover {
+          border-color: rgba(255,62,181,0.30);
+          box-shadow: 0 20px 55px rgba(0,0,0,0.55), 0 0 22px rgba(0,212,212,0.10);
+        }
 
-        .pensee-page {
+        .donut-zone {
+          position: relative;
+          width: min(94vw, 980px);
+          height: 650px;
+          margin: 0 auto;
+          perspective: 1250px;
+          overflow: visible;
+          user-select: none;
+        }
+        .donut-shadow {
           position: absolute;
-          width: 170px;
-          height: 276px;
-          border-radius: 14px;
-          background:
-            radial-gradient(circle at 30% 20%, rgba(255,255,255,0.95), rgba(255,246,223,0.95) 45%, rgba(232,214,184,0.95) 100%);
-          border: 1px solid rgba(255,255,255,0.7);
-          box-shadow: 0 18px 34px rgba(0,0,0,0.56);
-          transform-origin: bottom center;
-          transition: transform .38s ease, box-shadow .3s ease, filter .3s ease, opacity .3s ease;
+          left: 50%;
+          top: 60%;
+          width: min(84vw, 760px);
+          height: 190px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          background: radial-gradient(ellipse at center, rgba(0,212,212,0.16), rgba(255,62,181,0.10) 42%, rgba(0,0,0,0) 72%);
+          filter: blur(4px);
+          pointer-events: none;
+        }
+        .donut-stage {
+          position: absolute;
+          left: 50%;
+          top: 53%;
+          width: 760px;
+          height: 760px;
+          transform-style: preserve-3d;
+          transform: translate(-50%, -50%) rotateX(64deg);
+          border-radius: 50%;
+        }
+        .donut-hole {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 240px;
+          height: 240px;
+          transform: translate(-50%, -50%) translateZ(20px);
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(0,0,0,0.98), rgba(0,0,0,0.78) 58%, rgba(0,212,212,0.16) 78%, rgba(255,210,80,0.13) 100%);
+          border: 1px solid rgba(0,212,212,0.25);
+          box-shadow: inset 0 0 44px rgba(0,0,0,0.95), 0 0 34px rgba(0,212,212,0.13);
+          z-index: 600;
+          pointer-events: none;
+        }
+        .donut-info {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 190px;
+          transform: translate(-50%, -50%) rotateX(-64deg);
+          text-align: center;
+          color: rgba(255,255,255,0.58);
+          font-size: 11px;
+          line-height: 1.35;
+          z-index: 620;
+          pointer-events: none;
+        }
+
+        .fiche-donut {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 86px;
+          height: 260px;
+          margin-left: -43px;
+          margin-top: -236px;
+          transform-origin: 43px 236px;
+          border-radius: 11px 11px 7px 7px;
+          background: radial-gradient(circle at 26% 10%, rgba(255,255,255,0.98), rgba(255,248,231,0.98) 48%, rgba(230,211,178,0.98) 100%);
+          border: 1px solid rgba(255,255,255,0.55);
+          border-top: 7px solid var(--accent);
+          box-shadow: 0 18px 28px rgba(0,0,0,0.42);
           cursor: pointer;
+          transition: height .22s ease, margin-top .22s ease, filter .2s ease, box-shadow .2s ease, z-index .2s ease;
+          overflow: hidden;
+          transform-style: preserve-3d;
+        }
+        .fiche-donut:hover {
+          height: 312px;
+          margin-top: -288px;
+          filter: brightness(1.12);
+          box-shadow: 0 25px 46px rgba(0,0,0,0.58), 0 0 30px rgba(0,212,212,0.22);
+          z-index: 900 !important;
+        }
+        .fiche-donut::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, rgba(0,0,0,0.10), transparent 24%, transparent 76%, rgba(0,0,0,0.13));
+          pointer-events: none;
+        }
+        .fiche-contenu {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 26px;
+          padding: 10px 8px;
+          text-align: center;
+          opacity: 0;
+          transform: rotateX(-64deg) translateY(12px);
+          transition: opacity .2s ease, transform .2s ease;
+          pointer-events: none;
+        }
+        .fiche-donut:hover .fiche-contenu {
+          opacity: 1;
+          transform: rotateX(-64deg) translateY(0);
+        }
+        .fiche-titre {
+          color: #1c100b;
+          font-weight: 900;
+          font-size: 13px;
+          line-height: 1.08;
+          margin-bottom: 6px;
+          max-height: 76px;
           overflow: hidden;
         }
-        .pensee-page::before {
-          content:'';
-          position:absolute;
-          inset:0;
-          background: linear-gradient(90deg, rgba(0,0,0,0.10), transparent 20%, transparent 78%, rgba(0,0,0,0.12));
-          pointer-events:none;
+        .fiche-auteur {
+          color: rgba(28,16,11,0.62);
+          font-size: 9px;
+          font-weight: 800;
         }
-        .pensee-page:hover {
-          filter: brightness(1.12);
-          box-shadow: 0 22px 44px rgba(0,0,0,0.65), 0 0 28px rgba(0,212,212,0.28);
-          z-index: 80 !important;
+
+        .donut-controls {
+          position: absolute;
+          left: 50%;
+          bottom: 16px;
+          transform: translateX(-50%);
+          color: rgba(255,255,255,0.45);
+          font-size: 12px;
+          text-align: center;
+          width: 100%;
+          pointer-events: none;
         }
-        .livre-ouvert:hover .pensee-page {
-          animation-play-state: running;
-        }
-        .livre-ouvert:not(:hover) .pensee-page {
-          animation-play-state: paused;
-        }
+
         .popup-page {
           width: 500px;
           height: 812px;
@@ -282,31 +383,37 @@ function Pensees() {
           background: linear-gradient(90deg, rgba(0,0,0,0.16), rgba(0,0,0,0.04), transparent);
           pointer-events:none;
         }
-        .premium-card {
-          background: rgba(0,0,0,0.82);
-          border: 1px solid rgba(0,212,212,0.28);
-          border-radius: 18px;
-          backdrop-filter: blur(10px);
-          box-shadow: 0 18px 50px rgba(0,0,0,0.45);
-        }
-        .premium-card:hover {
-          border-color: rgba(255,62,181,0.30);
-          box-shadow: 0 20px 55px rgba(0,0,0,0.55), 0 0 22px rgba(0,212,212,0.10);
-        }
+
         @media (max-width: 600px) {
-          .pensee-page { width: 112px; height: 182px; border-radius: 10px; }
-          .book-table { height: 430px !important; }
+          .donut-zone { height: 490px; }
+          .donut-stage { width: 480px; height: 480px; transform: translate(-50%, -50%) rotateX(64deg); }
+          .donut-hole { width: 150px; height: 150px; }
+          .donut-info { width: 128px; font-size: 9px; }
+          .fiche-donut {
+            width: 58px;
+            height: 168px;
+            margin-left: -29px;
+            margin-top: -154px;
+            transform-origin: 29px 154px;
+            border-radius: 8px 8px 5px 5px;
+          }
+          .fiche-donut:hover {
+            height: 205px;
+            margin-top: -191px;
+          }
+          .fiche-contenu { top: 14px; padding: 8px 5px; }
+          .fiche-titre { font-size: 9px; max-height: 54px; }
+          .fiche-auteur { font-size: 7px; }
+          .donut-controls { bottom: 0; font-size: 10px; }
         }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
-      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
@@ -335,7 +442,6 @@ function Pensees() {
         </div>
       </div>
 
-      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -360,12 +466,12 @@ function Pensees() {
                 MES PENSÉES
               </h1>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: isMobile ? '13px' : '15px', lineHeight: 1.75, maxWidth: '760px', margin: '0 auto' }}>
-                Ici se rangent les petites phrases, les textes courts, les morceaux d'idées et les pensées qu'on garde parfois dans un coin de page.
-                Certaines viennent de Kevin Teo'Art, d'autres peuvent venir des visiteurs.
+                Une roue de petites fiches. Fais glisser ton curseur à gauche ou à droite : plus tu t'éloignes du centre, plus elle tourne vite.
+                Arrête-toi sur une fiche pour la lire, puis clique pour l'ouvrir.
               </p>
             </div>
 
-            <div style={{ textAlign: 'center', marginBottom: isMobile ? '20px' : '24px' }}>
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '18px' : '20px' }}>
               <button
                 onClick={() => setShowForm(true)}
                 style={{
@@ -391,19 +497,12 @@ function Pensees() {
                 Aucune pensée publiée pour le moment.
               </div>
             ) : (
-              <LivreOuvert
-                pensees={pensees}
-                activeIndex={activeIndex}
-                setActiveIndex={setActiveIndex}
-                ouvrirPopup={ouvrirPopup}
-                isMobile={isMobile}
-              />
+              <RoueDonut pensees={pensees} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
             )}
           </div>
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -517,6 +616,81 @@ function Pensees() {
   );
 }
 
+function RoueDonut({ pensees, ouvrirPopup, isMobile }) {
+  const zoneRef = React.useRef(null);
+  const rafRef = React.useRef(null);
+  const angleRef = React.useRef(0);
+  const speedRef = React.useRef(0);
+  const [angle, setAngle] = React.useState(0);
+
+  React.useEffect(() => {
+    const animate = () => {
+      angleRef.current += speedRef.current;
+      setAngle(angleRef.current);
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  const handleMouseMove = (e) => {
+    const rect = zoneRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const center = rect.left + rect.width / 2;
+    const dist = (e.clientX - center) / (rect.width / 2);
+    speedRef.current = Math.max(-1, Math.min(1, dist)) * 0.85;
+  };
+
+  const handleMouseLeave = () => {
+    speedRef.current = 0;
+  };
+
+  const visibles = pensees.slice(0, Math.min(pensees.length, 32));
+  const count = visibles.length || 1;
+  const radius = isMobile ? 156 : 246;
+
+  return (
+    <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+      <div className="donut-shadow" />
+      <div className="donut-stage">
+        {visibles.map((pensee, i) => {
+          const base = (360 / count) * i + angle;
+          const normalized = ((base % 360) + 360) % 360;
+          const front = normalized > 330 || normalized < 30;
+          const back = normalized > 150 && normalized < 210;
+          const z = front ? 820 : back ? 30 : 260 + Math.round(Math.cos((normalized * Math.PI) / 180) * 120);
+          const accent = i % 3 === 0 ? '#00d4d4' : i % 3 === 1 ? '#ff3eb5' : '#ffd250';
+
+          return (
+            <div
+              key={pensee.id}
+              className="fiche-donut"
+              onClick={() => ouvrirPopup(pensee)}
+              style={{
+                '--accent': accent,
+                transform: `rotateZ(${base}deg) translateY(-${radius}px)`,
+                zIndex: z,
+                opacity: back ? 0.64 : 1,
+              }}
+            >
+              <div className="fiche-contenu">
+                <div className="fiche-titre">{pensee.titre}</div>
+                <div className="fiche-auteur">par {pensee.auteur || 'Anonyme'}</div>
+              </div>
+            </div>
+          );
+        })}
+        <div className="donut-hole">
+          <div className="donut-info">
+            Déplace le curseur<br />à gauche ou à droite
+          </div>
+        </div>
+      </div>
+      <div className="donut-controls">Survole une fiche pour la lever · Clique pour lire</div>
+    </div>
+  );
+}
+
 const inputStyle = {
   width: '100%',
   background: 'rgba(255,255,255,0.06)',
@@ -544,163 +718,6 @@ function navPageBtn(actif) {
     alignItems: 'center',
     justifyContent: 'center',
   };
-}
-
-function LivreOuvert({ pensees, activeIndex, setActiveIndex, ouvrirPopup, isMobile }) {
-  const visibles = pensees.slice(0, Math.min(pensees.length, isMobile ? 9 : 15));
-  const active = visibles[activeIndex % visibles.length] || visibles[0];
-
-  return (
-    <div className="book-table" style={{ position: 'relative', width: '100%', height: isMobile ? '460px' : '610px', perspective: '1300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      {/* table / socle */}
-      <div style={{
-        position: 'absolute',
-        bottom: isMobile ? '30px' : '52px',
-        width: isMobile ? '92%' : '780px',
-        height: isMobile ? '80px' : '120px',
-        borderRadius: '50%',
-        background: 'radial-gradient(ellipse at center, rgba(255,62,181,0.18), rgba(0,212,212,0.08) 45%, transparent 72%)',
-        filter: 'blur(2px)',
-      }} />
-
-      <div className="livre-ouvert" style={{
-        position: 'relative',
-        width: isMobile ? '340px' : '760px',
-        height: isMobile ? '360px' : '520px',
-        transformStyle: 'preserve-3d',
-        animation: 'glowPulse 4s ease-in-out infinite',
-        borderRadius: '28px',
-      }}>
-        {/* couverture ouverte gauche */}
-        <div style={{
-          position: 'absolute',
-          left: isMobile ? '15px' : '70px',
-          top: isMobile ? '92px' : '125px',
-          width: isMobile ? '155px' : '300px',
-          height: isMobile ? '240px' : '360px',
-          borderRadius: '22px 8px 8px 22px',
-          background: 'linear-gradient(135deg, rgba(0,212,212,0.16), rgba(20,8,18,0.94) 45%, rgba(255,62,181,0.16))',
-          border: '1px solid rgba(0,212,212,0.22)',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.60)',
-          transform: 'rotateY(22deg) rotateZ(-3deg)',
-          transformOrigin: 'right center',
-        }} />
-
-        {/* couverture ouverte droite */}
-        <div style={{
-          position: 'absolute',
-          right: isMobile ? '15px' : '70px',
-          top: isMobile ? '92px' : '125px',
-          width: isMobile ? '155px' : '300px',
-          height: isMobile ? '240px' : '360px',
-          borderRadius: '8px 22px 22px 8px',
-          background: 'linear-gradient(225deg, rgba(255,210,80,0.17), rgba(20,8,18,0.94) 45%, rgba(0,212,212,0.14))',
-          border: '1px solid rgba(255,210,80,0.20)',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.60)',
-          transform: 'rotateY(-22deg) rotateZ(3deg)',
-          transformOrigin: 'left center',
-        }} />
-
-        {/* reliure */}
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: isMobile ? '98px' : '128px',
-          width: isMobile ? '18px' : '28px',
-          height: isMobile ? '230px' : '360px',
-          transform: 'translateX(-50%)',
-          borderRadius: '999px',
-          background: 'linear-gradient(90deg, rgba(0,0,0,0.65), rgba(255,255,255,0.16), rgba(0,0,0,0.72))',
-          boxShadow: '0 0 35px rgba(0,212,212,0.20)',
-          zIndex: 60,
-        }} />
-
-        {visibles.map((pensee, i) => {
-          const side = i % 2 === 0 ? -1 : 1;
-          const rang = Math.floor(i / 2);
-          const mobileScale = isMobile ? 0.72 : 1;
-          const baseX = side * (isMobile ? 56 : 150);
-          const spread = side * (rang * (isMobile ? 13 : 26));
-          const x = baseX + spread;
-          const y = (rang % 5) * (isMobile ? 12 : 18) + (side === -1 ? 6 : 0);
-          const rotY = side === -1 ? 34 - rang * 2.2 : -34 + rang * 2.2;
-          const rotZ = side === -1 ? -16 + rang * 4 : 16 - rang * 4;
-          const z = 45 - rang;
-          const isActive = active?.id === pensee.id;
-          const anim = i % 3 === 0 ? 'cardFloatA' : i % 3 === 1 ? 'cardFloatB' : 'cardFloatC';
-          const couleurBord = i % 3 === 0 ? '#00d4d4' : i % 3 === 1 ? '#ff3eb5' : '#ffd250';
-
-          const transform = isActive
-            ? `translateX(-50%) translateY(${isMobile ? -45 : -70}px) translateZ(130px) rotateY(0deg) rotateZ(0deg) scale(${isMobile ? 1.04 : 1.16})`
-            : `translateX(calc(-50% + ${x}px)) translateY(${isMobile ? 28 + y : 44 + y}px) translateZ(${z}px) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${mobileScale})`;
-
-          return (
-            <div
-              key={pensee.id}
-              className="pensee-page"
-              onMouseEnter={() => setActiveIndex(i)}
-              onFocus={() => setActiveIndex(i)}
-              onClick={() => ouvrirPopup(pensee)}
-              role="button"
-              tabIndex={0}
-              style={{
-                left: '50%',
-                top: isMobile ? '58px' : '70px',
-                zIndex: isActive ? 120 : 40 - rang,
-                borderTop: `7px solid ${couleurBord}`,
-                transform,
-                animation: `${anim} ${3.8 + (i % 4) * 0.35}s ease-in-out infinite`,
-                animationDelay: `${i * 0.12}s`,
-              }}
-            >
-              <div style={{
-                height: '100%',
-                padding: isMobile ? '28px 13px 14px' : '42px 20px 18px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: isActive ? 'center' : 'flex-start',
-                alignItems: 'center',
-                textAlign: 'center',
-                position: 'relative',
-              }}>
-                <h3 style={{
-                  color: '#1c100b',
-                  fontSize: isMobile ? (isActive ? '15px' : '12px') : (isActive ? '23px' : '16px'),
-                  lineHeight: 1.12,
-                  fontWeight: 800,
-                  marginBottom: isActive ? '10px' : '6px',
-                  maxHeight: isActive ? '96px' : '55px',
-                  overflow: 'hidden',
-                }}>
-                  {pensee.titre}
-                </h3>
-                <p style={{
-                  color: 'rgba(28,16,11,0.62)',
-                  fontSize: isMobile ? '9px' : '11px',
-                  fontWeight: 700,
-                }}>
-                  par {pensee.auteur || 'Anonyme'}
-                </p>
-                {isActive && (
-                  <p style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: isMobile ? '12px' : '18px',
-                    color: 'rgba(28,16,11,0.45)',
-                    fontSize: isMobile ? '9px' : '11px',
-                    fontWeight: 700,
-                  }}>
-                    Cliquer pour ouvrir
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 export default Pensees;
