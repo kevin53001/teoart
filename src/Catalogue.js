@@ -23,6 +23,42 @@ const SPEED = '80s';
 const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
 const ANNEES = [2021, 2022, 2023, 2024, 2025, 2026];
 
+const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+// Mois Patreon 2026 disponibles jusqu'au mois courant inclus
+function getMoisPatreonDisponibles() {
+  const maintenant = new Date();
+  const moisCourant = maintenant.getMonth(); // 0-indexed
+  const anneeCourante = maintenant.getFullYear();
+  if (anneeCourante < 2026) return [];
+  if (anneeCourante > 2026) return MOIS_FR.map(m => `Patreon - ${m} 2026`);
+  return MOIS_FR.slice(0, moisCourant + 1).map(m => `Patreon - ${m} 2026`);
+}
+
+// Bandeau promo
+const PALIERS_PROMO = [
+  { texte: '✦ Dès 3 illustrations : -15% sur ta commande ✦', couleur: '#00d4d4' },
+  { texte: '✦ Dès 6 illustrations : -25% sur ta commande ✦', couleur: 'rgba(255,210,80,0.95)' },
+  { texte: '✦ Dès 10 illustrations : -35% sur ta commande ✦', couleur: '#ff3eb5' },
+];
+
+function BandeauPromo() {
+  const items = [...PALIERS_PROMO, ...PALIERS_PROMO, ...PALIERS_PROMO];
+  return (
+    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 0 0', position: 'relative', zIndex: 40, overflow: 'hidden' }}>
+      <div style={{ maxWidth: BANNER_MAX, width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)' }}>
+        <div style={{ display: 'flex', animation: 'scrollPromo 22s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
+          {items.map((p, i) => (
+            <span key={i} style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', padding: '0 48px', letterSpacing: '0.5px' }}>
+              {p.texte}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
@@ -54,15 +90,11 @@ function getVisuelsOrdonnes(visuels) {
     }
   });
   ['B', 'b'].forEach(k => {
-    if (visuels[k] && !valeursAjoutees.has(visuels[k])) {
-      result.push(visuels[k]); valeursAjoutees.add(visuels[k]);
-    }
+    if (visuels[k] && !valeursAjoutees.has(visuels[k])) { result.push(visuels[k]); valeursAjoutees.add(visuels[k]); }
   });
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
-    if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) {
-      result.push(v); valeursAjoutees.add(v);
-    }
+    if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
   });
   Object.entries(visuels).forEach(([k, v]) => {
     if (k.toUpperCase() === 'A') return;
@@ -80,14 +112,11 @@ function getVisuelPresentation(visuels) {
   return null;
 }
 
-
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
   const wrapRef = React.useRef(null);
-
   const handleMouseMove = (e) => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     const rect = el.getBoundingClientRect();
     const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
     const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
@@ -99,31 +128,14 @@ function LogoPremium({ onClick, isMobile, L }) {
     if (wrapRef.current) wrapRef.current.style.transform = '';
   };
   const handleMouseEnter = () => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     el.classList.remove('shining-logo'); void el.offsetWidth; el.classList.add('shining-logo');
   };
-
   return (
     <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
-      <img
-        ref={ref}
-        src={`${R2}/site/Logo.png`}
-        alt="logo"
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={onClick}
-        style={{
-          width: `${L}px`, height: `${L}px`, borderRadius: '50%',
-          border: `${isMobile ? 3 : 4}px solid #000`,
-          boxShadow: '0 0 0 3px #00d4d4',
-          objectFit: 'cover', cursor: 'pointer',
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.1s ease, box-shadow 0.3s',
-          willChange: 'transform',
-        }}
-      />
+      <img ref={ref} src={`${R2}/site/Logo.png`} alt="logo"
+        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClick}
+        style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', cursor: 'pointer', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', willChange: 'transform' }} />
     </div>
   );
 }
@@ -135,8 +147,10 @@ function Catalogue() {
   const [coloriages, setColoriages] = React.useState({});
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
+  const [sousCategorie, setSousCategorie] = React.useState(''); // POINT 10/11
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
+  const [showPatreon, setShowPatreon] = React.useState(false); // POINT 11
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
   const [tri, setTri] = React.useState('az');
@@ -151,10 +165,19 @@ function Catalogue() {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
+  const moisPatreon = getMoisPatreonDisponibles();
+
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fermer dropdowns au clic extérieur
+  React.useEffect(() => {
+    const handler = () => { setShowCategories(false); setShowPatreon(false); };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
   }, []);
 
   React.useEffect(() => {
@@ -166,17 +189,13 @@ function Catalogue() {
       setUserPseudo(profil?.pseudo || 'Anonyme');
       const { data: illus } = await supabase
         .from('illustrations')
-        .select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids')
+        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, visuels, prix, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published').order('nom');
-      const { data: coll } = await supabase
-        .from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
-      const { data: colos } = await supabase
-        .from('coloriages').select('illustration_id').eq('user_id', user.id);
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
+      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
       setIllustrations(illus || []);
       const collMap = {};
-      (coll || []).forEach(c => {
-        collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false };
-      });
+      (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false }; });
       setCollection(collMap);
       const coloMap = {};
       (colos || []).forEach(c => { coloMap[c.illustration_id] = true; });
@@ -201,8 +220,6 @@ function Catalogue() {
       { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false },
       { onConflict: 'user_id,illustration_id' }
     );
-
-    // BUG 2 : cocheage/decochage auto livre/recueil selon etat des illustrations
     const illu = illustrations.find(i => i.id === illuId);
     if (illu) {
       const tousItems = [
@@ -211,40 +228,16 @@ function Catalogue() {
       ];
       for (const { id: itemId, type } of tousItems) {
         const champ = type === 'livre' ? 'livres_ids' : 'recueils_ids';
-        const { data: illusItem } = await supabase
-          .from('illustrations')
-          .select('id')
-          .eq('statut', 'published')
-          .contains(champ, [itemId]);
+        const { data: illusItem } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains(champ, [itemId]);
         const illuIds = (illusItem || []).map(i => i.id);
         if (illuIds.length === 0) continue;
-        const { data: cochees } = await supabase
-          .from('collection')
-          .select('illustration_id')
-          .eq('user_id', userId)
-          .eq('j_ai', true)
-          .in('illustration_id', illuIds);
+        const { data: cochees } = await supabase.from('collection').select('illustration_id').eq('user_id', userId).eq('j_ai', true).in('illustration_id', illuIds);
         const nbCoches = (cochees || []).length;
-        const { data: existant } = await supabase
-          .from('collection_livres')
-          .select('j_ai, je_veux')
-          .eq('user_id', userId)
-          .eq('item_id', itemId)
-          .eq('item_type', type)
-          .maybeSingle();
-
+        const { data: existant } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', userId).eq('item_id', itemId).eq('item_type', type).maybeSingle();
         if (nouveau && nbCoches === illuIds.length && !existant?.j_ai) {
-          // Toutes cochees => cocher le livre/recueil
-          await supabase.from('collection_livres').upsert(
-            { user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false },
-            { onConflict: 'user_id,item_id,item_type' }
-          );
+          await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
         } else if (!nouveau && existant?.j_ai) {
-          // On vient de decocher une illustration => decocher le livre/recueil
-          await supabase.from('collection_livres').upsert(
-            { user_id: userId, item_id: itemId, item_type: type, j_ai: false, je_veux: existant?.je_veux || false },
-            { onConflict: 'user_id,item_id,item_type' }
-          );
+          await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: false, je_veux: existant?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
         }
       }
     }
@@ -257,14 +250,26 @@ function Catalogue() {
     await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false });
   };
 
-  const handleColoUploaded = (illuId) => {
-    setColoriages(prev => ({ ...prev, [illuId]: true }));
-  };
-
+  const handleColoUploaded = (illuId) => { setColoriages(prev => ({ ...prev, [illuId]: true })); };
   const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
 
+  // Sélection catégorie normale
+  const selectionnerCategorie = (cat) => {
+    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreon(false); setPage(1);
+  };
+
+  // Sélection mois Patreon (POINT 11)
+  const selectionnerPatreon = (mois) => {
+    setSousCategorie(mois); setCategorie('Tout'); setShowPatreon(false); setShowCategories(false); setPage(1);
+  };
+
   let illustrationsFiltrees = illustrations.filter(i => {
-    if (categorie !== 'Tout' && i.categorie !== categorie) return false;
+    if (sousCategorie) {
+      // Filtre Patreon : chercher dans sous_categorie_patreon
+      if (i.sous_categorie_patreon !== sousCategorie) return false;
+    } else {
+      if (categorie !== 'Tout' && i.categorie !== categorie) return false;
+    }
     if (annees.length > 0 && !annees.includes(i.annee)) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
     if (filtreCollection === 'jai' && !collection[i.id]?.j_ai) return false;
@@ -309,17 +314,13 @@ function Catalogue() {
   });
 
   const encartStyle = {
-    background: 'rgba(0,0,0,0.82)',
-    border: '1px solid rgba(0,212,212,0.3)',
-    borderRadius: '16px',
-    padding: '12px 16px',
-    backdropFilter: 'blur(10px)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
+    background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px',
+    padding: '12px 16px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column',
+    gap: '8px', alignSelf: 'stretch', justifyContent: 'center',
   };
+
+  // Label affiché dans le compteur
+  const labelFiltre = sousCategorie ? ` · ${sousCategorie}` : (categorie !== 'Tout' ? ` · ${categorie}` : '');
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
@@ -327,24 +328,29 @@ function Catalogue() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+        @keyframes scrollPromo { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
         .teoart-card::before {
-          content: ''; position: absolute; top: -20%; left: -150%;
-          width: 80%; height: 140%;
+          content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%;
           background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
           transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
         }
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
         @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
         .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
-        .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
-        .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; }
+        .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
+        .dropdown-patreon { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(255,210,80,0.4); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
+        .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; display: block; width: 100%; background: none; border: none; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
+        .dropdown-item-patreon { padding: 8px 14px; color: rgba(255,210,80,0.8); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; display: block; width: 100%; background: none; border: none; }
+        .dropdown-item-patreon:hover { background: rgba(255,210,80,0.1); color: rgba(255,210,80,1); }
+        .dropdown-item-patreon.actif { color: rgba(255,210,80,1); font-weight: bold; }
+        .dropdown-titre-patreon { padding: 6px 14px 4px; color: rgba(255,210,80,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
         .search-input::placeholder { color: rgba(255,255,255,0.4); }
@@ -382,9 +388,9 @@ function Catalogue() {
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
         ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
@@ -398,16 +404,36 @@ function Catalogue() {
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/catalogue')} />
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }}
-              onClick={() => navigate('/livres')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => navigate('/livres')} />
+            {/* POINT 11 : dropdown catégories avec sous-menu Patreon 2026 */}
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0' }}>
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={() => setShowCategories(v => !v)} />
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }}
+                onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreon(false); }} />
               {showCategories && (
-                <div className="dropdown-cat">
+                <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
-                    <div key={cat} className={`dropdown-item${categorie === cat ? ' actif' : ''}`}
-                      onClick={() => { setCategorie(cat); setShowCategories(false); setPage(1); }}>{cat}</div>
+                    <button key={cat} className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`}
+                      onClick={() => selectionnerCategorie(cat)}>{cat}</button>
+                  ))}
+                  <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
+                  {/* Sous-menu Patreon 2026 */}
+                  <button className={`dropdown-item${sousCategorie ? ' actif' : ''}`}
+                    style={{ color: sousCategorie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    onClick={e => { e.stopPropagation(); setShowPatreon(v => !v); setShowCategories(false); }}>
+                    <span>⭐ Patreon 2026</span>
+                    <span style={{ fontSize: '10px', opacity: 0.6 }}>›</span>
+                  </button>
+                </div>
+              )}
+              {/* Sous-menu mois Patreon */}
+              {showPatreon && (
+                <div className="dropdown-patreon" style={{ left: isMobile ? '50%' : '110%', top: isMobile ? '52px' : '0', transform: isMobile ? 'translateX(-50%)' : 'none' }} onClick={e => e.stopPropagation()}>
+                  <p className="dropdown-titre-patreon">Patreon 2026</p>
+                  {moisPatreon.map(mois => (
+                    <button key={mois} className={`dropdown-item-patreon${sousCategorie === mois ? ' actif' : ''}`}
+                      onClick={() => selectionnerPatreon(mois)}>
+                      {mois.replace('Patreon - ', '')}
+                    </button>
                   ))}
                 </div>
               )}
@@ -429,6 +455,9 @@ function Catalogue() {
           style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
       </div>
 
+      {/* POINT 9 : BANDEAU PROMO */}
+      <BandeauPromo />
+
       {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
@@ -437,8 +466,7 @@ function Catalogue() {
               <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'}
-                  style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
+                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
                   {[...barre.images, ...barre.images].map((img, j) => (
                     <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />
                   ))}
@@ -452,7 +480,6 @@ function Catalogue() {
 
           {/* ENCARTS */}
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '24px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
-
             {!isMobile && (
               <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -473,10 +500,17 @@ function Catalogue() {
               </div>
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textAlign: 'center' }}>
                 {total} illustration{total > 1 ? 's' : ''}
-                {categorie !== 'Tout' ? ` · ${categorie}` : ''}
+                {labelFiltre}
                 {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
                 {recherche ? ` · "${recherche}"` : ''}
               </p>
+              {/* Indicateur filtre Patreon actif */}
+              {sousCategorie && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px', fontWeight: 'bold' }}>⭐ {sousCategorie}</span>
+                  <button onClick={() => { setSousCategorie(''); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                </div>
+              )}
             </div>
 
             {!isMobile && (
@@ -577,17 +611,14 @@ function Catalogue() {
           userId={userId}
           onColoUploaded={() => handleColoUploaded(popup.id)}
           onOuvrirLivre={(item) => { navigate('/livres', { state: { ouvrirItem: item } }); }}
+          onFiltrerPatreon={(mois) => { setPopup(null); selectionnerPatreon(mois); }}
         />
       )}
 
       {popupColo && (
-        <PopupColoVignette
-          illu={popupColo}
-          userId={userId}
-          userPseudo={userPseudo}
+        <PopupColoVignette illu={popupColo} userId={userId} userPseudo={userPseudo}
           onClose={() => setPopupColo(null)}
-          onUploaded={() => { handleColoUploaded(popupColo.id); setPopupColo(null); }}
-        />
+          onUploaded={() => { handleColoUploaded(popupColo.id); setPopupColo(null); }} />
       )}
 
       {confirmation && (
@@ -600,14 +631,8 @@ function Catalogue() {
               Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button onClick={() => setConfirmation(null)}
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>
-                Non, je la garde !
-              </button>
-              <button onClick={() => { toggleJAi(confirmation.illuId); setConfirmation(null); }}
-                style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px' }}>
-                Oui, je décoche
-              </button>
+              <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Non, je la garde !</button>
+              <button onClick={() => { toggleJAi(confirmation.illuId); setConfirmation(null); }} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px' }}>Oui, je décoche</button>
             </div>
           </div>
         </div>
@@ -635,7 +660,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
       }, 2500);
     }
   };
-
   const handleMouseLeave = () => {
     const el = cardRef.current; const wrap = wrapRef.current;
     el.style.transform = ''; if (wrap) wrap.style.transform = '';
@@ -643,7 +667,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
     clearInterval(intervalRef.current);
     setVisuelIndex(0); setFadeKey(k => k + 1);
   };
-
   const handleMouseMove = (e) => {
     const el = cardRef.current; const wrap = wrapRef.current;
     const rect = el.getBoundingClientRect();
@@ -652,7 +675,6 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
     el.style.transform = `rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) scale(1.04)`;
     if (wrap) wrap.style.transform = 'perspective(800px)';
   };
-
   React.useEffect(() => () => clearInterval(intervalRef.current), []);
 
   return (
@@ -660,58 +682,30 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
       <div ref={cardRef} className="teoart-card"
         onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClickPopup}
         style={{ width: `${taille}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
-
         {urlActuelle
           ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade" style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
-        }
-
-        <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>
-          {jAi ? "✓ J'ai" : "✕ J'ai"}
-        </div>
-
-        <div onClick={onToggleJeVeux}
-          style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
+          : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />}
+        <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>{jAi ? "✓ J'ai" : "✕ J'ai"}</div>
+        <div onClick={onToggleJeVeux} style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
           <svg viewBox="0 0 24 24" width="16" height="16">
-            {jeVeux
-              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
-            }
+            {jeVeux ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />}
           </svg>
         </div>
-
         <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
-            {aColorié ? (
-              <g>
-                <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5"/>
-                <circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d"/>
-                <circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4"/>
-                <circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043"/>
-                <circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a"/>
-              </g>
-            ) : (
-              <g>
-                <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
-                <circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
-                <circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
-                <circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
-                <circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/>
-              </g>
-            )}
+            {aColorié ? (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5"/><circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d"/><circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4"/><circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043"/><circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a"/></g>)
+              : (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/><circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/></g>)}
           </svg>
         </div>
-
         <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1.4" fill="#000" />
-            <circle cx="19" cy="21" r="1.4" fill="#000" />
+            <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
           </svg>
         </div>
-
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
           <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
           <p style={{ color: '#00d4d4', fontSize: '11px' }}>{illu.prix ? `${illu.prix} €` : ''}</p>
@@ -734,27 +728,13 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
       if (avecImage && coloImage) {
         const ext = coloImage.name.split('.').pop();
         const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(coloImage);
-        });
-        const response = await fetch('/api/upload-colo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }),
-        });
+        const base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(coloImage); });
+        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
         imageUrl = data.url;
       }
-      await supabase.from('coloriages').upsert({
-        user_id: userId,
-        illustration_id: illu.id,
-        image_url: imageUrl,
-        date_coloriage: coloDate || null,
-      });
+      await supabase.from('coloriages').upsert({ user_id: userId, illustration_id: illu.id, image_url: imageUrl, date_coloriage: coloDate || null });
       setOk(true);
       setTimeout(() => { onUploaded(); }, 1200);
     } catch (e) { console.error(e); }
@@ -767,30 +747,15 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
         <p style={{ fontSize: '24px', marginBottom: '8px' }}>🎨</p>
         <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{illu.nom}</p>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px' }}>Partage ton coloriage !</p>
-        {ok ? (
-          <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px' }}>🎉 Coloriage partagé ! Merci {userPseudo} !</p>
-        ) : (
+        {ok ? <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px' }}>🎉 Coloriage partagé ! Merci {userPseudo} !</p> : (
           <>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px' }}>
-              Pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong>
-            </p>
-            <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])}
-              style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', display: 'block', width: '100%' }} />
-            <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)}
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px' }}>Pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
+            <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', display: 'block', width: '100%' }} />
+            <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={() => handleUpload(false)} disabled={envoi}
-                style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>
-                ✓ Sans image
-              </button>
-              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi}
-                style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1 }}>
-                🎨 Avec image
-              </button>
-              <button onClick={onClose}
-                style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '8px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer' }}>
-                Annuler
-              </button>
+              <button onClick={() => handleUpload(false)} disabled={envoi} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>✓ Sans image</button>
+              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1 }}>🎨 Avec image</button>
+              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '8px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer' }}>Annuler</button>
             </div>
           </>
         )}
@@ -804,7 +769,6 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
   const [commentaires, setCommentaires] = React.useState([]);
   const [texte, setTexte] = React.useState('');
   const [envoi, setEnvoi] = React.useState(false);
-
   const coloId = coloriage?.id;
   const jaLike = likes.some(l => l.user_id === userId);
 
@@ -812,68 +776,44 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
     if (!coloId) return;
     const charger = async () => {
       const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
-      const { data: commentsRaw } = await supabase
-        .from('commentaires_coloriages')
-        .select('id, texte, created_at, user_id')
-        .eq('coloriage_id', coloId)
-        .order('created_at', { ascending: true });
+      const { data: commentsRaw } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
       setLikes(l || []);
       if (commentsRaw && commentsRaw.length > 0) {
         const userIds = [...new Set(commentsRaw.map(c => c.user_id))];
         const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
-        const profilsMap = {};
-        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
         setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
-      } else {
-        setCommentaires([]);
-      }
+      } else setCommentaires([]);
     };
     charger();
   }, [coloId]);
 
   const toggleLike = async () => {
     if (!coloId || !userId) return;
-    if (jaLike) {
-      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
-      setLikes(prev => prev.filter(l => l.user_id !== userId));
-    } else {
-      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
-      setLikes(prev => [...prev, { user_id: userId }]);
-    }
+    if (jaLike) { await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId); setLikes(prev => prev.filter(l => l.user_id !== userId)); }
+    else { await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId }); setLikes(prev => [...prev, { user_id: userId }]); }
   };
 
   const envoyerCommentaire = async () => {
     if (!texte.trim() || !coloId || !userId) return;
     setEnvoi(true);
-    const { data } = await supabase
-      .from('commentaires_coloriages')
-      .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
-      .select('id, texte, created_at, user_id')
-      .single();
+    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
     if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
-    setTexte('');
-    setEnvoi(false);
+    setTexte(''); setEnvoi(false);
   };
 
   if (!coloriage) return null;
-
   return (
     <div className="zoom-social">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button className={`zoom-like-btn${jaLike ? ' actif' : ''}`} onClick={toggleLike}>
           <svg viewBox="0 0 24 24" width="16" height="16">
-            {jaLike
-              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-            }
+            {jaLike ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
           </svg>
           <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
         </button>
-        {coloriage.pseudo && (
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>
-            🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriage.pseudo}</span>
-          </span>
-        )}
+        {coloriage.pseudo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriage.pseudo}</span></span>}
       </div>
       {commentaires.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
@@ -899,7 +839,7 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
   );
 }
 
-function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded, onOuvrirLivre }) {
+function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded, onOuvrirLivre, onFiltrerPatreon }) {
   const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
   const [colosPropres, setColosPropres] = React.useState([]);
@@ -914,8 +854,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
   const [livresIllu, setLivresIllu] = React.useState([]);
 
   React.useEffect(() => {
-    setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null);
-    setLivresIllu([]); setColosPropres([]);
+    setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null); setLivresIllu([]); setColosPropres([]);
     const charger = async () => {
       const resultats = [];
       if (illu.livres_ids && illu.livres_ids.length > 0) {
@@ -932,25 +871,17 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       if (colos && colos.length > 0) {
         const userIds = colos.map(c => c.user_id);
         const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
-        const profilsMap = {};
-        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
         setColosPropres(colos.map(c => ({ id: c.id, image_url: c.image_url, user_id: c.user_id, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
-      } else { setColosPropres([]); }
+      } else setColosPropres([]);
     };
     charger();
   }, [illu.id, illu.livres_ids, illu.recueils_ids]);
 
-  const getUrlVisuelActif = (index) => {
-    if (index < visuels.length) return visuels[index];
-    return colosPropres[index - visuels.length]?.image_url || null;
-  };
-  const getColoActif = (index) => {
-    if (index < visuels.length) return null;
-    return colosPropres[index - visuels.length] || null;
-  };
+  const getUrlVisuelActif = (index) => { if (index < visuels.length) return visuels[index]; return colosPropres[index - visuels.length]?.image_url || null; };
+  const getColoActif = (index) => { if (index < visuels.length) return null; return colosPropres[index - visuels.length] || null; };
   const urlZoom = zoomIndex !== null ? getUrlVisuelActif(zoomIndex) : null;
   const coloZoom = zoomIndex !== null ? getColoActif(zoomIndex) : null;
-  const ouvrirZoom = (index) => { setZoomIndex(index); };
   const zoomSuivant = (e) => { e.stopPropagation(); setZoomIndex(i => (i + 1) % totalVisuels); };
   const zoomPrecedent = (e) => { e.stopPropagation(); setZoomIndex(i => (i - 1 + totalVisuels) % totalVisuels); };
   const cheminActif = visuelsChemins[visuelActif];
@@ -974,9 +905,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 
   const formatDescription = (desc) => {
     if (!desc) return null;
-    return desc.split('\n').map((line, i, arr) => (
-      <React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>
-    ));
+    return desc.split('\n').map((line, i, arr) => (<React.Fragment key={i}>{line}{i < arr.length - 1 && <br />}</React.Fragment>));
   };
 
   const handlePartagerColo = async (avecImage = false) => {
@@ -986,30 +915,19 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
       if (avecImage && coloImage) {
         const ext = coloImage.name.split('.').pop();
         const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.onerror = reject;
-          reader.readAsDataURL(coloImage);
-        });
-        const response = await fetch('/api/upload-colo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }),
-        });
+        const base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(coloImage); });
+        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
         imageUrl = data.url;
       }
       await supabase.from('coloriages').upsert({ user_id: userId, illustration_id: illu.id, image_url: imageUrl, date_coloriage: coloDate || null });
-      setColoOk(true);
-      onColoUploaded();
+      setColoOk(true); onColoUploaded();
       const { data: colosRefresh } = await supabase.from('coloriages').select('id, image_url, user_id').eq('illustration_id', illu.id).not('image_url', 'is', null).order('created_at', { ascending: true });
       if (colosRefresh && colosRefresh.length > 0) {
         const userIds = [...new Set(colosRefresh.map(c => c.user_id))];
         const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
-        const profilsMap = {};
-        (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
         setColosPropres(colosRefresh.map(c => ({ id: c.id, image_url: c.image_url, user_id: c.user_id, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
       }
     } catch (e) { console.error(e); }
@@ -1019,24 +937,17 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
   return (
     <>
       {zoomIndex !== null && (
-        <div onClick={() => setZoomIndex(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
+        <div onClick={() => setZoomIndex(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }} onClick={e => e.stopPropagation()}>
             {urlZoom && <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />}
           </div>
-          {coloZoom && (
-            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
-              <ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
-            </div>
-          )}
+          {coloZoom && <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}><ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} /></div>}
           <button onClick={() => setZoomIndex(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 10 }}>✕</button>
-          {totalVisuels > 1 && (
-            <>
-              <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>
-              <button onClick={zoomSuivant} style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>›</button>
-              <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{zoomIndex + 1} / {totalVisuels}{coloZoom ? ' 🎨' : ''}</p>
-            </>
-          )}
+          {totalVisuels > 1 && <>
+            <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>
+            <button onClick={zoomSuivant} style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>›</button>
+            <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>{zoomIndex + 1} / {totalVisuels}{coloZoom ? ' 🎨' : ''}</p>
+          </>}
         </div>
       )}
 
@@ -1050,18 +961,14 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
             <div style={{ flex: '0 0 220px' }}>
               <div style={{ position: 'relative' }}>
                 {getUrlVisuelActif(visuelActif) && (
-                  <img src={getUrlVisuelActif(visuelActif)} alt={illu.nom} className="visuel-zoom" onClick={() => ouvrirZoom(visuelActif)}
+                  <img src={getUrlVisuelActif(visuelActif)} alt={illu.nom} className="visuel-zoom" onClick={() => setZoomIndex(visuelActif)}
                     style={{ width: '100%', borderRadius: '10px', display: 'block', marginBottom: '8px' }} />
                 )}
                 {visuelActif < visuels.length && coloriste && (
-                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
-                    Réalisé par {coloriste}
-                  </div>
+                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>Réalisé par {coloriste}</div>
                 )}
                 {visuelActif >= visuels.length && getColoActif(visuelActif) && (
-                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    🎨 {getColoActif(visuelActif).pseudo}
-                  </div>
+                  <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', gap: '3px' }}>🎨 {getColoActif(visuelActif).pseudo}</div>
                 )}
               </div>
               {totalVisuels > 1 && (
@@ -1074,8 +981,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                     const idxGlobal = visuels.length + i;
                     return (
                       <div key={`colo-${i}`} className="miniature-colo" onClick={() => setVisuelActif(idxGlobal)} style={{ position: 'relative', flexShrink: 0 }}>
-                        <img src={colo.image_url} alt={`Coloriage de ${colo.pseudo}`}
-                          style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${idxGlobal === visuelActif ? 'rgba(255,210,80,0.8)' : 'transparent'}`, opacity: idxGlobal === visuelActif ? 1 : 0.45, display: 'block' }} />
+                        <img src={colo.image_url} alt={`Coloriage de ${colo.pseudo}`} style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '5px', cursor: 'pointer', border: `2px solid ${idxGlobal === visuelActif ? 'rgba(255,210,80,0.8)' : 'transparent'}`, opacity: idxGlobal === visuelActif ? 1 : 0.45, display: 'block' }} />
                         <div className="miniature-colo-badge">🎨</div>
                       </div>
                     );
@@ -1086,15 +992,20 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
             <div style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold' }}>{illu.nom}</p>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{illu.categorie} · {illu.annee}</p>
+              {/* POINT 10 : badge Patreon en or, cliquable */}
+              {illu.sous_categorie_patreon && (
+                <button onClick={() => onFiltrerPatreon && onFiltrerPatreon(illu.sous_categorie_patreon)}
+                  style={{ alignSelf: 'flex-start', background: 'rgba(255,210,80,0.12)', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '20px', padding: '3px 10px', color: 'rgba(255,210,80,0.95)', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.22)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.7)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,210,80,0.12)'; e.currentTarget.style.borderColor = 'rgba(255,210,80,0.45)'; }}>
+                  ⭐ {illu.sous_categorie_patreon}
+                </button>
+              )}
               {illu.prix && <p style={{ color: '#00d4d4', fontSize: '15px', fontWeight: 'bold' }}>{illu.prix} €</p>}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>
-                  {jAi ? "✓ J'ai" : "✕ J'ai"}
-                </button>
+                <button onClick={onToggleJAi} style={{ background: jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>{jAi ? "✓ J'ai" : "✕ J'ai"}</button>
                 <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,77,125,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${jeVeux ? 'rgba(255,77,125,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <svg viewBox="0 0 24 24" width="11" height="11">
-                    {jeVeux ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" /> : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
-                  </svg>
+                  <svg viewBox="0 0 24 24" width="11" height="11">{jeVeux ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" /> : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}</svg>
                   Je veux
                 </button>
                 <button onClick={() => setShowPartagerColo(v => !v)}
@@ -1102,18 +1013,13 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   🎨 {aColorié ? 'Colorié ✓' : 'Mon colo'}
                 </button>
                 <button style={{ background: '#ff3eb5', border: 'none', borderRadius: '8px', padding: '6px 10px', color: '#000', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
-                    <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                  </svg>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" /><path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" /></svg>
                   Panier
                 </button>
               </div>
               {showPartagerColo && (
                 <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {coloOk ? (
-                    <p style={{ color: '#00d4d4', fontSize: '12px', textAlign: 'center' }}>🎉 Ton coloriage a été partagé ! Merci {userPseudo} !</p>
-                  ) : (
+                  {coloOk ? <p style={{ color: '#00d4d4', fontSize: '12px', textAlign: 'center' }}>🎉 Ton coloriage a été partagé ! Merci {userPseudo} !</p> : (
                     <>
                       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Partagé sous le pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
                       <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', background: 'transparent', border: 'none', cursor: 'pointer' }} />
@@ -1145,9 +1051,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
               )}
               {illu.tags && illu.tags.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {illu.tags.map((tag, i) => (
-                    <span key={i} style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', padding: '1px 6px', color: 'rgba(0,212,212,0.6)', fontSize: '9px' }}>{tag}</span>
-                  ))}
+                  {illu.tags.map((tag, i) => <span key={i} style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', padding: '1px 6px', color: 'rgba(0,212,212,0.6)', fontSize: '9px' }}>{tag}</span>)}
                 </div>
               )}
             </div>
@@ -1166,11 +1070,8 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                         style={{ flexShrink: 0, width: '160px', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', transition: 'border-color .2s' }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,212,0.35)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}>
-                        {url ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }} />
-                          : <div style={{ width: '100%', height: '160px', background: 'rgba(255,255,255,0.02)' }} />}
-                        <div style={{ padding: '4px 7px' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p>
-                        </div>
+                        {url ? <img src={url} alt={sim.nom} style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '160px', background: 'rgba(255,255,255,0.02)' }} />}
+                        <div style={{ padding: '4px 7px' }}><p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sim.nom}</p></div>
                       </div>
                     );
                   })}
