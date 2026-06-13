@@ -617,12 +617,22 @@ function SectionMesInfos({ userId }) {
     setSaving(true);
     let avatarUrl = profil.avatar_url;
     if (avatarFile) {
-      const nomFichier = `avatars/${userId}.jpg`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(nomFichier, avatarFile, { upsert: true, contentType: 'image/jpeg' });
-      if (uploadError) { console.error('Upload avatar error:', uploadError); }
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
-      // forcer le rafraîchissement du cache avec un timestamp
-      avatarUrl = urlData.publicUrl + '?t=' + Date.now();
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(avatarFile);
+        });
+        const response = await fetch('/api/upload-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64, userId }),
+        });
+        const data = await response.json();
+        if (data.url) { avatarUrl = data.url; }
+        else { console.error('upload-avatar erreur:', data.error); }
+      } catch (e) { console.error('upload-avatar exception:', e); }
     }
     await supabase.from('profils').update({
       pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
