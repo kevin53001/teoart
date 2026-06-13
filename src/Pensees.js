@@ -312,6 +312,7 @@ function Pensees() {
           perspective: 1000px;
           overflow: visible;
           user-select: none;
+          touch-action: pan-y;
         }
         .donut-stage {
           position: absolute;
@@ -701,6 +702,8 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const rafRef = React.useRef(null);
   const rotationRef = React.useRef(0);
   const speedRef = React.useRef(0);
+  const touchLastXRef = React.useRef(null);
+  const touchMovedRef = React.useRef(false);
   const [rotation, setRotation] = React.useState(0);
 
   const visibles = pensees.slice(0, Math.min(pensees.length, 90));
@@ -710,17 +713,19 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const ficheMarge = count < 12 ? 95 : count < 24 ? 82 : count < 40 ? 62 : 42;
   const limit = canLoop ? 999999 : Math.max(0, arc / 2 + ficheMarge);
 
+  const clampRotation = React.useCallback((value) => {
+    if (canLoop) return value;
+    return Math.max(-limit, Math.min(limit, value));
+  }, [canLoop, clampRotation]);
+
   React.useEffect(() => {
     const animate = () => {
       let next = rotationRef.current + speedRef.current;
 
       if (!canLoop) {
-        if (next > limit) {
-          next = limit;
-          speedRef.current *= 0.12;
-        }
-        if (next < -limit) {
-          next = -limit;
+        const clamped = clampRotation(next);
+        if (clamped !== next) {
+          next = clamped;
           speedRef.current *= 0.12;
         }
       }
@@ -731,7 +736,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [canLoop, limit]);
+  }, [canLoop, clampRotation]);
 
   const handleMouseMove = (e) => {
     const rect = zoneRef.current?.getBoundingClientRect();
@@ -746,12 +751,53 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
     speedRef.current = 0;
   };
 
+  const handleTouchStart = (e) => {
+    if (!isMobile) return;
+    touchLastXRef.current = e.touches[0].clientX;
+    touchMovedRef.current = false;
+    speedRef.current = 0;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isMobile || touchLastXRef.current === null) return;
+
+    const currentX = e.touches[0].clientX;
+    const deltaX = currentX - touchLastXRef.current;
+
+    if (Math.abs(deltaX) > 1) {
+      touchMovedRef.current = true;
+      e.preventDefault();
+
+      const next = clampRotation(rotationRef.current + deltaX * 0.28);
+      rotationRef.current = next;
+      setRotation(next);
+    }
+
+    touchLastXRef.current = currentX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile) return;
+    touchLastXRef.current = null;
+    speedRef.current = 0;
+    setTimeout(() => { touchMovedRef.current = false; }, 80);
+  };
+
   const radiusX = isMobile ? 210 : 430;
   const radiusY = isMobile ? 82 : 156;
   const smallCountSpread = count < 18 ? (isMobile ? 28 : 42) : 0;
 
   return (
-    <div ref={zoneRef} className="donut-zone" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+    <div
+      ref={zoneRef}
+      className="donut-zone"
+      onMouseMove={isMobile ? undefined : handleMouseMove}
+      onMouseLeave={isMobile ? undefined : handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
           const localAngle = count === 1 ? 0 : -arc / 2 + (arc / (count - 1)) * i;
@@ -785,7 +831,10 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
               />
               <div
                 className="fiche-wrap"
-                onClick={() => ouvrirPopup(pensee)}
+                onClick={() => {
+                  if (isMobile && touchMovedRef.current) return;
+                  ouvrirPopup(pensee);
+                }}
                 style={{
                   '--accent': couleur,
                   '--author-color': couleur,
