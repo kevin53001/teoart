@@ -474,6 +474,104 @@ function SectionMesFavoris({ userId }) {
   );
 }
 
+// ─── Composant cadrage avatar (crop circulaire par drag) ────────────────────
+function AvatarCrop({ src, onConfirm, onCancel }) {
+  const canvasRef = React.useRef(null);
+  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  const [scale, setScale] = React.useState(1);
+  const [dragging, setDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState(null);
+  const imgRef = React.useRef(null);
+  const SIZE = 280; // taille du canvas carré
+
+  React.useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      // centrer l'image au départ
+      const sc = Math.max(SIZE / img.width, SIZE / img.height);
+      setScale(sc);
+      setOffset({ x: (SIZE - img.width * sc) / 2, y: (SIZE - img.height * sc) / 2 });
+    };
+    img.src = src;
+  }, [src]);
+
+  React.useEffect(() => { dessiner(); }, [offset, scale]); // eslint-disable-line
+
+  const dessiner = () => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    // fond sombre
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    // image
+    ctx.drawImage(img, offset.x, offset.y, img.width * scale, img.height * scale);
+    // masque : tout assombrir sauf le cercle
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    // cercle guide
+    ctx.strokeStyle = '#00d4d4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+    ctx.stroke();
+  };
+
+  const onMouseDown = (e) => { setDragging(true); setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y }); };
+  const onMouseMove = (e) => { if (!dragging || !dragStart) return; setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
+  const onMouseUp = () => setDragging(false);
+  const onWheel = (e) => { e.preventDefault(); setScale(s => Math.max(0.2, Math.min(5, s - e.deltaY * 0.001))); };
+
+  // touch support
+  const lastTouch = React.useRef(null);
+  const onTouchStart = (e) => { const t = e.touches[0]; setDragging(true); setDragStart({ x: t.clientX - offset.x, y: t.clientY - offset.y }); lastTouch.current = t; };
+  const onTouchMove = (e) => { if (!dragging || !dragStart) return; const t = e.touches[0]; setOffset({ x: t.clientX - dragStart.x, y: t.clientY - dragStart.y }); };
+  const onTouchEnd = () => setDragging(false);
+
+  const confirmer = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400; canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    const img = imgRef.current;
+    if (!img) return;
+    // recalculer le ratio canvas affichage → export 400px
+    const ratio = 400 / SIZE;
+    ctx.beginPath();
+    ctx.arc(200, 200, 200, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, offset.x * ratio, offset.y * ratio, img.width * scale * ratio, img.height * scale * ratio);
+    canvas.toBlob(blob => { onConfirm(blob); }, 'image/jpeg', 0.92);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+      <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>Cadre ta photo de profil</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>Glisse pour repositionner · Molette pour zoomer</p>
+      <canvas
+        ref={canvasRef}
+        width={SIZE} height={SIZE}
+        style={{ borderRadius: '50%', cursor: dragging ? 'grabbing' : 'grab', border: '3px solid rgba(0,212,212,0.5)', touchAction: 'none' }}
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+        onWheel={onWheel}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+      />
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button onClick={onCancel} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px 24px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>Annuler</button>
+        <button onClick={confirmer} style={{ background: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.5)', borderRadius: '10px', padding: '10px 24px', color: '#00d4d4', fontSize: '13px', cursor: 'pointer' }}>✓ Valider ce cadrage</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── POINT 4 : Mes Infos — refonte 2 colonnes ──────────────────────────────
 function SectionMesInfos({ userId }) {
   const [profil, setProfil] = React.useState(null);
@@ -482,6 +580,8 @@ function SectionMesInfos({ userId }) {
   const [saved, setSaved] = React.useState(false);
   const [avatarFile, setAvatarFile] = React.useState(null);
   const [avatarPreview, setAvatarPreview] = React.useState(null);
+  const [showCrop, setShowCrop] = React.useState(false);
+  const [cropSrc, setCropSrc] = React.useState(null);
 
   // POINT 5 : états pour la réinitialisation du mot de passe
   const [resetEmail, setResetEmail] = React.useState('');
@@ -500,8 +600,17 @@ function SectionMesInfos({ userId }) {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+    setShowCrop(true);
+  };
+
+  const handleCropConfirm = (blob) => {
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarPreview(URL.createObjectURL(blob));
+    setShowCrop(false);
+    setCropSrc(null);
   };
 
   const handleSave = async () => {
@@ -517,7 +626,7 @@ function SectionMesInfos({ userId }) {
     await supabase.from('profils').update({
       pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
       telephone: profil.telephone, adresse: profil.adresse, complement: profil.complement,
-      code_postal: profil.code_postal, ville: profil.ville, pays: profil.pays, avatar_url: avatarUrl,
+      code_postal: profil.code_postal, ville: profil.ville, etat: profil.etat, pays: profil.pays, avatar_url: avatarUrl,
     }).eq('id', userId);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2500);
@@ -554,96 +663,116 @@ function SectionMesInfos({ userId }) {
   const styleTitreEncart = { color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' };
 
   return (
-    // POINT 4 : layout 2 colonnes — gauche 2/3, droite 1/3
-    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+    <>
+      {showCrop && cropSrc && (
+        <AvatarCrop src={cropSrc} onConfirm={handleCropConfirm} onCancel={() => { setShowCrop(false); setCropSrc(null); }} />
+      )}
 
-      {/* ── Colonne gauche : 3 encarts ── */}
-      <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* POINT 4 : layout 2 colonnes — gauche 2/3, droite 1/3 */}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'stretch', flexWrap: 'wrap' }}>
 
-        {/* Encart 1 : Identité */}
-        <div style={styleEncart}>
-          <p style={styleTitreEncart}>👤 Identité</p>
-          {champ('Pseudo', 'pseudo')}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {champ('Prénom', 'prenom')}
-            {champ('Nom', 'nom')}
+        {/* ── Colonne gauche : 3 encarts ── */}
+        <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+          {/* Encart 1 : Identité */}
+          <div style={styleEncart}>
+            <p style={styleTitreEncart}>👤 Identité</p>
+            {champ('Pseudo', 'pseudo')}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {champ('Prénom', 'prenom')}
+              {champ('Nom', 'nom')}
+            </div>
+            {champ('Téléphone', 'telephone', 'tel')}
           </div>
-          {champ('Téléphone', 'telephone', 'tel')}
-        </div>
 
-        {/* Encart 2 : Mot de passe + reset */}
-        <div style={styleEncart}>
-          <p style={styleTitreEncart}>🔒 Mot de passe</p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-            Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={styleLabel}>Email</label>
-            <input
-              type="email"
-              value={resetEmail}
-              onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
-              style={styleInput}
-              onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
-              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-              placeholder="ton@email.com"
-            />
-          </div>
-          {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
-          {resetEnvoye
-            ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
-            : (
-              <button onClick={handleReset} disabled={resetLoading}
-                style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
-                {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
-              </button>
-            )
-          }
-        </div>
-
-        {/* Encart 3 : Adresse */}
-        <div style={styleEncart}>
-          <p style={styleTitreEncart}>📍 Adresse</p>
-          {champ('Adresse', 'adresse')}
-          {champ('Complément', 'complement')}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
-            {champ('Code postal', 'code_postal')}
-            {champ('Ville', 'ville')}
-          </div>
-          {champ('Pays', 'pays')}
-        </div>
-
-        {/* Bouton sauvegarder */}
-        <button onClick={handleSave} disabled={saving}
-          style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 28px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .3s' }}>
-          {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
-        </button>
-      </div>
-
-      {/* ── Colonne droite : photo de profil pleine hauteur ── */}
-      <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ ...styleEncart, alignItems: 'center', gap: '16px', height: '100%' }}>
-          <p style={styleTitreEncart}>🖼 Photo de profil</p>
-          <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-            <img
-              src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
-              alt="avatar"
-              style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
-            />
-          </div>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>JPG, PNG · recommandé 400×400px</p>
-          <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '8px 14px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
-            📷 Choisir une photo
-            <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
-          </label>
-          {avatarPreview && (
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center' }}>
-              Nouvelle photo sélectionnée.<br/>Clique sur "Sauvegarder" pour confirmer.
+          {/* Encart 2 : Mot de passe + reset */}
+          <div style={styleEncart}>
+            <p style={styleTitreEncart}>🔒 Mot de passe</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+              Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
             </p>
-          )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={styleLabel}>Email</label>
+              <input
+                type="email"
+                value={resetEmail}
+                onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
+                style={styleInput}
+                onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                placeholder="ton@email.com"
+              />
+            </div>
+            {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
+            {resetEnvoye
+              ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
+              : (
+                <button onClick={handleReset} disabled={resetLoading}
+                  style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
+                  {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
+                </button>
+              )
+            }
+          </div>
+
+          {/* Encart 3 : Adresse */}
+          <div style={styleEncart}>
+            <p style={styleTitreEncart}>📍 Adresse</p>
+            {champ('Adresse', 'adresse')}
+            {champ('Complément', 'complement')}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+              {champ('Code postal', 'code_postal')}
+              {champ('Ville', 'ville')}
+            </div>
+            {/* Champ État / Province (non obligatoire) */}
+            {champ('État / Province (optionnel)', 'etat')}
+            {champ('Pays', 'pays')}
+          </div>
+
+          {/* Bouton sauvegarder — centré */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button onClick={handleSave} disabled={saving}
+              style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 40px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', transition: 'all .3s' }}>
+              {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Colonne droite : photo de profil — même hauteur que la colonne gauche ── */}
+        <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...styleEncart, alignItems: 'center', justifyContent: 'center', gap: '20px', flex: 1 }}>
+            <p style={styleTitreEncart}>🖼 Photo de profil</p>
+            {/* Aperçu circulaire */}
+            <div style={{ position: 'relative', width: '140px', height: '140px', flexShrink: 0 }}>
+              <img
+                src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
+                alt="avatar"
+                style={{ width: '140px', height: '140px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
+              />
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
+              JPG, PNG<br/>Recommandé 400×400px
+            </p>
+            <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
+              📷 Choisir une photo
+              <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+            </label>
+            {avatarPreview && (
+              <>
+                <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '10px', textAlign: 'center' }}>
+                  ✓ Photo cadrée.<br/>Clique sur "Sauvegarder" pour confirmer.
+                </p>
+                <button onClick={() => { setCropSrc(avatarPreview); setShowCrop(true); }}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 14px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
+                  ✏️ Recadrer
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1020,7 +1149,7 @@ function MonCompte() {
                   <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
                 )}
                 <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  MON COMPTE — Ma Collection {userPseudo} Kevin Teo'Art
+                  MON COMPTE — Ma Collection Kevin Teo'Art
                 </p>
               </div>
 
