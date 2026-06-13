@@ -184,7 +184,7 @@ function Catalogue() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate('/connexion'); return; }
+      if (!user) { navigate('/'); return; }
       setUserId(user.id);
       const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
