@@ -484,6 +484,29 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
   );
 }
 
+function VisuelsItem({ item }) {
+  const visuels = [item.visuel_presentation, item.visuel_front, item.visuel_back].filter(Boolean);
+  const [idx, setIdx] = React.useState(0);
+  if (visuels.length === 0) return (
+    <div style={{ width: '110px', height: '110px', borderRadius: '10px', background: 'linear-gradient(135deg,#0a0a0a,#1a1a1a)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ fontSize: '40px' }}>📁</span>
+    </div>
+  );
+  return (
+    <div style={{ flexShrink: 0 }}>
+      <img src={cheminVersUrl(visuels[idx])} alt={item.nom} style={{ width: '110px', borderRadius: '10px', display: 'block', marginBottom: '6px' }} />
+      {visuels.length > 1 && (
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          {visuels.map((v, i) => (
+            <img key={i} src={cheminVersUrl(v)} alt="" onClick={() => setIdx(i)}
+              style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: `2px solid ${i === idx ? '#00d4d4' : 'transparent'}`, opacity: i === idx ? 1 : 0.4 }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
   const wrapRef = React.useRef(null);
@@ -577,8 +600,8 @@ function Livres() {
       const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
 
-      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, prix, description').eq('statut', 'published').order('annee', { ascending: false });
-      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, prix, description').in('statut', ['published', 'dossier']).order('nom');
+      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, description').eq('statut', 'published').order('annee', { ascending: false });
+      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, description').in('statut', ['published', 'dossier']).order('nom');
 
       // Toutes les illustrations pour la PopupFiche (similaires)
       const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
@@ -865,14 +888,7 @@ function Livres() {
             <button onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
 
             <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {/* POINT 8 : afficher dossier 📁 si pas de visuel */}
-              {popupItem.visuel_presentation ? (
-                <img src={cheminVersUrl(popupItem.visuel_presentation)} alt={popupItem.nom} style={{ width: '110px', borderRadius: '10px', flexShrink: 0 }} />
-              ) : (
-                <div style={{ width: '110px', height: '110px', borderRadius: '10px', background: 'linear-gradient(135deg,#0a0a0a,#1a1a1a)', border: '1px solid rgba(255,210,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: '40px' }}>📁</span>
-                </div>
-              )}
+              <VisuelsItem item={popupItem} />
               <div style={{ flex: 1 }}>
                 <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
                   {popupType === 'recueil' ? 'Recueil' : 'Livre'}
