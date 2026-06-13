@@ -177,7 +177,7 @@ function Catalogue() {
 
   // Fermer dropdowns au clic extérieur
   React.useEffect(() => {
-    const handler = () => { setShowCategories(false); setShowPatreon(false); };
+    const handler = () => { setShowCategories(false); };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
@@ -257,12 +257,12 @@ function Catalogue() {
 
   // Sélection catégorie normale
   const selectionnerCategorie = (cat) => {
-    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreon(false); setPage(1);
+    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setPage(1);
   };
 
   // Sélection mois Patreon (POINT 11)
   const selectionnerPatreon = (mois) => {
-    setSousCategorie(mois); setCategorie('Tout'); setShowPatreon(false); setShowCategories(false); setPage(1);
+    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setPage(1);
   };
 
   let illustrationsFiltrees = illustrations.filter(i => {
@@ -411,7 +411,7 @@ function Catalogue() {
             {/* POINT 11 : dropdown catégories avec sous-menu Patreon 2026 */}
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0' }}>
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }}
-                onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreon(false); }} />
+                onClick={e => { e.stopPropagation(); setShowCategories(v => !v); }} />
               {showCategories && (
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
