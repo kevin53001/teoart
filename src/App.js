@@ -15,8 +15,22 @@ function App() {
   const [session, setSession] = React.useState(undefined);
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+    const init = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        await supabase.auth.signOut();
+        setSession(null);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+      }
+    };
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
