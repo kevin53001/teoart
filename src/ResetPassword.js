@@ -4,6 +4,46 @@ import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
 
+function EyeIcon({ visible }) {
+  return visible ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+}
+
+function PasswordInput({ value, onChange, placeholder, onKeyDown, onFocus, onBlur }) {
+  const [visible, setVisible] = React.useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        onKeyDown={onKeyDown}
+        style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 40px 10px 14px', color: '#fff', fontSize: '14px', outline: 'none' }}
+        onFocus={onFocus}
+        onBlur={onBlur}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible(v => !v)}
+        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: visible ? '#00d4d4' : 'rgba(255,255,255,0.35)', padding: 0, display: 'flex', alignItems: 'center' }}
+      >
+        <EyeIcon visible={visible} />
+      </button>
+    </div>
+  );
+}
+
 function ResetPassword() {
   const navigate = useNavigate();
   const [motDePasse, setMotDePasse] = React.useState('');
@@ -53,6 +93,16 @@ function ResetPassword() {
     }
   };
 
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    color: '#fff',
+    fontSize: '14px',
+    outline: 'none'
+  };
+
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
 
@@ -84,25 +134,21 @@ function ResetPassword() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Nouveau mot de passe</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={motDePasse}
                 onChange={e => setMotDePasse(e.target.value)}
                 placeholder="6 caractères minimum"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none' }}
                 onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Confirmer le mot de passe</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmation}
                 onChange={e => setConfirmation(e.target.value)}
                 placeholder="Répète ton mot de passe"
                 onKeyDown={e => { if (e.key === 'Enter') handleSubmit(); }}
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none' }}
                 onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
