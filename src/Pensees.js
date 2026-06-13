@@ -161,10 +161,12 @@ function Pensees() {
       setPensees(data || []);
 
       if (user) {
-        const { data: vuesData } = await supabase
+        const { data: vuesData, error: vuesError } = await supabase
           .from('pensees_vues')
           .select('pensee_id')
           .eq('user_id', user.id);
+
+        if (vuesError) console.error('Erreur lecture vues pensées:', vuesError);
 
         const vuesMap = {};
         (vuesData || []).forEach(v => { vuesMap[v.pensee_id] = true; });
@@ -213,9 +215,13 @@ function Pensees() {
 
     if (userId && pensee?.id && !vues[pensee.id]) {
       setVues(prev => ({ ...prev, [pensee.id]: true }));
-      await supabase
+      const { error } = await supabase
         .from('pensees_vues')
         .upsert({ user_id: userId, pensee_id: pensee.id }, { onConflict: 'user_id,pensee_id' });
+
+      if (error) {
+        console.error('Erreur enregistrement lecture pensée:', error);
+      }
     }
   };
 
@@ -300,7 +306,8 @@ function Pensees() {
         .donut-zone {
           position: relative;
           width: min(96vw, 1120px);
-          height: 430px;
+          height: 455px;
+          margin-top: 26px;
           margin: 0 auto;
           perspective: 1000px;
           overflow: visible;
@@ -324,7 +331,7 @@ function Pensees() {
         .donut-stage {
           position: absolute;
           left: 50%;
-          top: 55%;
+          top: 61%;
           width: 980px;
           height: 430px;
           transform: translate(-50%, -50%);
@@ -427,7 +434,6 @@ function Pensees() {
         .fiche-led {
           position: absolute;
           top: 10px;
-          right: 10px;
           width: 9px;
           height: 9px;
           border-radius: 50%;
@@ -459,7 +465,7 @@ function Pensees() {
         }
 
         @media (max-width: 600px) {
-          .donut-zone { height: 330px; }
+          .donut-zone { height: 340px; margin-top: 18px; }
           .donut-stage { width: 530px; height: 310px; }
           .fiche-wrap {
             width: 84px;
@@ -550,7 +556,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             ) : (
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
-                <div style={{ textAlign: 'center', marginTop: isMobile ? '-86px' : '-118px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-58px' : '-82px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
@@ -708,7 +714,8 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
   const count = visibles.length || 1;
   const arc = calculArc(count);
   const canLoop = arc >= 360;
-  const limit = canLoop ? 999999 : Math.max(0, arc / 2 - 18);
+  const ficheMarge = count < 12 ? 58 : count < 24 ? 46 : 34;
+  const limit = canLoop ? 999999 : Math.max(0, arc / 2 + ficheMarge);
 
   React.useEffect(() => {
     const animate = () => {
@@ -797,11 +804,25 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
                 }}
               >
                 <div className="fiche-face front">
-                  <div className="fiche-led" style={{ background: lue ? '#ff3eb5' : '#4dff72', boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72' }} />
+                  <div
+                    className="fiche-led"
+                    style={{
+                      [sin < 0 ? 'left' : 'right']: '10px',
+                      background: lue ? '#ff3eb5' : '#4dff72',
+                      boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
+                    }}
+                  />
                   <FicheTexte pensee={pensee} />
                 </div>
                 <div className="fiche-face back">
-                  <div className="fiche-led" style={{ background: lue ? '#ff3eb5' : '#4dff72', boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72' }} />
+                  <div
+                    className="fiche-led"
+                    style={{
+                      [sin < 0 ? 'left' : 'right']: '10px',
+                      background: lue ? '#ff3eb5' : '#4dff72',
+                      boxShadow: lue ? '0 0 12px #ff3eb5' : '0 0 12px #4dff72',
+                    }}
+                  />
                   <FicheTexte pensee={pensee} />
                 </div>
                 <div className="fiche-edge" />
