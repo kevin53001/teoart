@@ -617,11 +617,12 @@ function SectionMesInfos({ userId }) {
     setSaving(true);
     let avatarUrl = profil.avatar_url;
     if (avatarFile) {
-      const ext = avatarFile.name.split('.').pop();
-      const nomFichier = `avatars/${userId}.${ext}`;
-      await supabase.storage.from('avatars').upload(nomFichier, avatarFile, { upsert: true });
+      const nomFichier = `avatars/${userId}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(nomFichier, avatarFile, { upsert: true, contentType: 'image/jpeg' });
+      if (uploadError) { console.error('Upload avatar error:', uploadError); }
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(nomFichier);
-      avatarUrl = urlData.publicUrl;
+      // forcer le rafraîchissement du cache avec un timestamp
+      avatarUrl = urlData.publicUrl + '?t=' + Date.now();
     }
     await supabase.from('profils').update({
       pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
@@ -668,108 +669,111 @@ function SectionMesInfos({ userId }) {
         <AvatarCrop src={cropSrc} onConfirm={handleCropConfirm} onCancel={() => { setShowCrop(false); setCropSrc(null); }} />
       )}
 
-      {/* POINT 4 : layout 2 colonnes — gauche 2/3, droite 1/3 */}
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+      {/* Layout global : colonnes + bouton en dessous */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {/* ── Colonne gauche : 3 encarts ── */}
-        <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* ── Ligne des deux colonnes ── */}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
-          {/* Encart 1 : Identité */}
-          <div style={styleEncart}>
-            <p style={styleTitreEncart}>👤 Identité</p>
-            {champ('Pseudo', 'pseudo')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {champ('Prénom', 'prenom')}
-              {champ('Nom', 'nom')}
+          {/* ── Colonne gauche : 3 encarts ── */}
+          <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* Encart 1 : Identité */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>👤 Identité</p>
+              {champ('Pseudo', 'pseudo')}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {champ('Prénom', 'prenom')}
+                {champ('Nom', 'nom')}
+              </div>
+              {champ('Téléphone', 'telephone', 'tel')}
             </div>
-            {champ('Téléphone', 'telephone', 'tel')}
+
+            {/* Encart 2 : Mot de passe + reset */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>🔒 Mot de passe</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={styleLabel}>Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
+                  style={styleInput}
+                  onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  placeholder="ton@email.com"
+                />
+              </div>
+              {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
+              {resetEnvoye
+                ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
+                : (
+                  <button onClick={handleReset} disabled={resetLoading}
+                    style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
+                    {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
+                  </button>
+                )
+              }
+            </div>
+
+            {/* Encart 3 : Adresse */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>📍 Adresse</p>
+              {champ('Adresse', 'adresse')}
+              {champ('Complément', 'complement')}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+                {champ('Code postal', 'code_postal')}
+                {champ('Ville', 'ville')}
+              </div>
+              {champ('État / Province (optionnel)', 'etat')}
+              {champ('Pays', 'pays')}
+            </div>
           </div>
 
-          {/* Encart 2 : Mot de passe + reset */}
-          <div style={styleEncart}>
-            <p style={styleTitreEncart}>🔒 Mot de passe</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-              Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={styleLabel}>Email</label>
-              <input
-                type="email"
-                value={resetEmail}
-                onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
-                style={styleInput}
-                onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
-                placeholder="ton@email.com"
-              />
+          {/* ── Colonne droite : photo de profil — alignée en haut, hauteur = 3 encarts gauche ── */}
+          <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
+            {/* paddingBottom pour ne pas dépasser sous le 3e encart (le bouton est en dehors) */}
+            <div style={{ ...styleEncart, alignItems: 'center', justifyContent: 'flex-start', gap: '20px', height: '100%' }}>
+              <p style={styleTitreEncart}>🖼 Photo de profil</p>
+              <div style={{ width: '140px', height: '140px', flexShrink: 0 }}>
+                <img
+                  src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
+                  alt="avatar"
+                  style={{ width: '140px', height: '140px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
+                />
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
+                JPG, PNG<br/>Recommandé 400×400px
+              </p>
+              <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
+                📷 Choisir une photo
+                <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+              </label>
+              {avatarPreview && (
+                <>
+                  <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                  <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '10px', textAlign: 'center' }}>
+                    ✓ Photo cadrée.<br/>Clique sur "Sauvegarder" pour confirmer.
+                  </p>
+                  <button onClick={() => { setCropSrc(avatarPreview); setShowCrop(true); }}
+                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 14px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
+                    ✏️ Recadrer
+                  </button>
+                </>
+              )}
             </div>
-            {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
-            {resetEnvoye
-              ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
-              : (
-                <button onClick={handleReset} disabled={resetLoading}
-                  style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
-                  {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
-                </button>
-              )
-            }
-          </div>
-
-          {/* Encart 3 : Adresse */}
-          <div style={styleEncart}>
-            <p style={styleTitreEncart}>📍 Adresse</p>
-            {champ('Adresse', 'adresse')}
-            {champ('Complément', 'complement')}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
-              {champ('Code postal', 'code_postal')}
-              {champ('Ville', 'ville')}
-            </div>
-            {/* Champ État / Province (non obligatoire) */}
-            {champ('État / Province (optionnel)', 'etat')}
-            {champ('Pays', 'pays')}
-          </div>
-
-          {/* Bouton sauvegarder — centré */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button onClick={handleSave} disabled={saving}
-              style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 40px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', transition: 'all .3s' }}>
-              {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
-            </button>
           </div>
         </div>
 
-        {/* ── Colonne droite : photo de profil — même hauteur que la colonne gauche ── */}
-        <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ ...styleEncart, alignItems: 'center', justifyContent: 'center', gap: '20px', flex: 1 }}>
-            <p style={styleTitreEncart}>🖼 Photo de profil</p>
-            {/* Aperçu circulaire */}
-            <div style={{ position: 'relative', width: '140px', height: '140px', flexShrink: 0 }}>
-              <img
-                src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
-                alt="avatar"
-                style={{ width: '140px', height: '140px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
-              />
-            </div>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
-              JPG, PNG<br/>Recommandé 400×400px
-            </p>
-            <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
-              📷 Choisir une photo
-              <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
-            </label>
-            {avatarPreview && (
-              <>
-                <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
-                <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '10px', textAlign: 'center' }}>
-                  ✓ Photo cadrée.<br/>Clique sur "Sauvegarder" pour confirmer.
-                </p>
-                <button onClick={() => { setCropSrc(avatarPreview); setShowCrop(true); }}
-                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 14px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
-                  ✏️ Recadrer
-                </button>
-              </>
-            )}
-          </div>
+        {/* ── Bouton sauvegarder — centré sous les deux colonnes ── */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 48px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', transition: 'all .3s' }}>
+            {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+          </button>
         </div>
       </div>
     </>
