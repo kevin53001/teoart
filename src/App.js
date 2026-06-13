@@ -20,7 +20,12 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (session === undefined) return null;
+  if (session === undefined) return (
+    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '36px', height: '36px', border: '3px solid rgba(0,212,212,0.2)', borderTop: '3px solid #00d4d4', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   return (
     <BrowserRouter>
