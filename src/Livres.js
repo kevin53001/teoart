@@ -63,14 +63,12 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             {badge.label}
           </div>
         )}
-        {/* BADGE J'AI */}
         {onToggleJAi && (
           <div onClick={e => { e.stopPropagation(); onToggleJAi(); }}
             style={{ position: 'absolute', top: '5px', left: '5px', borderRadius: '4px', padding: '2px 5px', fontSize: '9px', fontWeight: 'bold', zIndex: 20, cursor: 'pointer', background: jAi ? '#00d4d4' : 'rgba(0,0,0,0.55)', color: jAi ? '#000' : 'rgba(255,255,255,0.45)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.4)' }}>
             {jAi ? "✓ J'ai" : "✕ J'ai"}
           </div>
         )}
-        {/* COEUR JE VEUX */}
         {onToggleJeVeux && (
           <div onClick={e => { e.stopPropagation(); onToggleJeVeux(); }}
             style={{ position: 'absolute', top: '4px', right: badge ? '50px' : '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -82,7 +80,6 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             </svg>
           </div>
         )}
-        {/* PANIER — bas droite de la vignette entière */}
         <div className="badge-panier-v" onClick={e => e.stopPropagation()} title="Ajouter au panier">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" />
@@ -99,7 +96,6 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
   );
 }
 
-// Vignette illustration dans les dépliés — avec badges J'ai / Je veux / Colorié
 function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onToggleJeVeux }) {
   const urlIllu = (() => {
     if (!illu.visuels) return null;
@@ -116,12 +112,10 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
         ? <img src={urlIllu} alt={illu.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
         : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />
       }
-      {/* Badge J'ai */}
       <div onClick={e => { e.stopPropagation(); onToggleJAi && onToggleJAi(); }}
         style={{ position: 'absolute', top: '3px', left: '3px', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', zIndex: 10, cursor: 'pointer', background: jAi ? '#00d4d4' : 'rgba(0,0,0,0.6)', color: jAi ? '#000' : 'rgba(255,255,255,0.4)', border: jAi ? 'none' : '1px solid rgba(255,80,80,0.35)' }}>
         {jAi ? '✓' : '✕'}
       </div>
-      {/* Coeur Je veux */}
       <div onClick={e => { e.stopPropagation(); onToggleJeVeux && onToggleJeVeux(); }}
         style={{ position: 'absolute', top: '3px', right: '3px', zIndex: 10, cursor: 'pointer', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <svg viewBox="0 0 24 24" width="12" height="12">
@@ -131,7 +125,6 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
           }
         </svg>
       </div>
-      {/* Badge colorié */}
       {aColorie && (
         <div style={{ position: 'absolute', bottom: `${taille > 80 ? 22 : 18}px`, left: '3px', zIndex: 10, width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(255,210,80,0.2)', border: '1px solid rgba(255,210,80,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>
           🎨
@@ -143,7 +136,6 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
     </div>
   );
 }
-
 
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
@@ -232,24 +224,20 @@ function Livres() {
       setTousLesLivres(l || []);
       setTousLivres((l || []).filter(li => li.visuel_presentation));
 
-      // Collection livres/recueils
       const { data: coll } = await supabase.from('collection_livres').select('item_id, item_type, j_ai, je_veux').eq('user_id', user.id);
       const collMap = {};
       (coll || []).forEach(c => { collMap[`${c.item_type}_${c.item_id}`] = { j_ai: c.j_ai, je_veux: c.je_veux }; });
 
-      // Collection illustrations (pour les dépliés)
       const { data: collIllus } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
       const collIllusMap = {};
       (collIllus || []).forEach(c => { collIllusMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false }; });
       setCollectionIllus(collIllusMap);
 
-      // Coloriages illustrations
       const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
       const colosMap = {};
       (colos || []).forEach(c => { colosMap[c.illustration_id] = true; });
       setColoriages(colosMap);
 
-      // Sélection initiale j_ai_auto
       const { data: illusAuto } = await supabase.from('collection').select('illustration_id').eq('user_id', user.id).eq('j_ai_auto', true);
       if (illusAuto && illusAuto.length > 0) {
         const illuIds = illusAuto.map(i => i.illustration_id);
@@ -294,22 +282,12 @@ function Livres() {
     setItemOuvert(null);
     setIllustrationsOuvertes([]);
 
-    // BUG 2 : si toutes les illustrations du recueil sont j_ai et que le recueil ne l'est pas encore → cocher auto
     const key = `recueil_${recueil.id}`;
     if (!collection[key]?.j_ai) {
-      const { data: illus } = await supabase
-        .from('illustrations')
-        .select('id')
-        .eq('statut', 'published')
-        .contains('recueils_ids', [recueil.id]);
+      const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [recueil.id]);
       const illuIds = (illus || []).map(i => i.id);
       if (illuIds.length > 0) {
-        const { data: collLiveR } = await supabase
-          .from('collection')
-          .select('illustration_id')
-          .eq('user_id', userId)
-          .eq('j_ai', true)
-          .in('illustration_id', illuIds);
+        const { data: collLiveR } = await supabase.from('collection').select('illustration_id').eq('user_id', userId).eq('j_ai', true).in('illustration_id', illuIds);
         const cochesSetR = new Set((collLiveR || []).map(c => c.illustration_id));
         const toutesOui = illuIds.every(id => cochesSetR.has(id));
         if (toutesOui) {
@@ -332,27 +310,16 @@ function Livres() {
     setItemOuvert(livre);
     setLoadingIllus(true);
     setIllustrationsOuvertes([]);
-    const { data } = await supabase
-      .from('illustrations')
-      .select('id, nom, visuels, annee, prix')
-      .eq('statut', 'published')
-      .contains('livres_ids', [livre.id])
-      .order('nom');
+    const { data } = await supabase.from('illustrations').select('id, nom, visuels, annee, prix').eq('statut', 'published').contains('livres_ids', [livre.id]).order('nom');
     const illus = data || [];
     setIllustrationsOuvertes(illus);
     setLoadingIllus(false);
 
-    // BUG 2 : requete Supabase directe pour eviter stale closure sur collectionIllus
     if (illus.length > 0) {
       const key = `livre_${livre.id}`;
       if (!collection[key]?.j_ai) {
         const illuIds = illus.map(i => i.id);
-        const { data: collLive } = await supabase
-          .from('collection')
-          .select('illustration_id')
-          .eq('user_id', userId)
-          .eq('j_ai', true)
-          .in('illustration_id', illuIds);
+        const { data: collLive } = await supabase.from('collection').select('illustration_id').eq('user_id', userId).eq('j_ai', true).in('illustration_id', illuIds);
         const cochesSet = new Set((collLive || []).map(c => c.illustration_id));
         const toutesOui = illuIds.every(id => cochesSet.has(id));
         if (toutesOui) {
@@ -366,52 +333,32 @@ function Livres() {
     }
   };
 
-  // ✅ FIX BUG 1 : onConflict explicite pour que l'upsert mette à jour au lieu d'insérer
   const toggleJAi = async (itemId, type) => {
     const key = `${type}_${itemId}`;
     const actuel = collection[key] || {};
     const nouveau = !(actuel.j_ai || false);
-
-    // Mise à jour optimiste
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: nouveau } }));
-
     const { error } = await supabase.from('collection_livres').upsert(
-      {
-        user_id: userId,
-        item_id: itemId,
-        item_type: type,
-        j_ai: nouveau,
-        je_veux: actuel.je_veux || false,
-      },
+      { user_id: userId, item_id: itemId, item_type: type, j_ai: nouveau, je_veux: actuel.je_veux || false },
       { onConflict: 'user_id,item_id,item_type' }
     );
-
     if (error) {
       console.error('Erreur upsert collection_livres (j_ai) :', error);
-      // Rollback optimiste en cas d'erreur
       setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: actuel.j_ai || false } }));
       return;
     }
-
-    // Cocher/décocher automatiquement toutes les illustrations du recueil/livre
     try {
       let illuIds = [];
       if (type === 'recueil') {
-        const { data: illus } = await supabase.from('illustrations')
-          .select('id').eq('statut', 'published').contains('recueils_ids', [itemId]);
+        const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [itemId]);
         illuIds = (illus || []).map(i => i.id);
       } else if (type === 'livre') {
-        const { data: illus } = await supabase.from('illustrations')
-          .select('id').eq('statut', 'published').contains('livres_ids', [itemId]);
+        const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [itemId]);
         illuIds = (illus || []).map(i => i.id);
       }
       if (illuIds.length > 0) {
         const upserts = illuIds.map(illuId => ({
-          user_id: userId,
-          illustration_id: illuId,
-          j_ai: nouveau,
-          j_ai_auto: nouveau,
-          je_veux: collectionIllus[illuId]?.je_veux || false,
+          user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: nouveau, je_veux: collectionIllus[illuId]?.je_veux || false,
         }));
         await supabase.from('collection').upsert(upserts, { onConflict: 'user_id,illustration_id' });
         setCollectionIllus(prev => {
@@ -423,25 +370,15 @@ function Livres() {
     } catch (e) { console.error('Erreur cascade illustrations :', e); }
   };
 
-  // ✅ FIX BUG 1 : onConflict explicite sur toggleJeVeux aussi
   const toggleJeVeux = async (itemId, type) => {
     const key = `${type}_${itemId}`;
     const actuel = collection[key] || {};
     const nouveau = !(actuel.je_veux || false);
-
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: nouveau } }));
-
     const { error } = await supabase.from('collection_livres').upsert(
-      {
-        user_id: userId,
-        item_id: itemId,
-        item_type: type,
-        j_ai: actuel.j_ai || false,
-        je_veux: nouveau,
-      },
+      { user_id: userId, item_id: itemId, item_type: type, j_ai: actuel.j_ai || false, je_veux: nouveau },
       { onConflict: 'user_id,item_id,item_type' }
     );
-
     if (error) {
       console.error('Erreur upsert collection_livres (je_veux) :', error);
       setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: actuel.je_veux || false } }));
@@ -503,16 +440,18 @@ function Livres() {
         .shining-logo { position: relative; overflow: hidden; }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
       `}</style>
 
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
-      {/* BANNIÈRE */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
@@ -539,7 +478,6 @@ function Livres() {
         </div>
       </div>
 
-      {/* BARRES + CONTENU */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -592,7 +530,6 @@ function Livres() {
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
@@ -602,7 +539,6 @@ function Livres() {
         </div>
       </div>
 
-      {/* POPUP RECUEIL OU LIVRE */}
       {popupItem && (
         <div onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} className="popup-anim"
@@ -610,7 +546,6 @@ function Livres() {
 
             <button onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
 
-            {/* En-tête */}
             <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
               {popupItem.visuel_presentation && (
                 <img src={cheminVersUrl(popupItem.visuel_presentation)} alt={popupItem.nom} style={{ width: '110px', borderRadius: '10px', flexShrink: 0 }} />
@@ -654,7 +589,6 @@ function Livres() {
               </div>
             </div>
 
-            {/* CONTENU DU RECUEIL */}
             {popupType === 'recueil' && contenuPopup.length > 0 && (
               <div>
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px' }}>Contenu du recueil</p>
@@ -680,7 +614,6 @@ function Livres() {
                           <span style={{ color: estOuvert ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '18px', transition: 'transform .2s', transform: estOuvert ? 'rotate(90deg)' : 'none' }}>›</span>
                         </div>
 
-                        {/* Illustrations dépliées avec badges */}
                         {estOuvert && (
                           <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,0,0,0.4)', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.08)' }}>
                             {loadingIllus ? (
@@ -714,7 +647,6 @@ function Livres() {
               </div>
             )}
 
-            {/* CONTENU D'UN LIVRE SEUL */}
             {popupType === 'livre' && (
               <PopupContenuLivre livre={popupItem} taille={TAILLE_ILLUS}
                 collectionIllus={collectionIllus} coloriages={coloriages}
