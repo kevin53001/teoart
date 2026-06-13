@@ -1492,6 +1492,9 @@ function MonCompte() {
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
+        img { -webkit-user-drag: none; user-drag: none; }
+        * { -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
@@ -1511,6 +1514,7 @@ function MonCompte() {
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
       `}</style>
 
+      <button onClick={async () => { const { supabase: sb } = await import('./supabase'); await sb.auth.signOut(); window.location.href = '/'; }} style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
@@ -1534,7 +1538,7 @@ function MonCompte() {
           </div>
           <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/pensees')} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }} onClick={() => navigate('/mon-compte')} />
           </div>

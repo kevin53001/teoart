@@ -260,6 +260,9 @@ function Pensees() {
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
+        img { -webkit-user-drag: none; user-drag: none; }
+        * { -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
         .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
         .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: var(--author-color, #00d4d4); }
@@ -472,7 +475,8 @@ function Pensees() {
         }
       `}</style>
 
-      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '18px' }}>🔔</div>
+      <button onClick={async () => { const { supabase: sb } = await import('./supabase'); await sb.auth.signOut(); window.location.href = '/'; }} style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>
+      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />

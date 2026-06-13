@@ -136,6 +136,9 @@ function Presentation() {
         .apercu-gradient { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .img-encart { cursor: zoom-in; transition: transform 0.2s, filter 0.2s; border-radius: 12px; }
         .img-encart:hover { transform: scale(1.02); filter: brightness(1.1); }
+        img { -webkit-user-drag: none; user-drag: none; }
+        * { -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
       `}</style>
 
       {/* Popup image globale — rendu ici, en dehors de tout contexte sticky */}
@@ -143,6 +146,7 @@ function Presentation() {
         <PopupImage images={popupGlobal.images} indexDepart={popupGlobal.index} onClose={() => setPopupGlobal(null)} />
       )}
 
+      {!popupGlobal && <button onClick={async () => { const { supabase: sb } = await import('./supabase'); await sb.auth.signOut(); window.location.href = '/'; }} style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>}
       {!popupGlobal && <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>}
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
