@@ -395,8 +395,12 @@ function Catalogue() {
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
+        img { -webkit-user-drag: none; user-drag: none; }
+        * { -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
       `}</style>
 
+      <button onClick={async () => { const { supabase: sb } = await import('./supabase'); await sb.auth.signOut(); window.location.href = '/'; }} style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>
       <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
