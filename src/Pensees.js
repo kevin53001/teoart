@@ -739,7 +739,7 @@ function RoueDonut({ pensees, vues, ouvrirPopup, isMobile }) {
     const center = rect.left + rect.width / 2;
     const dist = (e.clientX - center) / (rect.width / 2);
     const deadZone = Math.abs(dist) < 0.08 ? 0 : dist;
-    speedRef.current = Math.max(-1, Math.min(1, deadZone)) * 0.55;
+    speedRef.current = Math.max(-1, Math.min(1, deadZone)) * -0.55;
   };
 
   const handleMouseLeave = () => {
