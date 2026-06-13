@@ -13,15 +13,21 @@ function ResetPassword() {
   const [succes, setSucces] = React.useState(false);
   const [tokenValide, setTokenValide] = React.useState(false);
 
-  // Supabase injecte le token dans l'URL au format #access_token=...
-  // onAuthStateChange détecte l'événement PASSWORD_RECOVERY
   React.useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setTokenValide(true);
-      }
-    });
-    return () => subscription.unsubscribe();
+    // Supabase met le token dans le hash de l'URL : #access_token=...&type=recovery
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      // Laisser Supabase parser le hash automatiquement
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setTokenValide(true);
+        }
+      });
+      return () => subscription.unsubscribe();
+    } else {
+      // Pas de token dans l'URL — lien invalide ou expiré
+      setErreur('Lien invalide ou expiré. Demande un nouveau lien depuis Mes Infos.');
+    }
   }, []);
 
   const handleSubmit = async () => {
@@ -48,7 +54,6 @@ function ResetPassword() {
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
 
-      {/* Logo */}
       <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', marginBottom: '32px' }} />
 
       <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '20px', padding: '36px 32px', maxWidth: '420px', width: '100%' }}>
@@ -62,14 +67,16 @@ function ResetPassword() {
             <p style={{ color: '#00d4d4', fontSize: '14px', marginBottom: '8px' }}>Mot de passe mis à jour !</p>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Redirection vers la connexion...</p>
           </div>
+        ) : erreur && !tokenValide ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '32px', marginBottom: '12px' }}>❌</p>
+            <p style={{ color: '#ff8080', fontSize: '13px', marginBottom: '16px' }}>{erreur}</p>
+            <p onClick={() => navigate('/')} style={{ color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}>Retour à la connexion</p>
+          </div>
         ) : !tokenValide ? (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</p>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Vérification du lien en cours...</p>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '12px' }}>
-              Si ce message persiste, le lien est peut-être expiré.<br />
-              <span onClick={() => navigate('/')} style={{ color: '#00d4d4', cursor: 'pointer', textDecoration: 'underline' }}>Retour à la connexion</span>
-            </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
