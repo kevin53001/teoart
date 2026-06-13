@@ -547,6 +547,34 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
                 <div style={{ textAlign: 'center', marginTop: isMobile ? '-126px' : '-205px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      bottom: 'calc(100% + 7px)',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: isMobile ? '10px' : '16px',
+                      color: 'rgba(255,255,255,0.74)',
+                      fontSize: isMobile ? '10px' : '12px',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      pointerEvents: 'none',
+                      textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4dff72', boxShadow: '0 0 10px #4dff72', display: 'inline-block' }} />
+                      Non lue
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff3eb5', boxShadow: '0 0 10px #ff3eb5', display: 'inline-block' }} />
+                      Pensée lue
+                    </span>
+                  </div>
+
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
