@@ -152,7 +152,7 @@ function Catalogue() {
   const [sousCategorie, setSousCategorie] = React.useState(''); // POINT 10/11
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
-  const [showPatreon, setShowPatreon] = React.useState(false); // POINT 11
+
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
   const [tri, setTri] = React.useState('az');
