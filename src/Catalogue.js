@@ -47,11 +47,9 @@ function BandeauPromo() {
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 0 0', position: 'relative', zIndex: 40, overflow: 'hidden' }}>
       <div style={{ maxWidth: '860px', width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)', position: 'relative' }}>
-        {/* Effet scintillant */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%)', animation: 'shimmerPromo 3s ease-in-out infinite', pointerEvents: 'none', zIndex: 2 }} />
         <div style={{ display: 'flex', animation: 'scrollPromo 22s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
           {items.map((p, i) => (
-            <span key={i} style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', padding: '0 48px', letterSpacing: '0.5px' }}>
+            <span key={i} style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', padding: '0 48px', letterSpacing: '0.5px', animation: `glowPromo${i % 3} 2.5s ease-in-out infinite`, animationDelay: `${(i % 3) * 0.4}s` }}>
               {p.texte}
             </span>
           ))}
@@ -152,6 +150,7 @@ function Catalogue() {
   const [sousCategorie, setSousCategorie] = React.useState(''); // POINT 10/11
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
+  const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
 
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
@@ -177,7 +176,7 @@ function Catalogue() {
 
   // Fermer dropdowns au clic extérieur
   React.useEffect(() => {
-    const handler = () => { setShowCategories(false); };
+    const handler = () => { setShowCategories(false); setShowPatreonMenu(false); };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
@@ -257,12 +256,12 @@ function Catalogue() {
 
   // Sélection catégorie normale
   const selectionnerCategorie = (cat) => {
-    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setPage(1);
+    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
   };
 
   // Sélection mois Patreon (POINT 11)
   const selectionnerPatreon = (mois) => {
-    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setPage(1);
+    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
   };
 
   let illustrationsFiltrees = illustrations.filter(i => {
@@ -331,7 +330,9 @@ function Catalogue() {
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         @keyframes scrollPromo { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
-        @keyframes shimmerPromo { 0% { transform: translateX(-100%); } 60%, 100% { transform: translateX(200%); } }
+        @keyframes glowPromo0 { 0%, 100% { text-shadow: 0 0 4px rgba(0,212,212,0.3); } 50% { text-shadow: 0 0 12px rgba(0,212,212,0.9), 0 0 20px rgba(0,212,212,0.5); } }
+        @keyframes glowPromo1 { 0%, 100% { text-shadow: 0 0 4px rgba(255,210,80,0.3); } 50% { text-shadow: 0 0 12px rgba(255,210,80,0.9), 0 0 20px rgba(255,210,80,0.5); } }
+        @keyframes glowPromo2 { 0%, 100% { text-shadow: 0 0 4px rgba(255,62,181,0.3); } 50% { text-shadow: 0 0 12px rgba(255,62,181,0.9), 0 0 20px rgba(255,62,181,0.5); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
@@ -419,13 +420,23 @@ function Catalogue() {
                       onClick={() => selectionnerCategorie(cat)}>{cat}</button>
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
-                  <p className="dropdown-titre-patreon">⭐ Patreon 2026</p>
-                  {moisPatreon.map(mois => (
-                    <button key={mois} className={`dropdown-item-patreon${sousCategorie === mois ? ' actif' : ''}`}
-                      onClick={() => selectionnerPatreon(mois)}>
-                      {mois.replace('Patreon - ', '')}
-                    </button>
-                  ))}
+                  <button
+                    className={`dropdown-item${sousCategorie ? ' actif' : ''}`}
+                    style={{ color: sousCategorie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+                    onClick={() => setShowPatreonMenu(v => !v)}>
+                    <span>⭐ Patreon 2026</span>
+                    <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showPatreonMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                  </button>
+                  {showPatreonMenu && (
+                    <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,210,80,0.2)', marginLeft: '14px', marginTop: '4px' }}>
+                      {moisPatreon.map(mois => (
+                        <button key={mois} className={`dropdown-item-patreon${sousCategorie === mois ? ' actif' : ''}`}
+                          onClick={() => selectionnerPatreon(mois)}>
+                          {mois.replace('Patreon - ', '')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
