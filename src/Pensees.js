@@ -560,7 +560,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             ) : (
               <>
                 <RoueDonut pensees={pensees} vues={vues} ouvrirPopup={ouvrirPopup} isMobile={isMobile} />
-                <div style={{ textAlign: 'center', marginTop: isMobile ? '-86px' : '-132px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
+                <div style={{ textAlign: 'center', marginTop: isMobile ? '-150px' : '-200px', marginBottom: isMobile ? '18px' : '24px', position: 'relative', zIndex: 30 }}>
                   <button className="btn-nuage" onClick={() => setShowForm(true)}>
                     Ajouter ma pensée
                   </button>
