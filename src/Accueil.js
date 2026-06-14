@@ -29,7 +29,7 @@ function cheminVersUrl(chemin) {
 
 function extraireColoriste(chemin) {
   if (!chemin) return null;
-  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  const nomFichier = decodeURIComponent(chemin.split('\\').pop().split('/').pop());
   const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
   if (match) return match[1].trim();
   return null;
