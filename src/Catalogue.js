@@ -653,6 +653,7 @@ function Catalogue() {
           </div>
         </div>
       )}
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
     </div>
   );
 }
@@ -1097,7 +1098,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           )}
         </div>
       </div>
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
     </>
   );
 }
