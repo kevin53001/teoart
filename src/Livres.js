@@ -1082,12 +1082,12 @@ function Livres() {
               </p>
             ) : confirmation.type === 'recueil' ? (
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
-                Ce recueil faisait partie de ta sélection de bienvenue. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
-                C'est un grand geste... Kevin en a peut-être perdu le sommeil pour le créer. Tu es vraiment sûr·e ? 🥲
+                Ce recueil faisait partie de ta sélection initiale. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
+                C'est un grand geste... Kevin en a peut-être perdu le sommeil pour le créer. Tu es vraiment sûr·e ? 😢
               </p>
             ) : (
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
-                Ce livre faisait partie de ta sélection de bienvenue. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
+                Ce livre faisait partie de ta sélection initiale. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
                 Des heures de travail, des pages de coloriage, des crayons usés jusqu'au bout... tout ça pour rien ? 😩
               </p>
             )}
