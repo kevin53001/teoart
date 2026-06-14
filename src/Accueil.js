@@ -97,7 +97,7 @@ function TripleJauge({ pctJai, pctColo, pctJeVeux }) {
 }
 
 // ── Bouton style MonCompte ──
-function BoutonAction({ label, couleur, couleurRgb, onClick, disabled }) {
+function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, isMobile }) {
   const ref = React.useRef(null);
   const handleMouseEnter = () => {
     const el = ref.current; if (!el) return;
@@ -111,15 +111,21 @@ function BoutonAction({ label, couleur, couleurRgb, onClick, disabled }) {
         color: couleur,
         boxShadow: `0 2px 8px rgba(0,0,0,0.4)`,
         borderRadius: '14px',
-        padding: '12px 20px',
+        padding: '10px 14px',
         cursor: disabled ? 'default' : 'pointer',
-        fontSize: '13px',
+        fontSize: '12px',
         fontWeight: 'bold',
-        flex: 1,
-        minWidth: '140px',
+        flex: isMobile ? '1 1 100%' : '1 1 0',
+        minWidth: isMobile ? '100%' : '0',
         opacity: disabled ? 0.55 : 1,
         transition: 'transform .2s, box-shadow .2s',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '7px',
+        whiteSpace: 'nowrap',
       }}>
+      {icone}
       {label}
     </button>
   );
@@ -528,11 +534,12 @@ function Accueil() {
   const pctJeVeux = stats.totalIllus > 0 ? (stats.jeVeux / stats.totalIllus) * 100 : 0;
 
   const BTNS = [
-    { label: '📚 Constitue ta collection',    couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/mon-compte'), disabled: false },
-    { label: '🎨 Partage tes coloriages',      couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: null,                          disabled: true  },
-    { label: '✨ Viens me découvrir',           couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80',  onClick: () => navigate('/presentation'), disabled: false },
-    { label: '💭 Plonge dans mes pensées',     couleur: '#a78bfa',              couleurRgb: '167,139,250', onClick: () => navigate('/pensees'),     disabled: false },
-    { label: '🖼️ Catalogue complet',           couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: () => navigate('/catalogue'),   disabled: false },
+    { label: 'Constitue ta collection', pastille: `${R2}/site/pastille_mon_compte.png`, couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/mon-compte'),   disabled: false },
+    { label: 'Partage tes coloriages',  emoji: '🎨',                                    couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: null,                            disabled: true  },
+    { label: 'Viens me découvrir',      logo: `${R2}/site/Logo.png`,                    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80',  onClick: () => navigate('/presentation'), disabled: false },
+    { label: 'Plonge dans mes pensées', pastille: `${R2}/site/pastille_pensees.png`,    couleur: '#a78bfa',              couleurRgb: '167,139,250', onClick: () => navigate('/pensees'),      disabled: false },
+    { label: 'Catalogue complet',       pastille: `${R2}/site/pastille_categories.png`, couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: () => navigate('/catalogue'),    disabled: false },
+    { label: 'Bibliothèque',            pastille: `${R2}/site/pastille_livres.png`,     couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/livres'),       disabled: false },
   ];
 
   const anyPopup = popup || popupFiche;
@@ -637,10 +644,17 @@ function Accueil() {
               </p>
 
               {/* Boutons style MonCompte */}
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: isMobile ? 'wrap' : 'nowrap', justifyContent: 'center' }}>
                 {BTNS.map((btn, i) => (
-                  <BoutonAction key={i} label={btn.label} couleur={btn.couleur} couleurRgb={btn.couleurRgb}
-                    onClick={btn.onClick || undefined} disabled={btn.disabled} />
+                  <BoutonAction key={i}
+                    label={btn.label}
+                    icone={btn.pastille ? <img src={btn.pastille} alt="" style={{ width: '22px', height: '22px', objectFit: 'contain', flexShrink: 0 }} />
+                      : btn.logo ? <img src={btn.logo} alt="" style={{ width: '22px', height: '22px', objectFit: 'cover', borderRadius: '50%', flexShrink: 0 }} />
+                      : btn.emoji ? <span style={{ fontSize: '16px', flexShrink: 0 }}>{btn.emoji}</span>
+                      : null}
+                    couleur={btn.couleur} couleurRgb={btn.couleurRgb}
+                    onClick={btn.onClick || undefined} disabled={btn.disabled}
+                    isMobile={isMobile} />
                 ))}
               </div>
             </div>
@@ -692,7 +706,7 @@ function Accueil() {
               <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '14px 18px', marginBottom: '28px' }}>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: '1.8' }}>
                   <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
-                  Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). C'est maintenant à toi de jouer pour la compléter…
+                  Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
                 </p>
               </div>
 
