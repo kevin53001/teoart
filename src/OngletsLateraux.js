@@ -123,7 +123,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
     <div style={{
       width: '220px',
       maxHeight: '80vh',
-      background: 'rgba(10,10,10,0.72)',
+      background: 'rgba(10,10,10,0.45)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
       borderLeft: `2px solid ${couleur}60`,
@@ -290,33 +290,36 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
         ))}
       </div>
 
-      {/* Panneau déployé */}
-      {ouvert && ongletActif && (
-        <div
-          ref={panneauRef}
-          style={{
-            position: 'fixed',
-            right: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 199,
-            animation: 'slideInRight 0.28s ease-out',
-            display: 'flex',
-            maxHeight: '80vh',
-            willChange: 'transform',
-          }}
-        >
-          <PanneauOnglet
-            id={ongletActif.id}
-            couleur={ongletActif.couleur}
-            emoji={ongletActif.emoji}
-            label={ongletActif.label}
-            userId={userId}
-            onClose={() => setOuvert(null)}
-            onOuvrirFiche={(illu) => { onOuvrirFiche && onOuvrirFiche(illu); setOuvert(null); }}
-          />
-        </div>
-      )}
+      {/* Panneaux — tous montés, affichage via CSS pour éviter animation de bas en haut */}
+      <div
+        ref={panneauRef}
+        style={{
+          position: 'fixed',
+          right: 0,
+          top: '50%',
+          transform: ouvert ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(100%)',
+          zIndex: 199,
+          display: 'flex',
+          maxHeight: '80vh',
+          transition: 'transform 0.28s ease-out',
+          willChange: 'transform',
+          pointerEvents: ouvert ? 'auto' : 'none',
+        }}
+      >
+        {ONGLETS.map(o => (
+          <div key={o.id} style={{ display: ouvert === o.id ? 'flex' : 'none' }}>
+            <PanneauOnglet
+              id={o.id}
+              couleur={o.couleur}
+              emoji={o.emoji}
+              label={o.label}
+              userId={userId}
+              onClose={() => setOuvert(null)}
+              onOuvrirFiche={(illu) => { onOuvrirFiche && onOuvrirFiche(illu); setOuvert(null); }}
+            />
+          </div>
+        ))}
+      </div>
     </>
   );
 }
