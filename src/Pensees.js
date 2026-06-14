@@ -447,66 +447,21 @@ function navPageBtn(actif) {
 // ─── TEXTE ADAPTATIF POPUP ─────────────────────────────────────────────────────
 
 function TexteAdaptatif({ texte, isMobile }) {
-  const containerRef = React.useRef(null);
-  const textRef = React.useRef(null);
-  const [fontSize, setFontSize] = React.useState(13.6);
-  const [court, setCourt] = React.useState(false);
+  // Mobile : taille fixe, pas de scroll, pas de changement
+  if (isMobile) {
+    return (
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ width: '100%', fontSize: '13px', lineHeight: 1.42, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
+          {texte}
+        </p>
+      </div>
+    );
+  }
 
-  React.useEffect(() => {
-    if (!containerRef.current || !textRef.current || !texte) return;
-
-    const MAX = 13.6;
-    const MIN = 10; // plancher raisonnable — en dessous c'est illisible
-    let size = MAX;
-    textRef.current.style.fontSize = size + 'px';
-
-    // Vérifier si le texte tient sans réduction
-    const containerH = containerRef.current.clientHeight;
-    const textH = textRef.current.scrollHeight;
-
-    if (textH <= containerH) {
-      // Texte court : pas de réduction, centrer verticalement
-      setFontSize(MAX);
-      setCourt(true);
-      return;
-    }
-
-    setCourt(false);
-
-    // Texte long : réduire par petits paliers
-    while (size > MIN) {
-      const cH = containerRef.current.clientHeight;
-      const tH = textRef.current.scrollHeight;
-      if (tH <= cH) break;
-      size -= 0.3;
-      textRef.current.style.fontSize = size + 'px';
-    }
-    setFontSize(size);
-  }, [texte, isMobile]);
-
+  // Desktop : taille normale, scroll si nécessaire, bloc centré horizontalement, texte aligné à gauche
   return (
-    <div
-      ref={containerRef}
-      style={{
-        flex: 1,
-        overflow: 'hidden',
-        display: 'flex',
-        alignItems: court ? 'center' : 'flex-start',
-        justifyContent: 'center',
-      }}
-    >
-      <p
-        ref={textRef}
-        style={{
-          width: '100%',
-          fontSize: fontSize + 'px',
-          lineHeight: 1.48,
-          whiteSpace: 'pre-wrap',
-          textAlign: 'center',
-          color: '#2c160e',
-          margin: 0,
-        }}
-      >
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', justifyContent: 'center', paddingRight: '2px' }}>
+      <p style={{ width: '100%', maxWidth: '380px', fontSize: '13.6px', lineHeight: 1.52, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: '0 auto' }}>
         {texte}
       </p>
     </div>
