@@ -668,25 +668,19 @@ function Pensees() {
         }
         .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 6px 18px rgba(0,0,0,0.75)); }
 
-        /* Face principale : cuir foncé vieilli */
+        /* Face principale : image de fond custom */
         .fiche-face {
           position: absolute;
           pointer-events: none;
           inset: 0;
           border-radius: 4px 12px 12px 4px;
-          background:
-            linear-gradient(160deg,
-              #3a2010 0%,
-              #2e1a0c 30%,
-              #261508 55%,
-              #1e1006 80%,
-              #180d04 100%
-            );
+          background-image: url('https://images.kevinteoart.fr/site/fiche_fond_desktop.jpg');
+          background-size: 100% 100%;
+          background-repeat: no-repeat;
+          background-position: center;
           border: 1px solid rgba(80,45,15,0.6);
           border-top: 7px solid color-mix(in srgb, var(--accent) 80%, #1a0a00);
           box-shadow:
-            inset 0 0 30px rgba(0,0,0,0.55),
-            inset 0 2px 8px rgba(255,200,120,0.06),
             2px 6px 18px rgba(0,0,0,0.70),
             0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
           overflow: hidden;
@@ -700,37 +694,25 @@ function Pensees() {
         }
         .fiche-face.back { transform: rotateY(180deg); }
 
-        /* Texture cuir + taches de vieillissement bien visibles */
+        /* Dégradés noirs sur bords gauche, droit et bas */
         .fiche-face::before {
           content: '';
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(ellipse at 15% 20%, rgba(180,120,50,0.28) 0%, transparent 38%),
-            radial-gradient(ellipse at 82% 75%, rgba(160,100,35,0.22) 0%, transparent 32%),
-            radial-gradient(ellipse at 50% 8%,  rgba(200,140,60,0.18) 0%, transparent 28%),
-            radial-gradient(ellipse at 30% 85%, rgba(140,80,25,0.20) 0%, transparent 30%),
-            radial-gradient(ellipse at 70% 45%, rgba(100,55,15,0.12) 0%, transparent 40%),
-            repeating-linear-gradient(
-              47deg,
-              transparent 0px,
-              transparent 18px,
-              rgba(255,200,100,0.025) 18px,
-              rgba(255,200,100,0.025) 19px
-            );
+            linear-gradient(90deg, rgba(0,0,0,0.45) 0%, transparent 22%),
+            linear-gradient(270deg, rgba(0,0,0,0.45) 0%, transparent 22%),
+            linear-gradient(0deg, rgba(0,0,0,0.55) 0%, transparent 28%);
           pointer-events: none;
           border-radius: inherit;
         }
-        /* Reflet de lumière haut gauche */
+        /* Reflet léger en haut */
         .fiche-face::after {
           content: '';
           position: absolute;
           top: 7px; left: 8px; right: 8px;
-          height: 38%;
-          background: linear-gradient(180deg,
-            rgba(255,220,140,0.09) 0%,
-            transparent 100%
-          );
+          height: 30%;
+          background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
           border-radius: 3px;
           pointer-events: none;
         }
@@ -743,9 +725,9 @@ function Pensees() {
           padding: 8px 10px;
           border: 2px solid color-mix(in srgb, var(--accent) 70%, #8b5e1a);
           border-radius: 2px;
-          background: rgba(255,248,225,0.12);
+          background: rgba(210,210,210,0.82);
           box-shadow:
-            inset 0 0 0 1px rgba(255,235,170,0.18),
+            inset 0 0 0 1px rgba(255,255,255,0.5),
             0 0 8px color-mix(in srgb, var(--accent) 20%, transparent);
         }
         /* Coins décoratifs couleur accent */
@@ -763,7 +745,7 @@ function Pensees() {
         .fiche-title {
           position: relative;
           z-index: 2;
-          color: #f0e0c0;
+          color: #1a1008;
           font-size: 13.5px;
           line-height: 1.25;
           font-weight: 700;
@@ -773,7 +755,7 @@ function Pensees() {
           display: -webkit-box;
           -webkit-line-clamp: 4;
           -webkit-box-orient: vertical;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+          text-shadow: none;
         }
         .fiche-author {
           position: relative;
@@ -872,7 +854,7 @@ function Pensees() {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
           .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
-          .fiche-face { border-radius: 3px 8px 8px 3px; padding: 16px 8px 10px; border-top-width: 5px; }
+          .fiche-face { border-radius: 3px 8px 8px 3px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
           .fiche-encadre { padding: 6px 7px; }
           .fiche-edge { height: 70%; top: -70%; }
           .fiche-title { font-size: 10px; -webkit-line-clamp: 3; }
