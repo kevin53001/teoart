@@ -233,6 +233,7 @@ function Presentation() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }
@@ -315,7 +316,6 @@ function EncartPresentation({ enc, idx, isMobile, onOuvrirPopup }) {
 
         </div>
       </div>
-      <OngletsLateraux userId={userId} />
     </div>
   );
 }
