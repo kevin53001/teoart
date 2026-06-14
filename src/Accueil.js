@@ -688,70 +688,77 @@ function Accueil() {
               <p style={{ color: '#fff', fontSize: isMobile ? '17px' : '20px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center', letterSpacing: '0.5px' }}>
                 🗺️ Comment fonctionne le site ?
               </p>
-
               {[
                 {
-                  pastille: `${R2}/site/pastille_categories.png`,
-                  titre: 'Le Catalogue',
+                  pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue',
+                  titre: 'Le Catalogue', couleur: '#00d4d4',
                   texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.",
-                  couleur: '#00d4d4',
+                  sousmenu: [
+                    { emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." },
+                    { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." },
+                    { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." },
+                  ],
                 },
                 {
-                  emoji: '✓',
-                  titre: "La Collection — J'ai",
-                  texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page. Les illustrations cochées automatiquement lors de ta première visite viennent de ta sélection initiale.",
-                  couleur: '#00d4d4',
-                },
-                {
-                  emoji: '♡',
-                  titre: 'La Collection — Je veux',
-                  texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits. Pratique pour savoir quoi acheter en priorité !",
-                  couleur: '#ff4d7d',
-                },
-                {
-                  emoji: '🎨',
-                  titre: "J'ai colorié",
-                  texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Tu peux uploader une photo de ton coloriage. Les coloriages partagés apparaissent dans la fiche de l'illustration et dans les \"Derniers coloriages\" ci-dessus.",
-                  couleur: '#ffd250',
-                },
-                {
-                  pastille: `${R2}/site/pastille_livres.png`,
-                  titre: 'Les Livres & Recueils',
+                  pastille: `${R2}/site/pastille_livres.png`, lien: '/livres',
+                  titre: 'Les Livres & Recueils', couleur: '#a78bfa',
                   texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup.",
-                  couleur: '#a78bfa',
                 },
                 {
-                  pastille: `${R2}/site/pastille_pensees.png`,
-                  titre: 'Les Pensées',
+                  logo: `${R2}/site/Logo.png`, lien: '/presentation',
+                  titre: 'La Présentation', couleur: '#ffd250',
+                  texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue.",
+                },
+                {
+                  pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees',
+                  titre: 'Les Pensées', couleur: '#ff3eb5',
                   texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication).",
-                  couleur: '#ff3eb5',
                 },
                 {
-                  emoji: '⭐',
-                  titre: 'Patreon 2026',
-                  texte: "Les illustrations exclusives Patreon sont accessibles depuis le menu Catégories. Elles sont organisées par mois. Les nouveautés à venir apparaissent en aperçu dans l'encart \"Nouveautés Patreon\" ci-dessus.",
-                  couleur: '#ffd250',
-                },
-                {
-                  pastille: `${R2}/site/pastille_mon_compte.png`,
-                  titre: 'Le Panier & les Achats',
+                  pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte',
+                  titre: 'Le Panier & les Achats', couleur: '#ff3eb5',
                   texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 !",
-                  couleur: '#ff3eb5',
                 },
-              ].map((item, i, arr) => (
-                <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', marginBottom: i < arr.length - 1 ? '20px' : '0', paddingBottom: i < arr.length - 1 ? '20px' : '0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: `${item.couleur}20`, border: `1px solid ${item.couleur}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {item.pastille
-                      ? <img src={item.pastille} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-                      : <span style={{ fontSize: '14px', color: item.couleur, fontWeight: 'bold' }}>{item.emoji}</span>
-                    }
+              ].map((item, i, arr) => {
+                const T = 72;
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={i} style={{ marginBottom: isLast ? 0 : '24px', paddingBottom: isLast ? 0 : '24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                      <div
+                        onClick={() => navigate(item.lien)}
+                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: item.logo ? '50%' : '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer', transition: 'transform .2s, filter .2s' }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}
+                      >
+                        {item.logo
+                          ? <img src={item.logo} alt="" style={{ width: `${T}px`, height: `${T}px`, objectFit: 'cover', borderRadius: '50%', border: '2px solid rgba(255,210,80,0.4)', display: 'block' }} />
+                          : <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
+                        }
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
+                      </div>
+                    </div>
+                    {item.sousmenu && (
+                      <div style={{ marginTop: '14px', marginLeft: `${T + 16}px`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {item.sousmenu.map((sub, si) => (
+                          <div key={si} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                            <div style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '8px', background: `${sub.couleur}18`, border: `1px solid ${sub.couleur}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontSize: '12px', color: sub.couleur, fontWeight: 'bold' }}>{sub.emoji}</span>
+                            </div>
+                            <div>
+                              <p style={{ color: sub.couleur, fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{sub.titre}</p>
+                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.6' }}>{sub.texte}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <p style={{ color: item.couleur, fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{item.titre}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
           </div>
