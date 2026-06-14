@@ -123,7 +123,9 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
     <div style={{
       width: '220px',
       maxHeight: '80vh',
-      background: 'rgba(10,10,10,0.96)',
+      background: 'rgba(10,10,10,0.72)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       borderLeft: `2px solid ${couleur}60`,
       borderRadius: '12px 0 0 12px',
       display: 'flex',
@@ -234,15 +236,11 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
     <>
       <style>{`
         @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to   { transform: translateX(0);    opacity: 1; }
-        }
-        @keyframes slideOutRight {
-          from { transform: translateX(0);    opacity: 1; }
-          to   { transform: translateX(100%); opacity: 0; }
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
         }
         .onglet-tab {
-          transition: transform 0.2s, opacity 0.2s;
+          transition: background 0.2s, box-shadow 0.2s;
         }
         .onglet-tab:hover {
           transform: translateX(-4px);
@@ -302,9 +300,10 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 199,
-            animation: 'slideInRight 0.3s ease',
+            animation: 'slideInRight 0.28s ease-out',
             display: 'flex',
             maxHeight: '80vh',
+            willChange: 'transform',
           }}
         >
           <PanneauOnglet
