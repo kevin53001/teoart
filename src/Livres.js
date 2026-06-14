@@ -584,6 +584,7 @@ function Livres() {
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [collection, setCollection] = React.useState({});
+  const [itemsAuto, setItemsAuto] = React.useState({ recueils: new Set(), livres: new Set() });
   const [collectionIllus, setCollectionIllus] = React.useState({});
   const [coloriages, setColoriages] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
@@ -663,6 +664,7 @@ function Livres() {
         });
         recueilsAuto.forEach(rid => { if (!collMap[`recueil_${rid}`]) collMap[`recueil_${rid}`] = { j_ai: true, je_veux: false }; });
         livresAuto.forEach(lid => { if (!collMap[`livre_${lid}`]) collMap[`livre_${lid}`] = { j_ai: true, je_veux: false }; });
+        setItemsAuto({ recueils: recueilsAuto, livres: livresAuto });
       }
 
       setCollection(collMap);
@@ -741,11 +743,10 @@ function Livres() {
   };
 
   const toggleJAi = (itemId, type) => {
-    const key = `${type}_${itemId}`;
-    const actuel = collection[key] || {};
-    const nouveau = !(actuel.j_ai || false);
-    // Décochage → demander confirmation
-    if (!nouveau) {
+    const nouveau = !(collection[`${type}_${itemId}`]?.j_ai || false);
+    // Décochage d'un item de la sélection initiale → confirmation
+    const estAuto = type === 'recueil' ? itemsAuto.recueils.has(itemId) : itemsAuto.livres.has(itemId);
+    if (!nouveau && estAuto) {
       setConfirmation({ itemId, type });
       return;
     }
@@ -1074,10 +1075,22 @@ function Livres() {
           <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
             <p style={{ fontSize: '28px', marginBottom: '12px' }}>🤔</p>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Attends, t'es sûr·e ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
-              Cette illustration fait partie d'un livre ou recueil que tu as sélectionné lors de ta première visite.<br /><br />
-              Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
-            </p>
+            {confirmation.illuId ? (
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
+                Cette illustration fait partie d'un livre ou recueil que tu as sélectionné lors de ta première visite.<br /><br />
+                Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
+              </p>
+            ) : confirmation.type === 'recueil' ? (
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
+                Ce recueil faisait partie de ta sélection de bienvenue. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
+                C'est un grand geste... Kevin en a peut-être perdu le sommeil pour le créer. Tu es vraiment sûr·e ? 🥲
+              </p>
+            ) : (
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
+                Ce livre faisait partie de ta sélection de bienvenue. Si tu le décoches, toutes ses illustrations seront retirées aussi.<br /><br />
+                Des heures de travail, des pages de coloriage, des crayons usés jusqu'au bout... tout ça pour rien ? 😩
+              </p>
+            )}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Non, je la garde !</button>
               <button onClick={() => {
