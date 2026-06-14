@@ -773,7 +773,7 @@ function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
   const [illus, setIllus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [collection, setCollection] = React.useState({});
-
+  const [coloriages, setColoriages] = React.useState({});
 
   React.useEffect(() => {
     const charger = async () => {
