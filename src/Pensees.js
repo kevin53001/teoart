@@ -300,7 +300,7 @@ function FicheTexte({ pensee }) {
         <div className="fiche-title">{pensee.titre}</div>
       </div>
       <div className="fiche-author">{pensee.auteur || 'Anonyme'}</div>
-      <div className="fiche-pages">{nbPages} p.</div>
+      <div className="fiche-pages">{nbPages} {nbPages > 1 ? "pages" : "page"}</div>
     </>
   );
 }
@@ -1166,8 +1166,16 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                   onChange={e => setTexteForm(e.target.value)}
                   placeholder="Ta pensée..."
                   rows={6}
-                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px', lineHeight: 1.6 }}
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px', lineHeight: 1.6, marginBottom: '4px' }}
                 />
+                {texteForm.trim() && (() => {
+                  const nb = decouperTexte(texteForm.trim()).length;
+                  return (
+                    <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '11px', textAlign: 'right', marginBottom: '12px' }}>
+                      {nb} page{nb > 1 ? 's' : ''}
+                    </p>
+                  );
+                })()}
 
                 <div style={{ marginBottom: '14px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Couleur de la fiche</p>
