@@ -772,8 +772,6 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
   const [illus, setIllus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [collection, setCollection] = React.useState({});
-  const [coloriages, setColoriages] = React.useState({});
 
   React.useEffect(() => {
     const charger = async () => {
@@ -781,16 +779,7 @@ function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
       if (!coll || coll.length === 0) { setLoading(false); return; }
       const ids = coll.map(c => c.illustration_id);
       const { data: illusData } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').in('id', ids).order('nom');
-      // charger aussi tout le reste de la collection pour j_ai / colorie
-      const { data: collTout } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', userId);
-      const { data: colosTout } = await supabase.from('coloriages').select('illustration_id').eq('user_id', userId);
-      const collMap = {};
-      (collTout || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false }; });
-      const coloMap = {};
-      (colosTout || []).forEach(c => { coloMap[c.illustration_id] = true; });
       setIllus(illusData || []);
-      setCollection(collMap);
-      setColoriages(coloMap);
       setLoading(false);
     };
     charger();
