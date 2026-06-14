@@ -611,6 +611,11 @@ function Pensees() {
         }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
+        @keyframes reliure-glow {
+          0%   { border-top-color: var(--accent); box-shadow: 2px 6px 18px rgba(0,0,0,0.70), 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent); }
+          50%  { border-top-color: color-mix(in srgb, var(--accent) 60%, #fff); box-shadow: 2px 6px 18px rgba(0,0,0,0.70), 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+          100% { border-top-color: var(--accent); box-shadow: 2px 6px 18px rgba(0,0,0,0.70), 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent); }
+        }
 
         /* ── Cards premium ── */
         .premium-card {
@@ -666,20 +671,21 @@ function Pensees() {
           cursor: pointer;
           transition: filter .18s ease;
         }
-        .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 6px 18px rgba(0,0,0,0.75)); }
+        .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 70%, transparent)) drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
 
         /* Face principale : image de fond custom */
         .fiche-face {
           position: absolute;
           pointer-events: none;
           inset: 0;
-          border-radius: 4px 12px 12px 4px;
+          border-radius: 12px;
           background-image: url('https://images.kevinteoart.fr/site/fiche_fond_desktop.jpg');
           background-size: 100% 100%;
           background-repeat: no-repeat;
           background-position: center;
           border: 1px solid rgba(80,45,15,0.6);
-          border-top: 7px solid color-mix(in srgb, var(--accent) 80%, #1a0a00);
+          border-top: 7px solid var(--accent);
+          animation: reliure-glow 2.4s ease-in-out infinite;
           box-shadow:
             2px 6px 18px rgba(0,0,0,0.70),
             0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
@@ -724,7 +730,7 @@ function Pensees() {
           width: calc(100% - 10px);
           padding: 8px 10px;
           border: 2px solid color-mix(in srgb, var(--accent) 70%, #8b5e1a);
-          border-radius: 2px;
+          border-radius: 6px;
           background: rgba(210,210,210,0.82);
           box-shadow:
             inset 0 0 0 1px rgba(255,255,255,0.5),
@@ -770,7 +776,7 @@ function Pensees() {
           letter-spacing: 0.3px;
           text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
         }
-        .fiche-author::before { content: '— '; }
+        .fiche-author::before { content: ''; }
 
         /* Tranche 3D haut (reliure) */
         .fiche-edge {
@@ -854,7 +860,7 @@ function Pensees() {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
           .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
-          .fiche-face { border-radius: 3px 8px 8px 3px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
+          .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
           .fiche-encadre { padding: 6px 7px; }
           .fiche-edge { height: 70%; top: -70%; }
           .fiche-title { font-size: 10px; -webkit-line-clamp: 3; }
