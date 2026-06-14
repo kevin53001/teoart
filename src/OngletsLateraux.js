@@ -211,12 +211,15 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
 function OngletsLateraux({ userId, onOuvrirFiche }) {
   const [ouvert, setOuvert] = React.useState(null); // id de l'onglet ouvert
   const panneauRef = React.useRef(null);
+  const languettesRef = React.useRef(null);
 
   // Fermer au clic en dehors
   React.useEffect(() => {
     if (!ouvert) return;
     const handler = (e) => {
-      if (panneauRef.current && !panneauRef.current.contains(e.target)) {
+      const dansPanneau = panneauRef.current && panneauRef.current.contains(e.target);
+      const dansLanguettes = languettesRef.current && languettesRef.current.contains(e.target);
+      if (!dansPanneau && !dansLanguettes) {
         setOuvert(null);
       }
     };
@@ -247,7 +250,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
       `}</style>
 
       {/* Languettes fixes sur le bord droit */}
-      <div style={{
+      <div ref={languettesRef} style={{
         position: 'fixed',
         right: ouvert ? '220px' : '0',
         top: '50%',
