@@ -69,7 +69,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
           const depuis = new Date(Date.now() - s * 7 * 24 * 3600 * 1000).toISOString();
           const { data } = await supabase
             .from('coloriages')
-            .select('id, image_url, user_id')
+            .select('id, image_url, user_id, illustration_id')
             .not('image_url', 'is', null)
             .gte('created_at', depuis)
             .order('created_at', { ascending: false })
@@ -223,7 +223,10 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
     return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler); };
   }, [ouvert]);
 
-  const toggle = (id) => setOuvert(prev => prev === id ? null : id);
+  const toggle = (id) => {
+    if (ouvert === id) setOuvert(null); // refermer si on reclique sur le même
+    else setOuvert(id); // sinon juste changer d'onglet (le panneau reste ouvert)
+  };
 
   const ongletActif = ONGLETS.find(o => o.id === ouvert);
 
