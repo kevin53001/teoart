@@ -1097,7 +1097,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           )}
         </div>
       </div>
-      <OngletsLateraux userId={userId} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </>
   );
 }

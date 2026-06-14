@@ -94,6 +94,7 @@ function Presentation() {
   const [showCategories, setShowCategories] = React.useState(false);
   const [popupGlobal, setPopupGlobal] = React.useState(null); // { images, index }
   const [userId, setUserId] = React.useState(null);
+  const [popupOnglet, setPopupOnglet] = React.useState(null);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -233,7 +234,7 @@ function Presentation() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
-      <OngletsLateraux userId={userId} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupOnglet(illu)} />
     </div>
   );
 }
@@ -316,6 +317,20 @@ function EncartPresentation({ enc, idx, isMobile, onOuvrirPopup }) {
 
         </div>
       </div>
+
+{popupOnglet && (
+        <div onClick={() => setPopupOnglet(null)} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', maxWidth: '480px', width: '100%', position: 'relative' }}>
+            <button onClick={() => setPopupOnglet(null)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '32px', height: '32px', color: '#fff', fontSize: '18px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            <img src={popupOnglet.visuels ? Object.values(popupOnglet.visuels)[0] : ''} alt={popupOnglet.nom} style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', background: '#000' }} />
+            <div style={{ padding: '16px 20px' }}>
+              <h3 style={{ color: '#fff', fontSize: '16px', marginBottom: '8px' }}>{popupOnglet.nom}</h3>
+              {popupOnglet.description && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: 1.6 }}>{popupOnglet.description}</p>}
+              {popupOnglet.prix && <p style={{ color: '#00d4d4', fontSize: '14px', fontWeight: 'bold', marginTop: '8px' }}>{popupOnglet.prix} €</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

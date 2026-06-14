@@ -1,5 +1,4 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -45,8 +44,7 @@ const ONGLETS = [
 ];
 
 // ─── Panneau d'un onglet ──────────────────────────────────────────────────────
-function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
-  const navigate = useNavigate();
+function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFiche }) {
   const [images, setImages] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -80,7 +78,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
             const uids = [...new Set(data.map(c => c.user_id))];
             const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
             const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
-            colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id }));
+            colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id, illuId: c.illustration_id }));
             break;
           }
         }
@@ -89,20 +87,20 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
       } else if (id === 'bestsellers') {
         const { data } = await supabase
           .from('illustrations')
-          .select('id, nom, visuels')
+          .select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids')
           .eq('statut', 'published')
           .eq('best_seller', true)
           .limit(10);
-        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id })).filter(i => i.url));
+        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id, illu: i })).filter(i => i.url));
 
       } else if (id === 'favoris') {
         const { data } = await supabase
           .from('illustrations')
-          .select('id, nom, visuels')
+          .select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids')
           .eq('statut', 'published')
           .eq('favori', true)
           .limit(10);
-        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id })).filter(i => i.url));
+        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id, illu: i })).filter(i => i.url));
       }
 
       setLoading(false);
@@ -161,10 +159,18 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
               key={img.url}
               src={img.url}
               alt={img.nom}
-              onClick={() => {
-                if (id !== 'patreon' && img.illuId) {
-                  navigate(`/catalogue`);
-                  onClose();
+              onClick={async () => {
+                if (id === 'patreon' || !img.illuId) return;
+                if (img.illu) {
+                  onOuvrirFiche && onOuvrirFiche(img.illu);
+                } else {
+                  // Charger l'illu complète (cas coloriages)
+                  const { data } = await supabase
+                    .from('illustrations')
+                    .select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids')
+                    .eq('id', img.illuId)
+                    .maybeSingle();
+                  if (data) onOuvrirFiche && onOuvrirFiche(data);
                 }
               }}
               style={{
@@ -200,7 +206,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
-function OngletsLateraux({ userId }) {
+function OngletsLateraux({ userId, onOuvrirFiche }) {
   const [ouvert, setOuvert] = React.useState(null); // id de l'onglet ouvert
   const panneauRef = React.useRef(null);
 
@@ -305,6 +311,7 @@ function OngletsLateraux({ userId }) {
             label={ongletActif.label}
             userId={userId}
             onClose={() => setOuvert(null)}
+            onOuvrirFiche={(illu) => { onOuvrirFiche && onOuvrirFiche(illu); setOuvert(null); }}
           />
         </div>
       )}

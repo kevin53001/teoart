@@ -1103,7 +1103,7 @@ function Livres() {
           </div>
         </div>
       )}
-      <OngletsLateraux userId={userId} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </div>
   );
 }
