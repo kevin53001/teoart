@@ -310,14 +310,40 @@ function PopupFiche({ illu, onClose, userId, userPseudo }) {
   );
 }
 
-// ── Encart défilant — version avec popup fiche ──
+// ── Encart défilant — crossfade réel (deux images superposées) ──
 function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
-  const [idx, setIdx] = React.useState(0);
+  // On garde les deux derniers index : current et previous
+  const [cur, setCur] = React.useState(0);
+  const [prev, setPrev] = React.useState(null);
+  const [fading, setFading] = React.useState(false);
+  const timerRef = React.useRef(null);
+  const FADE = 1200; // durée fondue ms
+
+  const goTo = React.useCallback((next) => {
+    if (next === cur) return;
+    setPrev(cur);
+    setCur(next);
+    setFading(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setPrev(null);
+      setFading(false);
+    }, FADE);
+  }, [cur]);
 
   React.useEffect(() => {
     if (images.length <= 1) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 4500);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      setCur(c => {
+        const next = (c + 1) % images.length;
+        setPrev(c);
+        setFading(true);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => { setPrev(null); setFading(false); }, FADE);
+        return next;
+      });
+    }, 4500);
+    return () => { clearInterval(t); clearTimeout(timerRef.current); };
   }, [images.length]);
 
   if (images.length === 0) return (
@@ -326,43 +352,61 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
     </div>
   );
 
-  const img = images[idx];
+  const imgCur = images[cur];
+  const imgPrev = prev !== null ? images[prev] : null;
   const handleClick = () => {
-    if (onFiche && img.illu) onFiche(img.illu);
-    else if (onZoom) onZoom(images, idx);
+    if (onFiche && imgCur.illu) onFiche(imgCur.illu);
+    else if (onZoom) onZoom(images, cur);
   };
 
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: `1px solid ${couleur}30`, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-      <style>{`
-        @keyframes encartFadeIn { from { opacity: 0; } to { opacity: 1; } }
-      `}</style>
       <div style={{ background: couleur, padding: '8px 14px' }}>
         <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0, textAlign: 'center' }}>{titre}</p>
       </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', position: 'relative', cursor: onFiche && img.illu ? 'pointer' : 'zoom-in' }}
-        onClick={handleClick}>
-        <img
-          key={img.url}
-          src={img.url}
-          alt={img.nom}
-          style={{ maxWidth: '100%', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', display: 'block', animation: 'encartFadeIn 1.2s ease' }}
+      <div
+        style={{ flex: 1, position: 'relative', padding: '12px', cursor: onFiche && imgCur.illu ? 'pointer' : 'zoom-in' }}
+        onClick={handleClick}
+      >
+        {/* Image précédente — s'efface */}
+        {imgPrev && (
+          <img src={imgPrev.url} alt=""
+            style={{
+              position: 'absolute', inset: '12px',
+              width: 'calc(100% - 24px)', height: 'calc(100% - 24px)',
+              objectFit: 'contain', borderRadius: '8px',
+              opacity: fading ? 0 : 1,
+              transition: `opacity ${FADE}ms ease`,
+            }}
+          />
+        )}
+        {/* Image courante — apparaît */}
+        <img src={imgCur.url} alt={imgCur.nom}
+          style={{
+            position: 'absolute', inset: '12px',
+            width: 'calc(100% - 24px)', height: 'calc(100% - 24px)',
+            objectFit: 'contain', borderRadius: '8px',
+            opacity: fading ? 1 : 1,
+            transition: `opacity ${FADE}ms ease`,
+          }}
         />
-        {img.coloriste && (
-          <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none' }}>
-            Réalisé par {img.coloriste}
+        {/* Spacer pour maintenir la hauteur */}
+        <div style={{ width: '100%', height: '160px' }} />
+        {imgCur.coloriste && (
+          <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none' }}>
+            Réalisé par {imgCur.coloriste}
           </div>
         )}
       </div>
       {images.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px' }}>
           {images.map((_, i) => (
-            <div key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? couleur : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+            <div key={i} onClick={() => goTo(i)} style={{ width: i === cur ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === cur ? couleur : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
           ))}
         </div>
       )}
       <div style={{ padding: '4px 12px 10px', textAlign: 'center' }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.nom}</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{imgCur.nom}</p>
       </div>
     </div>
   );
@@ -371,12 +415,25 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
 // ── Encart Patreon spécial ──
 function EncartPatreon({ images, onZoom }) {
   const [idx, setIdx] = React.useState(0);
+  const [prevP, setPrevP] = React.useState(null);
+  const [fadingP, setFadingP] = React.useState(false);
+  const timerPRef = React.useRef(null);
+  const FADEP = 1200;
   const mois = moisSuivant();
 
   React.useEffect(() => {
     if (images.length <= 1) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 4500);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      setIdx(c => {
+        const next = (c + 1) % images.length;
+        setPrevP(c);
+        setFadingP(true);
+        clearTimeout(timerPRef.current);
+        timerPRef.current = setTimeout(() => { setPrevP(null); setFadingP(false); }, FADEP);
+        return next;
+      });
+    }, 4500);
+    return () => { clearInterval(t); clearTimeout(timerPRef.current); };
   }, [images.length]);
 
   if (images.length === 0) return (
@@ -397,19 +454,28 @@ function EncartPatreon({ images, onZoom }) {
           <span onClick={() => window.open(PATREON_URL, '_blank')} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Patreon</span> !
         </p>
       </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 12px', cursor: 'zoom-in' }}
+      <div style={{ flex: 1, position: 'relative', padding: '8px 12px', cursor: 'zoom-in', minHeight: '140px' }}
         onClick={() => onZoom && onZoom(images, idx)}>
-        <img
-          key={img.url}
-          src={img.url}
-          alt={img.nom}
-          style={{ maxWidth: '100%', maxHeight: '140px', objectFit: 'contain', borderRadius: '8px', display: 'block', animation: 'encartFadeIn 1.2s ease' }}
+        {prevP !== null && images[prevP] && (
+          <img src={images[prevP].url} alt=""
+            style={{ position: 'absolute', inset: '8px 12px', width: 'calc(100% - 24px)', height: 'calc(100% - 16px)', objectFit: 'contain', borderRadius: '8px', opacity: fadingP ? 0 : 1, transition: `opacity ${FADEP}ms ease` }}
+          />
+        )}
+        <img src={img.url} alt={img.nom}
+          style={{ position: 'absolute', inset: '8px 12px', width: 'calc(100% - 24px)', height: 'calc(100% - 16px)', objectFit: 'contain', borderRadius: '8px', opacity: 1 }}
         />
+        <div style={{ width: '100%', height: '140px' }} />
       </div>
       {images.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '6px' }}>
           {images.map((_, i) => (
-            <div key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#ffd250' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+            <div key={i} onClick={() => {
+              if (i === idx) return;
+              setPrevP(idx); setFadingP(true);
+              clearTimeout(timerPRef.current);
+              timerPRef.current = setTimeout(() => { setPrevP(null); setFadingP(false); }, FADEP);
+              setIdx(i);
+            }} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#ffd250' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
           ))}
         </div>
       )}
