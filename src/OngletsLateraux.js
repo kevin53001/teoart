@@ -230,7 +230,6 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
     else setOuvert(id); // sinon juste changer d'onglet (le panneau reste ouvert)
   };
 
-  const ongletActif = ONGLETS.find(o => o.id === ouvert);
 
   return (
     <>
