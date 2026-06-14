@@ -313,34 +313,43 @@ function PopupFiche({ illu, onClose, userId, userPseudo }) {
 // ── Encart défilant — version avec popup fiche ──
 function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
   const [idx, setIdx] = React.useState(0);
-  const [nextIdx, setNextIdx] = React.useState(null);
-  const [transitioning, setTransitioning] = React.useState(false);
+  const [prevIdx, setPrevIdx] = React.useState(null);
+  const [crossfading, setCrossfading] = React.useState(false);
+  const busyRef = React.useRef(false);
   const intervalRef = React.useRef(null);
+  const DURATION = 1400; // ms de transition
 
   const goTo = React.useCallback((next) => {
-    if (transitioning) return;
-    setNextIdx(next);
-    setTransitioning(true);
-    setTimeout(() => {
+    if (busyRef.current || next === idx) return;
+    busyRef.current = true;
+    setPrevIdx(idx);
+    setCrossfading(true);
+    // Précharger l'image suivante avant de lancer la transition
+    const img = new window.Image();
+    img.src = images[next].url;
+    const start = () => {
       setIdx(next);
-      setNextIdx(null);
-      setTransitioning(false);
-    }, 700);
-  }, [transitioning]);
+      setTimeout(() => {
+        setPrevIdx(null);
+        setCrossfading(false);
+        busyRef.current = false;
+      }, DURATION);
+    };
+    if (img.complete) start();
+    else { img.onload = start; img.onerror = start; }
+  }, [idx, images]);
 
   React.useEffect(() => {
     if (images.length <= 1) return;
     intervalRef.current = setInterval(() => {
       setIdx(prev => {
         const next = (prev + 1) % images.length;
-        setNextIdx(next);
-        setTransitioning(true);
-        setTimeout(() => { setIdx(next); setNextIdx(null); setTransitioning(false); }, 700);
+        goTo(next);
         return prev;
       });
-    }, 4000);
+    }, 4500);
     return () => clearInterval(intervalRef.current);
-  }, [images.length]);
+  }, [images.length, goTo]);
 
   if (images.length === 0) return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
@@ -349,7 +358,7 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
   );
 
   const img = images[idx];
-  const imgNext = nextIdx !== null ? images[nextIdx] : null;
+  const imgPrev = prevIdx !== null ? images[prevIdx] : null;
   const handleClick = () => {
     if (onFiche && img.illu) onFiche(img.illu);
     else if (onZoom) onZoom(images, idx);
@@ -362,18 +371,18 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', position: 'relative', cursor: onFiche && img.illu ? 'pointer' : 'zoom-in' }}
         onClick={handleClick}>
-        {/* Image actuelle */}
-        <img src={img.url} alt={img.nom}
-          style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', opacity: transitioning ? 0 : 1, transition: 'opacity 0.7s ease', display: 'block' }} />
-        {/* Image suivante (crossfade) */}
-        {imgNext && (
-          <img src={imgNext.url} alt={imgNext.nom}
-            style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', opacity: transitioning ? 1 : 0, transition: 'opacity 0.7s ease', display: 'block' }} />
+        {/* Image précédente qui s'efface */}
+        {imgPrev && (
+          <img src={imgPrev.url} alt=""
+            style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', opacity: crossfading ? 0 : 1, transition: `opacity ${DURATION}ms ease`, display: 'block', zIndex: 1 }} />
         )}
-        {/* Espace invisible pour maintenir la hauteur */}
+        {/* Image courante qui apparaît */}
+        <img src={img.url} alt={img.nom}
+          style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', opacity: crossfading ? 1 : 1, transition: `opacity ${DURATION}ms ease`, display: 'block', zIndex: 2 }} />
+        {/* Spacer invisible */}
         <img src={img.url} alt="" style={{ maxWidth: '100%', maxHeight: '160px', objectFit: 'contain', visibility: 'hidden', display: 'block' }} />
         {img.coloriste && (
-          <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none', zIndex: 2 }}>
+          <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none', zIndex: 3 }}>
             Réalisé par {img.coloriste}
           </div>
         )}
@@ -386,7 +395,7 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
         </div>
       )}
       <div style={{ padding: '4px 12px 10px', textAlign: 'center' }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'opacity 0.7s ease', opacity: transitioning ? 0.3 : 1 }}>{img.nom}</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.nom}</p>
       </div>
     </div>
   );
@@ -399,19 +408,30 @@ function EncartPatreon({ images, onZoom }) {
   const [transitioning, setTransitioning] = React.useState(false);
   const mois = moisSuivant();
 
+  const busyRef = React.useRef(false);
+  const DURATION = 1400;
+
+  const goToP = React.useCallback((next) => {
+    if (busyRef.current || next === idx) return;
+    busyRef.current = true;
+    setNextIdx(idx);
+    setTransitioning(true);
+    const preload = new window.Image();
+    preload.src = images[next].url;
+    const start = () => {
+      setIdx(next);
+      setTimeout(() => { setNextIdx(null); setTransitioning(false); busyRef.current = false; }, DURATION);
+    };
+    if (preload.complete) start(); else { preload.onload = start; preload.onerror = start; }
+  }, [idx, images]);
+
   React.useEffect(() => {
     if (images.length <= 1) return;
     const t = setInterval(() => {
-      setIdx(prev => {
-        const next = (prev + 1) % images.length;
-        setNextIdx(next);
-        setTransitioning(true);
-        setTimeout(() => { setIdx(next); setNextIdx(null); setTransitioning(false); }, 700);
-        return prev;
-      });
-    }, 4000);
+      setIdx(prev => { goToP((prev + 1) % images.length); return prev; });
+    }, 4500);
     return () => clearInterval(t);
-  }, [images.length]);
+  }, [images.length, goToP]);
 
   if (images.length === 0) return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
@@ -434,23 +454,23 @@ function EncartPatreon({ images, onZoom }) {
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 12px', position: 'relative', cursor: 'zoom-in' }}
         onClick={() => onZoom && onZoom(images, idx)}>
-        <img src={img.url} alt={img.nom}
-          style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '140px', objectFit: 'contain', borderRadius: '8px', opacity: transitioning ? 0 : 1, transition: 'opacity 0.7s ease', display: 'block' }} />
-        {imgNext && (
-          <img src={imgNext.url} alt={imgNext.nom}
-            style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '140px', objectFit: 'contain', borderRadius: '8px', opacity: transitioning ? 1 : 0, transition: 'opacity 0.7s ease', display: 'block' }} />
+        {nextIdx !== null && (
+          <img src={images[nextIdx].url} alt=""
+            style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '140px', objectFit: 'contain', borderRadius: '8px', opacity: transitioning ? 0 : 1, transition: `opacity ${DURATION}ms ease`, display: 'block', zIndex: 1 }} />
         )}
+        <img src={img.url} alt={img.nom}
+          style={{ position: 'absolute', maxWidth: 'calc(100% - 24px)', maxHeight: '140px', objectFit: 'contain', borderRadius: '8px', opacity: 1, display: 'block', zIndex: 2 }} />
         <img src={img.url} alt="" style={{ maxWidth: '100%', maxHeight: '140px', objectFit: 'contain', visibility: 'hidden', display: 'block' }} />
       </div>
       {images.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '6px' }}>
           {images.map((_, i) => (
-            <div key={i} onClick={() => { if (!transitioning) { setNextIdx(i); setTransitioning(true); setTimeout(() => { setIdx(i); setNextIdx(null); setTransitioning(false); }, 700); } }} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#ffd250' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+            <div key={i} onClick={() => goToP(i)} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#ffd250' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
           ))}
         </div>
       )}
       <div style={{ padding: '4px 12px 8px', textAlign: 'center' }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'opacity 0.7s ease', opacity: transitioning ? 0.3 : 1 }}>{img.nom}</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.nom}</p>
       </div>
     </div>
   );
