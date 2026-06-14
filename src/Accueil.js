@@ -440,7 +440,6 @@ function EncartPatreon({ images, onZoom }) {
   );
 
   const img = images[idx];
-  const imgNext = nextIdx !== null ? images[nextIdx] : null;
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
       <div style={{ background: '#ffd250', padding: '8px 14px' }}>
