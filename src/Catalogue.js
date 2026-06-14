@@ -1,6 +1,5 @@
 import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
-import OngletsLateraux from './OngletsLateraux';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 

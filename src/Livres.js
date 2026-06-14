@@ -1103,6 +1103,7 @@ function Livres() {
           </div>
         </div>
       )}
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }
@@ -1140,7 +1141,6 @@ function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggl
           />
         ))}
       </div>
-      <OngletsLateraux userId={userId} />
     </div>
   );
 }
