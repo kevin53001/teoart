@@ -662,9 +662,10 @@ function Accueil() {
                     isMobile={isMobile} />
                 ))}
               </div>
-              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', fontStyle: 'italic', marginTop: '20px' }}>
-                Si tu veux en savoir plus sur le fonctionnement du site, je t'invite à scroller un peu plus bas — sinon, bienvenue dans mon monde numérique, fais comme chez toi. 🏠
-              </p>
+              <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', fontStyle: 'italic' }}>Si tu veux en savoir plus sur le fonctionnement du site, je t'invite à scroller un peu plus bas.</p>
+                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', fontStyle: 'italic' }}>Sinon, bienvenue dans mon monde numérique, fais comme chez toi.</p>
+              </div>
             </div>
 
             {/* ── Triple jauge ── */}
