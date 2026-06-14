@@ -769,13 +769,11 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 }
 
 // ─── Mes Favoris avec popup complète ─────────────────────────────────────────
-function SectionMesFavoris({ userId, userPseudo }) {
+function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup, collection: collectionExt, coloriages: coloriagesExt, onToggleJAi, onToggleJeVeux }) {
   const [illus, setIllus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [collection, setCollection] = React.useState({});
   const [coloriages, setColoriages] = React.useState({});
-  const [popup, setPopup] = React.useState(null);
-  const [popupIndex, setPopupIndex] = React.useState(null);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -818,9 +816,7 @@ function SectionMesFavoris({ userId, userPseudo }) {
     );
   };
 
-  const ouvrirPopup = (illu, index) => { setPopup(illu); setPopupIndex(index); };
-  const popupSuivant = () => { const next = (popupIndex + 1) % illus.length; setPopup(illus[next]); setPopupIndex(next); };
-  const popupPrecedent = () => { const prev = (popupIndex - 1 + illus.length) % illus.length; setPopup(illus[prev]); setPopupIndex(prev); };
+  const ouvrirPopup = (illu, index) => { if (onOuvrirPopup) onOuvrirPopup(illu, index, illus); };
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (illus.length === 0) return <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Aucun favori pour l'instant.</p>;
@@ -850,24 +846,6 @@ function SectionMesFavoris({ userId, userPseudo }) {
         })}
       </div>
 
-      {popup && (
-        <PopupFiche
-          illu={popup}
-          illustrations={illus}
-          jAi={collection[popup.id]?.j_ai || false}
-          jeVeux={collection[popup.id]?.je_veux || false}
-          aColorié={coloriages[popup.id] || false}
-          onToggleJAi={() => toggleJAi(popup.id)}
-          onToggleJeVeux={() => toggleJeVeux(popup.id)}
-          onClose={() => setPopup(null)}
-          onOpenSimilaire={(illu) => setPopup(illu)}
-          onSuivant={popupSuivant}
-          onPrecedent={popupPrecedent}
-          userPseudo={userPseudo}
-          userId={userId}
-          onColoUploaded={() => setColoriages(prev => ({ ...prev, [popup.id]: true }))}
-        />
-      )}
     </>
   );
 }
@@ -1440,6 +1418,11 @@ function MonCompte() {
   const [onglet, setOnglet] = React.useState(null);
   const [showFavoris, setShowFavoris] = React.useState(false);
   const [stats, setStats] = React.useState({ totalIllus: 0, jAi: 0, colorie: 0, jeVeux: 0 });
+  const [popupIllu, setPopupIllu] = React.useState(null);
+  const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
+  const [popupIlluList, setPopupIlluList] = React.useState([]);
+  const [popupCollection, setPopupCollection] = React.useState({});
+  const [popupColoriages, setPopupColoriages] = React.useState({});
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -1600,7 +1583,19 @@ function MonCompte() {
               </div>
 
               {onglet === 'collection' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMaCollection userId={userId} totalIllus={stats.totalIllus} /></div>}
-              {showFavoris         && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesFavoris userId={userId} userPseudo={userPseudo} /></div>}
+              {showFavoris && (
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
+                  <SectionMesFavoris
+                    userId={userId}
+                    userPseudo={userPseudo}
+                    onOuvrirPopup={(illu, index, list) => {
+                      setPopupIllu(illu);
+                      setPopupIlluIndex(index);
+                      setPopupIlluList(list);
+                    }}
+                  />
+                </div>
+              )}
               {onglet === 'coloriages' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesColoriages userId={userId} userPseudo={userPseudo} /></div>}
               {onglet === 'infos'   && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesInfos userId={userId} /></div>}
               {onglet === 'commandes' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesCommandes userId={userId} /></div>}
@@ -1617,6 +1612,32 @@ function MonCompte() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
+      {popupIllu && (
+        <PopupFiche
+          illu={popupIllu}
+          illustrations={popupIlluList}
+          jAi={popupCollection[popupIllu.id]?.j_ai || false}
+          jeVeux={popupCollection[popupIllu.id]?.je_veux || false}
+          aColorié={popupColoriages[popupIllu.id] || false}
+          onToggleJAi={() => {}}
+          onToggleJeVeux={() => {}}
+          onClose={() => setPopupIllu(null)}
+          onOpenSimilaire={(illu) => setPopupIllu(illu)}
+          onSuivant={() => {
+            const next = (popupIlluIndex + 1) % popupIlluList.length;
+            setPopupIllu(popupIlluList[next]);
+            setPopupIlluIndex(next);
+          }}
+          onPrecedent={() => {
+            const prev = (popupIlluIndex - 1 + popupIlluList.length) % popupIlluList.length;
+            setPopupIllu(popupIlluList[prev]);
+            setPopupIlluIndex(prev);
+          }}
+          userPseudo={userPseudo}
+          userId={userId}
+          onColoUploaded={() => {}}
+        />
+      )}
     </div>
   );
 }
