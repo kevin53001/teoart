@@ -444,6 +444,53 @@ function navPageBtn(actif) {
   };
 }
 
+// ─── TEXTE ADAPTATIF POPUP ─────────────────────────────────────────────────────
+
+function TexteAdaptatif({ texte, isMobile }) {
+  const containerRef = React.useRef(null);
+  const textRef = React.useRef(null);
+  const [fontSize, setFontSize] = React.useState(isMobile ? 13 : 13.6);
+
+  React.useEffect(() => {
+    if (!containerRef.current || !textRef.current || !texte) return;
+
+    // Réinitialiser à la taille max
+    const MAX = isMobile ? 13 : 13.6;
+    const MIN = 7;
+    let size = MAX;
+    textRef.current.style.fontSize = size + 'px';
+
+    // Réduire tant que le texte dépasse le container
+    while (size > MIN) {
+      const containerH = containerRef.current.clientHeight;
+      const textH = textRef.current.scrollHeight;
+      if (textH <= containerH) break;
+      size -= 0.4;
+      textRef.current.style.fontSize = size + 'px';
+    }
+    setFontSize(size);
+  }, [texte, isMobile]);
+
+  return (
+    <div ref={containerRef} style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+      <p
+        ref={textRef}
+        style={{
+          width: '100%',
+          fontSize: fontSize + 'px',
+          lineHeight: 1.42,
+          whiteSpace: 'pre-wrap',
+          textAlign: 'left',
+          color: '#2c160e',
+          margin: 0,
+        }}
+      >
+        {texte}
+      </p>
+    </div>
+  );
+}
+
 // ─── COMPOSANT PRINCIPAL ─────────────────────────────────────────────────────
 
 function Pensees() {
@@ -1091,11 +1138,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                     {popup.auteur || 'Anonyme'}
                   </p>
                 </div>
-                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <p style={{ width: '100%', fontSize: isMobile ? '13px' : '13.6px', lineHeight: 1.38, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 'auto 0' }}>
-                    {pagesPopup[pagePopup]}
-                  </p>
-                </div>
+                <TexteAdaptatif texte={pagesPopup[pagePopup]} isMobile={isMobile} />
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', marginTop: '4px' }}>
                   <button onClick={pagePrecedente} disabled={pagePopup === 0} style={navPageBtn(pagePopup !== 0)}>‹</button>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(36,19,12,0.52)' }}>{pagePopup + 1} / {pagesPopup.length}</span>
@@ -1166,16 +1209,9 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                   onChange={e => setTexteForm(e.target.value)}
                   placeholder="Ta pensée..."
                   rows={6}
-                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px', lineHeight: 1.6, marginBottom: '4px' }}
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px', lineHeight: 1.6 }}
                 />
-                {texteForm.trim() && (() => {
-                  const nb = decouperTexte(texteForm.trim()).length;
-                  return (
-                    <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '11px', textAlign: 'right', marginBottom: '12px' }}>
-                      {nb} page{nb > 1 ? 's' : ''}
-                    </p>
-                  );
-                })()}
+
 
                 <div style={{ marginBottom: '14px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Couleur de la fiche</p>
