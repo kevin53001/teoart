@@ -32,8 +32,8 @@ function getMoisPatreonDisponibles() {
 }
 
 const COULEURS_VISITEURS = [
-'#ff4d6d', '#ff7a3d', '#ffd250', '#a8e063', '#4cd964', '#2ecc71', '#1a6bbd', '#7b61ff',
-'#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#ff6f61', '#00c4aa', '#c0c0c0', '#f5f5f5'
+  '#cc0000', '#ff4d4d', '#ff7a3d', '#ffd250', '#a8e063', '#2ecc71', '#00c4aa', '#1a6bbd',
+  '#7b61ff', '#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#c0c0c0', '#f5f5f5', '#fff8e7'
 ];
 
 function hashString(str) {
@@ -537,7 +537,7 @@ function Pensees() {
       setTitreForm('');
       setTexteForm('');
       setCouleurForm(COULEURS_VISITEURS[0]);
-      setMessage("Pensée envoyée ! Elle apparaîtra après validation. 🌟");
+      setMessage("Pensée envoyée. Elle apparaîtra après validation.");
     }
     setSending(false);
   };
@@ -653,7 +653,7 @@ function Pensees() {
           transform-style: preserve-3d;
         }
 
-        /* ─── FICHE VIEUX LIVRE ─── */
+        /* ─── FICHE VIEUX CUIR ─── */
         .fiche-wrap {
           position: absolute;
           left: 50%;
@@ -666,36 +666,29 @@ function Pensees() {
           cursor: pointer;
           transition: filter .18s ease;
         }
-        .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
+        .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 6px 18px rgba(0,0,0,0.75)); }
 
-        /* Face principale : parchemin vieilli */
+        /* Face principale : cuir foncé vieilli */
         .fiche-face {
           position: absolute;
           pointer-events: none;
           inset: 0;
-          border-radius: 3px 12px 12px 3px;
+          border-radius: 4px 12px 12px 4px;
           background:
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 28px,
-              rgba(139,100,60,0.07) 28px,
-              rgba(139,100,60,0.07) 29px
-            ),
             linear-gradient(160deg,
-              #f5e6c8 0%,
-              #ede0b8 25%,
-              #e8d8a8 50%,
-              #ddd0a0 75%,
-              #d4c898 100%
+              #3a2010 0%,
+              #2e1a0c 30%,
+              #261508 55%,
+              #1e1006 80%,
+              #180d04 100%
             );
-          border: 1px solid rgba(139,100,60,0.35);
-          border-left: 5px solid color-mix(in srgb, var(--accent) 70%, #5c3a1e);
+          border: 1px solid rgba(80,45,15,0.6);
+          border-top: 7px solid color-mix(in srgb, var(--accent) 80%, #1a0a00);
           box-shadow:
-            inset -3px 0 8px rgba(139,100,60,0.15),
-            inset 0 0 20px rgba(100,70,30,0.08),
-            2px 4px 14px rgba(0,0,0,0.55),
-            0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+            inset 0 0 30px rgba(0,0,0,0.55),
+            inset 0 2px 8px rgba(255,200,120,0.06),
+            2px 6px 18px rgba(0,0,0,0.70),
+            0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
           overflow: hidden;
           backface-visibility: hidden;
           display: flex;
@@ -703,56 +696,65 @@ function Pensees() {
           justify-content: center;
           align-items: center;
           text-align: center;
-          padding: 18px 14px 14px;
+          padding: 20px 14px 14px;
         }
         .fiche-face.back { transform: rotateY(180deg); }
 
-        /* Taches de vieillissement */
+        /* Texture cuir + taches de vieillissement bien visibles */
         .fiche-face::before {
           content: '';
           position: absolute;
           inset: 0;
           background:
-            radial-gradient(ellipse at 10% 15%, rgba(139,100,60,0.10) 0%, transparent 40%),
-            radial-gradient(ellipse at 88% 80%, rgba(120,85,45,0.08) 0%, transparent 35%),
-            radial-gradient(ellipse at 55% 5%,  rgba(160,120,70,0.06) 0%, transparent 30%);
+            radial-gradient(ellipse at 15% 20%, rgba(180,120,50,0.28) 0%, transparent 38%),
+            radial-gradient(ellipse at 82% 75%, rgba(160,100,35,0.22) 0%, transparent 32%),
+            radial-gradient(ellipse at 50% 8%,  rgba(200,140,60,0.18) 0%, transparent 28%),
+            radial-gradient(ellipse at 30% 85%, rgba(140,80,25,0.20) 0%, transparent 30%),
+            radial-gradient(ellipse at 70% 45%, rgba(100,55,15,0.12) 0%, transparent 40%),
+            repeating-linear-gradient(
+              47deg,
+              transparent 0px,
+              transparent 18px,
+              rgba(255,200,100,0.025) 18px,
+              rgba(255,200,100,0.025) 19px
+            );
           pointer-events: none;
           border-radius: inherit;
         }
-        /* Tranche gauche (reliure) */
+        /* Reflet de lumière haut gauche */
         .fiche-face::after {
           content: '';
           position: absolute;
-          top: 0; left: 0;
-          width: 14px; height: 100%;
-          background: linear-gradient(90deg,
-            color-mix(in srgb, var(--accent) 30%, #3a2010) 0%,
-            rgba(80,50,20,0.25) 60%,
+          top: 7px; left: 8px; right: 8px;
+          height: 38%;
+          background: linear-gradient(180deg,
+            rgba(255,220,140,0.09) 0%,
             transparent 100%
           );
+          border-radius: 3px;
           pointer-events: none;
         }
 
-        /* Encadré titre façon vieux livre */
+        /* Encadré titre façon vieux livre — cadre couleur accent */
         .fiche-encadre {
           position: relative;
           z-index: 2;
-          width: calc(100% - 8px);
+          width: calc(100% - 10px);
           padding: 8px 10px;
-          border: 1.5px solid color-mix(in srgb, var(--accent) 55%, #7a5520);
+          border: 2px solid color-mix(in srgb, var(--accent) 70%, #8b5e1a);
           border-radius: 2px;
-          background: rgba(255,248,230,0.45);
+          background: rgba(255,248,225,0.12);
           box-shadow:
-            inset 0 0 0 3px rgba(255,248,220,0.6),
-            0 1px 4px rgba(100,70,20,0.18);
+            inset 0 0 0 1px rgba(255,235,170,0.18),
+            0 0 8px color-mix(in srgb, var(--accent) 20%, transparent);
         }
-        /* Coins décoratifs de l'encadré */
+        /* Coins décoratifs couleur accent */
         .fiche-encadre::before,
         .fiche-encadre::after {
           content: '✦';
           position: absolute;
           font-size: 9px;
-          color: color-mix(in srgb, var(--accent) 65%, #7a5520);
+          color: color-mix(in srgb, var(--accent) 85%, #c8902a);
           line-height: 1;
         }
         .fiche-encadre::before { top: -6px; left: 50%; transform: translateX(-50%); }
@@ -761,50 +763,51 @@ function Pensees() {
         .fiche-title {
           position: relative;
           z-index: 2;
-          color: #2c1a06;
-          font-size: 14px;
+          color: #f0e0c0;
+          font-size: 13.5px;
           line-height: 1.25;
-          font-weight: 800;
+          font-weight: 700;
           font-family: Georgia, 'Times New Roman', serif;
           letter-spacing: 0.2px;
           overflow: hidden;
           display: -webkit-box;
           -webkit-line-clamp: 4;
           -webkit-box-orient: vertical;
-          text-shadow: 0 1px 2px rgba(255,240,200,0.6);
+          text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
         .fiche-author {
           position: relative;
           z-index: 2;
           margin-top: 10px;
-          color: color-mix(in srgb, var(--accent) 75%, #3a2010);
+          color: color-mix(in srgb, var(--accent) 90%, #f0d080);
           font-size: 10.5px;
           line-height: 1.2;
           font-weight: 700;
           font-style: italic;
           font-family: Georgia, serif;
           letter-spacing: 0.3px;
+          text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
         }
         .fiche-author::before { content: '— '; }
 
-        /* Tranche 3D (côté du livre) */
+        /* Tranche 3D haut (reliure) */
         .fiche-edge {
           position: absolute;
           pointer-events: none;
-          left: 100%;
-          top: 4px;
-          width: 14px;
-          height: calc(100% - 8px);
-          transform-origin: left center;
-          transform: rotateY(90deg);
-          background: linear-gradient(90deg,
-            color-mix(in srgb, var(--accent) 35%, #3a1e08),
-            #6b4422 40%,
-            #8b5a2b 70%,
-            #a06830
+          left: 4px;
+          top: -100%;
+          width: calc(100% - 8px);
+          height: 100%;
+          transform-origin: bottom center;
+          transform: rotateX(90deg);
+          background: linear-gradient(180deg,
+            color-mix(in srgb, var(--accent) 50%, #1a0800) 0%,
+            color-mix(in srgb, var(--accent) 30%, #2a1005) 40%,
+            #3a1a08 70%,
+            #1e0d04 100%
           );
-          border-radius: 0 4px 4px 0;
-          box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
+          border-radius: 4px 4px 0 0;
+          box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
         }
 
         /* Reflet sol */
@@ -819,7 +822,7 @@ function Pensees() {
           transform-origin: top center;
           border-radius: 4px;
           background: linear-gradient(to bottom,
-            color-mix(in srgb, var(--accent) 18%, rgba(210,185,130,0.3)),
+            color-mix(in srgb, var(--accent) 15%, rgba(80,45,15,0.35)),
             transparent 65%
           );
           filter: blur(5px);
@@ -835,7 +838,7 @@ function Pensees() {
           border-radius: 50%;
           z-index: 8;
         }
-        .fiche-led.left { left: 18px; }
+        .fiche-led.left { left: 10px; }
         .fiche-led.right { right: 10px; }
 
         /* Popup pensée (format page) */
@@ -869,15 +872,15 @@ function Pensees() {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
           .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
-          .fiche-face { border-radius: 2px 8px 8px 2px; padding: 12px 8px 10px; border-left-width: 4px; }
+          .fiche-face { border-radius: 3px 8px 8px 3px; padding: 16px 8px 10px; border-top-width: 5px; }
           .fiche-encadre { padding: 6px 7px; }
-          .fiche-edge { width: 10px; }
+          .fiche-edge { height: 70%; top: -70%; }
           .fiche-title { font-size: 10px; -webkit-line-clamp: 3; }
           .fiche-author { font-size: 8.5px; margin-top: 7px; }
           .fiche-reflet { width: 78px; height: 110px; margin-left: -39px; margin-top: 72px; }
           .fiche-led { width: 7px; height: 7px; top: 8px; }
-          .fiche-led.left { left: 14px; }
-          .fiche-led.right { right: 7px; }
+          .fiche-led.left { left: 8px; }
+          .fiche-led.right { right: 8px; }
         }
       `}</style>
 
