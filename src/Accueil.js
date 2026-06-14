@@ -688,6 +688,14 @@ function Accueil() {
               <p style={{ color: '#fff', fontSize: isMobile ? '17px' : '20px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center', letterSpacing: '0.5px' }}>
                 🗺️ Comment fonctionne le site ?
               </p>
+              {/* Texte sélection initiale */}
+              <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '14px 18px', marginBottom: '28px' }}>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: '1.8' }}>
+                  <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
+                  Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). C'est maintenant à toi de jouer pour la compléter…
+                </p>
+              </div>
+
               {[
                 {
                   pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue',
@@ -701,23 +709,28 @@ function Accueil() {
                 },
                 {
                   pastille: `${R2}/site/pastille_livres.png`, lien: '/livres',
-                  titre: 'Les Livres & Recueils', couleur: '#a78bfa',
+                  titre: 'Les Livres & Recueils', couleur: '#ffd250',
                   texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup.",
                 },
                 {
                   logo: `${R2}/site/Logo.png`, lien: '/presentation',
-                  titre: 'La Présentation', couleur: '#ffd250',
+                  titre: 'La Présentation', couleur: '#00d4d4',
                   texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue.",
                 },
                 {
                   pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees',
-                  titre: 'Les Pensées', couleur: '#ff3eb5',
+                  titre: 'Les Pensées', couleur: '#00d4d4',
                   texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication).",
                 },
                 {
-                  pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte',
-                  titre: 'Le Panier & les Achats', couleur: '#ff3eb5',
+                  pastille: `${R2}/site/pastille_panier.png`, lien: null,
+                  titre: 'Le Panier & les Achats', couleur: '#ffd250',
                   texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 !",
+                },
+                {
+                  pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte',
+                  titre: 'Mon Compte', couleur: '#ff3eb5',
+                  texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées.",
                 },
               ].map((item, i, arr) => {
                 const T = 72;
@@ -726,9 +739,9 @@ function Accueil() {
                   <div key={i} style={{ marginBottom: isLast ? 0 : '24px', paddingBottom: isLast ? 0 : '24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                       <div
-                        onClick={() => navigate(item.lien)}
-                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: item.logo ? '50%' : '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer', transition: 'transform .2s, filter .2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; }}
+                        onClick={item.lien ? () => navigate(item.lien) : undefined}
+                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: item.logo ? '50%' : '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }}
+                        onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }}
                         onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}
                       >
                         {item.logo
