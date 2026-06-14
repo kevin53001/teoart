@@ -600,6 +600,7 @@ function Livres() {
   const [popupIllu, setPopupIllu] = React.useState(null);
   const [popupIlluListe, setPopupIlluListe] = React.useState([]);
   const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
+  const [confirmation, setConfirmation] = React.useState(null);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -723,7 +724,7 @@ function Livres() {
     }
   };
 
-  const toggleJAi = async (itemId, type) => {
+  const faireToggleJAi = async (itemId, type) => {
     const key = `${type}_${itemId}`; const actuel = collection[key] || {}; const nouveau = !(actuel.j_ai || false);
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: nouveau } }));
     const { error } = await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: nouveau, je_veux: actuel.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
@@ -739,6 +740,18 @@ function Livres() {
     } catch (e) { console.error(e); }
   };
 
+  const toggleJAi = (itemId, type) => {
+    const key = `${type}_${itemId}`;
+    const actuel = collection[key] || {};
+    const nouveau = !(actuel.j_ai || false);
+    // Décochage → demander confirmation
+    if (!nouveau) {
+      setConfirmation({ itemId, type });
+      return;
+    }
+    faireToggleJAi(itemId, type);
+  };
+
   const toggleJeVeux = async (itemId, type) => {
     const key = `${type}_${itemId}`; const actuel = collection[key] || {}; const nouveau = !(actuel.je_veux || false);
     setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: nouveau } }));
@@ -746,10 +759,21 @@ function Livres() {
     if (error) { console.error(error); setCollection(prev => ({ ...prev, [key]: { ...prev[key], je_veux: actuel.je_veux || false } })); }
   };
 
-  const toggleJAiIllu = async (illuId) => {
+  const faireToggleJAiIllu = async (illuId) => {
     const nouveau = !(collectionIllus[illuId]?.j_ai || false);
     setCollectionIllus(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
     await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collectionIllus[illuId]?.je_veux || false }, { onConflict: 'user_id,illustration_id' });
+  };
+
+  const toggleJAiIllu = (illuId) => {
+    const actuel = collectionIllus[illuId] || {};
+    const nouveau = !(actuel.j_ai || false);
+    // Si on décoche une illustration cochée automatiquement → demander confirmation
+    if (!nouveau && actuel.j_ai_auto) {
+      setConfirmation({ illuId });
+      return;
+    }
+    faireToggleJAiIllu(illuId);
   };
 
   const toggleJeVeuxIllu = async (illuId) => {
@@ -1043,6 +1067,27 @@ function Livres() {
           userId={userId}
           onColoUploaded={() => setColoriages(prev => ({ ...prev, [popupIllu.id]: true }))}
         />
+      )}
+
+      {confirmation && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
+            <p style={{ fontSize: '28px', marginBottom: '12px' }}>🤔</p>
+            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Attends, t'es sûr·e ?</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
+              Cette illustration fait partie d'un livre ou recueil que tu as sélectionné lors de ta première visite.<br /><br />
+              Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Non, je la garde !</button>
+              <button onClick={() => {
+                if (confirmation.illuId) faireToggleJAiIllu(confirmation.illuId);
+                else faireToggleJAi(confirmation.itemId, confirmation.type);
+                setConfirmation(null);
+              }} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px' }}>Oui, je décoche</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
