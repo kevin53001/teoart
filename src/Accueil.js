@@ -36,14 +36,6 @@ function getVisuelB(visuels) {
   return null;
 }
 
-function getVisuelPresentation(visuels) {
-  if (!visuels) return null;
-  const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
-  if (cle) return cheminVersUrl(visuels[cle]);
-  if (visuels['B']) return cheminVersUrl(visuels['B']);
-  if (visuels['b']) return cheminVersUrl(visuels['b']);
-  return null;
-}
 
 function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
