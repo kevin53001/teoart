@@ -769,11 +769,11 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
 }
 
 // ─── Mes Favoris avec popup complète ─────────────────────────────────────────
-function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup, collection: collectionExt, coloriages: coloriagesExt, onToggleJAi, onToggleJeVeux }) {
+function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
   const [illus, setIllus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [collection, setCollection] = React.useState({});
-  const [coloriages, setColoriages] = React.useState({});
+
 
   React.useEffect(() => {
     const charger = async () => {
@@ -796,25 +796,7 @@ function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup, collection: coll
     charger();
   }, [userId]);
 
-  const toggleJAi = async (illuId) => {
-    const nouveau = !(collection[illuId]?.j_ai || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert(
-      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false },
-      { onConflict: 'user_id,illustration_id' }
-    );
-  };
 
-  const toggleJeVeux = async (illuId) => {
-    const nouveau = !(collection[illuId]?.je_veux || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    // Si on décoche Je veux, on retire de la liste des favoris
-    if (!nouveau) setIllus(prev => prev.filter(i => i.id !== illuId));
-    await supabase.from('collection').upsert(
-      { user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false },
-      { onConflict: 'user_id,illustration_id' }
-    );
-  };
 
   const ouvrirPopup = (illu, index) => { if (onOuvrirPopup) onOuvrirPopup(illu, index, illus); };
 
@@ -1421,8 +1403,8 @@ function MonCompte() {
   const [popupIllu, setPopupIllu] = React.useState(null);
   const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
   const [popupIlluList, setPopupIlluList] = React.useState([]);
-  const [popupCollection, setPopupCollection] = React.useState({});
-  const [popupColoriages, setPopupColoriages] = React.useState({});
+  const [popupCollection] = React.useState({});
+  const [popupColoriages] = React.useState({});
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
