@@ -1,4 +1,5 @@
 import React from 'react';
+import OngletsLateraux from './OngletsLateraux';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
@@ -1237,6 +1238,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           </div>
         </div>
       )}
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }

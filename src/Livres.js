@@ -1,4 +1,5 @@
 import React from 'react';
+import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 
@@ -1139,6 +1140,7 @@ function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggl
           />
         ))}
       </div>
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }

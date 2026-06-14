@@ -1,4 +1,5 @@
 import React from 'react';
+import OngletsLateraux from './OngletsLateraux';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
@@ -1609,6 +1610,7 @@ function MonCompte() {
           onColoUploaded={() => {}}
         />
       )}
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }

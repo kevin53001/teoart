@@ -1,4 +1,5 @@
 import React from 'react';
+import OngletsLateraux from './OngletsLateraux';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
@@ -92,6 +93,7 @@ function Presentation() {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
   const [popupGlobal, setPopupGlobal] = React.useState(null); // { images, index }
+  const [userId, setUserId] = React.useState(null);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -111,6 +113,8 @@ function Presentation() {
 
   React.useEffect(() => {
     const charger = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
       const { data } = await supabase.from('presentation').select('*').order('ordre', { ascending: true });
       setEncarts(data || []);
       setLoading(false);
@@ -311,6 +315,7 @@ function EncartPresentation({ enc, idx, isMobile, onOuvrirPopup }) {
 
         </div>
       </div>
+      <OngletsLateraux userId={userId} />
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import React from 'react';
+import OngletsLateraux from './OngletsLateraux';
+import OngletsLateraux from './OngletsLateraux';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
@@ -1096,6 +1098,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
           )}
         </div>
       </div>
+      <OngletsLateraux userId={userId} />
     </>
   );
 }
