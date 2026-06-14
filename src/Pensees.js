@@ -286,13 +286,21 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
   );
 }
 
+function compterPages(pensee) {
+  if (Array.isArray(pensee.pages) && pensee.pages.length > 0) return pensee.pages.length;
+  if (Array.isArray(pensee.texte_pages) && pensee.texte_pages.length > 0) return pensee.texte_pages.length;
+  return decouperTexte(pensee.texte || '').length;
+}
+
 function FicheTexte({ pensee }) {
+  const nbPages = compterPages(pensee);
   return (
     <>
       <div className="fiche-encadre">
         <div className="fiche-title">{pensee.titre}</div>
       </div>
       <div className="fiche-author">{pensee.auteur || 'Anonyme'}</div>
+      <div className="fiche-pages">{nbPages} p.</div>
     </>
   );
 }
@@ -504,7 +512,27 @@ function Pensees() {
         .order('ordre', { ascending: true })
         .order('created_at', { ascending: false });
       if (error) console.error(error);
-      setPensees(data || []);
+      // Réorganisation : nouvelles pensées au milieu, alternance gauche/droite
+      const raw = data || [];
+      // Les premières dans la BDD sont les plus anciennes (ordre asc),
+      // on intercale les nouvelles (fin de liste) autour du centre
+      const reorg = [];
+      let gauche = [];
+      let droite = [];
+      raw.forEach((p, i) => {
+        if (i % 2 === 0) droite.push(p);
+        else gauche.push(p);
+      });
+      // gauche en ordre inverse (plus récent vers le centre)
+      gauche.reverse();
+      // Construire : ...gauche (index croissant = vers centre), ...droite (index croissant = vers bords)
+      // Résultat : centre = pensées récentes, bords = anciennes
+      const maxLen = Math.max(gauche.length, droite.length);
+      for (let i = maxLen - 1; i >= 0; i--) {
+        if (gauche[i] !== undefined) reorg.push(gauche[i]);
+        if (droite[i] !== undefined) reorg.push(droite[i]);
+      }
+      setPensees(reorg.length ? reorg : raw);
       if (user) {
         const { data: vuesData } = await supabase.from('pensees_vues').select('pensee_id').eq('user_id', user.id);
         const vuesMap = {};
@@ -672,6 +700,9 @@ function Pensees() {
           transition: filter .18s ease;
         }
         .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 70%, transparent)) drop-shadow(0 6px 14px rgba(0,0,0,0.5)); }
+        .fiche-wrap:hover .fiche-face { transform: scale(1.08); }
+        .fiche-wrap:hover .fiche-face.back { transform: scale(1.08) rotateY(180deg); }
+        .fiche-face { transition: transform 0.22s ease; }
 
         /* Face principale : image de fond custom */
         .fiche-face {
@@ -777,6 +808,19 @@ function Pensees() {
           text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
         }
         .fiche-author::before { content: ''; }
+        .fiche-pages {
+          position: absolute;
+          bottom: 8px;
+          right: 10px;
+          z-index: 3;
+          color: var(--author-color, #00d4d4);
+          font-size: 9.5px;
+          font-weight: 700;
+          font-style: italic;
+          font-family: Georgia, serif;
+          opacity: 0.85;
+          text-shadow: 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent);
+        }
 
         /* Tranche 3D haut (reliure) */
         .fiche-edge {
