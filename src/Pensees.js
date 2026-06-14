@@ -33,7 +33,7 @@ function getMoisPatreonDisponibles() {
 
 const COULEURS_VISITEURS = [
   '#ff4d6d', '#ff7a3d', '#ffd250', '#a8e063', '#4cd964',
-  '#2ecc71', '#5dade2', '#7b61ff', '#9b59b6', '#d96cff',
+  '#2ecc71', '#0a1a3a', '#7b61ff', '#9b59b6', '#d96cff',
   '#ff3eb5', '#ff8fb3', '#ff6f61', '#c0c0c0', '#f5f5f5'
 ];
 
@@ -533,11 +533,10 @@ function Pensees() {
     if (error) {
       setMessage("Impossible d'envoyer la pensée pour le moment.");
     } else {
-      setMessage("Pensée envoyée. Elle apparaîtra après validation.");
       setTitreForm('');
       setTexteForm('');
       setCouleurForm(COULEURS_VISITEURS[0]);
-      setTimeout(() => setShowForm(false), 1400);
+      setMessage("Pensée envoyée ! Elle apparaîtra après validation. 🌟");
     }
     setSending(false);
   };
@@ -996,7 +995,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
       {/* ─── POPUP FORMULAIRE ─── */}
       {showForm && (
         <div
-          onClick={() => setShowForm(false)}
+          onClick={() => { if (!message) setShowForm(false); }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1009,67 +1008,93 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             padding: '20px',
           }}
         >
-          <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '540px', maxWidth: '96vw', padding: '24px', position: 'relative' }}>
-            <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>×</button>
-            <h2 style={{ color: '#fff', marginBottom: '14px', fontSize: '24px' }}>Ajouter ma pensée</h2>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.6, marginBottom: '18px' }}>
-              Elle sera envoyée avec ton pseudo et apparaîtra après validation. Le cyan est réservé aux pensées de Kevin Teo'Art.
-            </p>
+          <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '540px', maxWidth: '96vw', padding: '22px', position: 'relative' }}>
 
-            <input
-              value={titreForm}
-              onChange={e => setTitreForm(e.target.value)}
-              placeholder="Titre"
-              maxLength={90}
-              style={inputStyle}
-            />
-            <textarea
-              value={texteForm}
-              onChange={e => setTexteForm(e.target.value)}
-              placeholder="Ta pensée..."
-              rows={8}
-              style={{ ...inputStyle, resize: 'vertical', minHeight: '170px', lineHeight: 1.6 }}
-            />
-
-            <div style={{ marginBottom: '16px' }}>
-              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '13px', fontWeight: 700, marginBottom: '10px' }}>Couleur de la fiche</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-                {COULEURS_VISITEURS.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCouleurForm(c)}
-                    aria-label={`Couleur ${c}`}
-                    style={{
-                      height: '34px',
-                      borderRadius: '999px',
-                      border: couleurForm === c ? '3px solid #fff' : '1px solid rgba(255,255,255,0.20)',
-                      background: c,
-                      cursor: 'pointer',
-                      boxShadow: couleurForm === c ? `0 0 18px ${c}` : 'none',
-                    }}
-                  />
-                ))}
+            {/* ── Écran de confirmation après envoi ── */}
+            {message ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px 10px', gap: '22px', minHeight: '180px' }}>
+                <p style={{ fontSize: '42px', lineHeight: 1 }}>✨</p>
+                <p style={{ color: message.includes('Impossible') ? '#ff6b6b' : '#00d4d4', fontSize: '18px', fontWeight: 800, lineHeight: 1.5 }}>
+                  {message}
+                </p>
+                <button
+                  onClick={() => { setShowForm(false); setMessage(''); }}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.22)',
+                    background: 'linear-gradient(90deg, rgba(0,212,212,0.92), rgba(255,62,181,0.92))',
+                    color: '#000', fontWeight: 'bold', padding: '11px 36px',
+                    borderRadius: '12px', cursor: 'pointer', fontSize: '14px',
+                  }}
+                >
+                  Fermer
+                </button>
               </div>
-            </div>
+            ) : (
+              /* ── Formulaire ── */
+              <>
+                <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>×</button>
+                <h2 style={{ color: '#fff', marginBottom: '10px', fontSize: '20px' }}>Ajouter ma pensée</h2>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.5, marginBottom: '14px' }}>
+                  Elle sera envoyée avec ton pseudo et apparaîtra après validation. Le cyan est réservé aux pensées de Kevin Teo'Art.
+                </p>
 
-            {message && <p style={{ color: message.includes('Impossible') ? '#ff6b6b' : '#00d4d4', fontSize: '13px', marginBottom: '12px' }}>{message}</p>}
+                <input
+                  value={titreForm}
+                  onChange={e => setTitreForm(e.target.value)}
+                  placeholder="Titre"
+                  maxLength={90}
+                  style={inputStyle}
+                />
+                <textarea
+                  value={texteForm}
+                  onChange={e => setTexteForm(e.target.value)}
+                  placeholder="Ta pensée..."
+                  rows={6}
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: '130px', lineHeight: 1.6 }}
+                />
 
-            <button
-              onClick={envoyerPensee}
-              disabled={sending || !titreForm.trim() || !texteForm.trim()}
-              style={{
-                width: '100%',
-                border: '1px solid rgba(255,255,255,0.22)',
-                background: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(90deg, rgba(0,212,212,0.92), rgba(255,62,181,0.92))',
-                color: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.35)' : '#000',
-                fontWeight: 'bold',
-                padding: '12px',
-                borderRadius: '12px',
-                cursor: (!titreForm.trim() || !texteForm.trim()) ? 'default' : 'pointer',
-              }}
-            >
-              {sending ? 'Envoi...' : 'Envoyer ma pensée'}
-            </button>
+                <div style={{ marginBottom: '14px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Couleur de la fiche</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {COULEURS_VISITEURS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setCouleurForm(c)}
+                        aria-label={`Couleur ${c}`}
+                        style={{
+                          width: '28px',
+                          height: '18px',
+                          borderRadius: '999px',
+                          border: couleurForm === c ? '2px solid #fff' : '1px solid rgba(255,255,255,0.20)',
+                          background: c,
+                          cursor: 'pointer',
+                          boxShadow: couleurForm === c ? `0 0 12px ${c}` : 'none',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={envoyerPensee}
+                  disabled={sending || !titreForm.trim() || !texteForm.trim()}
+                  style={{
+                    width: '100%',
+                    border: '1px solid rgba(255,255,255,0.22)',
+                    background: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(90deg, rgba(0,212,212,0.92), rgba(255,62,181,0.92))',
+                    color: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.35)' : '#000',
+                    fontWeight: 'bold',
+                    padding: '11px',
+                    borderRadius: '12px',
+                    cursor: (!titreForm.trim() || !texteForm.trim()) ? 'default' : 'pointer',
+                    fontSize: '14px',
+                  }}
+                >
+                  {sending ? 'Envoi...' : 'Envoyer ma pensée'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
