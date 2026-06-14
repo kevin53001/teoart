@@ -411,6 +411,19 @@ function PenseeSocial({ pensee, userId, pseudo }) {
   );
 }
 
+const inputStyle = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(0,212,212,0.22)',
+  borderRadius: '12px',
+  padding: '12px 14px',
+  color: '#fff',
+  fontSize: '14px',
+  fontFamily: 'inherit',
+  marginBottom: '12px',
+  outline: 'none',
+};
+
 function navPageBtn(actif) {
   return {
     width: '30px', height: '30px', borderRadius: '50%',
@@ -554,12 +567,6 @@ function Pensees() {
     if (diff < -45) pageSuivante();
     if (diff > 45) pagePrecedente();
     startX.current = null;
-  };
-
-  const inputStyle = {
-    width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(0,212,212,0.22)',
-    borderRadius: '12px', padding: '12px 14px', color: '#fff', fontSize: '14px',
-    fontFamily: 'inherit', marginBottom: '12px', outline: 'none',
   };
 
   return (
@@ -990,7 +997,17 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
       {showForm && (
         <div
           onClick={() => setShowForm(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 520, background: 'rgba(0,0,0,0.86)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 520,
+            background: 'rgba(0,0,0,0.86)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
         >
           <div onClick={e => e.stopPropagation()} className="premium-card" style={{ width: '540px', maxWidth: '96vw', padding: '24px', position: 'relative' }}>
             <button onClick={() => setShowForm(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>×</button>
@@ -998,6 +1015,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: 1.6, marginBottom: '18px' }}>
               Elle sera envoyée avec ton pseudo et apparaîtra après validation. Le cyan est réservé aux pensées de Kevin Teo'Art.
             </p>
+
             <input
               value={titreForm}
               onChange={e => setTitreForm(e.target.value)}
@@ -1012,6 +1030,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
               rows={8}
               style={{ ...inputStyle, resize: 'vertical', minHeight: '170px', lineHeight: 1.6 }}
             />
+
             <div style={{ marginBottom: '16px' }}>
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '13px', fontWeight: 700, marginBottom: '10px' }}>Couleur de la fiche</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
@@ -1019,30 +1038,37 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
                   <button
                     key={c}
                     onClick={() => setCouleurForm(c)}
+                    aria-label={`Couleur ${c}`}
                     style={{
-                      width: '100%', aspectRatio: '1', borderRadius: '8px', background: c,
-                      border: couleurForm === c ? '3px solid #fff' : '2px solid transparent',
-                      cursor: 'pointer', transition: 'transform .15s',
-                      transform: couleurForm === c ? 'scale(1.15)' : 'scale(1)',
+                      height: '34px',
+                      borderRadius: '999px',
+                      border: couleurForm === c ? '3px solid #fff' : '1px solid rgba(255,255,255,0.20)',
+                      background: c,
+                      cursor: 'pointer',
+                      boxShadow: couleurForm === c ? `0 0 18px ${c}` : 'none',
                     }}
                   />
                 ))}
               </div>
             </div>
-            {message && (
-              <p style={{ color: message.includes('Impossible') ? '#ff8080' : '#4dff72', fontSize: '13px', marginBottom: '10px' }}>{message}</p>
-            )}
+
+            {message && <p style={{ color: message.includes('Impossible') ? '#ff6b6b' : '#00d4d4', fontSize: '13px', marginBottom: '12px' }}>{message}</p>}
+
             <button
               onClick={envoyerPensee}
-              disabled={!titreForm.trim() || !texteForm.trim() || sending}
+              disabled={sending || !titreForm.trim() || !texteForm.trim()}
               style={{
-                width: '100%', background: (titreForm.trim() && texteForm.trim()) ? '#00d4d4' : 'rgba(255,255,255,0.1)',
-                color: (titreForm.trim() && texteForm.trim()) ? '#000' : 'rgba(255,255,255,0.3)',
-                border: 'none', borderRadius: '10px', padding: '13px', fontWeight: 800,
-                fontSize: '14px', cursor: (titreForm.trim() && texteForm.trim()) ? 'pointer' : 'default',
+                width: '100%',
+                border: '1px solid rgba(255,255,255,0.22)',
+                background: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.08)' : 'linear-gradient(90deg, rgba(0,212,212,0.92), rgba(255,62,181,0.92))',
+                color: (!titreForm.trim() || !texteForm.trim()) ? 'rgba(255,255,255,0.35)' : '#000',
+                fontWeight: 'bold',
+                padding: '12px',
+                borderRadius: '12px',
+                cursor: (!titreForm.trim() || !texteForm.trim()) ? 'default' : 'pointer',
               }}
             >
-              {sending ? 'Envoi…' : 'Envoyer ma pensée'}
+              {sending ? 'Envoi...' : 'Envoyer ma pensée'}
             </button>
           </div>
         </div>
