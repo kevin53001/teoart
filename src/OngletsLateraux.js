@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -45,6 +46,7 @@ const ONGLETS = [
 
 // ─── Panneau d'un onglet ──────────────────────────────────────────────────────
 function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
+  const navigate = useNavigate();
   const [images, setImages] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -91,7 +93,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
           .eq('statut', 'published')
           .eq('best_seller', true)
           .limit(10);
-        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom })).filter(i => i.url));
+        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id })).filter(i => i.url));
 
       } else if (id === 'favoris') {
         const { data } = await supabase
@@ -100,7 +102,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
           .eq('statut', 'published')
           .eq('favori', true)
           .limit(10);
-        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom })).filter(i => i.url));
+        setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illuId: i.id })).filter(i => i.url));
       }
 
       setLoading(false);
@@ -122,9 +124,10 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
   return (
     <div style={{
       width: '220px',
-      height: '100%',
+      maxHeight: '80vh',
       background: 'rgba(10,10,10,0.96)',
       borderLeft: `2px solid ${couleur}60`,
+      borderRadius: '12px 0 0 12px',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
@@ -158,7 +161,16 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose }) {
               key={img.url}
               src={img.url}
               alt={img.nom}
-              style={{ maxWidth: '100%', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', display: 'block' }}
+              onClick={() => {
+                if (id !== 'patreon' && img.illuId) {
+                  navigate(`/catalogue`);
+                  onClose();
+                }
+              }}
+              style={{
+                maxWidth: '100%', maxHeight: '208px', objectFit: 'contain', borderRadius: '8px', display: 'block',
+                cursor: (id !== 'patreon' && img.illuId) ? 'pointer' : 'default',
+              }}
             />
             {nomColoriste && (
               <div style={{ position: 'absolute', bottom: '18px', right: '18px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
@@ -250,22 +262,20 @@ function OngletsLateraux({ userId }) {
               width: '36px',
               height: '44px',
               background: ouvert === o.id
-                ? o.couleur
-                : `rgba(10,10,10,0.85)`,
-              borderLeft: `3px solid ${o.couleur}`,
-              borderTop: `1px solid ${o.couleur}40`,
-              borderBottom: `1px solid ${o.couleur}40`,
-              borderRight: 'none',
+                ? `${o.couleur}dd`
+                : `${o.couleur}55`,
+              border: 'none',
               borderRadius: '8px 0 0 8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               fontSize: '18px',
-              backdropFilter: 'blur(8px)',
+              backdropFilter: 'blur(6px)',
               boxShadow: ouvert === o.id
-                ? `0 0 14px ${o.couleur}60`
-                : '-2px 0 8px rgba(0,0,0,0.4)',
+                ? `0 0 16px ${o.couleur}80`
+                : `-2px 0 8px ${o.couleur}30`,
+              transition: 'background 0.2s, box-shadow 0.2s',
             }}
           >
             {o.emoji}
@@ -280,11 +290,12 @@ function OngletsLateraux({ userId }) {
           style={{
             position: 'fixed',
             right: 0,
-            top: 0,
-            height: '100vh',
+            top: '50%',
+            transform: 'translateY(-50%)',
             zIndex: 199,
             animation: 'slideInRight 0.3s ease',
             display: 'flex',
+            maxHeight: '80vh',
           }}
         >
           <PanneauOnglet
