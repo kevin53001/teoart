@@ -111,22 +111,27 @@ function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, is
         color: couleur,
         boxShadow: `0 2px 8px rgba(0,0,0,0.4)`,
         borderRadius: '14px',
-        padding: '10px 14px',
+        padding: isMobile ? '10px 14px' : '10px 8px',
         cursor: disabled ? 'default' : 'pointer',
-        fontSize: '12px',
         fontWeight: 'bold',
         flex: isMobile ? '1 1 100%' : '1 1 0',
         minWidth: isMobile ? '100%' : '0',
         opacity: disabled ? 0.55 : 1,
         transition: 'transform .2s, box-shadow .2s',
         display: 'flex',
+        flexDirection: isMobile ? 'row' : 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '7px',
-        whiteSpace: 'nowrap',
+        gap: isMobile ? '7px' : '6px',
       }}>
-      {icone}
-      {label}
+      {icone && React.cloneElement(icone, {
+        style: {
+          ...(icone.props.style || {}),
+          width: isMobile ? '20px' : '32px',
+          height: isMobile ? '20px' : '32px',
+        }
+      })}
+      <span style={{ fontSize: isMobile ? '13px' : '11px', lineHeight: '1.3', textAlign: 'center' }}>{label}</span>
     </button>
   );
 }
@@ -657,6 +662,9 @@ function Accueil() {
                     isMobile={isMobile} />
                 ))}
               </div>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '13px', fontStyle: 'italic', marginTop: '20px' }}>
+                Si tu veux en savoir plus sur le fonctionnement du site, je t'invite à scroller un peu plus bas — sinon, bienvenue dans mon monde numérique, fais comme chez toi. 🏠
+              </p>
             </div>
 
             {/* ── Triple jauge ── */}
