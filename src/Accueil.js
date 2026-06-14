@@ -61,7 +61,14 @@ function getVisuelsOrdonnes(visuels) {
 function getVisuelsC(visuels) {
   if (!visuels) return [];
   return Object.entries(visuels)
-    .filter(([k]) => /[Cc]\d*[-.]/.test(k.split('\\').pop().split('/').pop()))
+    .filter(([k, v]) => {
+      // La clé peut être "C", "C1", "Cx", "C2"... ou le nom du fichier peut contenir "- C -"
+      if (/^[Cc]\d*$/.test(k)) return true;
+      // Ou tester le nom de fichier dans la valeur (chemin complet)
+      if (!v) return false;
+      const nomFichier = String(v).split('\\').pop().split('/').pop();
+      return /\s*-\s*[Cc]\d*\s*[-.]/.test(nomFichier);
+    })
     .map(([, v]) => cheminVersUrl(v))
     .filter(Boolean);
 }
