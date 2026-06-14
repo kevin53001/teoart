@@ -449,8 +449,9 @@ function navPageBtn(actif) {
 function TexteAdaptatif({ texte, isMobile }) {
   // Mobile : taille fixe, pas de scroll, pas de changement
   if (isMobile) {
+    const estCourtMobile = texte && texte.length < 200 && (texte.match(/\n/g) || []).length < 4;
     return (
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: estCourtMobile ? 'center' : 'flex-start' }}>
         <p style={{ width: '100%', fontSize: '13px', lineHeight: 1.42, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: 0 }}>
           {texte}
         </p>
@@ -459,8 +460,10 @@ function TexteAdaptatif({ texte, isMobile }) {
   }
 
   // Desktop : taille normale, scroll si nécessaire, bloc centré horizontalement, texte aligné à gauche
+  // Centrage vertical si texte court (moins de 300 caractères et moins de 6 sauts de ligne)
+  const estCourt = texte && texte.length < 300 && (texte.match(/\n/g) || []).length < 5;
   return (
-    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', justifyContent: 'center', paddingRight: '2px' }}>
+    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: estCourt ? 'center' : 'flex-start', alignItems: 'center', paddingRight: '2px' }}>
       <p style={{ width: '100%', maxWidth: '380px', fontSize: '13.6px', lineHeight: 1.52, whiteSpace: 'pre-wrap', textAlign: 'left', color: '#2c160e', margin: '0 auto' }}>
         {texte}
       </p>
@@ -931,7 +934,7 @@ function Pensees() {
           .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
           .fiche-encadre { padding: 6px 7px; }
           .fiche-edge { height: 70%; top: -70%; }
-          .fiche-title { font-size: 10px; -webkit-line-clamp: 3; }
+          .fiche-title { font-size: clamp(7px, 2.2vw, 10px); -webkit-line-clamp: unset; max-height: none; overflow: visible; }
           .fiche-author { font-size: 8.5px; margin-top: 7px; }
           .fiche-reflet { width: 78px; height: 110px; margin-left: -39px; margin-top: 72px; }
           .fiche-led { width: 7px; height: 7px; top: 8px; }
