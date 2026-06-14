@@ -32,9 +32,8 @@ function getMoisPatreonDisponibles() {
 }
 
 const COULEURS_VISITEURS = [
-  '#ff4d6d', '#ff7a3d', '#ffd250', '#a8e063', '#4cd964',
-  '#2ecc71', '#0a1a3a', '#7b61ff', '#9b59b6', '#d96cff',
-  '#ff3eb5', '#ff8fb3', '#ff6f61', '#c0c0c0', '#f5f5f5'
+'#ff4d6d', '#ff7a3d', '#ffd250', '#a8e063', '#4cd964', '#2ecc71', '#1a6bbd', '#7b61ff',
+'#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#ff6f61', '#00c4aa', '#c0c0c0', '#f5f5f5'
 ];
 
 function hashString(str) {
@@ -290,8 +289,10 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
 function FicheTexte({ pensee }) {
   return (
     <>
-      <div className="fiche-title">{pensee.titre}</div>
-      <div className="fiche-author">par {pensee.auteur || 'Anonyme'}</div>
+      <div className="fiche-encadre">
+        <div className="fiche-title">{pensee.titre}</div>
+      </div>
+      <div className="fiche-author">{pensee.auteur || 'Anonyme'}</div>
     </>
   );
 }
@@ -652,7 +653,7 @@ function Pensees() {
           transform-style: preserve-3d;
         }
 
-        /* Fiche : taille augmentée */
+        /* ─── FICHE VIEUX LIVRE ─── */
         .fiche-wrap {
           position: absolute;
           left: 50%;
@@ -665,22 +666,36 @@ function Pensees() {
           cursor: pointer;
           transition: filter .18s ease;
         }
-        .fiche-wrap:hover { filter: brightness(1.15) drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 40%, transparent)); }
+        .fiche-wrap:hover { filter: brightness(1.10) drop-shadow(0 6px 18px rgba(0,0,0,0.7)); }
 
+        /* Face principale : parchemin vieilli */
         .fiche-face {
           position: absolute;
           pointer-events: none;
           inset: 0;
-          border-radius: 16px;
+          border-radius: 3px 12px 12px 3px;
           background:
-            radial-gradient(circle at 28% 18%, rgba(255,255,255,0.04), transparent 38%),
-            linear-gradient(145deg, rgba(24,24,24,0.98), rgba(4,4,4,0.99));
-          border: 1px solid rgba(255,255,255,0.09);
-          border-top: 8px solid var(--accent);
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 28px,
+              rgba(139,100,60,0.07) 28px,
+              rgba(139,100,60,0.07) 29px
+            ),
+            linear-gradient(160deg,
+              #f5e6c8 0%,
+              #ede0b8 25%,
+              #e8d8a8 50%,
+              #ddd0a0 75%,
+              #d4c898 100%
+            );
+          border: 1px solid rgba(139,100,60,0.35);
+          border-left: 5px solid color-mix(in srgb, var(--accent) 70%, #5c3a1e);
           box-shadow:
-            0 24px 52px rgba(0,0,0,0.70),
-            0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
-            0 0 28px color-mix(in srgb, var(--accent) 16%, transparent);
+            inset -3px 0 8px rgba(139,100,60,0.15),
+            inset 0 0 20px rgba(100,70,30,0.08),
+            2px 4px 14px rgba(0,0,0,0.55),
+            0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
           overflow: hidden;
           backface-visibility: hidden;
           display: flex;
@@ -688,78 +703,140 @@ function Pensees() {
           justify-content: center;
           align-items: center;
           text-align: center;
-          padding: 22px 16px;
+          padding: 18px 14px 14px;
         }
         .fiche-face.back { transform: rotateY(180deg); }
+
+        /* Taches de vieillissement */
         .fiche-face::before {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(90deg, rgba(255,255,255,0.04), transparent 28%, transparent 72%, rgba(0,0,0,0.32));
+          background:
+            radial-gradient(ellipse at 10% 15%, rgba(139,100,60,0.10) 0%, transparent 40%),
+            radial-gradient(ellipse at 88% 80%, rgba(120,85,45,0.08) 0%, transparent 35%),
+            radial-gradient(ellipse at 55% 5%,  rgba(160,120,70,0.06) 0%, transparent 30%);
+          pointer-events: none;
+          border-radius: inherit;
+        }
+        /* Tranche gauche (reliure) */
+        .fiche-face::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0;
+          width: 14px; height: 100%;
+          background: linear-gradient(90deg,
+            color-mix(in srgb, var(--accent) 30%, #3a2010) 0%,
+            rgba(80,50,20,0.25) 60%,
+            transparent 100%
+          );
           pointer-events: none;
         }
+
+        /* Encadré titre façon vieux livre */
+        .fiche-encadre {
+          position: relative;
+          z-index: 2;
+          width: calc(100% - 8px);
+          padding: 8px 10px;
+          border: 1.5px solid color-mix(in srgb, var(--accent) 55%, #7a5520);
+          border-radius: 2px;
+          background: rgba(255,248,230,0.45);
+          box-shadow:
+            inset 0 0 0 3px rgba(255,248,220,0.6),
+            0 1px 4px rgba(100,70,20,0.18);
+        }
+        /* Coins décoratifs de l'encadré */
+        .fiche-encadre::before,
+        .fiche-encadre::after {
+          content: '✦';
+          position: absolute;
+          font-size: 9px;
+          color: color-mix(in srgb, var(--accent) 65%, #7a5520);
+          line-height: 1;
+        }
+        .fiche-encadre::before { top: -6px; left: 50%; transform: translateX(-50%); }
+        .fiche-encadre::after  { bottom: -6px; left: 50%; transform: translateX(-50%); }
 
         .fiche-title {
           position: relative;
           z-index: 2;
-          color: #fff;
-          font-size: 16px;
-          line-height: 1.22;
+          color: #2c1a06;
+          font-size: 14px;
+          line-height: 1.25;
           font-weight: 800;
-          max-height: 96px;
+          font-family: Georgia, 'Times New Roman', serif;
+          letter-spacing: 0.2px;
           overflow: hidden;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.80);
+          display: -webkit-box;
+          -webkit-line-clamp: 4;
+          -webkit-box-orient: vertical;
+          text-shadow: 0 1px 2px rgba(255,240,200,0.6);
         }
         .fiche-author {
           position: relative;
           z-index: 2;
-          margin-top: 16px;
-          color: var(--author-color, #00d4d4);
-          font-size: 11.5px;
+          margin-top: 10px;
+          color: color-mix(in srgb, var(--accent) 75%, #3a2010);
+          font-size: 10.5px;
           line-height: 1.2;
           font-weight: 700;
-          text-shadow: 0 0 10px color-mix(in srgb, var(--author-color, #00d4d4) 30%, transparent);
+          font-style: italic;
+          font-family: Georgia, serif;
+          letter-spacing: 0.3px;
         }
+        .fiche-author::before { content: '— '; }
 
+        /* Tranche 3D (côté du livre) */
         .fiche-edge {
           position: absolute;
           pointer-events: none;
           left: 100%;
-          top: 5px;
-          width: 17px;
-          height: calc(100% - 10px);
+          top: 4px;
+          width: 14px;
+          height: calc(100% - 8px);
           transform-origin: left center;
           transform: rotateY(90deg);
-          background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, #000), rgba(8,8,8,0.98));
-          border-radius: 0 8px 8px 0;
-          box-shadow: inset 0 0 16px rgba(0,0,0,0.8);
+          background: linear-gradient(90deg,
+            color-mix(in srgb, var(--accent) 35%, #3a1e08),
+            #6b4422 40%,
+            #8b5a2b 70%,
+            #a06830
+          );
+          border-radius: 0 4px 4px 0;
+          box-shadow: inset 0 0 10px rgba(0,0,0,0.6);
         }
 
+        /* Reflet sol */
         .fiche-reflet {
           position: absolute;
           left: 50%;
           top: 50%;
           width: 140px;
-          height: 200px;
+          height: 180px;
           margin-left: -70px;
-          margin-top: 120px;
+          margin-top: 118px;
           transform-origin: top center;
-          border-radius: 16px;
-          background: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%);
-          filter: blur(4px);
+          border-radius: 4px;
+          background: linear-gradient(to bottom,
+            color-mix(in srgb, var(--accent) 18%, rgba(210,185,130,0.3)),
+            transparent 65%
+          );
+          filter: blur(5px);
           pointer-events: none;
         }
 
+        /* LEDs */
         .fiche-led {
           position: absolute;
-          top: 11px;
-          width: 9px;
-          height: 9px;
+          top: 10px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           z-index: 8;
         }
-        .fiche-led.left { left: 11px; }
-        .fiche-led.right { right: 11px; }
+        .fiche-led.left { left: 18px; }
+        .fiche-led.right { right: 10px; }
 
         /* Popup pensée (format page) */
         .popup-page {
@@ -791,12 +868,16 @@ function Pensees() {
         @media (max-width: 600px) {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
-          .fiche-wrap { width: 92px; height: 158px; margin-left: -46px; margin-top: -79px; }
-          .fiche-face { border-radius: 11px; padding: 14px 10px; border-top-width: 6px; }
-          .fiche-edge { width: 11px; }
-          .fiche-title { font-size: 11px; max-height: 58px; }
-          .fiche-author { font-size: 9px; margin-top: 10px; }
-          .fiche-reflet { width: 78px; height: 120px; margin-left: -39px; margin-top: 76px; }
+          .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
+          .fiche-face { border-radius: 2px 8px 8px 2px; padding: 12px 8px 10px; border-left-width: 4px; }
+          .fiche-encadre { padding: 6px 7px; }
+          .fiche-edge { width: 10px; }
+          .fiche-title { font-size: 10px; -webkit-line-clamp: 3; }
+          .fiche-author { font-size: 8.5px; margin-top: 7px; }
+          .fiche-reflet { width: 78px; height: 110px; margin-left: -39px; margin-top: 72px; }
+          .fiche-led { width: 7px; height: 7px; top: 8px; }
+          .fiche-led.left { left: 14px; }
+          .fiche-led.right { right: 7px; }
         }
       `}</style>
 
@@ -1055,21 +1136,20 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
 
                 <div style={{ marginBottom: '14px' }}>
                   <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '12px', fontWeight: 700, marginBottom: '8px' }}>Couleur de la fiche</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '6px' }}>
                     {COULEURS_VISITEURS.map(c => (
                       <button
                         key={c}
                         onClick={() => setCouleurForm(c)}
                         aria-label={`Couleur ${c}`}
                         style={{
-                          width: '28px',
+                          width: '100%',
                           height: '18px',
                           borderRadius: '999px',
                           border: couleurForm === c ? '2px solid #fff' : '1px solid rgba(255,255,255,0.20)',
                           background: c,
                           cursor: 'pointer',
                           boxShadow: couleurForm === c ? `0 0 12px ${c}` : 'none',
-                          flexShrink: 0,
                         }}
                       />
                     ))}
