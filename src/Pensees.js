@@ -449,38 +449,60 @@ function navPageBtn(actif) {
 function TexteAdaptatif({ texte, isMobile }) {
   const containerRef = React.useRef(null);
   const textRef = React.useRef(null);
-  const [fontSize, setFontSize] = React.useState(isMobile ? 13 : 13.6);
+  const [fontSize, setFontSize] = React.useState(13.6);
+  const [court, setCourt] = React.useState(false);
 
   React.useEffect(() => {
     if (!containerRef.current || !textRef.current || !texte) return;
 
-    // Réinitialiser à la taille max
-    const MAX = isMobile ? 13 : 13.6;
-    const MIN = 7;
+    const MAX = 13.6;
+    const MIN = 10; // plancher raisonnable — en dessous c'est illisible
     let size = MAX;
     textRef.current.style.fontSize = size + 'px';
 
-    // Réduire tant que le texte dépasse le container
+    // Vérifier si le texte tient sans réduction
+    const containerH = containerRef.current.clientHeight;
+    const textH = textRef.current.scrollHeight;
+
+    if (textH <= containerH) {
+      // Texte court : pas de réduction, centrer verticalement
+      setFontSize(MAX);
+      setCourt(true);
+      return;
+    }
+
+    setCourt(false);
+
+    // Texte long : réduire par petits paliers
     while (size > MIN) {
-      const containerH = containerRef.current.clientHeight;
-      const textH = textRef.current.scrollHeight;
-      if (textH <= containerH) break;
-      size -= 0.4;
+      const cH = containerRef.current.clientHeight;
+      const tH = textRef.current.scrollHeight;
+      if (tH <= cH) break;
+      size -= 0.3;
       textRef.current.style.fontSize = size + 'px';
     }
     setFontSize(size);
   }, [texte, isMobile]);
 
   return (
-    <div ref={containerRef} style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+    <div
+      ref={containerRef}
+      style={{
+        flex: 1,
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: court ? 'center' : 'flex-start',
+        justifyContent: 'center',
+      }}
+    >
       <p
         ref={textRef}
         style={{
           width: '100%',
           fontSize: fontSize + 'px',
-          lineHeight: 1.42,
+          lineHeight: 1.48,
           whiteSpace: 'pre-wrap',
-          textAlign: 'left',
+          textAlign: 'center',
           color: '#2c160e',
           margin: 0,
         }}
