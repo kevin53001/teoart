@@ -27,6 +27,14 @@ function cheminVersUrl(chemin) {
   return `${R2}/${relatif.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 }
 
+function extraireColoriste(chemin) {
+  if (!chemin) return null;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
+  if (match) return match[1].trim();
+  return null;
+}
+
 function getVisuelB(visuels) {
   if (!visuels) return null;
   if (visuels['B']) return cheminVersUrl(visuels['B']);
@@ -48,6 +56,23 @@ function getVisuelsOrdonnes(visuels) {
   }
   for (const k of cles) { if (!tries.includes(k) && !k.toUpperCase().startsWith('A')) tries.push(k); }
   return tries.map(k => visuels[k]).filter(Boolean);
+}
+
+function getVisuelsC(visuels) {
+  if (!visuels) return [];
+  return Object.entries(visuels)
+    .filter(([k]) => /[Cc]\d*[-.]/.test(k.split('\\').pop().split('/').pop()))
+    .map(([, v]) => cheminVersUrl(v))
+    .filter(Boolean);
+}
+
+function melangerTableau(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 function moisSuivant() {
@@ -314,6 +339,11 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
         onClick={handleClick}>
         <img src={img.url} alt={img.nom}
           style={{ maxWidth: '100%', maxHeight: '160px', objectFit: 'contain', borderRadius: '8px', opacity: fade ? 1 : 0, transition: 'opacity 0.3s ease', display: 'block' }} />
+        {img.coloriste && (
+          <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none' }}>
+            Réalisé par {img.coloriste}
+          </div>
+        )}
       </div>
       {images.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px' }}>
@@ -509,9 +539,28 @@ function Accueil() {
           const uids = [...new Set(data.map(c => c.user_id))];
           const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
           const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
-          colosData = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}` }));
+          colosData = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloriste: pm[c.user_id] || null }));
           break;
         }
+      }
+      // Compléter avec visuels C aléatoires si moins de 20 coloriages
+      if (colosData.length < 20) {
+        const manquants = 20 - colosData.length;
+        const { data: illusAvecC } = await supabase
+          .from('illustrations')
+          .select('id, nom, visuels')
+          .eq('statut', 'published')
+          .limit(200);
+        const visuelsC = [];
+        (illusAvecC || []).forEach(illu => {
+          const urls = getVisuelsC(illu.visuels);
+          urls.forEach(url => {
+            const coloriste = extraireColoriste(url);
+            visuelsC.push({ url, nom: illu.nom, coloriste });
+          });
+        });
+        const complements = melangerTableau(visuelsC).slice(0, manquants);
+        colosData = [...colosData, ...complements];
       }
       setColoriages(colosData);
 
