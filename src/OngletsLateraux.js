@@ -83,6 +83,15 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
             const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
             const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
             colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id, illuId: c.illustration_id }));
+            // Filtrer les images cassées
+            const testerUrl = (url) => new Promise(resolve => {
+              const img = new Image();
+              img.onload = () => resolve(true);
+              img.onerror = () => resolve(false);
+              img.src = url;
+            });
+            const resultats = await Promise.allSettled(colos.map(c => testerUrl(c.url)));
+            colos = colos.filter((_, i) => resultats[i].value === true);
             break;
           }
         }

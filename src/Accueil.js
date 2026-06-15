@@ -469,6 +469,7 @@ function EncartPatreon({ images, onZoom }) {
           />
         )}
         <img src={img.url} alt={img.nom}
+          onError={() => { if (images.length > 1) setIdx(i => (i + 1) % images.length); }}
           style={{ position: 'absolute', inset: '8px 12px', width: 'calc(100% - 24px)', height: 'calc(100% - 16px)', objectFit: 'contain', borderRadius: '8px', opacity: 1 }}
         />
         <div style={{ width: '100%', height: '140px' }} />
@@ -733,6 +734,15 @@ function Accueil() {
         const complements = melangerTableau(visuelsC).slice(0, manquants);
         colosData = [...colosData, ...complements];
       }
+      // Filtrer les images cassées avant affichage
+      const testerUrl = (url) => new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+      const resultats = await Promise.allSettled(colosData.map(c => testerUrl(c.url)));
+      colosData = colosData.filter((_, i) => resultats[i].value === true);
       setColoriages(colosData);
 
       // Best sellers — avec données illu pour popup fiche
