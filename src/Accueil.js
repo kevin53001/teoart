@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
+import BoutonsFlottants from './BoutonsFlottants';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -812,11 +813,8 @@ function Accueil() {
         <PopupFiche illu={popupFiche} onClose={() => setPopupFiche(null)} userId={userId} userPseudo={userPseudo} />
       )}
 
-      {/* Bouton déco */}
-      {!anyPopup && (
-        <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/'; }}
-          style={{ position: 'fixed', top: '12px', left: '16px', zIndex: 100, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer', backdropFilter: 'blur(6px)' }}>⏻ Déco</button>
-      )}
+      {/* Boutons flottants (déco + scroll-to-top) */}
+      <BoutonsFlottants />
 
       {/* Cloche */}
       {!anyPopup && <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>}
