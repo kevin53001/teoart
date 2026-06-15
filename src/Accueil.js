@@ -125,9 +125,9 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8 }) {
 function TripleJauge({ pctJai, pctColo, pctJeVeux }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-      <UneBarre pct={pctJai}    couleur="linear-gradient(90deg,#00d4d4,#00aaaa)"  label="✓ J'ai"     delai={0}   hauteur={14} />
-      <UneBarre pct={pctColo}   couleur="linear-gradient(90deg,#ffd250,#ffb428)"  label="🎨 Colorié"  delai={200} hauteur={14} />
-      <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#ff3eb5,#cc2090)"  label="♡ Je veux"  delai={400} hauteur={14} />
+      <UneBarre pct={pctJai}    couleur="linear-gradient(90deg,#003333,#004444 20%,#00aaaa 60%,#00d4d4)"  label="✓ J'ai"     delai={0}   hauteur={14} />
+      <UneBarre pct={pctColo}   couleur="linear-gradient(90deg,#332800,#554200 20%,#cc9000 60%,#ffd250)"  label="🎨 Colorié"  delai={200} hauteur={14} />
+      <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#330020,#550035 20%,#cc1880 60%,#ff3eb5)"  label="♡ Je veux"  delai={400} hauteur={14} />
     </div>
   );
 }
