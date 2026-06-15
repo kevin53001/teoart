@@ -20,7 +20,7 @@ const BARRES = [
 ];
 
 const CATEGORIES = ['Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
-const COULEURS_TITRE = ['#00d4d4', '#ff3eb5', 'rgba(255,210,80,0.95)'];
+const COULEURS_TITRE = ['#00d4d4', '#ff3eb5', '#ffd250'];
 
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
