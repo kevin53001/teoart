@@ -3,21 +3,18 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
-// ── Libellés et couleurs par type ────────────────────────────────────────────
 const CONFIG_TYPE = {
-  nouvelle_illustration:  { couleur: '#00d4d4', icone: '🖼',  label: 'Nouvelles illustrations' },
-  nouveau_livre_pdf:      { couleur: '#a78bfa', icone: '📚', label: 'Nouveau livre PDF' },
-  nouveau_livre_relie:    { couleur: '#a78bfa', icone: '📖', label: 'Nouveau livre relié' },
-  like_coloriage:         { couleur: '#ff3eb5', icone: '❤️',  label: "J'aime sur ton coloriage" },
-  commentaire_coloriage:  { couleur: '#ffd250', icone: '💬', label: 'Commentaire sur ton coloriage' },
-  like_pensee:            { couleur: '#ff3eb5', icone: '❤️',  label: "J'aime sur une pensée" },
-  commentaire_pensee:     { couleur: '#ffd250', icone: '💬', label: 'Commentaire sur une pensée' },
-  badge_obtenu:           { couleur: '#00cc66', icone: '🏆', label: 'Badge obtenu !' },
-  nouvelle_pensee:        { couleur: '#a78bfa', icone: '✨',  label: 'Nouvelle pensée' },
-  nouvelle_presentation:  { couleur: '#00d4d4', icone: '🌟', label: 'Nouvelle présentation' },
+  nouvelle_illustration:    { couleur: '#00d4d4', icone: '🖼'  },
+  nouveau_livre_pdf:        { couleur: '#a78bfa', icone: '📚' },
+  nouveau_livre_relie:      { couleur: '#a78bfa', icone: '📖' },
+  like_coloriage:           { couleur: '#ff3eb5', icone: '❤️'  },
+  commentaire_coloriage:    { couleur: '#ffd250', icone: '💬' },
+  badge_obtenu:             { couleur: '#00cc66', icone: '🏆' },
+  nouvelle_pensee:          { couleur: '#a78bfa', icone: '✨'  },
+  nouvelle_presentation:    { couleur: '#00d4d4', icone: '🌟' },
+  nouveau_coloriage_partage:{ couleur: '#00d4d4', icone: '🎨' },
 };
 
-// ── Formater une date relative ───────────────────────────────────────────────
 function dateRelative(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const min  = Math.floor(diff / 60000);
@@ -30,61 +27,44 @@ function dateRelative(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
-// ── Grouper les notifs coloriages/pensées/illustrations par item ─────────────
-function grouperNotifs(notifs) {
-  const groupes = {};
-  const ordre   = [];
-
-  notifs.forEach(n => {
-    const cle_coloriage = ['like_coloriage', 'commentaire_coloriage'].includes(n.type) && n.contenu?.coloriage_id
-      ? `coloriage_${n.contenu.coloriage_id}` : null;
-    const cle_pensee    = ['like_pensee', 'commentaire_pensee'].includes(n.type) && n.contenu?.pensee_id
-      ? `pensee_${n.contenu.pensee_id}` : null;
-    const cle_illus     = n.type === 'nouvelle_illustration' ? 'groupe_illus' : null;
-    const cle_pres_pen  = ['nouvelle_pensee', 'nouvelle_presentation'].includes(n.type) ? 'groupe_pres_pen' : null;
-
-    const cle = cle_coloriage || cle_pensee || cle_illus || cle_pres_pen || n.id;
-
-    if (!groupes[cle]) {
-      groupes[cle] = {
-        cle,
-        items: [],
-        type_groupe: cle_coloriage ? 'coloriage' : cle_pensee ? 'pensee' : cle_illus ? 'illustrations' : cle_pres_pen ? 'pres_pen' : 'single',
-      };
-      ordre.push(cle);
-    }
-    groupes[cle].items.push(n);
-  });
-
-  return ordre.map(cle => groupes[cle]);
+function texteNotif(n) {
+  const c = n.contenu || {};
+  const nb = c.count || 1;
+  switch (n.type) {
+    case 'nouvelle_illustration':
+      return nb === 1
+        ? `Nouvelle illustration : "${c.derniere_nom || '...'}"`
+        : `${nb} nouvelles illustrations publiées`;
+    case 'nouveau_livre_pdf':
+      return `"${c.nom || 'Livre'}" disponible en PDF`;
+    case 'nouveau_livre_relie':
+      return `"${c.nom || 'Livre'}" disponible en version reliée`;
+    case 'like_coloriage':
+      return `${c.from_user || 'Quelqu\'un'} a aimé ton coloriage`;
+    case 'commentaire_coloriage':
+      return `${c.from_user || 'Quelqu\'un'} a commenté ton coloriage${c.texte ? ` : "${c.texte}"` : ''}`;
+    case 'badge_obtenu':
+      return `Badge ${c.badge_type === 'fan' ? 'Fan' : 'Coloriste'} ${c.niveau} obtenu !${c.remise ? ` -${c.remise}% sur ta prochaine commande` : ''}`;
+    case 'nouvelle_pensee':
+      return nb === 1
+        ? `Nouvelle pensée : "${c.derniere_titre || '...'}"`
+        : `${nb} nouvelles pensées publiées`;
+    case 'nouvelle_presentation':
+      return nb === 1
+        ? `Nouvelle présentation : "${c.derniere_titre || '...'}"`
+        : `${nb} nouvelles présentations`;
+    case 'nouveau_coloriage_partage':
+      return nb === 1
+        ? `${c.pseudo_coloriste || 'Quelqu\'un'} a partagé un coloriage`
+        : `${nb} nouveaux coloriages partagés par la communauté`;
+    default:
+      return 'Nouvelle notification';
+  }
 }
 
-// ── Ligne notif simple ───────────────────────────────────────────────────────
+// ── Ligne notif ──────────────────────────────────────────────────────────────
 function LigneNotif({ notif, onClic }) {
   const cfg = CONFIG_TYPE[notif.type] || { couleur: '#fff', icone: '•' };
-  let texte = '';
-
-  if (notif.type === 'nouvelle_illustration')    texte = notif.contenu?.nom || 'Nouvelle illustration publiée';
-  else if (notif.type === 'nouveau_livre_pdf')   texte = `"${notif.contenu?.nom || 'Livre'}" disponible en PDF`;
-  else if (notif.type === 'nouveau_livre_relie') texte = `"${notif.contenu?.nom || 'Livre'}" disponible en version reliée`;
-  else if (notif.type === 'like_coloriage')      texte = `${notif.contenu?.from_user || 'Quelqu\'un'} a aimé ton coloriage`;
-  else if (notif.type === 'commentaire_coloriage') {
-    texte = `${notif.contenu?.from_user || 'Quelqu\'un'} a commenté ton coloriage`;
-    if (notif.contenu?.texte) texte += ` : "${notif.contenu.texte}"`;
-  }
-  else if (notif.type === 'like_pensee')         texte = `${notif.contenu?.from_user || 'Quelqu\'un'} a aimé "${notif.contenu?.titre || 'une pensée'}"`;
-  else if (notif.type === 'commentaire_pensee') {
-    texte = `${notif.contenu?.from_user || 'Quelqu\'un'} a commenté "${notif.contenu?.titre || 'une pensée'}"`;
-    if (notif.contenu?.texte) texte += ` : "${notif.contenu.texte}"`;
-  }
-  else if (notif.type === 'badge_obtenu') {
-    texte = `Badge ${notif.contenu?.badge_type === 'fan' ? 'Fan' : 'Coloriste'} ${notif.contenu?.niveau} obtenu !`;
-    if (notif.contenu?.remise) texte += ` -${notif.contenu.remise}% sur ta prochaine commande`;
-  }
-  else if (notif.type === 'nouvelle_pensee')        texte = `Nouvelle pensée : "${notif.contenu?.titre || '...'}"`;
-  else if (notif.type === 'nouvelle_presentation')  texte = `Nouvelle présentation : "${notif.contenu?.titre || '...'}"`;
-  else texte = 'Nouvelle notification';
-
   return (
     <div
       onClick={() => onClic(notif)}
@@ -94,7 +74,9 @@ function LigneNotif({ notif, onClic }) {
     >
       <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>{cfg.icone}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: '1.5', margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{texte}</p>
+        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: '1.5', margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+          {texteNotif(notif)}
+        </p>
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', margin: '3px 0 0' }}>{dateRelative(notif.created_at)}</p>
       </div>
       <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.couleur, flexShrink: 0, marginTop: '5px', boxShadow: `0 0 6px ${cfg.couleur}` }} />
@@ -102,100 +84,232 @@ function LigneNotif({ notif, onClic }) {
   );
 }
 
-// ── Groupe accordéon ─────────────────────────────────────────────────────────
-function GroupeNotif({ groupe, onClicItem }) {
-  const [ouvert, setOuvert] = useState(false);
-  const { items, type_groupe } = groupe;
-  const premier = items[0];
-  const cfg = CONFIG_TYPE[premier.type] || { couleur: '#fff', icone: '•' };
+// ── Social coloriages (like + commentaires) ──────────────────────────────────
+function SocialColo({ coloId, userId, userPseudo }) {
+  const [likes, setLikes]           = useState([]);
+  const [commentaires, setComments] = useState([]);
+  const [texte, setTexte]           = useState('');
+  const [envoi, setEnvoi]           = useState(false);
+  const jaLike = likes.some(l => l.user_id === userId);
 
-  let titreGroupe = '';
-  let iconeGroupe = cfg.icone;
+  useEffect(() => {
+    if (!coloId) return;
+    (async () => {
+      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
+      const { data: cr } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
+      setLikes(l || []);
+      if (cr && cr.length > 0) {
+        const uids = [...new Set(cr.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+        setComments(cr.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
+      } else setComments([]);
+    })();
+  }, [coloId]);
 
-  if (type_groupe === 'coloriage') {
-    const nb_likes = items.filter(i => i.type === 'like_coloriage').length;
-    const nb_comm  = items.filter(i => i.type === 'commentaire_coloriage').length;
-    const parties  = [];
-    if (nb_likes) parties.push(`${nb_likes} j'aime`);
-    if (nb_comm)  parties.push(`${nb_comm} commentaire${nb_comm > 1 ? 's' : ''}`);
-    titreGroupe = `${parties.join(' et ')} sur ton coloriage`;
-    iconeGroupe = '🎨';
-  } else if (type_groupe === 'pensee') {
-    const nb_likes = items.filter(i => i.type === 'like_pensee').length;
-    const nb_comm  = items.filter(i => i.type === 'commentaire_pensee').length;
-    const parties  = [];
-    if (nb_likes) parties.push(`${nb_likes} j'aime`);
-    if (nb_comm)  parties.push(`${nb_comm} commentaire${nb_comm > 1 ? 's' : ''}`);
-    titreGroupe = `${parties.join(' et ')} sur "${premier.contenu?.titre || 'une pensée'}"`;
-    iconeGroupe = '✨';
-  } else if (type_groupe === 'illustrations') {
-    titreGroupe = `${items.length} nouvelle${items.length > 1 ? 's' : ''} illustration${items.length > 1 ? 's' : ''} publiée${items.length > 1 ? 's' : ''}`;
-    iconeGroupe = '🖼';
-  } else if (type_groupe === 'pres_pen') {
-    titreGroupe = `${items.length} nouveau${items.length > 1 ? 'x' : ''} contenu${items.length > 1 ? 's' : ''} (pensées / présentations)`;
-    iconeGroupe = '✨';
-  }
+  const toggleLike = async () => {
+    if (!coloId || !userId) return;
+    if (jaLike) {
+      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
+  };
+
+  const envoyer = async () => {
+    if (!texte.trim() || !coloId || !userId) return;
+    setEnvoi(true);
+    const { data } = await supabase.from('commentaires_coloriages')
+      .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
+      .select('id, texte, created_at, user_id').single();
+    if (data) setComments(prev => [...prev, { ...data, pseudo: userPseudo }]);
+    setTexte(''); setEnvoi(false);
+  };
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-      <div
-        onClick={() => items.length === 1 ? onClicItem(items[0]) : setOuvert(v => !v)}
-        style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 14px', cursor: 'pointer', transition: 'background .15s' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-      >
-        <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>{iconeGroupe}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: '1.5', margin: 0 }}>{titreGroupe}</p>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', margin: '3px 0 0' }}>{dateRelative(items[0].created_at)}</p>
-        </div>
-        {items.length > 1 && (
-          <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px', flexShrink: 0, marginTop: '2px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}>›</span>
-        )}
-        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: cfg.couleur, flexShrink: 0, marginTop: '5px', boxShadow: `0 0 6px ${cfg.couleur}` }} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px', background: 'rgba(0,0,0,0.6)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button onClick={toggleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: jaLike ? '#ff4d7d' : 'rgba(255,255,255,0.5)', fontSize: '13px', padding: 0 }}>
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            {jaLike
+              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+            }
+          </svg>
+          {likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}
+        </button>
       </div>
-
-      {ouvert && items.length > 1 && (
-        <div style={{ background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-          {items.map(notif => (
-            <div
-              key={notif.id}
-              onClick={() => onClicItem(notif)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 14px 8px 30px', cursor: 'pointer', transition: 'background .15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              <span style={{ fontSize: '13px', flexShrink: 0 }}>{CONFIG_TYPE[notif.type]?.icone || '•'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', margin: 0, lineHeight: '1.4' }}>
-                  {(notif.type === 'like_coloriage' || notif.type === 'like_pensee')
-                    ? `${notif.contenu?.from_user} a aimé`
-                    : `${notif.contenu?.from_user} : "${notif.contenu?.texte || '...'}"`
-                  }
-                </p>
-                <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', margin: '2px 0 0' }}>{dateRelative(notif.created_at)}</p>
-              </div>
+      {commentaires.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
+          {commentaires.map(c => (
+            <div key={c.id} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo}</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', lineHeight: 1.4 }}>{c.texte}</span>
             </div>
           ))}
         </div>
       )}
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <textarea
+          rows={1} placeholder="Ajouter un commentaire…" value={texte}
+          onChange={e => setTexte(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyer(); } }}
+          style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '7px 10px', color: '#fff', fontSize: '12px', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+        />
+        <button onClick={envoyer} disabled={!texte.trim() || envoi}
+          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '7px 12px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '12px', cursor: texte.trim() ? 'pointer' : 'default', whiteSpace: 'nowrap', alignSelf: 'flex-end' }}>
+          Envoyer
+        </button>
+      </div>
     </div>
   );
 }
 
-// ── Composant principal ──────────────────────────────────────────────────────
+// ── Popup coloriages partagés ────────────────────────────────────────────────
+function PopupColoriages({ userId, userPseudo, onClose }) {
+  const [colos, setColos]   = useState([]);
+  const [idx, setIdx]       = useState(0);
+  const [loading, setLoading] = useState(true);
+  const touchStartX = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      // Tous les coloriages avec image_url, du plus ancien au plus récent, sans limite
+      const { data } = await supabase
+        .from('coloriages')
+        .select('id, image_url, user_id, illustration_id, created_at')
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: true });
+
+      if (!data || data.length === 0) { setLoading(false); return; }
+
+      // Récupérer les pseudos
+      const uids = [...new Set(data.map(c => c.user_id))];
+      const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+      const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+
+      // Filtrer les images cassées
+      const tester = url => new Promise(resolve => {
+        const img = new Image(); img.onload = () => resolve(true); img.onerror = () => resolve(false); img.src = url;
+      });
+      const resultats = await Promise.allSettled(data.map(c => tester(c.image_url)));
+      const valides = data.filter((_, i) => resultats[i].value === true);
+
+      setColos(valides.map(c => ({ id: c.id, url: c.image_url, pseudo: pm[c.user_id] || 'Coloriste', created_at: c.created_at })));
+      setLoading(false);
+    })();
+  }, []);
+
+  // Navigation clavier
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key === 'ArrowRight') setIdx(i => Math.min(i + 1, colos.length - 1));
+      if (e.key === 'ArrowLeft')  setIdx(i => Math.max(i - 1, 0));
+      if (e.key === 'Escape')     onClose();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [colos.length, onClose]);
+
+  // Swipe mobile
+  const onTouchStart = e => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd   = e => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) setIdx(i => Math.min(i + 1, colos.length - 1));
+      else          setIdx(i => Math.max(i - 1, 0));
+    }
+    touchStartX.current = null;
+  };
+
+  const colo = colos[idx];
+
+  return ReactDOM.createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99998, background: 'rgba(0,0,0,0.96)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+
+      {/* Fermer */}
+      <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '38px', height: '38px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>×</button>
+
+      {/* Compteur */}
+      <p style={{ position: 'absolute', top: '20px', left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>
+        {loading ? '' : colos.length === 0 ? '' : `${idx + 1} / ${colos.length}`}
+      </p>
+
+      {loading ? (
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Chargement…</p>
+      ) : colos.length === 0 ? (
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Aucun coloriage partagé pour l'instant</p>
+        </div>
+      ) : (
+        <>
+          {/* Flèche gauche */}
+          {idx > 0 && (
+            <button onClick={() => setIdx(i => i - 1)}
+              style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>‹</button>
+          )}
+
+          {/* Contenu */}
+          <div style={{ width: '100%', maxWidth: '500px', background: '#111', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <img src={colo.url} alt={colo.pseudo}
+              style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', flexShrink: 0 }} />
+            <div style={{ padding: '8px 16px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px' }}>🎨 par <strong>{colo.pseudo}</strong></span>
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>{dateRelative(colo.created_at)}</span>
+            </div>
+            <div style={{ overflowY: 'auto', flexShrink: 0 }}>
+              <SocialColo coloId={colo.id} userId={userId} userPseudo={userPseudo} />
+            </div>
+          </div>
+
+          {/* Flèche droite */}
+          {idx < colos.length - 1 && (
+            <button onClick={() => setIdx(i => i + 1)}
+              style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>›</button>
+          )}
+
+          {/* Dots (max 20 affichés) */}
+          {colos.length > 1 && colos.length <= 30 && (
+            <div style={{ display: 'flex', gap: '5px', marginTop: '16px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '300px' }}>
+              {colos.map((_, i) => (
+                <div key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? '14px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#00d4d4' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all .3s' }} />
+              ))}
+            </div>
+          )}
+          {colos.length > 30 && (
+            <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px', marginTop: '12px' }}>← → pour naviguer</p>
+          )}
+        </>
+      )}
+    </div>,
+    document.body
+  );
+}
+
+// ── Composant principal Cloche ───────────────────────────────────────────────
 function Cloche({ hidden = false }) {
   const navigate = useNavigate();
-  const [notifs, setNotifs]   = useState([]);
-  const [ouvert, setOuvert]   = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [userId, setUserId]   = useState(null);
+  const [notifs, setNotifs]           = useState([]);
+  const [ouvert, setOuvert]           = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [userId, setUserId]           = useState(null);
+  const [userPseudo, setUserPseudo]   = useState('');
+  const [popupColos, setPopupColos]   = useState(false);
   const dropdownRef = useRef(null);
   const clocheRef   = useRef(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) setUserId(data.user.id);
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data?.user) return;
+      setUserId(data.user.id);
+      const { data: p } = await supabase.from('profils').select('pseudo').eq('id', data.user.id).single();
+      if (p) setUserPseudo(p.pseudo || '');
     });
   }, []);
 
@@ -247,24 +361,37 @@ function Cloche({ hidden = false }) {
   const handleClicNotif = async (notif) => {
     await supprimerNotif(notif.id);
     setOuvert(false);
-    if (notif.type === 'nouvelle_illustration')
-      navigate('/catalogue', { state: { filtreNouveautes: true } });
-    else if (notif.type === 'nouveau_livre_pdf' || notif.type === 'nouveau_livre_relie')
-      navigate('/livres', { state: { ouvrirItem: notif.contenu?.item_id, itemType: notif.contenu?.item_type } });
-    else if (notif.type === 'like_coloriage' || notif.type === 'commentaire_coloriage')
-      navigate('/mon-compte', { state: { onglet: 'coloriages', coloId: notif.contenu?.coloriage_id } });
-    else if (notif.type === 'like_pensee' || notif.type === 'commentaire_pensee')
-      navigate('/pensees', { state: { ouvrirPensee: notif.contenu?.pensee_id } });
-    else if (notif.type === 'badge_obtenu')
-      navigate('/mon-compte', { state: { onglet: 'collection' } });
-    else if (notif.type === 'nouvelle_pensee')
-      navigate('/pensees', { state: { ouvrirPensee: notif.contenu?.pensee_id } });
-    else if (notif.type === 'nouvelle_presentation')
-      navigate('/presentation');
+
+    switch (notif.type) {
+      case 'nouvelle_illustration':
+        navigate('/catalogue', { state: { filtreNouveautes: true } });
+        break;
+      case 'nouveau_livre_pdf':
+      case 'nouveau_livre_relie':
+        navigate('/livres', { state: { ouvrirItem: notif.contenu?.item_id, itemType: notif.contenu?.item_type } });
+        break;
+      case 'like_coloriage':
+      case 'commentaire_coloriage':
+        navigate('/mon-compte', { state: { onglet: 'coloriages', coloId: notif.contenu?.coloriage_id } });
+        break;
+      case 'badge_obtenu':
+        navigate('/mon-compte', { state: { onglet: 'collection' } });
+        break;
+      case 'nouvelle_pensee':
+        navigate('/pensees');
+        break;
+      case 'nouvelle_presentation':
+        navigate('/presentation');
+        break;
+      case 'nouveau_coloriage_partage':
+        setPopupColos(true);
+        break;
+      default:
+        break;
+    }
   };
 
   const nbNonLues = notifs.length;
-  const groupes   = grouperNotifs(notifs);
 
   if (hidden) return null;
 
@@ -303,7 +430,7 @@ function Cloche({ hidden = false }) {
 
       {/* Dropdown */}
       {ouvert && ReactDOM.createPortal(
-        <div ref={dropdownRef} style={{ position: 'fixed', top: '44px', right: '12px', width: '300px', maxHeight: '420px', zIndex: 9999, background: 'rgba(8,16,20,0.97)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,212,212,0.08)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div ref={dropdownRef} style={{ position: 'fixed', top: '44px', right: '12px', width: '300px', maxHeight: '420px', zIndex: 9999, background: 'rgba(8,16,20,0.97)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* En-tête */}
           <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, rgba(0,212,212,0.08), rgba(0,212,212,0.03))', flexShrink: 0 }}>
@@ -311,7 +438,8 @@ function Cloche({ hidden = false }) {
               Notifications{nbNonLues > 0 ? ` (${nbNonLues})` : ''}
             </span>
             {nbNonLues > 0 && (
-              <button onClick={toutSupprimer} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '11px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px' }}
+              <button onClick={toutSupprimer}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '11px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px' }}
                 onMouseEnter={e => e.target.style.color = '#ff6b6b'}
                 onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.3)'}>
                 Tout effacer
@@ -323,22 +451,26 @@ function Cloche({ hidden = false }) {
           <div className="notif-dropdown" style={{ overflowY: 'auto', flex: 1 }}>
             {loading ? (
               <div style={{ padding: '30px', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '12px' }}>Chargement…</div>
-            ) : groupes.length === 0 ? (
+            ) : notifs.length === 0 ? (
               <div style={{ padding: '30px 20px', textAlign: 'center' }}>
                 <p style={{ fontSize: '28px', marginBottom: '10px' }}>🔕</p>
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Aucune notification</p>
               </div>
             ) : (
-              groupes.map(groupe =>
-                groupe.items.length === 1 && groupe.type_groupe === 'single'
-                  ? <LigneNotif key={groupe.cle} notif={groupe.items[0]} onClic={handleClicNotif} />
-                  : <GroupeNotif key={groupe.cle} groupe={groupe} onClicItem={handleClicNotif} />
-              )
+              notifs.map(n => <LigneNotif key={n.id} notif={n} onClic={handleClicNotif} />)
             )}
           </div>
-
         </div>,
         document.body
+      )}
+
+      {/* Popup coloriages partagés */}
+      {popupColos && (
+        <PopupColoriages
+          userId={userId}
+          userPseudo={userPseudo}
+          onClose={() => setPopupColos(false)}
+        />
       )}
     </>
   );
