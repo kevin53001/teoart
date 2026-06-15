@@ -3,6 +3,7 @@ import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
+import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -949,7 +950,7 @@ function Pensees() {
 
       {/* ─── BOUTON DÉCO + SCROLL-TO-TOP ─── */}
       <BoutonsFlottants />
-      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
+      <Cloche />
 
       {/* ─── BANNIÈRE HAUT ─── */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>

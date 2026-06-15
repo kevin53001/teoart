@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import Cropper from 'react-easy-crop';
+import PaysInput from './PaysInput';
 
 const R2 = 'https://images.kevinteoart.fr';
 
@@ -375,7 +376,11 @@ function Inscription() {
                   <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>③ Adresse de livraison</p>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande.</p>
                   <label style={labelStyle}>Pays</label>
-                  <input type="text" placeholder="France" value={pays} onChange={e => setPays(e.target.value)} style={inputStyle} />
+                  <PaysInput
+                    value={pays}
+                    onChange={val => setPays(val)}
+                    style={inputStyle}
+                  />
                   <label style={labelStyle}>Adresse</label>
                   <input type="text" placeholder="12 rue des illustrations" value={adresse} onChange={e => setAdresse(e.target.value)} style={inputStyle} />
                   <label style={labelStyle}>Complément</label>
