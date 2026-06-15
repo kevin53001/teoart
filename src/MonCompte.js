@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
@@ -169,6 +170,7 @@ function hexPath(cx, cy, r, rCoin) {
 function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
   const ref = React.useRef(null);
   const [anime, setAnime] = React.useState(false);
+  const [msgPos, setMsgPos] = React.useState(null);
 
   React.useEffect(() => {
     if (!obtenu) return;
@@ -178,6 +180,19 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
       return () => clearTimeout(t);
     }
   }, [delaiAnim, obtenu]);
+
+  // Quand on ouvre, on calcule la position réelle du badge
+  React.useEffect(() => {
+    if (ouvert && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setMsgPos({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    } else {
+      setMsgPos(null);
+    }
+  }, [ouvert]);
 
   const W = small ? 58 : 80;
   const H = small ? 67 : 92;
@@ -249,13 +264,12 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
       </svg>
 
       {/* Message déroulant au clic — uniquement si badge obtenu */}
-      {obtenu && ouvert && (
+      {obtenu && ouvert && msgPos && ReactDOM.createPortal(
         <div style={{
           position: 'absolute',
-          bottom: '100%',
-          left: '50%',
+          top: msgPos.top,
+          left: msgPos.left,
           transform: 'translateX(-50%)',
-          marginBottom: '8px',
           width: small ? '220px' : '260px',
           background: badge.id === 'fan_argent' ? '#141420' : `rgb(${badge.rgb.split(',').map(v => Math.max(8, Math.round(parseInt(v)*0.22))).join(',')})`,
           border: `1px solid rgba(${badge.rgb},0.7)`,
@@ -265,14 +279,18 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
           fontSize: '11px',
           lineHeight: 1.7,
           fontStyle: 'italic',
-          zIndex: 9999,
+          zIndex: 99999,
           boxShadow: `0 0 18px rgba(${badge.rgb},0.4), inset 0 1px 0 rgba(${badge.rgb},0.3), 0 8px 32px #000`,
           textAlign: 'center',
-          animation: 'fadeInUp 0.25s ease',
-        }}>
-          <div style={{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: badge.id === 'fan_argent' ? '#141420' : `rgb(${badge.rgb.split(',').map(v => Math.max(8, Math.round(parseInt(v)*0.22))).join(',')})`, border: `1px solid rgba(${badge.rgb},0.7)`, borderTop: 'none', borderLeft: 'none' }} />
+          animation: 'fadeInDown 0.25s ease',
+          pointerEvents: 'auto',
+        }}
+          onClick={() => onToggle()}
+        >
+          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: badge.id === 'fan_argent' ? '#141420' : `rgb(${badge.rgb.split(',').map(v => Math.max(8, Math.round(parseInt(v)*0.22))).join(',')})`, border: `1px solid rgba(${badge.rgb},0.7)`, borderBottom: 'none', borderRight: 'none' }} />
           {badge.message}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
