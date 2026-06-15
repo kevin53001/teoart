@@ -1322,6 +1322,14 @@ function SectionMesInfos({ userId }) {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  // États formulaire de contact
+  const [contactSujet, setContactSujet] = React.useState('');
+  const [contactMessage, setContactMessage] = React.useState('');
+  const [contactEnvoi, setContactEnvoi] = React.useState(false);
+  const [contactEnvoye, setContactEnvoye] = React.useState(false);
+  const [contactErreur, setContactErreur] = React.useState('');
+  const [showContact, setShowContact] = React.useState(false);
+
   // POINT 5 : envoi du mail de réinitialisation
   const handleReset = async () => {
     if (!resetEmail.trim()) { setResetErreur('Adresse email requise.'); return; }
@@ -1335,6 +1343,35 @@ function SectionMesInfos({ userId }) {
   };
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
+
+  const handleContact = async () => {
+    if (!contactSujet.trim() || !contactMessage.trim()) { setContactErreur('Merci de remplir le sujet et le message.'); return; }
+    setContactEnvoi(true); setContactErreur('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sujet: contactSujet.trim(),
+          message: contactMessage.trim(),
+          userEmail: profil.email || '',
+          userPseudo: profil.pseudo || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setContactEnvoye(true);
+        setContactSujet('');
+        setContactMessage('');
+        setTimeout(() => { setContactEnvoye(false); setShowContact(false); }, 3000);
+      } else {
+        setContactErreur("Erreur lors de l'envoi. Réessaie.");
+      }
+    } catch (e) {
+      setContactErreur("Erreur réseau. Réessaie.");
+    }
+    setContactEnvoi(false);
+  };
 
   const styleInput = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', outline: 'none', width: '100%' };
   const styleLabel = { color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', display: 'block' };
@@ -1466,6 +1503,49 @@ function SectionMesInfos({ userId }) {
                   📲 Installer l'application
                 </button>
               )}
+              {/* ── Formulaire de contact ── */}
+              <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              <button
+                onClick={() => { setShowContact(v => !v); setContactEnvoye(false); setContactErreur(''); }}
+                style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.18), rgba(255,160,40,0.08))', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ffd250', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,210,80,0.12)' }}>
+                ✉️ Contacter Kevin
+              </button>
+              {showContact && (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {contactEnvoye ? (
+                    <p style={{ color: '#00cc66', fontSize: '12px', textAlign: 'center' }}>✓ Message envoyé !</p>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Sujet"
+                        value={contactSujet}
+                        onChange={e => setContactSujet(e.target.value)}
+                        style={{ ...styleInput, fontSize: '12px', padding: '8px 10px' }}
+                        onFocus={e => e.target.style.borderColor = 'rgba(255,210,80,0.5)'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      <textarea
+                        placeholder="Ton message…"
+                        value={contactMessage}
+                        onChange={e => setContactMessage(e.target.value)}
+                        rows={4}
+                        style={{ ...styleInput, fontSize: '12px', padding: '8px 10px', resize: 'vertical', fontFamily: 'inherit', minHeight: '80px' }}
+                        onFocus={e => e.target.style.borderColor = 'rgba(255,210,80,0.5)'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      {contactErreur && <p style={{ color: '#ff6b6b', fontSize: '11px' }}>{contactErreur}</p>}
+                      <button
+                        onClick={handleContact}
+                        disabled={contactEnvoi || !contactSujet.trim() || !contactMessage.trim()}
+                        style={{ background: (contactSujet.trim() && contactMessage.trim()) ? 'linear-gradient(135deg, rgba(255,210,80,0.25), rgba(255,160,40,0.15))' : 'rgba(255,255,255,0.04)', border: `1px solid ${(contactSujet.trim() && contactMessage.trim()) ? 'rgba(255,210,80,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px', color: (contactSujet.trim() && contactMessage.trim()) ? '#ffd250' : 'rgba(255,255,255,0.2)', fontSize: '12px', cursor: (contactSujet.trim() && contactMessage.trim()) ? 'pointer' : 'default', fontWeight: 'bold' }}>
+                        {contactEnvoi ? 'Envoi...' : 'Envoyer'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
               {avatarPreview && (
                 <>
                   <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
