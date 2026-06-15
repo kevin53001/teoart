@@ -38,14 +38,14 @@ function moisSuivant() {
 
 // ─── Config des 4 onglets ─────────────────────────────────────────────────────
 const ONGLETS = [
-  { id: 'patreon',   emoji: '🌟', couleur: '#ffd250', label: 'Nouveautés Patreon'  },
-  { id: 'coloriages',emoji: '🎨', couleur: '#00d4d4', label: 'Derniers coloriages' },
-  { id: 'bestsellers',emoji:'💎', couleur: '#ff3eb5', label: 'Best sellers'         },
-  { id: 'favoris',   emoji: '❤️', couleur: '#a78bfa', label: 'Favoris TeoArt'      },
+  { id: 'patreon',    pastille: `${R2}/site/pastille_patreon.png`,  couleur: '#ffd250', label: 'Nouveautés Patreon'  },
+  { id: 'coloriages', pastille: `${R2}/site/pastille_colos.png`,    couleur: '#00d4d4', label: 'Derniers coloriages' },
+  { id: 'bestsellers',pastille: `${R2}/site/pastille_best.png`,     couleur: '#ff3eb5', label: 'Best sellers'        },
+  { id: 'favoris',    pastille: `${R2}/site/pastille_favoris.png`,  couleur: '#a78bfa', label: 'Favoris TeoArt'     },
 ];
 
 // ─── Panneau d'un onglet ──────────────────────────────────────────────────────
-function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFiche }) {
+function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrirFiche }) {
   const [images, setImages] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [prevIdx, setPrevIdx] = React.useState(null);
@@ -146,7 +146,10 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
     }}>
       {/* En-tête */}
       <div style={{ background: couleur, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: '#000', fontSize: '12px', fontWeight: 800 }}>{emoji} {label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <img src={pastille} alt="" style={{ width: '18px', height: '18px', objectFit: 'contain', flexShrink: 0 }} />
+          <span style={{ color: '#000', fontSize: '12px', fontWeight: 800 }}>{label}</span>
+        </div>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#000', fontSize: '16px', cursor: 'pointer', lineHeight: 1, opacity: 0.6 }}>×</button>
       </div>
 
@@ -316,7 +319,6 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              fontSize: '18px',
               backdropFilter: 'blur(6px)',
               boxShadow: ouvert === o.id
                 ? `0 0 16px ${o.couleur}80`
@@ -324,7 +326,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
               transition: 'background 0.2s, box-shadow 0.2s',
             }}
           >
-            {o.emoji}
+            <img src={o.pastille} alt={o.label} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
           </div>
         ))}
       </div>
@@ -350,7 +352,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
             <PanneauOnglet
               id={o.id}
               couleur={o.couleur}
-              emoji={o.emoji}
+              pastille={o.pastille}
               label={o.label}
               userId={userId}
               onClose={() => setOuvert(null)}

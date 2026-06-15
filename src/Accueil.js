@@ -316,7 +316,7 @@ function PopupFiche({ illu, onClose, userId, userPseudo }) {
 }
 
 // ── Encart défilant — crossfade réel (deux images superposées) ──
-function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
+function EncartDefilant({ titre, pastille, couleur, images, onZoom, onFiche }) {
   // On garde les deux derniers index : current et previous
   const [cur, setCur] = React.useState(0);
   const [prev, setPrev] = React.useState(null);
@@ -366,8 +366,9 @@ function EncartDefilant({ titre, couleur, images, onZoom, onFiche }) {
 
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: `1px solid ${couleur}30`, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-      <div style={{ background: couleur, padding: '8px 14px' }}>
-        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0, textAlign: 'center' }}>{titre}</p>
+      <div style={{ background: couleur, padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        {pastille && <img src={pastille} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />}
+        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{titre}</p>
       </div>
       <div
         style={{ flex: 1, position: 'relative', padding: '12px', cursor: onFiche && imgCur.illu ? 'pointer' : 'zoom-in' }}
@@ -450,8 +451,9 @@ function EncartPatreon({ images, onZoom }) {
   const img = images[idx];
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-      <div style={{ background: '#ffd250', padding: '8px 14px' }}>
-        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0, textAlign: 'center' }}>🌟 Nouveautés Patreon</p>
+      <div style={{ background: '#ffd250', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <img src={`${R2}/site/pastille_patreon.png`} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>Nouveautés Patreon</p>
       </div>
       <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px', fontWeight: 'bold' }}>
@@ -907,7 +909,7 @@ function Accueil() {
                   images={nouveautes}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
-                <EncartDefilant titre="🎨 Derniers coloriages" couleur="#00d4d4"
+                <EncartDefilant titre="Derniers coloriages" pastille={`${R2}/site/pastille_colos.png`} couleur="#00d4d4"
                   images={coloriages}
                   onZoom={(imgs, i) => {
                     const img = imgs[i];
@@ -915,12 +917,12 @@ function Accueil() {
                     else setPopup({ images: imgs, index: i });
                   }}
                 />
-                <EncartDefilant titre="💎 Best sellers" couleur="#ff3eb5"
+                <EncartDefilant titre="Best sellers" pastille={`${R2}/site/pastille_best.png`} couleur="#ff3eb5"
                   images={bestSellers}
                   onFiche={(illu) => setPopupFiche(illu)}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
-                <EncartDefilant titre="❤️ Favoris TeoArt" couleur="#a78bfa"
+                <EncartDefilant titre="Favoris TeoArt" pastille={`${R2}/site/pastille_favoris.png`} couleur="#a78bfa"
                   images={favoris}
                   onFiche={(illu) => setPopupFiche(illu)}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
