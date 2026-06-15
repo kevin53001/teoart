@@ -47,7 +47,10 @@ const ONGLETS = [
 function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFiche }) {
   const [images, setImages] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
+  const [prevIdx, setPrevIdx] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const [popupZoom, setPopupZoom] = React.useState(null);
+  const timerRef = React.useRef(null);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -108,14 +111,22 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
     charger();
   }, [id]);
 
-  // Auto-défilement
+  // Auto-défilement avec crossfade
   React.useEffect(() => {
     if (images.length <= 1) return;
-    const t = setInterval(() => setIdx(i => (i + 1) % images.length), 4000);
-    return () => clearInterval(t);
+    const t = setInterval(() => {
+      setIdx(prev => {
+        setPrevIdx(prev);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setPrevIdx(null), 1200);
+        return (prev + 1) % images.length;
+      });
+    }, 4000);
+    return () => { clearInterval(t); clearTimeout(timerRef.current); };
   }, [images.length]);
 
   const img = images[idx];
+  const prevImg = prevIdx !== null ? images[prevIdx] : null;
   const coloriste = img ? extraireColoriste(img.url) : null;
   const nomColoriste = img?.nom?.startsWith('🎨') ? img.nom.replace('🎨 ', '') : coloriste;
 
@@ -149,24 +160,30 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
         </div>
       ) : (
         <>
-          {/* Image */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', position: 'relative', minHeight: '180px' }}>
-            {id === 'patreon' && (
-              <p style={{ position: 'absolute', top: '8px', left: 0, right: 0, textAlign: 'center', color: `${couleur}cc`, fontSize: '10px', fontWeight: 700 }}>
-                Ça arrive en {moisSuivant()} sur{' '}
-                <span onClick={() => window.open(PATREON_URL, '_blank')} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Patreon</span>
-              </p>
+          {/* Texte Patreon au-dessus de l'image */}
+          {id === 'patreon' && (
+            <p style={{ textAlign: 'center', color: `${couleur}cc`, fontSize: '10px', fontWeight: 700, padding: '6px 14px 0' }}>
+              Ça arrive en {moisSuivant()} sur{' '}
+              <span onClick={() => window.open(PATREON_URL, '_blank')} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Patreon</span>
+            </p>
+          )}
+
+          {/* Image avec crossfade */}
+          <div style={{ flex: 1, position: 'relative', padding: '12px', minHeight: '180px' }}>
+            {prevImg && (
+              <img src={prevImg.url} alt=""
+                style={{ position: 'absolute', inset: '12px', width: 'calc(100% - 24px)', height: 'calc(100% - 24px)', objectFit: 'contain', borderRadius: '8px', opacity: 0, transition: 'opacity 1.2s ease', pointerEvents: 'none' }}
+              />
             )}
             <img
-              key={img.url}
               src={img.url}
               alt={img.nom}
               onClick={async () => {
-                if (id === 'patreon' || !img.illuId) return;
+                if (id === 'patreon') { setPopupZoom(img.url); return; }
+                if (!img.illuId) return;
                 if (img.illu) {
                   onOuvrirFiche && onOuvrirFiche(img.illu);
                 } else {
-                  // Charger l'illu complète (cas coloriages)
                   const { data } = await supabase
                     .from('illustrations')
                     .select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids')
@@ -176,12 +193,15 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
                 }
               }}
               style={{
-                maxWidth: '100%', maxHeight: '208px', objectFit: 'contain', borderRadius: '8px', display: 'block',
-                cursor: (id !== 'patreon' && img.illuId) ? 'pointer' : 'default',
+                position: 'absolute', inset: '12px',
+                width: 'calc(100% - 24px)', height: 'calc(100% - 24px)',
+                objectFit: 'contain', borderRadius: '8px',
+                cursor: (id === 'patreon' || img.illuId) ? 'pointer' : 'default',
               }}
             />
+            <div style={{ width: '100%', height: '180px' }} />
             {nomColoriste && (
-              <div style={{ position: 'absolute', bottom: '18px', right: '18px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
+              <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                 {nomColoriste}
               </div>
             )}
@@ -202,6 +222,12 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
             </div>
           )}
         </>
+      )}
+      {popupZoom && (
+        <div onClick={() => setPopupZoom(null)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <button onClick={() => setPopupZoom(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <img src={popupZoom} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
+        </div>
       )}
     </div>
   );
