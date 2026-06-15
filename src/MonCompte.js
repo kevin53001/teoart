@@ -371,6 +371,20 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
   );
 }
 
+// Jauge qui s'anime de 0 à sa valeur cible au montage
+function JaugeAnimee({ pct, couleurClair, couleurPlein, hauteur = 4 }) {
+  const [largeur, setLargeur] = React.useState(0);
+  React.useEffect(() => {
+    const t = setTimeout(() => setLargeur(pct), 50);
+    return () => clearTimeout(t);
+  }, [pct]);
+  return (
+    <div style={{ height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${largeur}%`, background: `linear-gradient(90deg,${couleurClair},${couleurPlein})`, borderRadius: `${hauteur}px`, transition: 'width 1.4s cubic-bezier(0.4,0,0.2,1)' }} />
+    </div>
+  );
+}
+
 function SectionMaCollection({ userId, totalIllus }) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -380,8 +394,6 @@ function SectionMaCollection({ userId, totalIllus }) {
 
   const COULEURS_ARC = ['#ff3eb5','#ff6b35','#ffd250','#a8e063','#00d4d4','#4a9eff','#9b59b6'];
   const getCouleurAnnee = (idx) => COULEURS_ARC[idx % COULEURS_ARC.length];
-
-  // Convertit une couleur hex en composantes rgb
   const hexToRgb = (hex) => {
     const h = hex.replace('#','');
     const r = parseInt(h.substring(0,2),16);
@@ -585,9 +597,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{recueilData.info.nom}</p>
-                          <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurR.clair},${couleurR.plein})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
-                          </div>
+                          <JaugeAnimee pct={(jaiR/totalR)*100} couleurClair={couleurR.clair} couleurPlein={couleurR.plein} hauteur={4} />
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
                         <span style={{ color: ouvertR ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
@@ -610,9 +620,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                     <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
-                                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL.clair},${couleurL.plein})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
-                                    </div>
+                                    <JaugeAnimee pct={(jaiL/totalL)*100} couleurClair={couleurL.clair} couleurPlein={couleurL.plein} hauteur={3} />
                                   </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                                   <span style={{ color: ouvertL ? couleurL.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
@@ -655,9 +663,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
-                          <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurHS.clair},${couleurHS.plein})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
-                          </div>
+                          <JaugeAnimee pct={(jaiL/totalL)*100} couleurClair={couleurHS.clair} couleurPlein={couleurHS.plein} hauteur={3} />
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? couleurHS.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
@@ -719,9 +725,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
-                          <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: 'linear-gradient(90deg,#ffd25044,#ffd250)', borderRadius: '3px', transition: 'width 1.2s ease' }} />
-                          </div>
+                          <JaugeAnimee pct={(jaiL/totalL)*100} couleurClair="rgba(255,210,80,0.2)" couleurPlein="#ffd250" hauteur={3} />
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
