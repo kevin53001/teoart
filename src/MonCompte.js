@@ -157,66 +157,84 @@ function hexPath(cx, cy, r, rCoin) {
   return d + ' Z';
 }
 
-function HexBadge({ badge, obtenu, delaiAnim }) {
+function HexBadge({ badge, obtenu, delaiAnim, small }) {
   const ref = React.useRef(null);
   const [anime, setAnime] = React.useState(false);
 
   React.useEffect(() => {
-    if (delaiAnim !== null && ref.current) {
+    if (!obtenu) return;
+    setAnime(false);
+    if (delaiAnim !== null && delaiAnim !== undefined) {
       const t = setTimeout(() => setAnime(true), delaiAnim);
       return () => clearTimeout(t);
     }
-  }, [delaiAnim]);
+  }, [delaiAnim, obtenu]);
 
-  const W = 80; const H = 92;
+  const W = small ? 58 : 80;
+  const H = small ? 67 : 92;
   const cx = W/2; const cy = H/2;
-  const r = 38; const rCoin = 10;
+  const r = small ? 27 : 38;
+  const rCoin = small ? 7 : 10;
   const path = hexPath(cx, cy, r, rCoin);
-  const pathInner = hexPath(cx, cy, r - 7, rCoin - 2);
+  const pathInner = hexPath(cx, cy, r - (small ? 5 : 7), rCoin - 2);
+  // Relief 3D : ombre portée sous le badge
+  const pathShadow = hexPath(cx, cy + (small ? 3 : 4), r, rCoin);
 
-  // Texte multi-lignes centré
   const lignes = badge.lignes;
   const totalLines = lignes.length;
-  const lineH = totalLines === 2 ? 13 : 11;
+  const lineH = small ? 9 : 13;
   const startY = cy - ((totalLines - 1) * lineH) / 2;
+  const fs0 = small ? 7 : 9;
+  const fs1 = small ? 8 : 11;
 
   return (
     <div ref={ref}
       className={`hex-badge${obtenu ? ' obtenu' : ''}${anime ? ' badge-nouveau' : ''}`}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative',
-        animationDelay: anime ? '0ms' : undefined }}>
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative',
+        animationDelay: anime ? `${delaiAnim}ms` : undefined,
+      }}>
       {anime && (
-        <div style={{ position: 'absolute', top: '-8px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', zIndex: 2, boxShadow: '0 0 8px #ff3eb5' }}>🔔</div>
+        <div style={{ position: 'absolute', top: '-8px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', zIndex: 2, boxShadow: '0 0 8px #ff3eb5' }}>🔔</div>
       )}
-      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H}
-        style={{ display: 'block', filter: obtenu ? `drop-shadow(0 0 7px rgba(${badge.rgb},0.75))` : 'none' }}>
+      <svg viewBox={`0 0 ${W} ${H + (small ? 4 : 6)}`} width={W} height={H + (small ? 4 : 6)}
+        style={{ display: 'block', filter: obtenu ? `drop-shadow(0 ${small ? 2 : 3}px ${small ? 6 : 10}px rgba(${badge.rgb},0.65))` : 'none' }}>
         <defs>
           <linearGradient id={`grad_${badge.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor={obtenu ? '#fff' : '#2a2a2a'} stopOpacity={obtenu ? 0.3 : 1} />
+            <stop offset="0%"   stopColor={obtenu ? '#fff' : '#2a2a2a'} stopOpacity={obtenu ? 0.35 : 1} />
             <stop offset="45%"  stopColor={obtenu ? badge.couleur : '#1a1a1a'} stopOpacity={1} />
-            <stop offset="100%" stopColor={obtenu ? badge.couleur : '#0d0d0d'} stopOpacity={obtenu ? 0.75 : 1} />
+            <stop offset="100%" stopColor={obtenu ? badge.couleur : '#0d0d0d'} stopOpacity={obtenu ? 0.7 : 1} />
+          </linearGradient>
+          {/* Gradient pour le relief latéral 3D */}
+          <linearGradient id={`relief_${badge.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stopColor={obtenu ? badge.couleur : '#111'} stopOpacity={obtenu ? 0.9 : 0.5} />
+            <stop offset="100%" stopColor={obtenu ? badge.couleur : '#0a0a0a'} stopOpacity={obtenu ? 0.4 : 0.2} />
           </linearGradient>
           <linearGradient id={`shine_${badge.id}`} x1="0%" y1="0%" x2="55%" y2="100%">
-            <stop offset="0%"  stopColor="#fff" stopOpacity={obtenu ? 0.45 : 0} />
+            <stop offset="0%"  stopColor="#fff" stopOpacity={obtenu ? 0.5 : 0} />
             <stop offset="60%" stopColor="#fff" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {/* Fond */}
+        {/* Ombre portée 3D (relief bas) */}
+        {obtenu && <path d={pathShadow} fill={`rgba(${badge.rgb},0.25)`} />}
+        {/* Face latérale 3D (épaisseur) */}
+        {obtenu && <path d={hexPath(cx, cy + (small ? 2 : 3), r - 1, rCoin)} fill={`url(#relief_${badge.id})`} />}
+        {/* Face principale */}
         <path d={path} fill={`url(#grad_${badge.id})`}
           stroke={obtenu ? badge.couleur : 'rgba(255,255,255,0.07)'}
-          strokeWidth={obtenu ? 2 : 1} />
-        {/* Reflet */}
+          strokeWidth={obtenu ? 1.5 : 1} />
+        {/* Reflet brillant */}
         <path d={path} fill={`url(#shine_${badge.id})`} />
         {/* Bord intérieur */}
-        {obtenu && <path d={pathInner} fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1.2" />}
+        {obtenu && <path d={pathInner} fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1" />}
         {/* Texte */}
         {lignes.map((ligne, i) => (
           <text key={i}
             x={cx} y={startY + i * lineH}
             textAnchor="middle" dominantBaseline="middle"
-            fontSize={i === 0 ? "9" : "11"}
+            fontSize={i === 0 ? fs0 : fs1}
             fontWeight={i === 0 ? "normal" : "bold"}
-            fill={obtenu ? badge.textColor : 'rgba(255,255,255,0.18)'}
+            fill={obtenu ? badge.textColor : 'rgba(255,255,255,0.15)'}
             style={{ fontFamily: 'sans-serif' }}
           >{ligne}</text>
         ))}
@@ -225,63 +243,58 @@ function HexBadge({ badge, obtenu, delaiAnim }) {
   );
 }
 
-function BadgesHexagonaux({ pctJai, pctColo, userId }) {
-  const [nouveaux, setNouveaux] = React.useState([]);
+function BadgesHexagonaux({ pctJai, pctColo }) {
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
 
   React.useEffect(() => {
-    if (!userId || (pctJai === 0 && pctColo === 0)) return;
-    const key = `badges_vus_${userId}`;
-    const vus = JSON.parse(localStorage.getItem(key) || '[]');
-    const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
-    const obtenus = tousLesBadges
-      .filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil)
-      .map(b => b.id);
-    const nvx = obtenus.filter(id => !vus.includes(id));
-    setNouveaux(nvx);
-    if (nvx.length > 0) {
-      localStorage.setItem(key, JSON.stringify([...vus, ...nvx]));
-    }
-  }, [pctJai, pctColo, userId]);
+    const handler = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
-  // Délai cascade pour les nouveaux badges (ordre d'apparition)
+  // Animation à chaque visite — délai basé sur l'index dans la liste des obtenus
+  const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
+  const obtenus = tousLesBadges.filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil);
+
   const getDelai = (id) => {
-    if (!nouveaux.includes(id)) return null;
-    return nouveaux.indexOf(id) * 600; // 600ms entre chaque
+    const idx = obtenus.findIndex(b => b.id === id);
+    return idx >= 0 ? idx * 700 : null; // 700ms entre chaque badge
   };
 
   return (
     <>
       <style>{`
         @keyframes badge-apparition {
-          0%   { transform: scale(0.2) rotate(-20deg); opacity: 0; filter: brightness(4) blur(2px); }
-          35%  { transform: scale(1.3)  rotate(6deg);  opacity: 1; filter: brightness(2.5); }
-          55%  { transform: scale(0.9)  rotate(-4deg); filter: brightness(1.6); }
-          75%  { transform: scale(1.1)  rotate(2deg);  filter: brightness(1.2); }
-          100% { transform: scale(1)    rotate(0deg);  opacity: 1; filter: brightness(1); }
+          0%   { transform: scale(0.15) rotate(-25deg); opacity: 0; filter: brightness(5) blur(3px); }
+          30%  { transform: scale(1.35) rotate(8deg);   opacity: 1; filter: brightness(3); }
+          50%  { transform: scale(0.88) rotate(-5deg);  filter: brightness(1.8); }
+          70%  { transform: scale(1.12) rotate(3deg);   filter: brightness(1.3); }
+          85%  { transform: scale(0.96) rotate(-1deg);  filter: brightness(1.1); }
+          100% { transform: scale(1)    rotate(0deg);   opacity: 1; filter: brightness(1); }
         }
-        .badge-nouveau { animation: badge-apparition 1.2s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
         .hex-badge { transition: transform 0.2s; }
-        .hex-badge.obtenu:hover { transform: scale(1.1); }
+        .hex-badge.obtenu:hover { transform: scale(1.1) translateY(-2px); }
       `}</style>
 
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
 
         {/* ── Fan ── */}
-        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', flex: '1 1 260px' }}>
-          <p style={{ color: 'rgba(0,212,212,0.8)', fontSize: '11px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>✓ Fan — J'ai</p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '12px', padding: isMobile ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', flex: '1 1 auto' }}>
+          <p style={{ color: 'rgba(0,212,212,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>✓ Fan — J'ai</p>
+          <div style={{ display: 'flex', gap: isMobile ? '4px' : '6px', flexWrap: 'nowrap', justifyContent: 'center' }}>
             {BADGES_FAN.map(b => (
-              <HexBadge key={b.id} badge={b} obtenu={pctJai >= b.seuil} delaiAnim={getDelai(b.id)} />
+              <HexBadge key={b.id} badge={b} obtenu={pctJai >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile} />
             ))}
           </div>
         </div>
 
         {/* ── Coloriste ── */}
-        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', flex: '1 1 320px' }}>
-          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>🎨 Coloriste — Colorié</p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '12px', padding: isMobile ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', flex: '1 1 auto' }}>
+          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>🎨 Coloriste — Colorié</p>
+          <div style={{ display: 'flex', gap: isMobile ? '3px' : '6px', flexWrap: 'nowrap', justifyContent: 'center' }}>
             {BADGES_COLO.map(b => (
-              <HexBadge key={b.id} badge={b} obtenu={pctColo >= b.seuil} delaiAnim={getDelai(b.id)} />
+              <HexBadge key={b.id} badge={b} obtenu={pctColo >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile} />
             ))}
           </div>
         </div>
