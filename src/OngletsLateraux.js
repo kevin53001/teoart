@@ -153,13 +153,34 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
       flexDirection: 'column',
       overflow: 'hidden',
     }}>
-      {/* En-tête */}
-      <div style={{ background: couleur, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      {/* En-tête — style carte premium */}
+      <div style={{
+        background: `linear-gradient(135deg, ${couleur}38, ${couleur}18)`,
+        borderBottom: `1px solid ${couleur}55`,
+        boxShadow: `0 2px 12px ${couleur}30, inset 0 1px 0 ${couleur}30`,
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Effet shine au montage */}
+        <div style={{
+          position: 'absolute', top: '-20%', left: '-150%',
+          width: '80%', height: '140%',
+          background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.04) 75%, transparent 100%)',
+          transform: 'skewX(-28deg)',
+          animation: 'header-shine 1.2s ease-in-out forwards',
+          pointerEvents: 'none',
+        }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative', zIndex: 1 }}>
           <img src={pastille} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain', flexShrink: 0 }} />
-          <span style={{ color: '#000', fontSize: '12px', fontWeight: 800 }}>{label}</span>
+          <span style={{ color: couleur, fontSize: '12px', fontWeight: 800, textShadow: `0 0 8px ${couleur}80` }}>{label}</span>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#000', fontSize: '16px', cursor: 'pointer', lineHeight: 1, opacity: 0.6 }}>×</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: couleur, fontSize: '16px', cursor: 'pointer', lineHeight: 1, opacity: 0.7, position: 'relative', zIndex: 1 }}>×</button>
       </div>
 
       {/* Contenu */}
@@ -308,6 +329,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
         }
         .onglet-tab.shining::before { animation: onglet-shine 0.7s ease-in-out forwards; }
         @keyframes onglet-shine { 0% { left: -150%; } 100% { left: 220%; } }
+        @keyframes header-shine { 0% { left: -150%; } 100% { left: 220%; } }
         .onglet-tab:hover { transform: translateX(-4px); }
       `}</style>
 
