@@ -238,11 +238,6 @@ function Cloche({ hidden = false }) {
     setNotifs(prev => prev.filter(n => n.id !== id));
   };
 
-  const supprimerPlusieurs = async (ids) => {
-    await supabase.from('notifications').delete().in('id', ids);
-    setNotifs(prev => prev.filter(n => !ids.includes(n.id)));
-  };
-
   const toutSupprimer = async () => {
     if (!userId) return;
     await supabase.from('notifications').delete().eq('user_id', userId).eq('lu', false);
