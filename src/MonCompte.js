@@ -166,10 +166,9 @@ function hexPath(cx, cy, r, rCoin) {
   return d + ' Z';
 }
 
-function HexBadge({ badge, obtenu, delaiAnim, small }) {
+function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
   const ref = React.useRef(null);
   const [anime, setAnime] = React.useState(false);
-  const [ouvert, setOuvert] = React.useState(false);
 
   React.useEffect(() => {
     if (!obtenu) return;
@@ -200,7 +199,7 @@ function HexBadge({ badge, obtenu, delaiAnim, small }) {
   return (
     <div ref={ref}
       className={`hex-badge${obtenu ? ' obtenu' : ''}${anime ? ' badge-nouveau' : ''}`}
-      onClick={() => obtenu && setOuvert(v => !v)}
+      onClick={() => obtenu && onToggle()}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative',
         cursor: obtenu ? 'pointer' : 'default',
@@ -258,22 +257,21 @@ function HexBadge({ badge, obtenu, delaiAnim, small }) {
           transform: 'translateX(-50%)',
           marginTop: '8px',
           width: small ? '220px' : '260px',
-          background: `linear-gradient(135deg, rgba(${badge.rgb},0.18), rgba(${badge.rgb},0.08))`,
-          border: `1px solid rgba(${badge.rgb},0.45)`,
+          background: `linear-gradient(135deg, rgba(${badge.rgb},0.22), rgba(${badge.rgb},0.12))`,
+          border: `1px solid rgba(${badge.rgb},0.55)`,
           borderRadius: '12px',
           padding: '12px 14px',
-          color: 'rgba(255,255,255,0.82)',
+          color: '#fff',
           fontSize: '11px',
           lineHeight: 1.7,
           fontStyle: 'italic',
           zIndex: 50,
-          boxShadow: `0 4px 20px rgba(${badge.rgb},0.2), 0 8px 32px rgba(0,0,0,0.6)`,
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
+          boxShadow: `0 0 18px rgba(${badge.rgb},0.35), inset 0 1px 0 rgba(${badge.rgb},0.3), 0 8px 32px rgba(0,0,0,0.85)`,
+          backdropFilter: 'blur(0px)',
           textAlign: 'center',
           animation: 'fadeInDown 0.25s ease',
         }}>
-          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%)', width: '10px', height: '10px', background: `rgba(${badge.rgb},0.3)`, border: `1px solid rgba(${badge.rgb},0.45)`, borderRadius: '2px', rotate: '45deg', borderBottom: 'none', borderRight: 'none' }} />
+          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: `rgba(${badge.rgb},0.22)`, border: `1px solid rgba(${badge.rgb},0.55)`, borderBottom: 'none', borderRight: 'none' }} />
           {badge.message}
         </div>
       )}
@@ -283,6 +281,7 @@ function HexBadge({ badge, obtenu, delaiAnim, small }) {
 
 function BadgesHexagonaux({ pctJai, pctColo }) {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
+  const [badgeOuvert, setBadgeOuvert] = React.useState(null); // id du badge dont le message est affiché
 
   React.useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth <= 600);
@@ -290,13 +289,16 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // Animation à chaque visite — délai basé sur l'index dans la liste des obtenus
   const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
   const obtenus = tousLesBadges.filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil);
 
   const getDelai = (id) => {
     const idx = obtenus.findIndex(b => b.id === id);
-    return idx >= 0 ? idx * 700 : null; // 700ms entre chaque badge
+    return idx >= 0 ? idx * 700 : null;
+  };
+
+  const handleBadgeClick = (id) => {
+    setBadgeOuvert(prev => prev === id ? null : id);
   };
 
   return (
@@ -323,20 +325,22 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
 
         {/* ── Fan ── */}
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '12px', padding: isMobile ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', flex: '1 1 auto' }}>
-          <p style={{ color: 'rgba(0,212,212,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>✓ Fan — J'ai</p>
+          <p style={{ color: 'rgba(0,212,212,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>Badge Fan (✓ J'ai)</p>
           <div style={{ display: 'flex', gap: isMobile ? '4px' : '6px', flexWrap: 'nowrap', justifyContent: 'center' }}>
             {BADGES_FAN.map(b => (
-              <HexBadge key={b.id} badge={b} obtenu={pctJai >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile} />
+              <HexBadge key={b.id} badge={b} obtenu={pctJai >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile}
+                ouvert={badgeOuvert === b.id} onToggle={() => handleBadgeClick(b.id)} />
             ))}
           </div>
         </div>
 
         {/* ── Coloriste ── */}
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '12px', padding: isMobile ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', flex: '1 1 auto' }}>
-          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>🎨 Coloriste — Colorié</p>
+          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '10px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>Badge Coloriste</p>
           <div style={{ display: 'flex', gap: isMobile ? '3px' : '6px', flexWrap: 'nowrap', justifyContent: 'center' }}>
             {BADGES_COLO.map(b => (
-              <HexBadge key={b.id} badge={b} obtenu={pctColo >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile} />
+              <HexBadge key={b.id} badge={b} obtenu={pctColo >= b.seuil} delaiAnim={getDelai(b.id)} small={isMobile}
+                ouvert={badgeOuvert === b.id} onToggle={() => handleBadgeClick(b.id)} />
             ))}
           </div>
         </div>
