@@ -98,7 +98,7 @@ function Selection() {
     }
 
     setSaving(false);
-    navigate('/catalogue');
+    navigate('/accueil');
   };
 
   const encartStyle = {
@@ -260,7 +260,7 @@ function Selection() {
                 ← Retour
               </button>
               <button onClick={validerLivres} disabled={saving} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Enregistrement...' : 'Accéder au catalogue →'}
+                {saving ? 'Enregistrement...' : "Accéder à l'accueil →"}
               </button>
             </div>
           </>

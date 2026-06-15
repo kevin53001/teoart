@@ -45,8 +45,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={!session ? <Connexion /> : <Navigate to="/catalogue" />} />
-        <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/catalogue" />} />
+        <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
+        <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
         <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
         <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
         <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />

@@ -62,7 +62,7 @@ function Connexion() {
 
     setLoading(false);
     if (profil?.selection_faite) {
-      navigate('/catalogue');
+      navigate('/accueil');
     } else {
       navigate('/selection');
     }
