@@ -11,6 +11,7 @@ import Presentation from './Presentation';
 import Pensees from './Pensees';
 import ResetPassword from './ResetPassword';
 import Accueil from './Accueil';
+import BannerePWA from './BannerePWA';
 
 function App() {
   const [session, setSession] = React.useState(undefined);
@@ -57,6 +58,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accueil" element={session ? <Accueil /> : <Navigate to="/" />} />
       </Routes>
+      <BannerePWA />
     </BrowserRouter>
   );
 }

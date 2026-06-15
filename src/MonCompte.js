@@ -3,6 +3,7 @@ import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
+import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -931,6 +932,7 @@ function SectionMesInfos({ userId }) {
   const [avatarPreview, setAvatarPreview] = React.useState(null);
   const [showCrop, setShowCrop] = React.useState(false);
   const [cropSrc, setCropSrc] = React.useState(null);
+  const pwa = usePWAInstallable();
 
   // POINT 5 : états pour la réinitialisation du mot de passe
   const [resetEmail, setResetEmail] = React.useState('');
@@ -1111,6 +1113,31 @@ function SectionMesInfos({ userId }) {
                 📷 Choisir une photo
                 <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
               </label>
+
+              {/* ── Bouton installation PWA ── */}
+              <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              {pwa.installed ? (
+                <p style={{ color: 'rgba(0,212,212,0.6)', fontSize: '11px', textAlign: 'center' }}>✓ Application installée</p>
+              ) : pwa.ios ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
+                    📱 Sur iPhone :<br/>
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Partager ⎙ → "Sur l'écran d'accueil"</span>
+                  </p>
+                </div>
+              ) : pwa.installable ? (
+                <button
+                  onClick={async () => { await pwa.installer(); }}
+                  style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.18), rgba(0,212,212,0.08))', border: '1px solid rgba(0,212,212,0.45)', borderRadius: '8px', padding: '10px 14px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxShadow: '0 0 10px rgba(0,212,212,0.15)' }}>
+                  📲 Installer l'application
+                </button>
+              ) : (
+                <button
+                  onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '10px 14px', color: 'rgba(255,255,255,0.4)', fontSize: '11px', cursor: 'pointer', textAlign: 'center', width: '100%' }}>
+                  📲 Installer l'application
+                </button>
+              )}
               {avatarPreview && (
                 <>
                   <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
