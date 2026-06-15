@@ -1505,6 +1505,9 @@ function SectionMesInfos({ userId }) {
               )}
               {/* ── Formulaire de contact ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center', lineHeight: '1.6', fontStyle: 'italic' }}>
+                Si quelque chose cloche ou que tu as une question, la boîte à lettres est ouverte. Je réponds quand les crayons me laissent souffler.
+              </p>
               <button
                 onClick={() => { setShowContact(v => !v); setContactEnvoye(false); setContactErreur(''); }}
                 style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.18), rgba(255,160,40,0.08))', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ffd250', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,210,80,0.12)' }}>
