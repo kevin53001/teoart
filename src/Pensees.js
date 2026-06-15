@@ -1,6 +1,6 @@
 import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 
@@ -477,6 +477,7 @@ function TexteAdaptatif({ texte, isMobile }) {
 
 function Pensees() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [pensees, setPensees] = React.useState([]);
   const [vues, setVues] = React.useState({});
   const [loading, setLoading] = React.useState(true);
@@ -962,16 +963,16 @@ function Pensees() {
           {/* GAUCHE */}
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }}
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/accueil' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
               onClick={() => navigate('/accueil')} />
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }}
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', ...(location.pathname === '/livres' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
               onClick={() => navigate('/livres')} />
             {/* Dropdown catégories complet */}
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0', overflow: 'visible' }}>
               <img
                 src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille"
-                style={{ width: `${P}px`, height: `${P}px`, display: 'block' }}
+                style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
                 onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); }}
               />
               {showCategories && (
@@ -1011,13 +1012,13 @@ function Pensees() {
           {/* DROITE */}
           <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
             <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }}
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/pensees' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
               onClick={() => navigate('/pensees')} />
             <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille"
               style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }}
               onClick={() => {}} />
             <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille"
-              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }}
+              style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/mon-compte' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
               onClick={() => navigate('/mon-compte')} />
           </div>
         </div>
