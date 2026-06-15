@@ -381,13 +381,20 @@ function SectionMaCollection({ userId, totalIllus }) {
   const COULEURS_ARC = ['#ff3eb5','#ff6b35','#ffd250','#a8e063','#00d4d4','#4a9eff','#9b59b6'];
   const getCouleurAnnee = (idx) => COULEURS_ARC[idx % COULEURS_ARC.length];
 
-  // Teinte de la même couleur que l'année, de très clair (idx=0) à foncé (idx=total-1)
+  // Convertit une couleur hex en rgb
+  const hexToRgb = (hex) => {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `${r},${g},${b}`;
+  };
+
+  // Teinte de la même couleur que l'année, de très clair (idx=0) à plein (idx=total-1)
   const getCouleurEntree = (couleurBase, idx, total) => {
-    const t = total <= 1 ? 1 : idx / (total - 1); // 0 = premier (clair), 1 = dernier (foncé)
-    const opMin = 0.25; // très clair
-    const opMax = 1.0;  // foncé
-    const op = opMin + t * (opMax - opMin);
-    return `${couleurBase}${Math.round(op * 255).toString(16).padStart(2, '0')}`;
+    const t = total <= 1 ? 1 : idx / (total - 1);
+    const op = 0.25 + t * 0.75;
+    const rgb = hexToRgb(couleurBase);
+    return { plein: `rgba(${rgb},${op.toFixed(2)})`, clair: `rgba(${rgb},${(op*0.4).toFixed(2)})` };
   };
   const EXCLUS = new Set(['recueil_recueil de noel_2026', 'livre_colormefree']);
 
@@ -570,7 +577,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{recueilData.info.nom}</p>
                           <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurR}66,${couleurR})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
+                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurR.clair},${couleurR.plein})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
                           </div>
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
@@ -595,11 +602,11 @@ function SectionMaCollection({ userId, totalIllus }) {
                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                     <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
                                     <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL}66,${couleurL})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL.clair},${couleurL.plein})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
                                     </div>
                                   </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
-                                  <span style={{ color: ouvertL ? couleurL : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                                  <span style={{ color: ouvertL ? couleurL.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                                 </div>
                                 {ouvertL && jaiL > 0 && (
                                   <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -640,11 +647,11 @@ function SectionMaCollection({ userId, totalIllus }) {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
                           <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurHS}66,${couleurHS})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurHS.clair},${couleurHS.plein})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
                           </div>
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
-                        <span style={{ color: ouvertL ? couleurHS : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                        <span style={{ color: ouvertL ? couleurHS.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
                       {ouvertL && jaiL > 0 && (
                         <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
