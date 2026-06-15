@@ -82,10 +82,13 @@ function melangerTableau(arr) {
   return a;
 }
 
-function moisSuivant() {
-  const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+function moisCibleComingSoon() {
+  // Avant le 15 : les coming_soon ciblent le mois courant
+  // A partir du 15 : les coming_soon ciblent le mois suivant
+  const MOIS = ['Janvier','\u0046\u00e9vrier','Mars','Avril','Mai','Juin','Juillet','Ao\u00fbt','Septembre','Octobre','Novembre','D\u00e9cembre'];
   const d = new Date();
-  return MOIS[(d.getMonth() + 1) % 12];
+  const offset = d.getDate() >= 15 ? 1 : 0;
+  return MOIS[(d.getMonth() + offset) % 12];
 }
 
 // ── Jauges ──
@@ -143,27 +146,27 @@ function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, is
         color: couleur,
         boxShadow: `0 2px 8px rgba(0,0,0,0.4)`,
         borderRadius: '14px',
-        padding: isMobile ? '10px 14px' : '10px 8px',
+        padding: isMobile ? '10px 8px' : '12px 8px',
         cursor: disabled ? 'default' : 'pointer',
         fontWeight: 'bold',
-        flex: isMobile ? '1 1 100%' : '1 1 0',
-        minWidth: isMobile ? '100%' : '0',
+        flex: isMobile ? '1 1 calc(50% - 4px)' : '1 1 0',
+        minWidth: isMobile ? 'calc(50% - 4px)' : '0',
         opacity: disabled ? 0.55 : 1,
         transition: 'transform .2s, box-shadow .2s',
         display: 'flex',
-        flexDirection: isMobile ? 'row' : 'column',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: isMobile ? '7px' : '6px',
+        gap: '8px',
       }}>
       {icone && React.cloneElement(icone, {
         style: {
           ...(icone.props.style || {}),
-          width: isMobile ? '20px' : '32px',
-          height: isMobile ? '20px' : '32px',
+          width: isMobile ? '36px' : '48px',
+          height: isMobile ? '36px' : '48px',
         }
       })}
-      <span style={{ fontSize: isMobile ? '13px' : '11px', lineHeight: '1.3', textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: isMobile ? '11px' : '12px', lineHeight: '1.3', textAlign: 'center' }}>{label}</span>
     </button>
   );
 }
@@ -419,7 +422,7 @@ function EncartPatreon({ images, onZoom }) {
   const [fadingP, setFadingP] = React.useState(false);
   const timerPRef = React.useRef(null);
   const FADEP = 1200;
-  const mois = moisSuivant();
+  const mois = moisCibleComingSoon();
 
   React.useEffect(() => {
     if (images.length <= 1) return;
@@ -451,7 +454,7 @@ function EncartPatreon({ images, onZoom }) {
       <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px', fontWeight: 'bold' }}>
           Ça arrive en {mois} sur{' '}
-          <span onClick={() => window.open(PATREON_URL, '_blank')} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Patreon</span> !
+          <span onClick={(e) => { e.stopPropagation(); window.open(PATREON_URL, '_blank'); }} style={{ textDecoration: 'underline', cursor: 'pointer', color: '#ffd250' }}>Patreon</span> !
         </p>
       </div>
       <div style={{ flex: 1, position: 'relative', padding: '8px 12px', cursor: 'zoom-in', minHeight: '140px' }}
@@ -754,7 +757,7 @@ function Accueil() {
   const BTNS = [
     { label: 'Constitue ta collection', pastille: `${R2}/site/pastille_mon_compte.png`, couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/mon-compte'),   disabled: false },
     { label: 'Partage tes coloriages',  emoji: '🎨',                                    couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: null,                            disabled: true  },
-    { label: 'Viens me découvrir',      logo: `${R2}/site/Logo.png`,                    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80',  onClick: () => navigate('/presentation'), disabled: false },
+    { label: 'Viens me découvrir',      pastille: `${R2}/site/pastille_logomini.png`,    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80',  onClick: () => navigate('/presentation'), disabled: false },
     { label: 'Plonge dans mes pensées', pastille: `${R2}/site/pastille_pensees.png`,    couleur: '#a78bfa',              couleurRgb: '167,139,250', onClick: () => navigate('/pensees'),      disabled: false },
     { label: 'Catalogue complet',       pastille: `${R2}/site/pastille_categories.png`, couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: () => navigate('/catalogue'),    disabled: false },
     { label: 'Bibliothèque',            pastille: `${R2}/site/pastille_livres.png`,     couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/livres'),       disabled: false },
@@ -867,9 +870,8 @@ function Accueil() {
                 {BTNS.map((btn, i) => (
                   <BoutonAction key={i}
                     label={btn.label}
-                    icone={btn.pastille ? <img src={btn.pastille} alt="" style={{ width: '22px', height: '22px', objectFit: 'contain', flexShrink: 0 }} />
-                      : btn.logo ? <img src={btn.logo} alt="" style={{ width: '22px', height: '22px', objectFit: 'cover', borderRadius: '50%', flexShrink: 0 }} />
-                      : btn.emoji ? <span style={{ fontSize: '16px', flexShrink: 0 }}>{btn.emoji}</span>
+                    icone={btn.pastille ? <img src={btn.pastille} alt="" style={{ objectFit: 'contain', flexShrink: 0, display: 'block' }} />
+                      : btn.emoji ? <span style={{ fontSize: '24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{btn.emoji}</span>
                       : null}
                     couleur={btn.couleur} couleurRgb={btn.couleurRgb}
                     onClick={btn.onClick || undefined} disabled={btn.disabled}
@@ -954,7 +956,7 @@ function Accueil() {
                   texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup.",
                 },
                 {
-                  logo: `${R2}/site/Logo.png`, lien: '/presentation',
+                  pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation',
                   titre: 'La Présentation', couleur: '#00d4d4',
                   texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue.",
                 },
@@ -981,14 +983,11 @@ function Accueil() {
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                       <div
                         onClick={item.lien ? () => navigate(item.lien) : undefined}
-                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: item.logo ? '50%' : '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }}
+                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }}
                         onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }}
                         onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}
                       >
-                        {item.logo
-                          ? <img src={item.logo} alt="" style={{ width: `${T}px`, height: `${T}px`, objectFit: 'cover', borderRadius: '50%', border: '2px solid rgba(255,210,80,0.4)', display: 'block' }} />
-                          : <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
-                        }
+                        <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
