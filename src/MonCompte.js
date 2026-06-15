@@ -84,9 +84,9 @@ function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = 
   if (showLabels) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-        <UneBarre pct={pctJai}    couleur="linear-gradient(90deg,#00d4d4,#00aaaa)"   label="✓ J'ai"    delai={0}   hauteur={hauteur} showLabel={true} />
-        <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#ffd250,#ffb428)"  label="🎨 Colorié" delai={200} hauteur={hauteur} showLabel={true} />
-        <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#ff3eb5,#cc2090)"   label="♡ Je veux" delai={400} hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctJai}    couleur="linear-gradient(90deg,#003333,#004444 20%,#00aaaa 60%,#00d4d4)"   label="✓ J'ai"    delai={0}   hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctColorie} couleur="linear-gradient(90deg,#332800,#554200 20%,#cc9000 60%,#ffd250)"  label="🎨 Colorié" delai={200} hauteur={hauteur} showLabel={true} />
+        <UneBarre pct={pctJeVeux} couleur="linear-gradient(90deg,#330020,#550035 20%,#cc1880 60%,#ff3eb5)"   label="♡ Je veux" delai={400} hauteur={hauteur} showLabel={true} />
       </div>
     );
   }
@@ -550,8 +550,13 @@ function SectionMaCollection({ userId, totalIllus }) {
                         {recueilData.info.visuel_presentation
                           ? <img src={cheminVersUrl(recueilData.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
-                        {/* POINT 2 : pas de JaugeDouble sur recueil — nom + compteur uniquement */}
-                        <p style={{ flex: 1, color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold' }}>{recueilData.info.nom}</p>
+                        {/* Jauge recueil colorée selon couleur année */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{recueilData.info.nom}</p>
+                          <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurAnnee}44,${couleurAnnee})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
+                          </div>
+                        </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
                         <span style={{ color: ouvertR ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvertR ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
@@ -570,8 +575,13 @@ function SectionMaCollection({ userId, totalIllus }) {
                                   style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                                  {/* POINT 2 : pas de JaugeDouble sur livre — nom + compteur uniquement */}
-                                  <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px' }}>{livreData.info.nom}</p>
+                                  {/* Jauge livre colorée dégradée selon ordre */}
+                                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
+                                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL}44,${couleurL})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                                    </div>
+                                  </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                                   <span style={{ color: ouvertL ? couleurL : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                                 </div>
@@ -606,8 +616,13 @@ function SectionMaCollection({ userId, totalIllus }) {
                         style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                        {/* POINT 2 : pas de JaugeDouble sur livre hors-série — nom + compteur */}
-                        <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px' }}>{livreData.info.nom}</p>
+                        {/* Jauge livre hors-série */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
+                          <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: 'linear-gradient(90deg,#00d4d444,#00d4d4)', borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                          </div>
+                        </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
@@ -642,8 +657,13 @@ function SectionMaCollection({ userId, totalIllus }) {
               {entree.info.visuel_presentation
                 ? <img src={cheminVersUrl(entree.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                 : <span style={{ fontSize: '20px' }}>📁</span>}
-              {/* POINT 2 : pas de JaugeDouble sur hors-années — nom + compteur */}
-              <span style={{ flex: 1, color: 'rgba(255,210,80,0.9)', fontSize: '14px', fontWeight: 'bold' }}>{entree.info.nom}</span>
+              {/* Jauge hors-années */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '14px', fontWeight: 'bold' }}>{entree.info.nom}</span>
+                <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(jaiE/totalE)*100}%`, background: 'linear-gradient(90deg,#ffd25044,#ffd250)', borderRadius: '4px', transition: 'width 1.2s ease' }} />
+                </div>
+              </div>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', whiteSpace: 'nowrap' }}>{jaiE}/{totalE}</span>
               <span style={{ color: ouvert ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.3)', fontSize: '16px', transition: 'transform .2s', transform: ouvert ? 'rotate(90deg)' : 'none' }}>›</span>
             </div>
@@ -661,7 +681,12 @@ function SectionMaCollection({ userId, totalIllus }) {
                         style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                        <p style={{ flex: 1, color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px' }}>{livreData.info.nom}</p>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
+                          <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: 'linear-gradient(90deg,#ffd25044,#ffd250)', borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                          </div>
+                        </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
