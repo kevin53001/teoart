@@ -118,17 +118,26 @@ function VignetteIlluLecture({ illu, taille = 100, aColorie = false }) {
 // ─── Badges hexagonaux ────────────────────────────────────────────────────────
 
 const BADGES_FAN = [
-  { id: 'fan_bronze', lignes: ['Fan', 'Bronze'],   seuil: 25,  couleur: '#cd7f32', rgb: '205,127,50',  textColor: '#fff3e0', serie: 'fan' },
-  { id: 'fan_argent', lignes: ['Fan', 'Argent'],   seuil: 50,  couleur: '#c0c0c0', rgb: '192,192,192', textColor: '#1a1a2e', serie: 'fan' },
-  { id: 'fan_or',     lignes: ['Fan', 'Or'],       seuil: 75,  couleur: '#ffd700', rgb: '255,215,0',   textColor: '#3d2b00', serie: 'fan' },
-  { id: 'fan_ultime', lignes: ['Fan', 'Ultime'],   seuil: 100, couleur: '#00d4d4', rgb: '0,212,212',   textColor: '#003333', serie: 'fan' },
+  { id: 'fan_bronze', lignes: ['Fan', 'Bronze'], seuil: 25, couleur: '#cd7f32', rgb: '205,127,50',  textColor: '#fff3e0', serie: 'fan',
+    message: "Tu possèdes déjà 1 dessin sur 4 de ma collection... t'as commencé fort ! Merci du fond du cœur. Mais chut, j'ai au moins 10 nouvelles créations qui arrivent chaque mois — garde un œil sur ta jauge !" },
+  { id: 'fan_argent', lignes: ['Fan', 'Argent'], seuil: 50, couleur: '#c0c0c0', rgb: '192,192,192', textColor: '#1a1a2e', serie: 'fan',
+    message: "La moitié de mon univers est chez toi, c'est dingue ! Un grand MERCI à toi. Mais attention... chaque mois une flopée de nouveaux dessins débarque et ta collection va devoir suivre le rythme !" },
+  { id: 'fan_or',     lignes: ['Fan', 'Or'],     seuil: 75, couleur: '#ffd700', rgb: '255,215,0',   textColor: '#3d2b00', serie: 'fan',
+    message: "3 dessins sur 4 chez toi ? Tu es officiellement obsédé(e) et j'adore ça. Je ne sais même pas quoi dire tellement je suis touché(e). Mais voilà, je suis productif(ve) — au moins 10 dessins par mois — et ce badge va falloir le mériter encore et encore..." },
+  { id: 'fan_ultime', lignes: ['Fan', 'Ultime'], seuil: 80, couleur: '#00d4d4', rgb: '0,212,212',   textColor: '#003333', serie: 'fan',
+    message: "80% de ma collection chez toi. C'est une performance. Je suis sincèrement touché(e) et un peu intimidé(e). Mais je sors au moins 10 dessins par mois, et ce badge au sommet... il va falloir rester dans la course si tu veux maintenir ce niveau." },
 ];
 const BADGES_COLO = [
-  { id: 'colo_herbe',       lignes: ['Coloriste', 'en herbe'],    seuil: 10, couleur: '#a8e063', rgb: '168,224,99',  textColor: '#1a2e00', serie: 'colo' },
-  { id: 'colo_raisonnable', lignes: ['Coloriste', 'raisonnable'], seuil: 20, couleur: '#4a9eff', rgb: '74,158,255',  textColor: '#001433', serie: 'colo' },
-  { id: 'colo_productif',   lignes: ['Coloriste', 'productif'],   seuil: 30, couleur: '#a78bfa', rgb: '167,139,250', textColor: '#1a0033', serie: 'colo' },
-  { id: 'colo_intense',     lignes: ['Coloriste', 'intense'],     seuil: 40, couleur: '#ff6b35', rgb: '255,107,53',  textColor: '#3d1000', serie: 'colo' },
-  { id: 'colo_fou',         lignes: ['Coloriste', 'fou'],         seuil: 50, couleur: '#ff3eb5', rgb: '255,62,181',  textColor: '#3d0025', serie: 'colo' },
+  { id: 'colo_herbe',       lignes: ['Coloriste', 'en herbe'],    seuil: 10, couleur: '#a8e063', rgb: '168,224,99',  textColor: '#1a2e00', serie: 'colo',
+    message: "Tes crayons commencent à chauffer ! 10% de mes dessins colorés, c'est un début prometteur. Mais ce badge est capricieux... j'ajoute au minimum 10 dessins par mois, alors range pas tes feutres !" },
+  { id: 'colo_raisonnable', lignes: ['Coloriste', 'raisonnable'], seuil: 20, couleur: '#4a9eff', rgb: '74,158,255',  textColor: '#001433', serie: 'colo',
+    message: "Raisonnable ? Toi ? On va dire ça... 20% de colorié c'est déjà très bien ! Mais 'raisonnable' ça veut dire qu'il reste 80% qui attendent tes couleurs. Et vu que j'arrive chaque mois avec de nouveaux dessins, tes crayons ont du boulot !" },
+  { id: 'colo_productif',   lignes: ['Coloriste', 'productif'],   seuil: 30, couleur: '#a78bfa', rgb: '167,139,250', textColor: '#1a0033', serie: 'colo',
+    message: "Productif c'est le mot ! 30% de mes dessins ont eu droit à ta touche magique. Mais attention, je sors au moins 10 nouveaux dessins chaque mois comme un lapin sort des chapeaux... va falloir accélérer la cadence !" },
+  { id: 'colo_intense',     lignes: ['Coloriste', 'intense'],     seuil: 40, couleur: '#ff6b35', rgb: '255,107,53',  textColor: '#3d1000', serie: 'colo',
+    message: "INTENSE. C'est le seul mot. 40% colorié, tes feutres doivent être à bout de souffle ! Un immense merci pour autant d'amour mis dans mes dessins. Mais le seuil bouge avec ma prod — minimum 10 dessins par mois — alors repose pas tes mains trop longtemps !" },
+  { id: 'colo_fou',         lignes: ['Coloriste', 'fou'],         seuil: 50, couleur: '#ff3eb5', rgb: '255,62,181',  textColor: '#3d0025', serie: 'colo',
+    message: "50%. UN DESSIN SUR DEUX. T'es complètement fou/folle et je t'adore pour ça. Tes crayons méritent une retraite bien méritée... mais pas tout de suite, parce que j'arrive chaque mois avec au moins 10 nouveaux dessins. COURAGE." },
 ];
 
 // Hexagone à coins arrondis via path SVG
@@ -160,6 +169,7 @@ function hexPath(cx, cy, r, rCoin) {
 function HexBadge({ badge, obtenu, delaiAnim, small }) {
   const ref = React.useRef(null);
   const [anime, setAnime] = React.useState(false);
+  const [ouvert, setOuvert] = React.useState(false);
 
   React.useEffect(() => {
     if (!obtenu) return;
@@ -190,13 +200,12 @@ function HexBadge({ badge, obtenu, delaiAnim, small }) {
   return (
     <div ref={ref}
       className={`hex-badge${obtenu ? ' obtenu' : ''}${anime ? ' badge-nouveau' : ''}`}
+      onClick={() => obtenu && setOuvert(v => !v)}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative',
+        cursor: obtenu ? 'pointer' : 'default',
         animationDelay: anime ? `${delaiAnim}ms` : undefined,
       }}>
-      {anime && (
-        <div style={{ position: 'absolute', top: '-8px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', zIndex: 2, boxShadow: '0 0 8px #ff3eb5' }}>🔔</div>
-      )}
       <svg viewBox={`0 0 ${W} ${H + (small ? 4 : 6)}`} width={W} height={H + (small ? 4 : 6)}
         style={{ display: 'block', filter: obtenu ? `drop-shadow(0 ${small ? 2 : 3}px ${small ? 6 : 10}px rgba(${badge.rgb},0.65))` : 'none' }}>
         <defs>
@@ -239,6 +248,35 @@ function HexBadge({ badge, obtenu, delaiAnim, small }) {
           >{ligne}</text>
         ))}
       </svg>
+
+      {/* Message déroulant au clic — uniquement si badge obtenu */}
+      {obtenu && ouvert && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          marginTop: '8px',
+          width: small ? '220px' : '260px',
+          background: `linear-gradient(135deg, rgba(${badge.rgb},0.18), rgba(${badge.rgb},0.08))`,
+          border: `1px solid rgba(${badge.rgb},0.45)`,
+          borderRadius: '12px',
+          padding: '12px 14px',
+          color: 'rgba(255,255,255,0.82)',
+          fontSize: '11px',
+          lineHeight: 1.7,
+          fontStyle: 'italic',
+          zIndex: 50,
+          boxShadow: `0 4px 20px rgba(${badge.rgb},0.2), 0 8px 32px rgba(0,0,0,0.6)`,
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          textAlign: 'center',
+          animation: 'fadeInDown 0.25s ease',
+        }}>
+          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%)', width: '10px', height: '10px', background: `rgba(${badge.rgb},0.3)`, border: `1px solid rgba(${badge.rgb},0.45)`, borderRadius: '2px', rotate: '45deg', borderBottom: 'none', borderRight: 'none' }} />
+          {badge.message}
+        </div>
+      )}
     </div>
   );
 }
@@ -271,6 +309,10 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
           70%  { transform: scale(1.12) rotate(3deg);   filter: brightness(1.3); }
           85%  { transform: scale(0.96) rotate(-1deg);  filter: brightness(1.1); }
           100% { transform: scale(1)    rotate(0deg);   opacity: 1; filter: brightness(1); }
+        }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
         .hex-badge { transition: transform 0.2s; }
