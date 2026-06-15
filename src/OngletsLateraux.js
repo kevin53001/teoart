@@ -180,7 +180,7 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
               src={img.url}
               alt={img.nom}
               onClick={async () => {
-                if (id === 'patreon') { setPopupZoom(img.url); return; }
+                if (id === 'patreon') { setPopupZoom(idx); return; }
                 if (!img.illuId) return;
                 if (img.illu) {
                   onOuvrirFiche && onOuvrirFiche(img.illu);
@@ -224,10 +224,19 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
           )}
         </>
       )}
-      {popupZoom && ReactDOM.createPortal(
+      {popupZoom !== null && ReactDOM.createPortal(
         <div onClick={() => setPopupZoom(null)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <button onClick={() => setPopupZoom(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-          <img src={popupZoom} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
+          {images.length > 1 && (
+            <button onClick={e => { e.stopPropagation(); setPopupZoom(i => (i - 1 + images.length) % images.length); }}
+              style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+          )}
+          <img src={images[popupZoom]?.url} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '80vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
+          {images.length > 1 && (
+            <button onClick={e => { e.stopPropagation(); setPopupZoom(i => (i + 1) % images.length); }}
+              style={{ position: 'absolute', right: '64px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+          )}
+          <p style={{ position: 'absolute', bottom: '16px', left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{images[popupZoom]?.nom} — {popupZoom + 1} / {images.length}</p>
         </div>,
         document.body
       )}
