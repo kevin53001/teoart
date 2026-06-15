@@ -291,11 +291,24 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
           to   { transform: translateX(0); }
         }
         .onglet-tab {
-          transition: background 0.2s, box-shadow 0.2s;
+          transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+          position: relative;
+          overflow: hidden;
         }
-        .onglet-tab:hover {
-          transform: translateX(-4px);
+        .onglet-tab::before {
+          content: '';
+          position: absolute;
+          top: -20%; left: -150%;
+          width: 80%; height: 140%;
+          background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.04) 75%, transparent 100%);
+          transform: skewX(-28deg);
+          z-index: 10;
+          pointer-events: none;
+          mix-blend-mode: screen;
         }
+        .onglet-tab.shining::before { animation: onglet-shine 0.7s ease-in-out forwards; }
+        @keyframes onglet-shine { 0% { left: -150%; } 100% { left: 220%; } }
+        .onglet-tab:hover { transform: translateX(-4px); }
       `}</style>
 
       {/* Languettes fixes sur le bord droit */}
@@ -315,24 +328,27 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
             key={o.id}
             className="onglet-tab"
             onClick={() => toggle(o.id)}
+            onMouseEnter={e => { e.currentTarget.classList.remove('shining'); void e.currentTarget.offsetWidth; e.currentTarget.classList.add('shining'); }}
             title={o.label}
             style={{
               width: '52px',
               height: '56px',
               background: ouvert === o.id
-                ? `${o.couleur}dd`
-                : `${o.couleur}55`,
-              border: 'none',
+                ? `linear-gradient(135deg, ${o.couleur}44, ${o.couleur}22)`
+                : `linear-gradient(135deg, ${o.couleur}22, ${o.couleur}10)`,
+              border: `1px solid ${o.couleur}${ouvert === o.id ? '99' : '55'}`,
+              borderRight: 'none',
               borderRadius: '10px 0 0 10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              backdropFilter: 'blur(6px)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               boxShadow: ouvert === o.id
-                ? `0 0 16px ${o.couleur}80`
-                : `-2px 0 8px ${o.couleur}30`,
-              transition: 'background 0.2s, box-shadow 0.2s',
+                ? `0 0 18px ${o.couleur}60, inset 0 1px 0 ${o.couleur}30`
+                : `-2px 0 12px ${o.couleur}30, inset 0 1px 0 ${o.couleur}20`,
+              transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
             }}
           >
             <img src={o.pastille} alt={o.label} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />

@@ -367,9 +367,9 @@ function EncartDefilant({ titre, pastille, couleur, images, onZoom, onFiche }) {
 
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: `1px solid ${couleur}30`, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-      <div style={{ background: couleur, padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+      <div style={{ background: `linear-gradient(135deg, ${couleur}44, ${couleur}22)`, border: `1px solid ${couleur}55`, borderBottom: 'none', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', boxShadow: `inset 0 1px 0 ${couleur}30, 0 2px 8px rgba(0,0,0,0.3)` }}>
         {pastille && <img src={pastille} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />}
-        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{titre}</p>
+        <p style={{ color: couleur, fontSize: '12px', fontWeight: 'bold', margin: 0, textShadow: `0 0 8px ${couleur}80` }}>{titre}</p>
       </div>
       <div
         style={{ flex: 1, position: 'relative', padding: '12px', cursor: onFiche && imgCur.illu ? 'pointer' : 'zoom-in' }}
