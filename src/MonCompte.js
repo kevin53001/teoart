@@ -1109,7 +1109,7 @@ function SectionMesInfos({ userId }) {
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
                 JPG, PNG<br/>Recommandé 400×400px
               </p>
-              <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center' }}>
+              <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
                 📷 Choisir une photo
                 <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
               </label>
@@ -1117,9 +1117,9 @@ function SectionMesInfos({ userId }) {
               {/* ── Bouton installation PWA ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
               {pwa.installed ? (
-                <p style={{ color: 'rgba(0,212,212,0.6)', fontSize: '11px', textAlign: 'center' }}>✓ Application installée</p>
+                <p style={{ color: 'rgba(255,62,181,0.7)', fontSize: '11px', textAlign: 'center' }}>✓ Application installée</p>
               ) : pwa.ios ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
                     📱 Sur iPhone :<br/>
                     <span style={{ color: 'rgba(255,255,255,0.6)' }}>Partager ⎙ → "Sur l'écran d'accueil"</span>
@@ -1128,13 +1128,13 @@ function SectionMesInfos({ userId }) {
               ) : pwa.installable ? (
                 <button
                   onClick={async () => { await pwa.installer(); }}
-                  style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.18), rgba(0,212,212,0.08))', border: '1px solid rgba(0,212,212,0.45)', borderRadius: '8px', padding: '10px 14px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxShadow: '0 0 10px rgba(0,212,212,0.15)' }}>
+                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
                   📲 Installer l'application
                 </button>
               ) : (
                 <button
                   onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '10px 14px', color: 'rgba(255,255,255,0.4)', fontSize: '11px', cursor: 'pointer', textAlign: 'center', width: '100%' }}>
+                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
                   📲 Installer l'application
                 </button>
               )}
