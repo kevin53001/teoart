@@ -381,20 +381,29 @@ function SectionMaCollection({ userId, totalIllus }) {
   const COULEURS_ARC = ['#ff3eb5','#ff6b35','#ffd250','#a8e063','#00d4d4','#4a9eff','#9b59b6'];
   const getCouleurAnnee = (idx) => COULEURS_ARC[idx % COULEURS_ARC.length];
 
-  // Convertit une couleur hex en rgb
+  // Convertit une couleur hex en composantes rgb
   const hexToRgb = (hex) => {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16);
+    const g = parseInt(h.substring(2,4),16);
+    const b = parseInt(h.substring(4,6),16);
     return `${r},${g},${b}`;
   };
 
   // Teinte de la même couleur que l'année, de très clair (idx=0) à plein (idx=total-1)
   const getCouleurEntree = (couleurBase, idx, total) => {
     const t = total <= 1 ? 1 : idx / (total - 1);
-    const op = 0.25 + t * 0.75;
-    const rgb = hexToRgb(couleurBase);
-    return { plein: `rgba(${rgb},${op.toFixed(2)})`, clair: `rgba(${rgb},${(op*0.4).toFixed(2)})` };
+    const opPlein = 0.28 + t * 0.72;
+    const opClair = opPlein * 0.35;
+    try {
+      const rgb = hexToRgb(couleurBase);
+      return {
+        plein: `rgba(${rgb},${opPlein.toFixed(2)})`,
+        clair: `rgba(${rgb},${opClair.toFixed(2)})`
+      };
+    } catch(e) {
+      return { plein: couleurBase, clair: couleurBase };
+    }
   };
   const EXCLUS = new Set(['recueil_recueil de noel_2026', 'livre_colormefree']);
 
