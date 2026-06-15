@@ -380,6 +380,15 @@ function SectionMaCollection({ userId, totalIllus }) {
 
   const COULEURS_ARC = ['#ff3eb5','#ff6b35','#ffd250','#a8e063','#00d4d4','#4a9eff','#9b59b6'];
   const getCouleurAnnee = (idx) => COULEURS_ARC[idx % COULEURS_ARC.length];
+
+  // Teinte de la même couleur que l'année, de très clair (idx=0) à foncé (idx=total-1)
+  const getCouleurEntree = (couleurBase, idx, total) => {
+    const t = total <= 1 ? 1 : idx / (total - 1); // 0 = premier (clair), 1 = dernier (foncé)
+    const opMin = 0.25; // très clair
+    const opMax = 1.0;  // foncé
+    const op = opMin + t * (opMax - opMin);
+    return `${couleurBase}${Math.round(op * 255).toString(16).padStart(2, '0')}`;
+  };
   const EXCLUS = new Set(['recueil_recueil de noel_2026', 'livre_colormefree']);
 
   React.useEffect(() => {
@@ -538,11 +547,19 @@ function SectionMaCollection({ userId, totalIllus }) {
 
             {ouvert && (
               <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {Object.values(anneeData.recueils).map((recueilData) => {
+                {(() => {
+                  // Toutes les entrées de l'année (recueils + hors-série) pour calculer le total
+                  const toutesEntrees = [
+                    ...Object.values(anneeData.recueils),
+                    ...Object.values(anneeData.horsSerieParent || {}).filter(l => totauxLivre[l.info.id] > 0)
+                  ];
+                  const totalEntrees = toutesEntrees.length;
+                  return Object.values(anneeData.recueils).map((recueilData, rIdx) => {
                   const rid = recueilData.info.id;
                   const totalR = totauxRecueil[rid] || 1;
                   const jaiR = Object.values(recueilData.livres).reduce((a, l) => a + l.illus.length, 0);
                   const ouvertR = recueilsOuverts[rid];
+                  const couleurR = getCouleurEntree(couleurAnnee, rIdx, totalEntrees);
                   return (
                     <div key={rid} style={{ border: '1px solid rgba(0,212,212,0.12)', borderRadius: '10px', overflow: 'hidden' }}>
                       <div onClick={() => setRecueilsOuverts(p => ({ ...p, [rid]: !p[rid] }))}
@@ -550,11 +567,10 @@ function SectionMaCollection({ userId, totalIllus }) {
                         {recueilData.info.visuel_presentation
                           ? <img src={cheminVersUrl(recueilData.info.visuel_presentation)} alt="" style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
                           : <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: '#111', flexShrink: 0 }} />}
-                        {/* Jauge recueil colorée selon couleur année */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{recueilData.info.nom}</p>
                           <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurAnnee}44,${couleurAnnee})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
+                            <div style={{ height: '100%', width: `${(jaiR/totalR)*100}%`, background: `linear-gradient(90deg,${couleurR}66,${couleurR})`, borderRadius: '4px', transition: 'width 1.2s ease' }} />
                           </div>
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiR}/{totalR}</span>
@@ -568,18 +584,18 @@ function SectionMaCollection({ userId, totalIllus }) {
                             const jaiL = livreData.illus.length;
                             const ouvertL = livresOuverts[lid];
                             const estDossier = !livreData.info.visuel_presentation;
-                            const couleurL = getCouleurAnnee(lIdx);
+                            const totalLivres = Object.values(recueilData.livres).length;
+                            const couleurL = getCouleurEntree(couleurAnnee, lIdx, totalLivres);
                             return (
                               <div key={lid} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', overflow: 'hidden' }}>
                                 <div onClick={() => setLivresOuverts(p => ({ ...p, [lid]: !p[lid] }))}
                                   style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                                     : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                                  {/* Jauge livre colorée dégradée selon ordre */}
                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                     <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.85)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
                                     <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL}44,${couleurL})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                                      <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurL}66,${couleurL})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
                                     </div>
                                   </div>
                                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
@@ -602,7 +618,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                       )}
                     </div>
                   );
-                })}
+                });
+                })()}
 
                 {Object.values(anneeData.horsSerieParent || {}).filter(l => totauxLivre[l.info.id] > 0).map((livreData, lIdx) => {
                   const lid = livreData.info.id;
@@ -610,21 +627,24 @@ function SectionMaCollection({ userId, totalIllus }) {
                   const jaiL = livreData.illus.length;
                   const ouvertL = livresOuverts[`hs_${lid}`];
                   const estDossier = !livreData.info.visuel_presentation;
+                  const totalEntreesHS = Object.values(anneeData.horsSerieParent || {}).filter(l => totauxLivre[l.info.id] > 0).length;
+                  const idxGlobal = Object.values(anneeData.recueils).length + lIdx;
+                  const totalEntreesAnnee = Object.values(anneeData.recueils).length + totalEntreesHS;
+                  const couleurHS = getCouleurEntree(couleurAnnee, idxGlobal, totalEntreesAnnee);
                   return (
                     <div key={`hs_${lid}`} style={{ border: `1px solid ${estDossier ? 'rgba(255,210,80,0.2)' : 'rgba(255,255,255,0.07)'}`, borderRadius: '8px', overflow: 'hidden' }}>
                       <div onClick={() => setLivresOuverts(p => ({ ...p, [`hs_${lid}`]: !p[`hs_${lid}`] }))}
                         style={{ padding: '8px 12px', cursor: 'pointer', background: ouvertL ? 'rgba(255,255,255,0.03)' : 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {estDossier ? <span style={{ fontSize: '16px' }}>📁</span>
                           : <img src={cheminVersUrl(livreData.info.visuel_presentation)} alt="" style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />}
-                        {/* Jauge livre hors-série */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <p style={{ color: estDossier ? 'rgba(255,210,80,0.8)' : 'rgba(255,255,255,0.8)', fontSize: '11px', margin: 0 }}>{livreData.info.nom}</p>
                           <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: 'linear-gradient(90deg,#00d4d444,#00d4d4)', borderRadius: '3px', transition: 'width 1.2s ease' }} />
+                            <div style={{ height: '100%', width: `${(jaiL/totalL)*100}%`, background: `linear-gradient(90deg,${couleurHS}66,${couleurHS})`, borderRadius: '3px', transition: 'width 1.2s ease' }} />
                           </div>
                         </div>
                         <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', whiteSpace: 'nowrap' }}>{jaiL}/{totalL}</span>
-                        <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
+                        <span style={{ color: ouvertL ? couleurHS : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
                       {ouvertL && jaiL > 0 && (
                         <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
