@@ -251,33 +251,27 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
       {/* Message déroulant au clic — uniquement si badge obtenu */}
       {obtenu && ouvert && (
         <div style={{
-          position: 'fixed',
-          top: '50%',
+          position: 'absolute',
+          top: '100%',
           left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: small ? '260px' : '300px',
-          background: `rgb(${badge.rgb === '192,192,192' ? '30,30,40' : '10,10,15'})`,
+          transform: 'translateX(-50%)',
+          marginTop: '8px',
+          width: small ? '220px' : '260px',
+          background: `rgba(${badge.rgb === '192,192,192' ? '20,20,30' : badge.rgb.split(',').map(v => Math.round(parseInt(v)*0.25)).join(',')},1)`,
           border: `1px solid rgba(${badge.rgb},0.7)`,
-          borderRadius: '14px',
-          padding: '16px 18px',
+          borderRadius: '12px',
+          padding: '12px 14px',
           color: '#fff',
-          fontSize: '12px',
-          lineHeight: 1.8,
+          fontSize: '11px',
+          lineHeight: 1.7,
           fontStyle: 'italic',
           zIndex: 9999,
-          boxShadow: `0 0 24px rgba(${badge.rgb},0.45), inset 0 1px 0 rgba(${badge.rgb},0.35), 0 12px 48px rgba(0,0,0,0.95)`,
+          boxShadow: `0 0 18px rgba(${badge.rgb},0.4), inset 0 1px 0 rgba(${badge.rgb},0.3), 0 8px 32px rgba(0,0,0,0.9)`,
           textAlign: 'center',
           animation: 'fadeInDown 0.25s ease',
-        }}
-          onClick={e => { e.stopPropagation(); onToggle(); }}
-        >
-          {/* Barre colorée haut */}
-          <div style={{ position: 'absolute', top: 0, left: '20px', right: '20px', height: '2px', background: `rgba(${badge.rgb},0.7)`, borderRadius: '2px' }} />
-          <p style={{ margin: '0 0 10px', fontStyle: 'normal', fontWeight: 'bold', color: `rgba(${badge.rgb === '192,192,192' ? badge.rgb : badge.rgb},1)`, fontSize: '11px', letterSpacing: '0.5px' }}>
-            {badge.lignes.join(' ')}
-          </p>
+        }}>
+          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: `rgba(${badge.rgb === '192,192,192' ? '20,20,30' : badge.rgb.split(',').map(v => Math.round(parseInt(v)*0.25)).join(',')},1)`, border: `1px solid rgba(${badge.rgb},0.7)`, borderBottom: 'none', borderRight: 'none' }} />
           {badge.message}
-          <p style={{ margin: '10px 0 0', fontSize: '10px', color: 'rgba(255,255,255,0.35)', fontStyle: 'normal' }}>Appuie pour fermer</p>
         </div>
       )}
     </div>
