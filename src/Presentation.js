@@ -269,22 +269,45 @@ function EncartPresentation({ enc, idx, isMobile, onOuvrirPopup }) {
     <div className="encart-anim encart-pres" style={{ animationDelay: `${idx * 0.1}s` }}>
 
       {titre && (
-        <div onClick={() => setOuvert(v => !v)} style={{ background: couleurTitre, padding: isMobile ? '8px 16px' : '10px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', userSelect: 'none', minHeight: isMobile ? '42px' : '50px' }}>
-          <h2 style={{ color: '#000', fontSize: isMobile ? '16px' : '20px', fontWeight: 'bold', letterSpacing: '0.5px', margin: 0, textAlign: 'center', flex: 1 }}>{titre}</h2>
-          <div style={{ color: '#fff', fontSize: '30px', position: 'absolute', right: '16px', top: '50%', transform: ouvert ? 'translateY(-50%) rotate(90deg)' : 'translateY(-50%) rotate(0deg)', transition: 'transform 0.3s ease', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>›</div>
+        <div onClick={() => setOuvert(v => !v)} style={{ position: 'relative', cursor: 'pointer', userSelect: 'none', overflow: 'hidden', minHeight: isMobile ? '28px' : '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Fond métallique premium */}
+          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(255,255,255,0.18) 0%, ${couleurTitre}99 18%, ${couleurTitre}66 50%, ${couleurTitre}44 82%, rgba(0,0,0,0.25) 100%)`, backdropFilter: 'blur(2px)' }} />
+          {/* Reflet métallique diagonal */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 50%, transparent 70%)', pointerEvents: 'none' }} />
+          {/* Ligne de brillance supérieure */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.55)', pointerEvents: 'none' }} />
+          {/* Ligne de profondeur inférieure */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'rgba(0,0,0,0.4)', pointerEvents: 'none' }} />
+          <h2 style={{ position: 'relative', color: '#fff', fontSize: isMobile ? '12px' : '14px', fontWeight: '600', letterSpacing: '1.5px', textTransform: 'uppercase', margin: 0, textAlign: 'center', flex: 1, padding: isMobile ? '5px 36px 5px 16px' : '7px 40px 7px 20px', textShadow: '0 1px 3px rgba(0,0,0,0.6), 0 0 12px rgba(0,0,0,0.3)' }}>{titre}</h2>
+          <div style={{ position: 'absolute', right: '14px', top: '50%', transform: ouvert ? 'translateY(-50%) rotate(90deg)' : 'translateY(-50%) rotate(0deg)', transition: 'transform 0.3s ease', color: 'rgba(255,255,255,0.85)', fontSize: '20px', lineHeight: 1, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>›</div>
         </div>
       )}
 
       {!ouvert && (
-        <div onClick={() => setOuvert(true)} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: isMobile ? '14px 16px' : '18px 24px', cursor: 'pointer' }}>
-          {premiereImage && (
-            <img src={premiereImage} alt="" style={{ width: isMobile ? '56px' : '72px', height: isMobile ? '56px' : '72px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.5)', filter: 'brightness(0.8)' }} />
-          )}
-          {aTexte && (
-            <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-              <p className="apercu-gradient" style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.65', margin: 0 }}>{texte}</p>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '28px', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))', pointerEvents: 'none' }} />
+        <div onClick={() => setOuvert(true)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: isMobile ? '12px 16px' : '14px 20px', cursor: 'pointer', minHeight: isMobile ? '72px' : '84px' }}>
+          {!aTexte && aImages ? (
+            /* Encart sans texte : miniatures centrées */
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {images.slice(0, 5).map((url, i) => (
+                <img key={i} src={url} alt="" style={{ width: isMobile ? '48px' : '60px', height: isMobile ? '48px' : '60px', objectFit: 'cover', borderRadius: '7px', boxShadow: '0 3px 10px rgba(0,0,0,0.6)', flexShrink: 0, opacity: 0.85 }} />
+              ))}
+              {images.length > 5 && (
+                <div style={{ width: isMobile ? '48px' : '60px', height: isMobile ? '48px' : '60px', borderRadius: '7px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: 600 }}>+{images.length - 5}</div>
+              )}
             </div>
+          ) : (
+            /* Encart avec texte : aperçu classique */
+            <>
+              {premiereImage && (
+                <img src={premiereImage} alt="" style={{ width: isMobile ? '56px' : '72px', height: isMobile ? '56px' : '72px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.5)', filter: 'brightness(0.8)' }} />
+              )}
+              {aTexte && (
+                <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+                  <p className="apercu-gradient" style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.65', margin: 0 }}>{texte}</p>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '28px', background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))', pointerEvents: 'none' }} />
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
