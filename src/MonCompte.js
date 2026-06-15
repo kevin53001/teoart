@@ -4,8 +4,6 @@ import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
-import Cloche from './Cloche';
-import PaysInput from './PaysInput';
 import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -377,9 +375,16 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
 function JaugeAnimee({ pct, couleurClair, couleurPlein, hauteur = 4 }) {
   const [largeur, setLargeur] = React.useState(0);
   React.useEffect(() => {
-    const t = setTimeout(() => setLargeur(pct), 50);
-    return () => clearTimeout(t);
-  }, [pct]);
+    let raf1, raf2;
+    setLargeur(0);
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        setLargeur(pct);
+      });
+    });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div style={{ height: `${hauteur}px`, background: 'rgba(255,255,255,0.06)', borderRadius: `${hauteur}px`, overflow: 'hidden' }}>
       <div style={{ height: '100%', width: `${largeur}%`, background: `linear-gradient(90deg,${couleurClair},${couleurPlein})`, borderRadius: `${hauteur}px`, transition: 'width 1.4s cubic-bezier(0.4,0,0.2,1)' }} />
@@ -1413,14 +1418,7 @@ function SectionMesInfos({ userId }) {
                 {champ('Ville', 'ville')}
               </div>
               {champ('État / Province (optionnel)', 'etat')}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styleLabel}>Pays</label>
-                <PaysInput
-                  value={profil.pays || ''}
-                  onChange={val => setProfil(p => ({ ...p, pays: val }))}
-                  style={styleInput}
-                />
-              </div>
+              {champ('Pays', 'pays')}
             </div>
           </div>
 
@@ -1837,7 +1835,7 @@ function MonCompte() {
       `}</style>
 
       <BoutonsFlottants />
-      <Cloche />
+      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
