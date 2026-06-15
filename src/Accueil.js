@@ -146,7 +146,7 @@ function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, is
         color: couleur,
         boxShadow: `0 2px 8px rgba(0,0,0,0.4)`,
         borderRadius: '14px',
-        padding: isMobile ? '10px 8px' : '12px 8px',
+        padding: isMobile ? '10px 8px' : '14px 8px 10px',
         cursor: disabled ? 'default' : 'pointer',
         fontWeight: 'bold',
         flex: isMobile ? '1 1 calc(50% - 4px)' : '1 1 0',
@@ -156,16 +156,18 @@ function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, is
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         gap: '8px',
       }}>
-      {icone && React.cloneElement(icone, {
-        style: {
-          ...(icone.props.style || {}),
-          width: isMobile ? '36px' : '48px',
-          height: isMobile ? '36px' : '48px',
-        }
-      })}
+      <div style={{ width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icone && React.cloneElement(icone, {
+          style: {
+            ...(icone.props.style || {}),
+            width: isMobile ? '36px' : '48px',
+            height: isMobile ? '36px' : '48px',
+          }
+        })}
+      </div>
       <span style={{ fontSize: isMobile ? '11px' : '12px', lineHeight: '1.3', textAlign: 'center' }}>{label}</span>
     </button>
   );
@@ -454,7 +456,7 @@ function EncartPatreon({ images, onZoom }) {
       <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px', fontWeight: 'bold' }}>
           Ça arrive en {mois} sur{' '}
-          <span onClick={(e) => { e.stopPropagation(); window.open(PATREON_URL, '_blank'); }} style={{ textDecoration: 'underline', cursor: 'pointer', color: '#ffd250' }}>Patreon</span> !
+          <span onClick={(e) => { e.stopPropagation(); window.open(PATREON_URL, '_blank'); }} style={{ textDecoration: 'underline', cursor: 'pointer', color: '#4da6ff', fontSize: '13px', fontWeight: 'bold' }}>Patreon</span> !
         </p>
       </div>
       <div style={{ flex: 1, position: 'relative', padding: '8px 12px', cursor: 'zoom-in', minHeight: '140px' }}
