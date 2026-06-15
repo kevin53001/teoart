@@ -115,6 +115,154 @@ function VignetteIlluLecture({ illu, taille = 100, aColorie = false }) {
   );
 }
 
+// ─── Badges hexagonaux ────────────────────────────────────────────────────────
+
+const BADGES_FAN = [
+  { id: 'fan_bronze', label: 'Bronze',  seuil: 25,  couleur: '#cd7f32', rgb: '205,127,50',  serie: 'fan' },
+  { id: 'fan_argent', label: 'Argent',  seuil: 50,  couleur: '#c0c0c0', rgb: '192,192,192', serie: 'fan' },
+  { id: 'fan_or',     label: 'Or',      seuil: 75,  couleur: '#ffd700', rgb: '255,215,0',   serie: 'fan' },
+  { id: 'fan_ultime', label: 'Ultime',  seuil: 100, couleur: '#00d4d4', rgb: '0,212,212',   serie: 'fan' },
+];
+const BADGES_COLO = [
+  { id: 'colo_herbe',      label: 'En herbe',    seuil: 10, couleur: '#a8e063', rgb: '168,224,99',  serie: 'colo' },
+  { id: 'colo_raisonnable',label: 'Raisonnable', seuil: 20, couleur: '#4a9eff', rgb: '74,158,255',  serie: 'colo' },
+  { id: 'colo_productif',  label: 'Productif',   seuil: 30, couleur: '#a78bfa', rgb: '167,139,250', serie: 'colo' },
+  { id: 'colo_intense',    label: 'Intense',     seuil: 40, couleur: '#ff6b35', rgb: '255,107,53',  serie: 'colo' },
+  { id: 'colo_fou',        label: 'Fou',         seuil: 50, couleur: '#ff3eb5', rgb: '255,62,181',  serie: 'colo' },
+];
+
+function HexBadge({ badge, obtenu, nouveau }) {
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    if (nouveau && ref.current) {
+      ref.current.classList.add('badge-nouveau');
+    }
+  }, [nouveau]);
+
+  const hex = (
+    <svg viewBox="0 0 100 115" width="64" height="74" style={{ display: 'block', filter: obtenu ? `drop-shadow(0 0 8px rgba(${badge.rgb},0.7))` : 'none' }}>
+      <defs>
+        <linearGradient id={`grad_${badge.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor={obtenu ? '#fff' : '#333'} stopOpacity={obtenu ? 0.35 : 0.15} />
+          <stop offset="50%"  stopColor={obtenu ? badge.couleur : '#222'} stopOpacity={1} />
+          <stop offset="100%" stopColor={obtenu ? badge.couleur : '#111'} stopOpacity={obtenu ? 0.7 : 1} />
+        </linearGradient>
+        <linearGradient id={`shine_${badge.id}`} x1="0%" y1="0%" x2="60%" y2="100%">
+          <stop offset="0%"  stopColor="#fff" stopOpacity={obtenu ? 0.4 : 0} />
+          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Hexagone fond */}
+      <polygon points="50,5 95,28 95,87 50,110 5,87 5,28"
+        fill={`url(#grad_${badge.id})`}
+        stroke={obtenu ? badge.couleur : 'rgba(255,255,255,0.08)'}
+        strokeWidth={obtenu ? 2.5 : 1}
+      />
+      {/* Reflet */}
+      <polygon points="50,5 95,28 95,87 50,110 5,87 5,28"
+        fill={`url(#shine_${badge.id})`}
+      />
+      {/* Bord intérieur brillant */}
+      {obtenu && (
+        <polygon points="50,12 88,32 88,82 50,103 12,82 12,32"
+          fill="none"
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth="1.5"
+        />
+      )}
+      {/* Seuil % */}
+      <text x="50" y="52" textAnchor="middle" dominantBaseline="middle"
+        fontSize={obtenu ? "22" : "18"}
+        fontWeight="bold"
+        fill={obtenu ? '#fff' : 'rgba(255,255,255,0.2)'}
+        style={{ fontFamily: 'sans-serif' }}
+      >{badge.seuil}%</text>
+      {/* Label */}
+      <text x="50" y="76" textAnchor="middle" dominantBaseline="middle"
+        fontSize="10"
+        fill={obtenu ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.15)'}
+        style={{ fontFamily: 'sans-serif' }}
+      >{badge.label}</text>
+    </svg>
+  );
+
+  return (
+    <div ref={ref} className={`hex-badge${obtenu ? ' obtenu' : ''}${nouveau ? ' badge-nouveau' : ''}`}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative' }}>
+      {nouveau && (
+        <div style={{ position: 'absolute', top: '-8px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', zIndex: 2, boxShadow: '0 0 8px #ff3eb5' }}>🔔</div>
+      )}
+      {hex}
+    </div>
+  );
+}
+
+function BadgesHexagonaux({ pctJai, pctColo, userId }) {
+  const [nouveaux, setNouveaux] = React.useState([]);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const key = `badges_vus_${userId}`;
+    const vus = JSON.parse(localStorage.getItem(key) || '[]');
+    const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
+    const obtenus = tousLesBadges
+      .filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil)
+      .map(b => b.id);
+    const nvx = obtenus.filter(id => !vus.includes(id));
+    setNouveaux(nvx);
+    if (nvx.length > 0) {
+      localStorage.setItem(key, JSON.stringify([...vus, ...nvx]));
+    }
+  }, [pctJai, pctColo, userId]);
+
+  return (
+    <>
+      <style>{`
+        @keyframes badge-apparition {
+          0%   { transform: scale(0.3) rotate(-15deg); opacity: 0; filter: brightness(3); }
+          40%  { transform: scale(1.25) rotate(5deg);  opacity: 1; filter: brightness(2); }
+          60%  { transform: scale(0.92) rotate(-3deg); filter: brightness(1.5); }
+          80%  { transform: scale(1.08) rotate(1deg);  filter: brightness(1.2); }
+          100% { transform: scale(1)    rotate(0deg);  opacity: 1; filter: brightness(1); }
+        }
+        @keyframes particules {
+          0%   { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(2.5); }
+        }
+        .badge-nouveau { animation: badge-apparition 1.1s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .hex-badge.obtenu { cursor: default; }
+        .hex-badge { transition: transform 0.2s; }
+        .hex-badge.obtenu:hover { transform: scale(1.08); }
+      `}</style>
+
+      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+
+        {/* ── Fan ── */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', flex: '1 1 280px' }}>
+          <p style={{ color: 'rgba(0,212,212,0.8)', fontSize: '11px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>✓ Fan — J'ai</p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {BADGES_FAN.map(b => (
+              <HexBadge key={b.id} badge={b} obtenu={pctJai >= b.seuil} nouveau={nouveaux.includes(b.id)} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Coloriste ── */}
+        <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', flex: '1 1 340px' }}>
+          <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', margin: 0, letterSpacing: '1px', textTransform: 'uppercase' }}>🎨 Coloriste — Colorié</p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {BADGES_COLO.map(b => (
+              <HexBadge key={b.id} badge={b} obtenu={pctColo >= b.seuil} nouveau={nouveaux.includes(b.id)} />
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}
+
 function SectionMaCollection({ userId, totalIllus }) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -1573,6 +1721,9 @@ function MonCompte() {
                   {stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} favoris
                 </p>
               </div>
+
+              {/* ── Badges hexagonaux ── */}
+              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
 
               {/* ── Boutons onglets ── */}
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
