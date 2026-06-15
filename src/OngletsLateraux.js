@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -223,11 +224,12 @@ function PanneauOnglet({ id, couleur, emoji, label, userId, onClose, onOuvrirFic
           )}
         </>
       )}
-      {popupZoom && (
-        <div onClick={() => setPopupZoom(null)} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      {popupZoom && ReactDOM.createPortal(
+        <div onClick={() => setPopupZoom(null)} style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <button onClick={() => setPopupZoom(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           <img src={popupZoom} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }} />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
