@@ -84,63 +84,66 @@ function BannerePWA() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
+      bottom: '24px',
+      left: '16px',
       zIndex: 9999,
-      background: 'rgba(10,10,10,0.97)',
-      borderTop: '1px solid rgba(0,212,212,0.35)',
+      width: '210px',
+      background: 'rgba(10,10,10,0.95)',
+      border: '1px solid rgba(0,212,212,0.35)',
+      borderRadius: '16px',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
-      padding: '16px 20px 20px',
-      boxShadow: '0 -4px 24px rgba(0,212,212,0.15)',
+      padding: '16px 14px 14px',
+      boxShadow: '0 4px 24px rgba(0,212,212,0.15), 0 8px 32px rgba(0,0,0,0.6)',
       display: 'flex',
       flexDirection: 'column',
       gap: '12px',
     }}>
       {/* En-tête */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <img
           src={`${R2}/site/Logo.png`}
           alt="Kevin Teo'Art"
-          style={{ width: '48px', height: '48px', borderRadius: '12px', border: '2px solid rgba(0,212,212,0.4)', objectFit: 'cover', flexShrink: 0 }}
+          style={{ width: '40px', height: '40px', borderRadius: '10px', border: '2px solid rgba(0,212,212,0.4)', objectFit: 'cover', flexShrink: 0 }}
         />
-        <div style={{ flex: 1 }}>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold', margin: 0 }}>Kevin Teo'Art</p>
-          <p style={{ color: 'rgba(0,212,212,0.9)', fontSize: '12px', margin: '2px 0 0' }}>
-            📱 Installe mon univers sur ton téléphone !
-          </p>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', margin: 0 }}>Kevin Teo'Art</p>
+          <p style={{ color: 'rgba(0,212,212,0.85)', fontSize: '10px', margin: '2px 0 0' }}>kevinteoart.fr</p>
         </div>
-        {/* Bouton fermer (sans refus définitif) */}
         <button
           onClick={handleFermer}
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '22px', cursor: 'pointer', padding: '4px', lineHeight: 1, flexShrink: 0 }}
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '18px', cursor: 'pointer', padding: '2px', lineHeight: 1, flexShrink: 0 }}
         >×</button>
       </div>
 
+      {/* Message */}
+      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>
+        📱 Installe mon univers<br/>sur ton téléphone !
+      </p>
+
       {/* Instructions iOS */}
       {ios && (
-        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', margin: 0, lineHeight: 1.6, background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          Sur iPhone : appuie sur <span style={{ color: '#fff' }}>⎙ Partager</span> en bas de Safari, puis <span style={{ color: '#fff' }}>"Sur l'écran d'accueil"</span>.
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', margin: 0, lineHeight: 1.6, background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
+          Appuie sur <span style={{ color: '#fff' }}>⎙ Partager</span><br/>puis <span style={{ color: '#fff' }}>"Sur l'écran d'accueil"</span>
         </p>
       )}
 
       {/* Boutons */}
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {!ios && (
           <button
             onClick={handleInstaller}
             style={{
-              flex: 1,
+              width: '100%',
               background: 'linear-gradient(135deg, rgba(0,212,212,0.25), rgba(0,212,212,0.12))',
               border: '1px solid rgba(0,212,212,0.55)',
               borderRadius: '10px',
-              padding: '11px',
+              padding: '10px',
               color: '#00d4d4',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
-              boxShadow: '0 0 12px rgba(0,212,212,0.2)',
+              boxShadow: '0 0 10px rgba(0,212,212,0.18)',
             }}
           >
             Installer l'application
@@ -149,13 +152,13 @@ function BannerePWA() {
         <button
           onClick={handleRefuser}
           style={{
-            flex: ios ? 1 : 'none',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            width: '100%',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '10px',
-            padding: '11px 16px',
-            color: 'rgba(255,255,255,0.4)',
-            fontSize: '12px',
+            padding: '8px',
+            color: 'rgba(255,255,255,0.35)',
+            fontSize: '11px',
             cursor: 'pointer',
           }}
         >
