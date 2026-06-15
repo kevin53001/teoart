@@ -452,9 +452,9 @@ function EncartPatreon({ images, onZoom }) {
   const img = images[idx];
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
-      <div style={{ background: '#ffd250', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #ffd25044, #ffd25022)', border: '1px solid #ffd25055', borderBottom: 'none', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', boxShadow: 'inset 0 1px 0 #ffd25030, 0 2px 8px rgba(0,0,0,0.3)' }}>
         <img src={`${R2}/site/pastille_patreon.png`} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
-        <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>Nouveautés Patreon</p>
+        <p style={{ color: '#ffd250', fontSize: '12px', fontWeight: 'bold', margin: 0, textShadow: '0 0 8px #ffd25080' }}>Nouveautés Patreon</p>
       </div>
       <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px', fontWeight: 'bold' }}>
