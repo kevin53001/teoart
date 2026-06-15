@@ -147,7 +147,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
       {/* En-tête */}
       <div style={{ background: couleur, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <img src={pastille} alt="" style={{ width: '18px', height: '18px', objectFit: 'contain', flexShrink: 0 }} />
+          <img src={pastille} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain', flexShrink: 0 }} />
           <span style={{ color: '#000', fontSize: '12px', fontWeight: 800 }}>{label}</span>
         </div>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#000', fontSize: '16px', cursor: 'pointer', lineHeight: 1, opacity: 0.6 }}>×</button>
@@ -308,13 +308,13 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
             onClick={() => toggle(o.id)}
             title={o.label}
             style={{
-              width: '36px',
-              height: '44px',
+              width: '52px',
+              height: '56px',
               background: ouvert === o.id
                 ? `${o.couleur}dd`
                 : `${o.couleur}55`,
               border: 'none',
-              borderRadius: '8px 0 0 8px',
+              borderRadius: '10px 0 0 10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -326,7 +326,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
               transition: 'background 0.2s, box-shadow 0.2s',
             }}
           >
-            <img src={o.pastille} alt={o.label} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+            <img src={o.pastille} alt={o.label} style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
           </div>
         ))}
       </div>

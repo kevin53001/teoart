@@ -367,7 +367,7 @@ function EncartDefilant({ titre, pastille, couleur, images, onZoom, onFiche }) {
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: `1px solid ${couleur}30`, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
       <div style={{ background: couleur, padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-        {pastille && <img src={pastille} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />}
+        {pastille && <img src={pastille} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />}
         <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>{titre}</p>
       </div>
       <div
@@ -452,7 +452,7 @@ function EncartPatreon({ images, onZoom }) {
   return (
     <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
       <div style={{ background: '#ffd250', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-        <img src={`${R2}/site/pastille_patreon.png`} alt="" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+        <img src={`${R2}/site/pastille_patreon.png`} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
         <p style={{ color: '#000', fontSize: '12px', fontWeight: 'bold', margin: 0 }}>Nouveautés Patreon</p>
       </div>
       <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
