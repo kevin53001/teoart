@@ -252,12 +252,12 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
       {obtenu && ouvert && (
         <div style={{
           position: 'absolute',
-          top: '100%',
+          bottom: '100%',
           left: '50%',
           transform: 'translateX(-50%)',
-          marginTop: '8px',
+          marginBottom: '8px',
           width: small ? '220px' : '260px',
-          background: `rgba(${badge.rgb === '192,192,192' ? '20,20,30' : badge.rgb.split(',').map(v => Math.round(parseInt(v)*0.25)).join(',')},1)`,
+          background: badge.id === 'fan_argent' ? '#141420' : `rgb(${badge.rgb.split(',').map(v => Math.max(8, Math.round(parseInt(v)*0.22))).join(',')})`,
           border: `1px solid rgba(${badge.rgb},0.7)`,
           borderRadius: '12px',
           padding: '12px 14px',
@@ -266,11 +266,11 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
           lineHeight: 1.7,
           fontStyle: 'italic',
           zIndex: 9999,
-          boxShadow: `0 0 18px rgba(${badge.rgb},0.4), inset 0 1px 0 rgba(${badge.rgb},0.3), 0 8px 32px rgba(0,0,0,0.9)`,
+          boxShadow: `0 0 18px rgba(${badge.rgb},0.4), inset 0 1px 0 rgba(${badge.rgb},0.3), 0 8px 32px #000`,
           textAlign: 'center',
-          animation: 'fadeInDown 0.25s ease',
+          animation: 'fadeInUp 0.25s ease',
         }}>
-          <div style={{ position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: `rgba(${badge.rgb === '192,192,192' ? '20,20,30' : badge.rgb.split(',').map(v => Math.round(parseInt(v)*0.25)).join(',')},1)`, border: `1px solid rgba(${badge.rgb},0.7)`, borderBottom: 'none', borderRight: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-6px', left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: '10px', height: '10px', background: badge.id === 'fan_argent' ? '#141420' : `rgb(${badge.rgb.split(',').map(v => Math.max(8, Math.round(parseInt(v)*0.22))).join(',')})`, border: `1px solid rgba(${badge.rgb},0.7)`, borderTop: 'none', borderLeft: 'none' }} />
           {badge.message}
         </div>
       )}
@@ -313,6 +313,10 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
         }
         @keyframes fadeInDown {
           from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateX(-50%) translateY(6px); }
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
