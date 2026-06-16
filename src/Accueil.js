@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import PopupFicheIllu from './PopupFicheIllu';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -187,6 +188,338 @@ function BoutonAction({ label, icone, couleur, couleurRgb, onClick, disabled, is
 }
 
 // ── Popup fiche illustration (pour favoris + best sellers) ──
+function EncartDefilant({ titre, pastille, couleur, images, onZoom, onFiche }) {
+  // On garde les deux derniers index : current et previous
+  const [cur, setCur] = React.useState(0);
+  const [prev, setPrev] = React.useState(null);
+  const [fading, setFading] = React.useState(false);
+  const timerRef = React.useRef(null);
+  const FADE = 1200; // durée fondue ms
+
+  const goTo = React.useCallback((next) => {
+    if (next === cur) return;
+    setPrev(cur);
+    setCur(next);
+    setFading(true);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setPrev(null);
+      setFading(false);
+    }, FADE);
+  }, [cur]);
+
+  React.useEffect(() => {
+    if (images.length <= 1) return;
+    const t = setInterval(() => {
+      setCur(c => {
+        const next = (c + 1) % images.length;
+        setPrev(c);
+        setFading(true);
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => { setPrev(null); setFading(false); }, FADE);
+        return next;
+      });
+    }, 4500);
+    return () => { clearInterval(t); clearTimeout(timerRef.current); };
+  }, [images.length]);
+
+  if (images.length === 0) return (
+    <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
+      <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px', textAlign: 'center' }}>{titre}<br/>Aucune image</p>
+    </div>
+  );
+
+  const imgCur = images[cur];
+  const imgPrev = prev !== null ? images[prev] : null;
+  const handleClick = () => {
+    if (onFiche && imgCur.illu) onFiche(imgCur.illu);
+    else if (onZoom) onZoom(images, cur);
+  };
+
+  return (
+    <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: `1px solid ${couleur}30`, borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+      <div style={{ background: `linear-gradient(135deg, ${couleur}44, ${couleur}22)`, border: `1px solid ${couleur}55`, borderBottom: 'none', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', boxShadow: `inset 0 1px 0 ${couleur}30, 0 2px 8px rgba(0,0,0,0.3)` }}>
+        {pastille && <img src={pastille} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />}
+        <p style={{ color: couleur, fontSize: '12px', fontWeight: 'bold', margin: 0, textShadow: `0 0 8px ${couleur}80` }}>{titre}</p>
+      </div>
+      <div
+        style={{ flex: 1, position: 'relative', padding: '12px', cursor: onFiche && imgCur.illu ? 'pointer' : 'zoom-in' }}
+        onClick={handleClick}
+      >
+        {/* Image précédente — s'efface */}
+        {imgPrev && (
+          <img src={imgPrev.url} alt=""
+            style={{
+              position: 'absolute', inset: '12px',
+              width: 'calc(100% - 24px)', height: 'calc(100% - 24px)',
+              objectFit: 'contain', borderRadius: '8px',
+              opacity: fading ? 0 : 1,
+              transition: `opacity ${FADE}ms ease`,
+            }}
+          />
+        )}
+        {/* Image courante — apparaît */}
+        <img src={imgCur.url} alt={imgCur.nom}
+          style={{
+            position: 'absolute', inset: '12px',
+            width: 'calc(100% - 24px)', height: 'calc(100% - 24px)',
+            objectFit: 'contain', borderRadius: '8px',
+            opacity: fading ? 1 : 1,
+            transition: `opacity ${FADE}ms ease`,
+          }}
+        />
+        {/* Spacer pour maintenir la hauteur */}
+        <div style={{ width: '100%', height: '160px' }} />
+        {imgCur.coloriste && (
+          <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(4px)', pointerEvents: 'none' }}>
+            Réalisé par {imgCur.coloriste}
+          </div>
+        )}
+      </div>
+      {images.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px' }}>
+          {images.map((_, i) => (
+            <div key={i} onClick={() => goTo(i)} style={{ width: i === cur ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === cur ? couleur : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+          ))}
+        </div>
+      )}
+      <div style={{ padding: '4px 12px 10px', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{imgCur.nom}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Encart Patreon spécial ──
+function EncartPatreon({ images, onZoom }) {
+  const [idx, setIdx] = React.useState(0);
+  const [prevP, setPrevP] = React.useState(null);
+  const [fadingP, setFadingP] = React.useState(false);
+  const timerPRef = React.useRef(null);
+  const FADEP = 1200;
+  const mois = moisCibleComingSoon();
+
+  React.useEffect(() => {
+    if (images.length <= 1) return;
+    const t = setInterval(() => {
+      setIdx(c => {
+        const next = (c + 1) % images.length;
+        setPrevP(c);
+        setFadingP(true);
+        clearTimeout(timerPRef.current);
+        timerPRef.current = setTimeout(() => { setPrevP(null); setFadingP(false); }, FADEP);
+        return next;
+      });
+    }, 4500);
+    return () => { clearInterval(t); clearTimeout(timerPRef.current); };
+  }, [images.length]);
+
+  if (images.length === 0) return (
+    <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '220px' }}>
+      <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '12px', textAlign: 'center' }}>🌟 Nouveautés Patreon<br/>Aucune image</p>
+    </div>
+  );
+
+  const img = images[idx];
+  return (
+    <div style={{ flex: 1, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #ffd25044, #ffd25022)', border: '1px solid #ffd25055', borderBottom: 'none', padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', boxShadow: 'inset 0 1px 0 #ffd25030, 0 2px 8px rgba(0,0,0,0.3)' }}>
+        <img src={`${R2}/site/pastille_patreon.png`} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', flexShrink: 0 }} />
+        <p style={{ color: '#ffd250', fontSize: '12px', fontWeight: 'bold', margin: 0, textShadow: '0 0 8px #ffd25080' }}>Nouveautés Patreon</p>
+      </div>
+      <div style={{ padding: '6px 12px 0', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px', fontWeight: 'bold' }}>
+          Ça arrive en {mois} sur{' '}
+          <span onClick={(e) => { e.stopPropagation(); window.open(PATREON_URL, '_blank'); }} style={{ textDecoration: 'underline', cursor: 'pointer', color: '#4da6ff', fontSize: '13px', fontWeight: 'bold' }}>Patreon</span> !
+        </p>
+      </div>
+      <div style={{ flex: 1, position: 'relative', padding: '8px 12px', cursor: 'zoom-in', minHeight: '140px' }}
+        onClick={() => onZoom && onZoom(images, idx)}>
+        {prevP !== null && images[prevP] && (
+          <img src={images[prevP].url} alt=""
+            style={{ position: 'absolute', inset: '8px 12px', width: 'calc(100% - 24px)', height: 'calc(100% - 16px)', objectFit: 'contain', borderRadius: '8px', opacity: fadingP ? 0 : 1, transition: `opacity ${FADEP}ms ease` }}
+          />
+        )}
+        <img src={img.url} alt={img.nom}
+          onError={() => { if (images.length > 1) setIdx(i => (i + 1) % images.length); }}
+          style={{ position: 'absolute', inset: '8px 12px', width: 'calc(100% - 24px)', height: 'calc(100% - 16px)', objectFit: 'contain', borderRadius: '8px', opacity: 1 }}
+        />
+        <div style={{ width: '100%', height: '140px' }} />
+      </div>
+      {images.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '6px' }}>
+          {images.map((_, i) => (
+            <div key={i} onClick={() => {
+              if (i === idx) return;
+              setPrevP(idx); setFadingP(true);
+              clearTimeout(timerPRef.current);
+              timerPRef.current = setTimeout(() => { setPrevP(null); setFadingP(false); }, FADEP);
+              setIdx(i);
+            }} style={{ width: i === idx ? '16px' : '6px', height: '6px', borderRadius: '3px', background: i === idx ? '#ffd250' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+          ))}
+        </div>
+      )}
+      <div style={{ padding: '4px 12px 8px', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{img.nom}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Social coloriages (identique Catalogue) ──
+function ZoomSocialAccueil({ coloId, pseudo, userId, userPseudo }) {
+  const [likes, setLikes] = React.useState([]);
+  const [commentaires, setCommentaires] = React.useState([]);
+  const [texte, setTexte] = React.useState('');
+  const [envoi, setEnvoi] = React.useState(false);
+  const jaLike = likes.some(l => l.user_id === userId);
+
+  React.useEffect(() => {
+    if (!coloId) return;
+    const charger = async () => {
+      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
+      const { data: commentsRaw } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
+      setLikes(l || []);
+      if (commentsRaw && commentsRaw.length > 0) {
+        const uids = [...new Set(commentsRaw.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
+      } else setCommentaires([]);
+    };
+    charger();
+  }, [coloId]);
+
+  const toggleLike = async () => {
+    if (!coloId || !userId) return;
+    if (jaLike) { await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId); setLikes(prev => prev.filter(l => l.user_id !== userId)); }
+    else { await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId }); setLikes(prev => [...prev, { user_id: userId }]); }
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!texte.trim() || !coloId || !userId) return;
+    setEnvoi(true);
+    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
+    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
+    setTexte(''); setEnvoi(false);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 14px', background: 'rgba(0,0,0,0.7)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button onClick={toggleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: jaLike ? '#ff4d7d' : 'rgba(255,255,255,0.5)', fontSize: '12px', padding: 0, transition: 'color .2s' }}>
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            {jaLike ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
+          </svg>
+          <span>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
+        </button>
+        {pseudo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{pseudo}</span></span>}
+      </div>
+      {commentaires.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '100px', overflowY: 'auto' }}>
+          {commentaires.map(c => (
+            <div key={c.id} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo}</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: 1.4 }}>{c.texte}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+        <textarea
+          rows={1} placeholder="Ajouter un commentaire…" value={texte}
+          onChange={e => setTexte(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
+          style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', color: '#fff', fontSize: '11px', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
+        />
+        <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi}
+          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', whiteSpace: 'nowrap' }}>
+          Envoyer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PopupColoAccueil({ img, userId, userPseudo, onClose }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', maxWidth: '480px', width: '100%', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '32px', height: '32px', color: '#fff', fontSize: '18px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        <img src={img.url} alt={img.nom} style={{ width: '100%', maxHeight: '420px', objectFit: 'contain', display: 'block', background: '#000' }} />
+        <ZoomSocialAccueil coloId={img.coloId} pseudo={img.pseudo} userId={userId} userPseudo={userPseudo} />
+      </div>
+    </div>
+  );
+}
+
+// ── Popup zoom image simple ──
+function PopupZoom({ images, indexDepart, onClose }) {
+  const [idx, setIdx] = React.useState(indexDepart);
+  const touchStartX = React.useRef(null);
+  React.useEffect(() => {
+    const h = (e) => {
+      if (e.key === 'ArrowRight') setIdx(i => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') setIdx(i => (i - 1 + images.length) % images.length);
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [images.length, onClose]);
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={e => {
+        if (!touchStartX.current) return;
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) setIdx(i => diff > 0 ? (i + 1) % images.length : (i - 1 + images.length) % images.length);
+        touchStartX.current = null;
+      }}>
+      <button onClick={onClose} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '30px', cursor: 'pointer', zIndex: 10000 }}>✕</button>
+      <img src={images[idx].url} alt={images[idx].nom} onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '90vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: '10px', display: 'block' }} />
+      {images.length > 1 && <>
+        <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}
+          style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>‹</button>
+        <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}
+          style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '48px', height: '48px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>›</button>
+        <p style={{ position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.4)', fontSize: '12px', zIndex: 10000 }}>{idx + 1} / {images.length}</p>
+      </>}
+    </div>
+  );
+}
+
+// ── Logo premium ──
+function LogoPremium({ onClick, isMobile, L }) {
+  const ref = React.useRef(null);
+  const wrapRef = React.useRef(null);
+  const handleMouseMove = (e) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 8}deg) rotateY(${dx * 8}deg) scale(1.08)`;
+    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(600px)';
+  };
+  const handleMouseLeave = () => {
+    if (ref.current) { ref.current.style.transform = ''; ref.current.classList.remove('shining-logo'); }
+    if (wrapRef.current) wrapRef.current.style.transform = '';
+  };
+  const handleMouseEnter = () => {
+    const el = ref.current; if (!el) return;
+    el.classList.remove('shining-logo'); void el.offsetWidth; el.classList.add('shining-logo');
+  };
+  return (
+    <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
+      <img ref={ref} src={`${R2}/site/Logo.png`} alt="logo"
+        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClick}
+        style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', cursor: 'pointer', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease', willChange: 'transform' }} />
+    </div>
+  );
+}
+
+// ── Page principale ──
 function Accueil() {
   const navigate = useNavigate();
   const location = useLocation();
