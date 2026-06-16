@@ -278,7 +278,7 @@ function Presentation() {
           illu={popupOnglet}
           onClose={() => setPopupOnglet(null)}
           userId={userId}
-          userPseudo={userPseudo}
+          userPseudo=""
         />
       )}
     </div>

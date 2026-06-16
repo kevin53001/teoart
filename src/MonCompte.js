@@ -812,6 +812,725 @@ function getVisuelsOrdonnes(visuels) {
   return result;
 }
 
+// ─── ZoomSocial (likes + commentaires sur un coloriage zoomé) ────────────────
+function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
+  const [illus, setIllus] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const charger = async () => {
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', userId).eq('je_veux', true);
+      if (!coll || coll.length === 0) { setLoading(false); return; }
+      const ids = coll.map(c => c.illustration_id);
+      const { data: illusData } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').in('id', ids).order('nom');
+      setIllus(illusData || []);
+      setLoading(false);
+    };
+    charger();
+  }, [userId]);
+
+
+
+  const ouvrirPopup = (illu, index) => { if (onOuvrirPopup) onOuvrirPopup(illu, index, illus); };
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
+  if (illus.length === 0) return <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Aucun favori pour l'instant.</p>;
+
+  return (
+    <>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '14px' }}>{illus.length} illustration{illus.length > 1 ? 's' : ''} dans tes favoris</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {illus.map((illu, idx) => {
+          const url = getVisuelPresentation(illu.visuels);
+          return (
+            <div key={illu.id} onClick={() => ouvrirPopup(illu, idx)}
+              style={{ flexShrink: 0, width: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,62,181,0.25)', background: '#0a0a0a', position: 'relative', cursor: 'pointer', transition: 'border-color .2s, transform .2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,62,181,0.6)'; e.currentTarget.style.transform = 'scale(1.04)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,62,181,0.25)'; e.currentTarget.style.transform = 'scale(1)'; }}>
+              {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: '100px', objectFit: 'cover', display: 'block' }} />
+                : <div style={{ width: '100%', height: '100px', background: '#111' }} />}
+              <div style={{ position: 'absolute', top: '3px', right: '3px' }}>
+                <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff3eb5" /></svg>
+              </div>
+              <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.85)' }}>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
+                {illu.prix && <p style={{ color: '#ff3eb5', fontSize: '8px' }}>{illu.prix} €</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+    </>
+  );
+}
+
+// ─── Composant cadrage avatar (crop circulaire par drag) ────────────────────
+function AvatarCrop({ src, onConfirm, onCancel }) {
+  const canvasRef = React.useRef(null);
+  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  const [scale, setScale] = React.useState(1);
+  const [dragging, setDragging] = React.useState(false);
+  const [dragStart, setDragStart] = React.useState(null);
+  const imgRef = React.useRef(null);
+  const SIZE = 280; // taille du canvas carré
+
+  React.useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      imgRef.current = img;
+      // centrer l'image au départ
+      const sc = Math.max(SIZE / img.width, SIZE / img.height);
+      setScale(sc);
+      setOffset({ x: (SIZE - img.width * sc) / 2, y: (SIZE - img.height * sc) / 2 });
+    };
+    img.src = src;
+  }, [src]);
+
+  React.useEffect(() => { dessiner(); }, [offset, scale]); // eslint-disable-line
+
+  const dessiner = () => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    // fond sombre
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    // image
+    ctx.drawImage(img, offset.x, offset.y, img.width * scale, img.height * scale);
+    // masque : tout assombrir sauf le cercle
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    // cercle guide
+    ctx.strokeStyle = '#00d4d4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 4, 0, Math.PI * 2);
+    ctx.stroke();
+  };
+
+  const onMouseDown = (e) => { setDragging(true); setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y }); };
+  const onMouseMove = (e) => { if (!dragging || !dragStart) return; setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
+  const onMouseUp = () => setDragging(false);
+  const onWheel = (e) => { e.preventDefault(); setScale(s => Math.max(0.2, Math.min(5, s - e.deltaY * 0.001))); };
+
+  // touch support
+  const lastTouch = React.useRef(null);
+  const onTouchStart = (e) => { const t = e.touches[0]; setDragging(true); setDragStart({ x: t.clientX - offset.x, y: t.clientY - offset.y }); lastTouch.current = t; };
+  const onTouchMove = (e) => { if (!dragging || !dragStart) return; const t = e.touches[0]; setOffset({ x: t.clientX - dragStart.x, y: t.clientY - dragStart.y }); };
+  const onTouchEnd = () => setDragging(false);
+
+  const confirmer = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400; canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    const img = imgRef.current;
+    if (!img) return;
+    // recalculer le ratio canvas affichage → export 400px
+    const ratio = 400 / SIZE;
+    ctx.beginPath();
+    ctx.arc(200, 200, 200, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, offset.x * ratio, offset.y * ratio, img.width * scale * ratio, img.height * scale * ratio);
+    canvas.toBlob(blob => { onConfirm(blob); }, 'image/jpeg', 0.92);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
+      <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>Cadre ta photo de profil</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>Glisse pour repositionner · Molette pour zoomer</p>
+      <canvas
+        ref={canvasRef}
+        width={SIZE} height={SIZE}
+        style={{ borderRadius: '50%', cursor: dragging ? 'grabbing' : 'grab', border: '3px solid rgba(0,212,212,0.5)', touchAction: 'none' }}
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+        onWheel={onWheel}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+      />
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button onClick={onCancel} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px 24px', color: '#fff', fontSize: '13px', cursor: 'pointer' }}>Annuler</button>
+        <button onClick={confirmer} style={{ background: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.5)', borderRadius: '10px', padding: '10px 24px', color: '#00d4d4', fontSize: '13px', cursor: 'pointer' }}>✓ Valider ce cadrage</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── POINT 4 : Mes Infos — refonte 2 colonnes ──────────────────────────────
+function SectionMesInfos({ userId }) {
+  const [profil, setProfil] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
+  const [avatarFile, setAvatarFile] = React.useState(null);
+  const [avatarPreview, setAvatarPreview] = React.useState(null);
+  const [showCrop, setShowCrop] = React.useState(false);
+  const [cropSrc, setCropSrc] = React.useState(null);
+  const pwa = usePWAInstallable();
+
+  // POINT 5 : états pour la réinitialisation du mot de passe
+  const [resetEmail, setResetEmail] = React.useState('');
+  const [resetEnvoye, setResetEnvoye] = React.useState(false);
+  const [resetLoading, setResetLoading] = React.useState(false);
+  const [resetErreur, setResetErreur] = React.useState('');
+
+  React.useEffect(() => {
+    supabase.from('profils').select('*').eq('id', userId).single().then(({ data }) => {
+      setProfil(data || {});
+      setResetEmail(data?.email || '');
+      setLoading(false);
+    });
+  }, [userId]);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setCropSrc(url);
+    setShowCrop(true);
+  };
+
+  const handleCropConfirm = (blob) => {
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(blob));
+    setShowCrop(false);
+    setCropSrc(null);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    let avatarUrl = profil.avatar_url;
+    if (avatarFile) {
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(avatarFile);
+        });
+        const response = await fetch('/api/upload-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64, userId }),
+        });
+        const data = await response.json();
+        if (data.url) { avatarUrl = data.url; }
+        else { console.error('upload-avatar erreur:', data.error); }
+      } catch (e) { console.error('upload-avatar exception:', e); }
+    }
+    await supabase.from('profils').update({
+      pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
+      telephone: profil.telephone, adresse: profil.adresse, complement: profil.complement,
+      code_postal: profil.code_postal, ville: profil.ville, etat: profil.etat, pays: profil.pays, avatar_url: avatarUrl,
+    }).eq('id', userId);
+    setSaved(true); setSaving(false);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  // États formulaire de contact
+  const [contactSujet, setContactSujet] = React.useState('');
+  const [contactMessage, setContactMessage] = React.useState('');
+  const [contactEnvoi, setContactEnvoi] = React.useState(false);
+  const [contactEnvoye, setContactEnvoye] = React.useState(false);
+  const [contactErreur, setContactErreur] = React.useState('');
+  const [showContact, setShowContact] = React.useState(false);
+
+  // POINT 5 : envoi du mail de réinitialisation
+  const handleReset = async () => {
+    if (!resetEmail.trim()) { setResetErreur('Adresse email requise.'); return; }
+    setResetLoading(true); setResetErreur('');
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: 'https://www.kevinteoart.fr/reset-password',
+    });
+    setResetLoading(false);
+    if (error) { setResetErreur(error.message); }
+    else { setResetEnvoye(true); }
+  };
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
+
+  const handleContact = async () => {
+    if (!contactSujet.trim() || !contactMessage.trim()) { setContactErreur('Merci de remplir le sujet et le message.'); return; }
+    setContactEnvoi(true); setContactErreur('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sujet: contactSujet.trim(),
+          message: contactMessage.trim(),
+          userEmail: profil.email || '',
+          userPseudo: profil.pseudo || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setContactEnvoye(true);
+        setContactSujet('');
+        setContactMessage('');
+        setTimeout(() => { setContactEnvoye(false); setShowContact(false); }, 3000);
+      } else {
+        setContactErreur("Erreur lors de l'envoi. Réessaie.");
+      }
+    } catch (e) {
+      setContactErreur("Erreur réseau. Réessaie.");
+    }
+    setContactEnvoi(false);
+  };
+
+  const styleInput = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', outline: 'none', width: '100%' };
+  const styleLabel = { color: 'rgba(255,255,255,0.4)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', display: 'block' };
+
+  const champ = (label, key, type = 'text') => (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <label style={styleLabel}>{label}</label>
+      <input type={type} value={profil[key] || ''} onChange={e => setProfil(p => ({ ...p, [key]: e.target.value }))}
+        style={styleInput}
+        onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+    </div>
+  );
+
+  const styleEncart = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '12px' };
+  const styleTitreEncart = { color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '4px' };
+
+  return (
+    <>
+      {showCrop && cropSrc && (
+        <AvatarCrop src={cropSrc} onConfirm={handleCropConfirm} onCancel={() => { setShowCrop(false); setCropSrc(null); }} />
+      )}
+
+      {/* Layout global : colonnes + bouton en dessous */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+        {/* ── Ligne des deux colonnes ── */}
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+          {/* ── Colonne gauche : 3 encarts ── */}
+          <div style={{ flex: '2 1 340px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+            {/* Encart 1 : Identité */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>👤 Identité</p>
+              {champ('Pseudo', 'pseudo')}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {champ('Prénom', 'prenom')}
+                {champ('Nom', 'nom')}
+              </div>
+              {champ('Téléphone', 'telephone', 'tel')}
+            </div>
+
+            {/* Encart 2 : Mot de passe + reset */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>🔒 Mot de passe</p>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
+                Pour changer ton mot de passe, un lien de réinitialisation sera envoyé à ton adresse email.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={styleLabel}>Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={e => { setResetEmail(e.target.value); setResetEnvoye(false); setResetErreur(''); }}
+                  style={styleInput}
+                  onFocus={e => e.target.style.borderColor = 'rgba(0,212,212,0.5)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  placeholder="ton@email.com"
+                />
+              </div>
+              {resetErreur && <p style={{ color: '#ff8080', fontSize: '11px' }}>{resetErreur}</p>}
+              {resetEnvoye
+                ? <p style={{ color: '#00d4d4', fontSize: '12px' }}>✓ Email envoyé ! Vérifie ta boîte mail.</p>
+                : (
+                  <button onClick={handleReset} disabled={resetLoading}
+                    style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '9px 16px', color: '#00d4d4', fontSize: '12px', cursor: resetLoading ? 'wait' : 'pointer', alignSelf: 'flex-start', transition: 'all .2s' }}>
+                    {resetLoading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
+                  </button>
+                )
+              }
+            </div>
+
+            {/* Encart 3 : Adresse */}
+            <div style={styleEncart}>
+              <p style={styleTitreEncart}>📍 Adresse</p>
+              {champ('Adresse', 'adresse')}
+              {champ('Complément', 'complement')}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+                {champ('Code postal', 'code_postal')}
+                {champ('Ville', 'ville')}
+              </div>
+              {champ('État / Province (optionnel)', 'etat')}
+              {champ('Pays', 'pays')}
+            </div>
+          </div>
+
+          {/* ── Colonne droite : photo de profil — alignée en haut, hauteur = 3 encarts gauche ── */}
+          <div style={{ flex: '1 1 160px', display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}>
+            {/* paddingBottom pour ne pas dépasser sous le 3e encart (le bouton est en dehors) */}
+            <div style={{ ...styleEncart, alignItems: 'center', justifyContent: 'flex-start', gap: '20px', height: '100%' }}>
+              <p style={styleTitreEncart}>🖼 Photo de profil</p>
+              <div style={{ width: '140px', height: '140px', flexShrink: 0 }}>
+                <img
+                  src={avatarPreview || profil.avatar_url || `${R2}/site/Logo.png`}
+                  alt="avatar"
+                  style={{ width: '140px', height: '140px', borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(0,212,212,0.4)', display: 'block' }}
+                />
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
+                JPG, PNG<br/>Recommandé 400×400px
+              </p>
+              <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+                📷 Choisir une photo
+                <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+              </label>
+
+              {/* ── Bouton installation PWA ── */}
+              <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              {pwa.installed ? (
+                <p style={{ color: 'rgba(255,62,181,0.7)', fontSize: '11px', textAlign: 'center' }}>✓ Application installée</p>
+              ) : pwa.ios ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
+                    📱 Sur iPhone :<br/>
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Partager ⎙ → "Sur l'écran d'accueil"</span>
+                  </p>
+                </div>
+              ) : pwa.installable ? (
+                <button
+                  onClick={async () => { await pwa.installer(); }}
+                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
+                  📲 Installer l'application
+                </button>
+              ) : (
+                <button
+                  onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
+                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
+                  📲 Installer l'application
+                </button>
+              )}
+              {/* ── Formulaire de contact ── */}
+              <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center', lineHeight: '1.6', fontStyle: 'italic' }}>
+                Si quelque chose cloche ou que tu as une question, la boîte à lettres est ouverte. Je réponds quand les crayons me laissent souffler.
+              </p>
+              <button
+                onClick={() => { setShowContact(v => !v); setContactEnvoye(false); setContactErreur(''); }}
+                style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.18), rgba(255,160,40,0.08))', border: '1px solid rgba(255,210,80,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ffd250', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,210,80,0.12)' }}>
+                ✉️ Contacter Kevin
+              </button>
+              {showContact && (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {contactEnvoye ? (
+                    <p style={{ color: '#00cc66', fontSize: '12px', textAlign: 'center' }}>✓ Message envoyé !</p>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        placeholder="Sujet"
+                        value={contactSujet}
+                        onChange={e => setContactSujet(e.target.value)}
+                        style={{ ...styleInput, fontSize: '12px', padding: '8px 10px' }}
+                        onFocus={e => e.target.style.borderColor = 'rgba(255,210,80,0.5)'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      <textarea
+                        placeholder="Ton message…"
+                        value={contactMessage}
+                        onChange={e => setContactMessage(e.target.value)}
+                        rows={4}
+                        style={{ ...styleInput, fontSize: '12px', padding: '8px 10px', resize: 'vertical', fontFamily: 'inherit', minHeight: '80px' }}
+                        onFocus={e => e.target.style.borderColor = 'rgba(255,210,80,0.5)'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                      />
+                      {contactErreur && <p style={{ color: '#ff6b6b', fontSize: '11px' }}>{contactErreur}</p>}
+                      <button
+                        onClick={handleContact}
+                        disabled={contactEnvoi || !contactSujet.trim() || !contactMessage.trim()}
+                        style={{ background: (contactSujet.trim() && contactMessage.trim()) ? 'linear-gradient(135deg, rgba(255,210,80,0.25), rgba(255,160,40,0.15))' : 'rgba(255,255,255,0.04)', border: `1px solid ${(contactSujet.trim() && contactMessage.trim()) ? 'rgba(255,210,80,0.5)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px', color: (contactSujet.trim() && contactMessage.trim()) ? '#ffd250' : 'rgba(255,255,255,0.2)', fontSize: '12px', cursor: (contactSujet.trim() && contactMessage.trim()) ? 'pointer' : 'default', fontWeight: 'bold' }}>
+                        {contactEnvoi ? 'Envoi...' : 'Envoyer'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {avatarPreview && (
+                <>
+                  <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                  <p style={{ color: 'rgba(0,212,212,0.7)', fontSize: '10px', textAlign: 'center' }}>
+                    ✓ Photo cadrée.<br/>Clique sur "Sauvegarder" pour confirmer.
+                  </p>
+                  <button onClick={() => { setCropSrc(avatarPreview); setShowCrop(true); }}
+                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 14px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', cursor: 'pointer' }}>
+                    ✏️ Recadrer
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bouton sauvegarder — centré sous les deux colonnes ── */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: saved ? 'rgba(0,212,212,0.3)' : 'linear-gradient(135deg, rgba(0,212,212,0.2), rgba(0,150,150,0.2))', border: `1px solid ${saved ? '#00d4d4' : 'rgba(0,212,212,0.4)'}`, borderRadius: '10px', padding: '11px 48px', color: saved ? '#00d4d4' : '#fff', fontSize: '13px', cursor: saving ? 'wait' : 'pointer', transition: 'all .3s' }}>
+            {saved ? '✓ Sauvegardé !' : saving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SectionMesCommandes({ userId }) {
+  const [commandes, setCommandes] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [telechargement, setTelechargement] = React.useState({});
+
+  React.useEffect(() => {
+    supabase.from('commandes').select('*').eq('user_id', userId).order('created_at', { ascending: false }).then(({ data }) => { setCommandes(data || []); setLoading(false); });
+  }, [userId]);
+
+  const telechargerFichier = async (commande, type) => {
+    const key = `${commande.id}_${type}`;
+    setTelechargement(p => ({ ...p, [key]: true }));
+    try {
+      const cheminR2 = type === 'produit' ? commande.fichier_pdf : commande.facture_pdf;
+      const response = await fetch('/api/download-secure', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemin: cheminR2, userId }) });
+      const data = await response.json();
+      if (data.url) {
+        const a = document.createElement('a');
+        a.href = data.url;
+        a.download = type === 'produit' ? `${commande.nom_produit}.pdf` : `Facture_${commande.id.slice(0, 8)}.pdf`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }
+    } catch (e) { console.error(e); }
+    setTelechargement(p => ({ ...p, [key]: false }));
+  };
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
+  if (commandes.length === 0) return (
+    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+      <p style={{ fontSize: '32px', marginBottom: '12px' }}>🛒</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Aucune commande pour l'instant.</p>
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {commandes.map(cmd => (
+        <div key={cmd.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{cmd.nom_produit}</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}{cmd.prix ? ` · ${cmd.prix} €` : ''}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {cmd.fichier_pdf && <button onClick={() => telechargerFichier(cmd, 'produit')} disabled={telechargement[`${cmd.id}_produit`]} style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '7px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer' }}>{telechargement[`${cmd.id}_produit`] ? '...' : '⬇ Télécharger'}</button>}
+            {cmd.facture_pdf && <button onClick={() => telechargerFichier(cmd, 'facture')} disabled={telechargement[`${cmd.id}_facture`]} style={{ background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', padding: '7px 12px', color: 'rgba(255,210,80,0.8)', fontSize: '11px', cursor: 'pointer' }}>{telechargement[`${cmd.id}_facture`] ? '...' : '🧾 Facture'}</button>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SectionMesColoriages({ userId, userPseudo }) {
+  const [colos, setColos] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [coloZoom, setColoZoom] = React.useState(null);
+  const [commentaires, setCommentaires] = React.useState([]);
+  const [likes, setLikes] = React.useState([]);
+  const [texte, setTexte] = React.useState('');
+  const [envoi, setEnvoi] = React.useState(false);
+  const [confirmation, setConfirmation] = React.useState(null);
+  const [suppression, setSuppression] = React.useState(false);
+
+  React.useEffect(() => { chargerColos(); }, [userId]); // eslint-disable-line
+
+  const chargerColos = async () => {
+    const { data } = await supabase.from('coloriages').select('id, illustration_id, image_url, date_coloriage, created_at').eq('user_id', userId).not('image_url', 'is', null).order('created_at', { ascending: false });
+    if (!data || data.length === 0) { setColos([]); setLoading(false); return; }
+    const illuIds = [...new Set(data.map(c => c.illustration_id))];
+    const { data: illus } = await supabase.from('illustrations').select('id, nom, annee').in('id', illuIds);
+    const illusMap = {};
+    (illus || []).forEach(i => { illusMap[i.id] = i; });
+    const coloIds = data.map(c => c.id);
+    const { data: newComments } = await supabase.from('commentaires_coloriages').select('coloriage_id').in('coloriage_id', coloIds).eq('vu', false).neq('user_id', userId);
+    const notifSet = new Set((newComments || []).map(c => c.coloriage_id));
+    setColos(data.map(c => ({ ...c, illu: illusMap[c.illustration_id], hasNotif: notifSet.has(c.id) })));
+    setLoading(false);
+  };
+
+  const ouvrirZoom = async (colo) => {
+    setColoZoom(colo);
+    await supabase.from('commentaires_coloriages').update({ vu: true }).eq('coloriage_id', colo.id).neq('user_id', userId);
+    setColos(prev => prev.map(c => c.id === colo.id ? { ...c, hasNotif: false } : c));
+    const { data: comRaw } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', colo.id).order('created_at', { ascending: true });
+    const { data: lks } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', colo.id);
+    if (comRaw && comRaw.length > 0) {
+      const uids = [...new Set(comRaw.map(c => c.user_id))];
+      const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+      const pm = {};
+      (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+      setCommentaires(comRaw.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
+    } else setCommentaires([]);
+    setLikes(lks || []);
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!texte.trim() || !coloZoom) return;
+    setEnvoi(true);
+    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloZoom.id, user_id: userId, texte: texte.trim(), vu: true }).select('id, texte, created_at, user_id').single();
+    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
+    setTexte(''); setEnvoi(false);
+  };
+
+  const supprimerColoriage = async (colo) => {
+    setSuppression(true);
+    try {
+      const urlPath = colo.image_url.replace('https://images.kevinteoart.fr/', '');
+      await fetch('/api/delete-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemin: urlPath, userId }) });
+      await supabase.from('coloriages').delete().eq('id', colo.id);
+      setColos(prev => prev.filter(c => c.id !== colo.id));
+      if (coloZoom?.id === colo.id) setColoZoom(null);
+    } catch (e) { console.error(e); }
+    setSuppression(false); setConfirmation(null);
+  };
+
+  if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
+  if (colos.length === 0) return (
+    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+      <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Tu n'as pas encore partagé de coloriage.</p>
+    </div>
+  );
+
+  return (
+    <>
+      {coloZoom && (
+        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
+            <img src={coloZoom.image_url} alt="" style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px 10px 0 0' }} />
+            <div style={{ background: 'rgba(20,20,20,0.98)', border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>{coloZoom.illu?.nom}</p>
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>❤️ {likes.length} · 💬 {commentaires.length}</span>
+              </div>
+              {commentaires.length > 0 && (
+                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {commentaires.map(c => (
+                    <div key={c.id} style={{ display: 'flex', gap: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+                      <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>{c.texte}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <textarea value={texte} onChange={e => setTexte(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }} placeholder="Répondre…" rows={1} style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 10px', color: '#fff', fontSize: '11px', resize: 'none', fontFamily: 'inherit' }} />
+                <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi} style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.04)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '8px', padding: '6px 12px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default' }}>Envoyer</button>
+              </div>
+              <button onClick={() => setConfirmation(coloZoom)} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer', alignSelf: 'flex-start' }}>🗑 Supprimer ce coloriage</button>
+            </div>
+          </div>
+          <button onClick={() => setColoZoom(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>✕</button>
+        </div>
+      )}
+      {confirmation && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#111', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '380px', textAlign: 'center' }}>
+            <p style={{ fontSize: '28px', marginBottom: '12px' }}>🗑</p>
+            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '8px' }}>Supprimer ce coloriage ?</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '24px' }}>Cette action est irréversible. L'image sera supprimée définitivement.</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Annuler</button>
+              <button onClick={() => supprimerColoriage(confirmation)} disabled={suppression} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px', opacity: suppression ? 0.6 : 1 }}>{suppression ? 'Suppression...' : 'Oui, supprimer'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+        {colos.map(colo => (
+          <div key={colo.id} onClick={() => ouvrirZoom(colo)} style={{ position: 'relative', width: '120px', cursor: 'pointer', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a' }}>
+            <img src={colo.image_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+            {colo.hasNotif && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px' }}>🔔</div>}
+            <div style={{ padding: '4px 6px', background: 'rgba(0,0,0,0.85)' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{colo.illu?.nom}</p>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '8px' }}>{colo.illu?.annee}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
+  const ref = React.useRef(null);
+  const handleMouseEnter = () => { const el = ref.current; el.classList.remove('shining'); void el.offsetWidth; el.classList.add('shining'); };
+  return (
+    <button ref={ref} className={`btn-onglet${actif ? ' actif' : ''}`} onMouseEnter={handleMouseEnter} onClick={onClick}
+      style={{ background: actif ? `linear-gradient(135deg, rgba(${couleurRgb},0.35), rgba(${couleurRgb},0.15))` : `linear-gradient(135deg, rgba(${couleurRgb},0.18), rgba(${couleurRgb},0.08))`, border: `1px solid rgba(${couleurRgb},${actif ? '0.8' : '0.45'})`, color: couleur, boxShadow: actif ? `0 0 18px rgba(${couleurRgb},0.3), 0 4px 12px rgba(0,0,0,0.5)` : `0 2px 8px rgba(0,0,0,0.4)`, transform: actif ? 'scale(1.07)' : 'scale(1)' }}>
+      {label}
+    </button>
+  );
+}
+
+function LogoPremium({ onClick, isMobile, L }) {
+  const ref = React.useRef(null);
+  const wrapRef = React.useRef(null);
+
+  const handleMouseMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `rotateX(${-dy * 8}deg) rotateY(${dx * 8}deg) scale(1.08)`;
+    if (wrapRef.current) wrapRef.current.style.transform = 'perspective(600px)';
+  };
+  const handleMouseLeave = () => {
+    if (ref.current) { ref.current.style.transform = ''; ref.current.classList.remove('shining-logo'); }
+    if (wrapRef.current) wrapRef.current.style.transform = '';
+  };
+  const handleMouseEnter = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove('shining-logo'); void el.offsetWidth; el.classList.add('shining-logo');
+  };
+
+  return (
+    <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
+      <img
+        ref={ref}
+        src={`${R2}/site/Logo.png`}
+        alt="logo"
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={onClick}
+        style={{
+          width: `${L}px`, height: `${L}px`, borderRadius: '50%',
+          border: `${isMobile ? 3 : 4}px solid #000`,
+          boxShadow: '0 0 0 3px #00d4d4',
+          objectFit: 'cover', cursor: 'pointer',
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.1s ease, box-shadow 0.3s',
+          willChange: 'transform',
+        }}
+      />
+    </div>
+  );
+}
+
 function MonCompte() {
   const navigate = useNavigate();
   const location = useLocation();

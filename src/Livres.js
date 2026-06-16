@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import PopupFicheIllu from './PopupFicheIllu';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -40,7 +41,19 @@ function cheminVersUrl(chemin) {
   return `${R2}/${relatif.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 }
 
+function extraireColoriste(chemin) {
+  if (!chemin) return null;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
+  if (match) return match[1].trim();
+  return null;
+}
 
+function estVisuelCChemin(chemin) {
+  if (!chemin) return false;
+  const nomFichier = chemin.split('\\').pop().split('/').pop();
+  return /\s*-\s*C\d*\s*[-.]/.test(nomFichier);
+}
 
 function getVisuelsOrdonnes(visuels) {
   if (!visuels) return [];
