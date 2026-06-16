@@ -1,13 +1,32 @@
+/* ── Variables polices Kevin Teo'Art ── */
+:root {
+  --font-titre:  'Bubblegum Sans', cursive;   /* titres pages, encarts, popups */
+  --font-bouton: 'Boogaloo', cursive;          /* boutons, menus, nav, dropdown */
+  --font-texte:  'Caveat', cursive;            /* tout le reste : textes, labels, inputs */
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-texte);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Titres automatiques */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-titre);
+}
+
+/* Boutons automatiques */
+button, .pastille-label, select, .dropdown-item, .dropdown-item-patreon {
+  font-family: var(--font-bouton);
+}
+
+/* Inputs restent en Caveat */
+input, textarea {
+  font-family: var(--font-texte);
+}
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
