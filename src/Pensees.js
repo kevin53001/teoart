@@ -1248,12 +1248,31 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           </div>
         </div>
       )}
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupOnglet(illu)} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu, liste) => {
+        const l = liste || [illu];
+        setIllustrationsOnglet(prev => { const merged = [...prev]; l.forEach(i => { if (!merged.find(x => x.id === i.id)) merged.push(i); }); return merged; });
+        setPopupOngletIndex(illustrationsOnglet.findIndex(i => i.id === illu.id) >= 0 ? illustrationsOnglet.findIndex(i => i.id === illu.id) : 0);
+        setPopupOnglet(illu);
+      }} />
 
       {popupOnglet && (
         <PopupFicheIllu
           illu={popupOnglet}
+          illustrations={illustrationsOnglet}
           onClose={() => setPopupOnglet(null)}
+          onOpenSimilaire={(illu) => setPopupOnglet(illu)}
+          onSuivant={() => {
+            const idx = illustrationsOnglet.findIndex(i => i.id === popupOnglet.id);
+            const next = (idx + 1) % illustrationsOnglet.length;
+            setPopupOngletIndex(next);
+            setPopupOnglet(illustrationsOnglet[next]);
+          }}
+          onPrecedent={() => {
+            const idx = illustrationsOnglet.findIndex(i => i.id === popupOnglet.id);
+            const prev = (idx - 1 + illustrationsOnglet.length) % illustrationsOnglet.length;
+            setPopupOngletIndex(prev);
+            setPopupOnglet(illustrationsOnglet[prev]);
+          }}
           userId={userId}
           userPseudo={pseudo}
         />
