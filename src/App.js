@@ -12,9 +12,11 @@ import Pensees from './Pensees';
 import ResetPassword from './ResetPassword';
 import Accueil from './Accueil';
 import BannerePWA from './BannerePWA';
+import SplashScreen from './SplashScreen';
 
 function App() {
   const [session, setSession] = React.useState(undefined);
+  const [splashTermine, setSplashTermine] = React.useState(false);
 
   React.useEffect(() => {
     const init = async () => {
@@ -37,14 +39,19 @@ function App() {
   }, []);
 
   if (session === undefined) return (
-    <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: '36px', height: '36px', border: '3px solid rgba(0,212,212,0.2)', borderTop: '3px solid #00d4d4', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    <>
+      <SplashScreen onTermine={() => setSplashTermine(true)} />
+      <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(0,212,212,0.2)', borderTop: '3px solid #00d4d4', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    </>
   );
 
   return (
-    <BrowserRouter>
+    <>
+      {!splashTermine && <SplashScreen onTermine={() => setSplashTermine(true)} />}
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
         <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
@@ -60,6 +67,7 @@ function App() {
       </Routes>
       <BannerePWA />
     </BrowserRouter>
+    </>
   );
 }
 
