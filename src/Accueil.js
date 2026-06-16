@@ -59,18 +59,6 @@ function getVisuelB(visuels) {
 }
 
 
-function getVisuelsOrdonnes(visuels) {
-  if (!visuels) return [];
-  const ordre = ['présentation', 'presentation', 'B', 'b'];
-  const cles = Object.keys(visuels);
-  const tries = [];
-  for (const o of ordre) {
-    const found = cles.find(k => k === o || k.toLowerCase().includes(o));
-    if (found && !tries.includes(found)) tries.push(found);
-  }
-  for (const k of cles) { if (!tries.includes(k) && !k.toUpperCase().startsWith('A')) tries.push(k); }
-  return tries.map(k => visuels[k]).filter(Boolean);
-}
 
 function getVisuelsC(visuels) {
   if (!visuels) return [];

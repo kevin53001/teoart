@@ -41,41 +41,9 @@ function cheminVersUrl(chemin) {
   return `${R2}/${relatif.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 }
 
-function extraireColoriste(chemin) {
-  if (!chemin) return null;
-  const nomFichier = chemin.split('\\').pop().split('/').pop();
-  const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
-  if (match) return match[1].trim();
-  return null;
-}
 
-function estVisuelCChemin(chemin) {
-  if (!chemin) return false;
-  const nomFichier = chemin.split('\\').pop().split('/').pop();
-  return /\s*-\s*C\d*\s*[-.]/.test(nomFichier);
-}
 
-function getVisuelsOrdonnes(visuels) {
-  if (!visuels) return [];
-  const result = []; const valeursAjoutees = new Set();
-  Object.entries(visuels).forEach(([k, v]) => {
-    if (k.toUpperCase() === 'A') return;
-    if ((k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')) && v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); }
-  });
-  ['B', 'b'].forEach(k => { if (visuels[k] && !valeursAjoutees.has(visuels[k])) { result.push(visuels[k]); valeursAjoutees.add(visuels[k]); } });
-  Object.entries(visuels).forEach(([k, v]) => { if (k.toUpperCase() === 'A') return; if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); } });
-  Object.entries(visuels).forEach(([k, v]) => { if (k.toUpperCase() === 'A') return; if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); } });
-  return result;
-}
 
-function getVisuelPresentation(visuels) {
-  if (!visuels) return null;
-  const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
-  if (cle) return cheminVersUrl(visuels[cle]);
-  if (visuels['B']) return cheminVersUrl(visuels['B']);
-  if (visuels['b']) return cheminVersUrl(visuels['b']);
-  return null;
-}
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
 function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux }) {
