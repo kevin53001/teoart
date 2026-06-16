@@ -431,7 +431,7 @@ export default function BandeLegale() {
         overflow: 'hidden',
         maxHeight: actif ? '65vh' : '0',
         transition: 'max-height 0.4s ease',
-        borderRadius: '16px 16px 0 0',
+        borderRadius: '16px',
       }}>
         <div
           ref={panneauRef}
@@ -439,7 +439,7 @@ export default function BandeLegale() {
             background: 'rgba(8,8,8,0.98)',
             border: couleurActif ? `1px solid rgba(${rgbActif},0.3)` : '1px solid rgba(255,255,255,0.08)',
             borderBottom: 'none',
-            borderRadius: '16px 16px 0 0',
+            borderRadius: '16px',
             overflowY: 'auto',
             maxHeight: '65vh',
           }}
