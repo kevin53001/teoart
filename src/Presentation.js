@@ -205,18 +205,18 @@ function Presentation() {
                     {CATEGORIES.map(cat => (
                       cat === 'Kawaii/Chibi' ? (
                         <div key={cat}>
-                          <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
+                          <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
                             onClick={() => setShowKawaiiMenu(v => !v)}>
                             <span>{cat}</span>
                             <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
                           </button>
                           {showKawaiiMenu && (
-                            <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(0,212,212,0.2)', marginLeft: '14px', marginTop: '4px' }}>
-                              <button className="dropdown-item" onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi' } }); setShowCategories(false); setShowKawaiiMenu(false); }}>
+                            <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
+                              <button className="dropdown-item" style={{ color: '#ff3eb5' }} onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi' } }); setShowCategories(false); setShowKawaiiMenu(false); }}>
                                 Tout Kawaii/Chibi
                               </button>
                               {['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'].map(sc => (
-                                <button key={sc} className="dropdown-item"
+                                <button key={sc} className="dropdown-item" style={{ color: '#ff3eb5' }}
                                   onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi', sousCategorie: sc } }); setShowCategories(false); setShowKawaiiMenu(false); }}>
                                   {sc}
                                 </button>
