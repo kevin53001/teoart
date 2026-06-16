@@ -40,8 +40,14 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (session === undefined || !splashTermine) return (
+  // Mobile : splash screen pendant le chargement
+  if (isMobile && !splashTermine) return (
     <SplashScreen onTermine={() => setSplashTermine(true)} />
+  );
+
+  // Desktop : fond noir simple pendant le chargement Supabase
+  if (session === undefined) return (
+    <div style={{ background: '#000', minHeight: '100vh' }} />
   );
 
   return (
