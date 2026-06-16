@@ -25,7 +25,7 @@ const IMG_H = 150;
 const GAP = 6;
 const SPEED = '80s';
 
-const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
 
 // Helpers utilisés par IlluCard (cheminVersUrl, getVisuelsOrdonnes, getVisuelPresentation)
 function cheminVersUrl(chemin) {
@@ -134,6 +134,7 @@ function Catalogue() {
   const [annees, setAnnees] = React.useState([]);
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
+  const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
 
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
@@ -271,10 +272,20 @@ function Catalogue() {
     setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
   };
 
+  const selectionnerSousCategorie = (sc) => {
+    setCategorie('Kawaii/Chibi'); setSousCategorie(sc); setShowCategories(false); setShowKawaiiMenu(false); setPage(1);
+  };
+
   let illustrationsFiltrees = illustrations.filter(i => {
     if (sousCategorie) {
-      // Filtre Patreon : chercher dans sous_categorie_patreon
-      if (i.sous_categorie_patreon !== sousCategorie) return false;
+      if (categorie === 'Kawaii/Chibi') {
+        // Filtre sous-catégorie Kawaii/Chibi
+        if (i.categorie !== 'Kawaii/Chibi') return false;
+        if (i.sous_categorie_kawaii !== sousCategorie) return false;
+      } else {
+        // Filtre Patreon : chercher dans sous_categorie_patreon
+        if (i.sous_categorie_patreon !== sousCategorie) return false;
+      }
     } else {
       if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     }
@@ -427,8 +438,32 @@ function Catalogue() {
               {showCategories && (
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
+                    cat === 'Kawaii/Chibi' ? (
+                      <div key={cat}>
+                        <button className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
+                          onClick={() => setShowKawaiiMenu(v => !v)}>
+                          <span>{cat}</span>
+                          <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                        </button>
+                        {showKawaiiMenu && (
+                          <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
+                            <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ color: '#ff3eb5' }} onClick={() => { selectionnerCategorie('Kawaii/Chibi'); setShowKawaiiMenu(false); }}>
+                              Tout Kawaii/Chibi
+                            </button>
+                            {['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'].map(sc => (
+                              <button key={sc} className={`dropdown-item${sousCategorie === sc ? ' actif' : ''}`} style={{ color: '#ff3eb5' }}
+                                onClick={() => { selectionnerSousCategorie(sc); setShowKawaiiMenu(false); }}>
+                                {sc}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
                     <button key={cat} className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`}
+                      style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}}
                       onClick={() => selectionnerCategorie(cat)}>{cat}</button>
+                    )
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
                   <button

@@ -25,7 +25,7 @@ const BARRES = [
   { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.05 },
 ];
 
-const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
 
 const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 function getMoisPatreonDisponibles() {
@@ -1509,6 +1509,7 @@ function MonCompte() {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
+  const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
   const moisPatreon = getMoisPatreonDisponibles();
   const [onglet, setOnglet] = React.useState(null);
   const [showFavoris, setShowFavoris] = React.useState(false);
@@ -1625,14 +1626,38 @@ function MonCompte() {
             <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/accueil' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/accueil')} />
             <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', ...(location.pathname === '/livres' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/livres')} />
             <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0', overflow: 'visible' }}>
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); }} />
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); setShowKawaiiMenu(false); }} />
               {showCategories && (
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
+                    cat === 'Kawaii/Chibi' ? (
+                      <div key={cat}>
+                        <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
+                          onClick={() => setShowKawaiiMenu(v => !v)}>
+                          <span>{cat}</span>
+                          <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                        </button>
+                        {showKawaiiMenu && (
+                          <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
+                            <button className="dropdown-item" style={{ color: '#ff3eb5' }} onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi' } }); setShowCategories(false); setShowKawaiiMenu(false); }}>
+                              Tout Kawaii/Chibi
+                            </button>
+                            {['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'].map(sc => (
+                              <button key={sc} className="dropdown-item" style={{ color: '#ff3eb5' }}
+                                onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi', sousCategorie: sc } }); setShowCategories(false); setShowKawaiiMenu(false); }}>
+                                {sc}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
                     <button key={cat} className="dropdown-item"
+                      style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}}
                       onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>
                       {cat}
                     </button>
+                    )
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
                   <button className="dropdown-item" style={{ color: 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }} onClick={() => setShowPatreonMenu(v => !v)}>
