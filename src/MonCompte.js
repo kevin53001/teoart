@@ -334,16 +334,6 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
     <>
       <style>{`
         @keyframes badge-apparition {
-        .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }
-        .zoom-like-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.5); font-size: 12px; transition: color .2s; padding: 0; }
-        .zoom-like-btn.actif { color: #ff4d7d; }
-        .zoom-like-btn:hover { color: #ff4d7d; }
-        .zoom-commentaire-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 11px; width: 100%; resize: none; font-family: inherit; }
-        .zoom-commentaire-input:focus { outline: none; border-color: rgba(0,212,212,0.4); }
-        .zoom-commentaire-input::placeholder { color: rgba(255,255,255,0.3); }
-        .zoom-commentaire { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .zoom-commentaire:last-child { border-bottom: none; }
-
           0%   { transform: scale(0.15) rotate(-25deg); opacity: 0; filter: brightness(5) blur(3px); }
           30%  { transform: scale(1.35) rotate(8deg);   opacity: 1; filter: brightness(3); }
           50%  { transform: scale(0.88) rotate(-5deg);  filter: brightness(1.8); }
@@ -360,6 +350,8 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .hex-badge.obtenu { opacity: 0; }
+        .hex-badge.obtenu.badge-nouveau { opacity: 1; }
         .hex-badge { transition: transform 0.2s; }
         .hex-badge.obtenu:hover { transform: scale(1.1) translateY(-2px); }
       `}</style>
