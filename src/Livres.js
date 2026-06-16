@@ -236,6 +236,16 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
             {urlZoom && <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px' }} />}
           </div>
           {coloZoom && <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}><ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} /></div>}
+          {!coloZoom && zoomIndex !== null && estVisuelCChemin(visuelsChemins[zoomIndex]) && (
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
+              <ZoomSocialVisuelC
+                visuelUrl={urlZoom}
+                coloriste={extraireColoriste(visuelsChemins[zoomIndex])}
+                userId={userId}
+                userPseudo={userPseudo}
+              />
+            </div>
+          )}
           <button onClick={() => setZoomIndex(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 10 }}>✕</button>
           {totalVisuels > 1 && <>
             <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>

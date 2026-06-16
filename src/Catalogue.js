@@ -859,6 +859,86 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
   );
 }
 
+// ─── ZoomSocialVisuelC (likes + commentaires sur visuel C par URL) ────────────
+function ZoomSocialVisuelC({ visuelUrl, coloriste, userId, userPseudo }) {
+  const [likes, setLikes] = React.useState([]);
+  const [commentaires, setCommentaires] = React.useState([]);
+  const [texte, setTexte] = React.useState('');
+  const [envoi, setEnvoi] = React.useState(false);
+  const jaLike = likes.some(l => l.user_id === userId);
+
+  React.useEffect(() => {
+    if (!visuelUrl) return;
+    const charger = async () => {
+      const { data: l } = await supabase.from('likes_visuels_c').select('user_id').eq('visuel_url', visuelUrl);
+      const { data: commentsRaw } = await supabase.from('commentaires_visuels_c').select('id, texte, created_at, user_id').eq('visuel_url', visuelUrl).order('created_at', { ascending: true });
+      setLikes(l || []);
+      if (commentsRaw && commentsRaw.length > 0) {
+        const userIds = [...new Set(commentsRaw.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
+        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
+        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
+      } else setCommentaires([]);
+    };
+    charger();
+  }, [visuelUrl]);
+
+  const toggleLike = async () => {
+    if (!visuelUrl || !userId) return;
+    if (jaLike) {
+      await supabase.from('likes_visuels_c').delete().eq('visuel_url', visuelUrl).eq('user_id', userId);
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      await supabase.from('likes_visuels_c').insert({ visuel_url: visuelUrl, user_id: userId });
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!texte.trim() || !visuelUrl || !userId) return;
+    setEnvoi(true);
+    const { data } = await supabase.from('commentaires_visuels_c').insert({ visuel_url: visuelUrl, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
+    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
+    setTexte(''); setEnvoi(false);
+  };
+
+  if (!visuelUrl) return null;
+  return (
+    <div className="zoom-social">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button className={`zoom-like-btn${jaLike ? ' actif' : ''}`} onClick={toggleLike}>
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            {jaLike ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
+          </svg>
+          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime \u2713" : "J'aime"}</span>
+        </button>
+        {coloriste && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>\ud83c\udfa8 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriste}</span></span>}
+      </div>
+      {commentaires.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
+          {commentaires.map(c => (
+            <div key={c.id} className="zoom-commentaire">
+              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo || 'Anonyme'}</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: '1.4' }}>{c.texte}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+        <textarea className="zoom-commentaire-input" rows={1} placeholder="Ajouter un commentaire\u2026" value={texte}
+          onChange={e => setTexte(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
+          style={{ flex: 1 }} />
+        <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi}
+          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', transition: 'all .2s', whiteSpace: 'nowrap' }}>
+          Envoyer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, onToggleJeVeux, onClose, onOpenSimilaire, onSuivant, onPrecedent, userPseudo, userId, onColoUploaded, onOuvrirLivre, onFiltrerPatreon }) {
   const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
@@ -962,6 +1042,16 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
             {urlZoom && <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />}
           </div>
           {coloZoom && <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}><ZoomSocial coloriage={coloZoom} userId={userId} userPseudo={userPseudo} /></div>}
+          {!coloZoom && zoomIndex !== null && estVisuelCChemin(visuelsChemins[zoomIndex]) && (
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
+              <ZoomSocialVisuelC
+                visuelUrl={urlZoom}
+                coloriste={extraireColoriste(visuelsChemins[zoomIndex])}
+                userId={userId}
+                userPseudo={userPseudo}
+              />
+            </div>
+          )}
           <button onClick={() => setZoomIndex(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 10 }}>✕</button>
           {totalVisuels > 1 && <>
             <button onClick={zoomPrecedent} style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>‹</button>
