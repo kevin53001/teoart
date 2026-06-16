@@ -14,9 +14,11 @@ import Accueil from './Accueil';
 import BannerePWA from './BannerePWA';
 import SplashScreen from './SplashScreen';
 
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 function App() {
   const [session, setSession] = React.useState(undefined);
-  const [splashTermine, setSplashTermine] = React.useState(false);
+  const [splashTermine, setSplashTermine] = React.useState(!isMobile);
 
   React.useEffect(() => {
     const init = async () => {
