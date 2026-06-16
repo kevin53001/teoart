@@ -330,16 +330,18 @@ const COULEUR_RGB = {
 export default function BandeLegale() {
   const [actif, setActif] = React.useState(null);
   const [visible, setVisible] = React.useState(false);
-  const sentinelRef = React.useRef(null);
   const panneauRef = React.useRef(null);
 
   React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    if (sentinelRef.current) observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      setVisible(scrollTop + windowHeight >= docHeight - 120);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const toggleItem = (id) => setActif(prev => prev === id ? null : id);
@@ -348,8 +350,6 @@ export default function BandeLegale() {
 
   return (
     <>
-      <div ref={sentinelRef} style={{ height: '1px', width: '100%' }} />
-
       {/* Panneau contenu légal */}
       <div style={{
         position: 'fixed',
