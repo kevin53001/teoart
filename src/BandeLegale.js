@@ -327,23 +327,6 @@ const COULEUR_RGB = {
   '#00D4D4': '0,212,212',
 };
 
-// Effet carte premium : gradient noir avec reflet
-function styleCartePremium(couleur, actif) {
-  const rgb = COULEUR_RGB[couleur];
-  if (actif) {
-    return {
-      background: `linear-gradient(135deg, rgba(${rgb},0.18) 0%, rgba(0,0,0,0.95) 50%, rgba(${rgb},0.10) 100%)`,
-      boxShadow: `0 0 10px rgba(${rgb},0.25), inset 0 1px 0 rgba(255,255,255,0.08)`,
-      border: `1px solid rgba(${rgb},0.5)`,
-    };
-  }
-  return {
-    background: 'none',
-    boxShadow: 'none',
-    border: '1px solid transparent',
-  };
-}
-
 export default function BandeLegale() {
   const [actif, setActif] = React.useState(null);
   const [visible, setVisible] = React.useState(false);
@@ -392,25 +375,47 @@ export default function BandeLegale() {
   const ligne1 = ITEMS.slice(0, 3);
   const ligne2 = ITEMS.slice(3);
 
-  const renderBouton = (item) => (
-    <button
-      key={item.id}
-      onClick={e => { e.stopPropagation(); toggleItem(item.id); }}
-      style={{
-        ...styleCartePremium(item.couleur, actif === item.id),
-        cursor: 'pointer',
-        padding: '5px 12px',
-        borderRadius: '20px',
-        fontFamily: 'var(--font-bouton)',
-        fontSize: isMobile ? '10px' : '11px',
-        color: actif === item.id ? item.couleur : 'rgba(255,255,255,0.5)',
-        transition: 'all 0.2s ease',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {item.label}
-    </button>
-  );
+  const renderBouton = (item) => {
+    const rgb = COULEUR_RGB[item.couleur];
+    const isActif = actif === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={e => { e.stopPropagation(); toggleItem(item.id); }}
+        style={{
+          cursor: 'pointer',
+          padding: isMobile ? '4px 10px' : '5px 14px',
+          borderRadius: '20px',
+          fontFamily: 'var(--font-bouton)',
+          fontSize: isMobile ? '10px' : '11px',
+          color: isActif ? '#000' : item.couleur,
+          transition: 'all 0.25s ease',
+          whiteSpace: 'nowrap',
+          border: `1px solid rgba(${rgb}, ${isActif ? '1' : '0.5'})`,
+          // Effet carte premium coloré quand actif, sinon semi-transparent
+          background: isActif
+            ? `linear-gradient(135deg, ${item.couleur} 0%, rgba(${rgb},0.7) 50%, ${item.couleur} 100%)`
+            : `linear-gradient(135deg, rgba(${rgb},0.15) 0%, rgba(${rgb},0.05) 50%, rgba(${rgb},0.12) 100%)`,
+          boxShadow: isActif
+            ? `0 0 12px rgba(${rgb},0.6), inset 0 1px 0 rgba(255,255,255,0.3)`
+            : `0 0 6px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06)`,
+          textShadow: isActif ? '0 1px 2px rgba(0,0,0,0.4)' : 'none',
+          fontWeight: isActif ? '700' : '400',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Reflet carte premium */}
+        <span style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%)',
+          borderRadius: '20px 20px 0 0',
+          pointerEvents: 'none',
+        }} />
+        {item.label}
+      </button>
+    );
+  };
 
   return (
     <>
