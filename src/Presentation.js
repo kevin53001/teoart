@@ -112,7 +112,6 @@ function Presentation() {
   const [popupGlobal, setPopupGlobal] = React.useState(null); // { images, index }
   const [userId, setUserId] = React.useState(null);
   const [popupOnglet, setPopupOnglet] = React.useState(null);
-  const [popupOngletIndex, setPopupOngletIndex] = React.useState(0);
   const [illustrationsOnglet, setIllustrationsOnglet] = React.useState([]);
 
   React.useEffect(() => {
