@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
 import PopupFicheIllu from './PopupFicheIllu';
+import BandeLegale from './BandeLegale';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -810,6 +811,7 @@ function Livres() {
           </div>
         </div>
       )}
+      <BandeLegale />
       <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </div>
   );
