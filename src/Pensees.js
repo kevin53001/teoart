@@ -497,6 +497,8 @@ function Pensees() {
   const [message, setMessage] = React.useState('');
   const [userId, setUserId] = React.useState(null);
   const [popupOnglet, setPopupOnglet] = React.useState(null);
+  const [popupOngletIndex, setPopupOngletIndex] = React.useState(0);
+  const [illustrationsOnglet, setIllustrationsOnglet] = React.useState([]);
   const [pseudo, setPseudo] = React.useState('Visiteur');
   const startX = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
