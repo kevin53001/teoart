@@ -3,16 +3,18 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
+const R2 = 'https://images.kevinteoart.fr';
+
 const CONFIG_TYPE = {
-  nouvelle_illustration:    { couleur: '#00d4d4', icone: '🖼'  },
-  nouveau_livre_pdf:        { couleur: '#a78bfa', icone: '📚' },
-  nouveau_livre_relie:      { couleur: '#a78bfa', icone: '📖' },
-  like_coloriage:           { couleur: '#ff3eb5', icone: '❤️'  },
-  commentaire_coloriage:    { couleur: '#ffd250', icone: '💬' },
-  badge_obtenu:             { couleur: '#00cc66', icone: '🏆' },
-  nouvelle_pensee:          { couleur: '#a78bfa', icone: '✨'  },
-  nouvelle_presentation:    { couleur: '#00d4d4', icone: '🌟' },
-  nouveau_coloriage_partage:{ couleur: '#00d4d4', icone: '🎨' },
+  nouvelle_illustration:    { couleur: '#00d4d4', icone: `${R2}/site/pastille_categories.png` },
+  nouveau_livre_pdf:        { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_livre_relie:      { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
+  like_coloriage:           { couleur: '#ff3eb5', icone: `${R2}/site/pastille_colos.png`      },
+  commentaire_coloriage:    { couleur: '#ffd250', icone: `${R2}/site/pastille_colos.png`      },
+  badge_obtenu:             { couleur: '#00cc66', icone: `${R2}/site/pastille_mon_compte.png` },
+  nouvelle_pensee:          { couleur: '#a78bfa', icone: `${R2}/site/pastille_pensees.png`    },
+  nouvelle_presentation:    { couleur: '#00d4d4', icone: `${R2}/site/pastille_logomini.png`   },
+  nouveau_coloriage_partage:{ couleur: '#00d4d4', icone: `${R2}/site/pastille_colos.png`      },
 };
 
 function dateRelative(iso) {
@@ -72,7 +74,7 @@ function LigneNotif({ notif, onClic }) {
       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      <span style={{ fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>{cfg.icone}</span>
+      <img src={cfg.icone} alt="" style={{ width: '22px', height: '22px', flexShrink: 0, marginTop: '1px', objectFit: 'contain' }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '12px', lineHeight: '1.5', margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
           {texteNotif(notif)}
@@ -244,7 +246,7 @@ function PopupColoriages({ userId, userPseudo, onClose }) {
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Chargement…</p>
       ) : colos.length === 0 ? (
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '32px', marginBottom: '12px' }}>🎨</p>
+          <p style={{ fontSize: '32px', marginBottom: '12px' }}><img src={`${R2}/site/pastille_colos.png`} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain' }} /></p>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Aucun coloriage partagé pour l'instant</p>
         </div>
       ) : (
@@ -260,7 +262,7 @@ function PopupColoriages({ userId, userPseudo, onClose }) {
             <img src={colo.url} alt={colo.pseudo}
               style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', flexShrink: 0 }} />
             <div style={{ padding: '8px 16px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px' }}>🎨 par <strong>{colo.pseudo}</strong></span>
+              <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}><img src={`${R2}/site/pastille_colos.png`} alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} /> par <strong>{colo.pseudo}</strong></span>
               <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>{dateRelative(colo.created_at)}</span>
             </div>
             <div style={{ overflowY: 'auto', flexShrink: 0 }}>

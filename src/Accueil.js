@@ -793,7 +793,7 @@ function Accueil() {
 
   const BTNS = [
     { label: 'Constitue ta collection', pastille: `${R2}/site/pastille_mon_compte.png`, couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/mon-compte'),   disabled: false },
-    { label: 'Partage tes coloriages',  emoji: '🎨',                                    couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: null,                            disabled: true  },
+    { label: 'Partage tes coloriages',  pastille: `${R2}/site/pastille_colos.png`,        couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: null,                            disabled: true  },
     { label: 'Viens me découvrir',      pastille: `${R2}/site/pastille_logomini.png`,    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80',  onClick: () => navigate('/presentation'), disabled: false },
     { label: 'Plonge dans mes pensées', pastille: `${R2}/site/pastille_pensees.png`,    couleur: '#a78bfa',              couleurRgb: '167,139,250', onClick: () => navigate('/pensees'),      disabled: false },
     { label: 'Catalogue complet',       pastille: `${R2}/site/pastille_categories.png`, couleur: '#00d4d4',              couleurRgb: '0,212,212',   onClick: () => navigate('/catalogue'),    disabled: false },
@@ -923,7 +923,7 @@ function Accueil() {
             {/* ── Encart message d'accueil ── */}
             <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '24px 20px' : '36px 40px', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
               <p style={{ color: '#fff', fontSize: isMobile ? '20px' : '26px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.5px' }}>
-                ✨ Bienvenue dans mon Univers ✨
+                ✨ Bienvenue dans mon Univers
               </p>
               <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: isMobile ? '13px' : '15px', lineHeight: '1.9', marginBottom: '28px' }}>
                 Vous êtes ici dans un endroit étrange où les dessins s'accumulent plus vite que les bonnes résolutions.<br /><br />

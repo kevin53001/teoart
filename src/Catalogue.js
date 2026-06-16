@@ -1155,6 +1155,12 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>{formatDescription(illu.description)}</p>
                 </div>
               )}
+              {/* Mention droits d'auteur */}
+              <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '10px', lineHeight: '1.6', margin: 0, fontStyle: 'italic' }}>
+                  L'ensemble des illustrations disponibles sur ce site (même les gratuites) sont destinées à un usage personnel uniquement. Toute reproduction, redistribution, revente ou utilisation commerciale est interdite sans autorisation écrite de Kevin Teo'Art.
+                </p>
+              </div>
               {/* POINT 10 : ligne Dans: avec badge Patreon intégré */}
               {(livresIllu.length > 0 || illu.sous_categorie_patreon) && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
