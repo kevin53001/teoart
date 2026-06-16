@@ -1,0 +1,404 @@
+import React from 'react';
+
+// Ordre gauche → droite : Mentions - Confidentialité - CGV - Droits - Contact
+const ITEMS = [
+  { id: 'mentions',        label: 'Mentions légales',            couleur: '#FFD700' },
+  { id: 'confidentialite', label: 'Politique de confidentialité', couleur: '#FF6EB4' },
+  { id: 'cgv',             label: 'CGV',                          couleur: '#00D4D4' },
+  { id: 'droits',          label: "Droits d'utilisation",         couleur: '#FF6EB4' },
+  { id: 'contact',         label: 'Contact',                      couleur: '#FFD700' },
+];
+
+const CONTENUS = {
+  mentions: {
+    titre: 'Mentions légales',
+    texte: `ÉDITEUR DU SITE
+
+Le présent site est édité par :
+
+Nom et prénom : Kevin Guerin
+Statut : Auto-entrepreneur
+Nom commercial : Kevin Teo'Art
+Numéro SIREN : 907886428
+Numéro SIRET : 90788642800016
+Adresse : 3 rue des Plantes, 78930 Guerville, France
+Adresse e-mail : kevin53001@gmail.com
+Site internet : https://kevinteoart.fr
+
+HÉBERGEMENT
+
+Le site est hébergé par :
+Vercel Inc.
+440 N Barranca Avenue #4133
+Covina, CA 91723 — États-Unis
+https://vercel.com
+
+NOM DE DOMAINE
+
+Le nom de domaine kevinteoart.fr est enregistré auprès de :
+OVH SAS — 2 rue Kellermann, 59100 Roubaix, France
+https://www.ovhcloud.com
+
+PROPRIÉTÉ INTELLECTUELLE
+
+L'ensemble des contenus présents sur le site KevinTeoArt.fr, notamment les illustrations, dessins, textes, photographies, éléments graphiques, logos, fichiers numériques, livres, recueils, mises en page et éléments visuels, sont protégés par les lois françaises et internationales relatives à la propriété intellectuelle.
+
+Toute reproduction, diffusion, modification, représentation, adaptation ou exploitation, totale ou partielle, sans autorisation écrite préalable de Kevin Teo'Art est strictement interdite.
+
+RESPONSABILITÉ
+
+L'éditeur du site met tout en œuvre pour assurer l'exactitude et la mise à jour des informations diffusées sur le site. Toutefois, il ne peut garantir l'absence d'erreurs, d'omissions ou d'interruptions temporaires du service. L'utilisateur reconnaît utiliser les informations présentes sur le site sous sa responsabilité exclusive.
+
+CONTACT
+
+kevin53001@gmail.com`,
+  },
+
+  confidentialite: {
+    titre: 'Politique de confidentialité',
+    texte: `Dernière mise à jour : Juin 2026
+
+Le site KevinTeoArt.fr respecte la vie privée de ses utilisateurs et s'engage à protéger leurs données personnelles conformément au Règlement Général sur la Protection des Données (RGPD).
+
+DONNÉES COLLECTÉES
+
+Lors de l'utilisation du site, les informations suivantes peuvent être collectées :
+• Adresse e-mail
+• Nom et prénom
+• Pseudo
+• Date de naissance
+• Adresse postale
+• Numéro de téléphone
+• Photographie de profil
+• Informations relatives à votre collection
+• Coloriages partagés
+• Commentaires et interactions publiés sur le site
+
+FINALITÉS DE LA COLLECTE
+
+Ces données sont utilisées pour :
+• Créer et gérer votre compte utilisateur
+• Gérer votre collection personnelle
+• Permettre les téléchargements et commandes
+• Afficher vos coloriages partagés
+• Gérer les commentaires et interactions
+• Répondre à vos demandes via le formulaire de contact
+• Assurer la sécurité du site
+
+DURÉE DE CONSERVATION
+
+Les données sont conservées aussi longtemps que votre compte reste actif ou aussi longtemps que nécessaire pour répondre aux obligations légales applicables.
+
+PARTAGE DES DONNÉES
+
+Les données ne sont ni vendues ni louées à des tiers. Elles peuvent être hébergées ou traitées par des prestataires techniques nécessaires au fonctionnement du site.
+
+VOS DROITS
+
+Conformément à la réglementation en vigueur, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité.
+
+Pour exercer ces droits, contactez : kevin53001@gmail.com
+
+SÉCURITÉ
+
+Des mesures techniques et organisationnelles sont mises en œuvre afin de protéger les données personnelles contre toute perte, divulgation ou accès non autorisé.`,
+  },
+
+  cgv: {
+    titre: 'Conditions Générales de Vente',
+    texte: `Dernière mise à jour : Juin 2026
+
+OBJET
+
+Les présentes Conditions Générales de Vente régissent les ventes réalisées sur le site KevinTeoArt.fr. Toute commande passée sur le site implique l'acceptation pleine et entière des présentes conditions.
+
+PRODUITS PROPOSÉS
+
+Le site KevinTeoArt.fr propose notamment :
+• Des illustrations numériques à colorier
+• Des livres numériques
+• Des recueils numériques
+• Des livres reliés imprimés à la demande
+• Des recueils reliés imprimés à la demande
+
+PRIX
+
+Les prix sont indiqués en euros (€). Pour les produits numériques, le prix affiché correspond au montant total à payer. Pour les livres et recueils reliés, les frais de livraison sont inclus dans le prix affiché.
+
+Kevin Teo'Art se réserve le droit de modifier ses tarifs à tout moment. Les produits sont facturés au tarif en vigueur au moment de la validation de la commande.
+
+CRÉATION D'UN COMPTE UTILISATEUR
+
+Certaines fonctionnalités du site nécessitent la création d'un compte utilisateur. L'utilisateur s'engage à fournir des informations exactes lors de son inscription. L'utilisateur est responsable de la confidentialité de ses identifiants de connexion.
+
+Kevin Teo'Art se réserve le droit de suspendre ou supprimer tout compte en cas d'utilisation frauduleuse, abusive ou contraire aux présentes conditions.
+
+PAIEMENT
+
+Le paiement s'effectue via les moyens de paiement proposés sur le site. La commande est considérée comme définitive après validation du paiement. Une confirmation de commande est envoyée à l'adresse électronique renseignée par l'utilisateur.
+
+LIVRAISON DES PRODUITS NUMÉRIQUES
+
+Les produits numériques sont disponibles immédiatement après validation du paiement. Les liens de téléchargement sont accessibles depuis le compte utilisateur. L'utilisateur est responsable de la conservation des fichiers téléchargés.
+
+LIVRES ET RECUEILS RELIÉS
+
+Les livres et recueils reliés sont imprimés à la demande et expédiés par Amazon KDP. Kevin Teo'Art agit comme intermédiaire entre le client et Amazon. Les commandes sont actuellement limitées aux pays européens desservis par Amazon KDP, à l'exclusion de la Suisse, de Monaco et d'Andorre.
+
+DÉLAIS DE FABRICATION ET DE LIVRAISON
+
+Les délais indiqués sur le site sont donnés à titre indicatif. Ils peuvent varier selon les contraintes de fabrication, de transport ou les périodes de forte activité. Kevin Teo'Art ne saurait être tenu responsable d'un retard imputable au transporteur ou au prestataire d'impression.
+
+COLIS PERDU, ENDOMMAGÉ OU NON CONFORME
+
+En cas de colis perdu, détérioré ou reçu dans un état non conforme, le client doit contacter Kevin Teo'Art dans les meilleurs délais. Des photographies pourront être demandées. Après étude du dossier, Kevin Teo'Art pourra procéder au remboursement, à la réimpression ou proposer toute autre solution adaptée.
+
+DROIT DE RÉTRACTATION
+
+Pour les produits numériques : conformément à l'article L221-28 du Code de la consommation, aucun remboursement ne pourra être accordé après téléchargement.
+
+Pour les livres et recueils reliés : le client dispose d'un délai de 14 jours à compter de la réception pour exercer son droit de rétractation. Toute demande doit être adressée à Kevin Teo'Art via les coordonnées figurant sur le site.
+
+UTILISATION DES ILLUSTRATIONS ET FICHIERS NUMÉRIQUES
+
+Les illustrations, livres et recueils numériques vendus sur le site sont destinés exclusivement à un usage personnel. Sont notamment interdits : la revente des fichiers, le partage avec des tiers, la diffusion publique, l'utilisation commerciale et la redistribution même partielle.
+
+Toute utilisation commerciale nécessite une autorisation écrite préalable de Kevin Teo'Art.
+
+CONTENUS PUBLIÉS PAR LES UTILISATEURS
+
+En publiant un contenu (coloriage, commentaire...), l'utilisateur autorise Kevin Teo'Art à l'afficher et le diffuser dans le cadre du fonctionnement du site. L'utilisateur conserve la propriété de ses créations.
+
+MODÉRATION
+
+Kevin Teo'Art se réserve le droit de supprimer sans préavis tout contenu illégal, injurieux, diffamatoire, discriminatoire, haineux, publicitaire, trompeur ou contraire à l'esprit du site.
+
+PROTECTION DE LA PROPRIÉTÉ INTELLECTUELLE
+
+L'ensemble des contenus du site est protégé par le droit d'auteur. Toute reproduction ou exploitation sans autorisation écrite préalable est interdite.
+
+DROIT APPLICABLE
+
+Les présentes CGV sont soumises au droit français. Tout litige relève des juridictions françaises compétentes.`,
+  },
+
+  droits: {
+    titre: "Droits d'utilisation des illustrations",
+    texte: `Merci d'avoir choisi une création Kevin Teo'Art.
+
+Les illustrations proposées sur ce site sont protégées par le droit d'auteur.
+
+CE QUE VOUS POUVEZ FAIRE
+
+• Télécharger les illustrations que vous avez achetées
+• Imprimer les illustrations pour votre usage personnel
+• Réimprimer vos illustrations autant de fois que vous le souhaitez pour votre usage personnel
+• Colorier les illustrations avec le matériel de votre choix
+• Partager vos coloriages terminés sur les réseaux sociaux, groupes de coloriage, blogs ou galeries personnelles
+
+Lors du partage de vos coloriages, une mention ou un lien vers Kevin Teo'Art est toujours appréciée.
+
+CE QUE VOUS NE POUVEZ PAS FAIRE
+
+• Revendre les fichiers numériques
+• Distribuer les fichiers à d'autres personnes
+• Publier les fichiers en téléchargement libre
+• Modifier les illustrations puis les redistribuer
+• Utiliser les illustrations dans un cadre commercial sans autorisation écrite
+• Intégrer les illustrations dans des produits destinés à la vente
+• Revendre des impressions des illustrations, coloriées ou non
+
+PARTAGE DES COLORIAGES
+
+Les coloriages réalisés à partir des illustrations Kevin Teo'Art restent la propriété artistique de leur auteur tout en respectant les droits d'auteur attachés au dessin original. L'auteur de l'illustration conserve l'ensemble de ses droits sur le dessin d'origine.
+
+UTILISATION COMMERCIALE
+
+Toute utilisation commerciale d'une illustration Kevin Teo'Art doit faire l'objet d'une autorisation écrite préalable.
+
+Pour toute demande spécifique : kevin53001@gmail.com
+
+Merci de respecter le travail des artistes et de contribuer à faire vivre la création indépendante.`,
+  },
+
+  contact: {
+    titre: 'Contact',
+    texte: `Une question ?
+
+Besoin d'aide concernant une commande, un téléchargement ou votre compte utilisateur ?
+
+Vous pouvez me contacter à l'adresse suivante :
+
+kevin53001@gmail.com
+
+Je m'efforce de répondre à chaque message dans les meilleurs délais.
+
+Merci pour votre visite dans l'univers Kevin Teo'Art.`,
+  },
+};
+
+const COULEUR_RGB = {
+  '#FFD700': '255,215,0',
+  '#FF6EB4': '255,110,180',
+  '#00D4D4': '0,212,212',
+};
+
+export default function BandeLegale() {
+  const [actif, setActif] = React.useState(null);
+  const [visible, setVisible] = React.useState(false);
+  const sentinelRef = React.useRef(null);
+  const panneauRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleItem = (id) => setActif(prev => prev === id ? null : id);
+  const contenu = actif ? CONTENUS[actif] : null;
+  const couleurActif = actif ? ITEMS.find(i => i.id === actif)?.couleur : null;
+
+  return (
+    <>
+      {/* Sentinelle : déclenche l'apparition de la bande */}
+      <div ref={sentinelRef} style={{ height: '1px', width: '100%' }} />
+
+      {/* Panneau contenu légal */}
+      <div style={{
+        position: 'fixed',
+        bottom: '44px',
+        left: 0,
+        right: 0,
+        zIndex: 998,
+        overflow: 'hidden',
+        maxHeight: actif ? '70vh' : '0',
+        transition: 'max-height 0.4s ease',
+      }}>
+        <div
+          ref={panneauRef}
+          style={{
+            background: 'rgba(8,8,8,0.98)',
+            borderTop: `1px solid ${couleurActif || 'rgba(255,255,255,0.1)'}`,
+            padding: '20px 28px 28px',
+            overflowY: 'auto',
+            maxHeight: '70vh',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          {contenu && (
+            <>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '16px',
+                position: 'sticky',
+                top: 0,
+                background: 'rgba(8,8,8,0.98)',
+                paddingBottom: '12px',
+                borderBottom: `1px solid rgba(${COULEUR_RGB[couleurActif]},0.2)`,
+              }}>
+                <span style={{
+                  fontFamily: 'var(--font-titre)',
+                  fontSize: '20px',
+                  color: couleurActif,
+                }}>
+                  {contenu.titre}
+                </span>
+                <button
+                  onClick={() => setActif(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.4)',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    lineHeight: 1,
+                    padding: '4px 8px',
+                  }}
+                >✕</button>
+              </div>
+              <div style={{
+                color: 'rgba(255,255,255,0.82)',
+                fontFamily: 'var(--font-texte)',
+                fontSize: '15px',
+                lineHeight: '1.75',
+                whiteSpace: 'pre-wrap',
+              }}>
+                {contenu.texte}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Bande noire fixe */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '44px',
+          background: '#000',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.4s ease',
+        }}
+        onClick={() => { if (actif) setActif(null); }}
+      >
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-evenly',
+          width: '100%',
+          maxWidth: '750px',
+          padding: '0 12px',
+        }}>
+          {ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={e => { e.stopPropagation(); toggleItem(item.id); }}
+              style={{
+                background: actif === item.id ? `rgba(${COULEUR_RGB[item.couleur]},0.13)` : 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontFamily: 'var(--font-bouton)',
+                fontSize: '11px',
+                color: actif === item.id ? item.couleur : 'rgba(255,255,255,0.45)',
+                transition: 'color 0.2s, background 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{
+                display: 'inline-block',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: item.couleur,
+                marginRight: '5px',
+                verticalAlign: 'middle',
+                boxShadow: `0 0 5px ${item.couleur}`,
+                opacity: actif === item.id ? 1 : 0.6,
+              }} />
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Espace réservé pour ne pas masquer le bas de page */}
+      <div style={{ height: visible ? '44px' : '0', transition: 'height 0.4s ease' }} />
+    </>
+  );
+}
