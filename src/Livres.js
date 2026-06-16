@@ -597,7 +597,7 @@ function Livres() {
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
               <SectionTitre couleur="#00d4d4" label="Recueils" />
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${TAILLE_RECUEIL}px, 1fr))`, gap: '16px', marginBottom: '40px', justifyItems: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
                 {recueils.map(r => (
                   <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
                     jAi={collection[`recueil_${r.id}`]?.j_ai || false}
@@ -606,12 +606,13 @@ function Livres() {
                     onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
                     onClick={() => ouvrirRecueil(r)} />
                 ))}
+                {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-r-${i}`} style={{ width: `${TAILLE_RECUEIL}px`, height: 0 }} />)}
               </div>
 
               <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)', marginBottom: '40px' }} />
 
               <SectionTitre couleur="rgba(255,255,255,0.6)" label="Tous les livres" />
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${TAILLE_LIVRE}px, 1fr))`, gap: '16px', justifyItems: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
                 {tousLivres.map(l => (
                   <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
                     jAi={collection[`livre_${l.id}`]?.j_ai || false}
@@ -620,6 +621,7 @@ function Livres() {
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
                     onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
                 ))}
+                {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-l-${i}`} style={{ width: `${TAILLE_LIVRE}px`, height: 0 }} />)}
               </div>
 
             </div>
@@ -722,7 +724,7 @@ function Livres() {
                                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                   {illustrationsOuvertes.length} illustration{illustrationsOuvertes.length > 1 ? 's' : ''} — cliquer pour ouvrir la fiche
                                 </p>
-                                <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${TAILLE_ILLUS}px, 1fr))`, gap: '8px', justifyItems: 'center' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                                   {illustrationsOuvertes.map(illu => (
                                     <VignetteIllu key={illu.id} illu={illu} taille={TAILLE_ILLUS}
                                       jAi={collectionIllus[illu.id]?.j_ai || false}
@@ -834,7 +836,7 @@ function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggl
       <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
         {illustrations.length} illustration{illustrations.length > 1 ? 's' : ''} — cliquer pour ouvrir la fiche
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${taille}px, 1fr))`, gap: '8px', justifyItems: 'center' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
         {illustrations.map(illu => (
           <VignetteIllu key={illu.id} illu={illu} taille={taille}
             jAi={collectionIllus?.[illu.id]?.j_ai || false}
