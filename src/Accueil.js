@@ -23,6 +23,17 @@ const BARRES = [
 
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
 
+const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+function getMoisPatreonDisponibles() {
+  const maintenant = new Date();
+  const moisCourant = maintenant.getMonth();
+  const anneeCourante = maintenant.getFullYear();
+  if (anneeCourante < 2026) return [];
+  if (anneeCourante > 2026) return MOIS_FR.map(m => `Patreon - ${m} 2026`);
+  return MOIS_FR.slice(0, moisCourant + 1).map(m => `Patreon - ${m} 2026`);
+}
+
 function cheminVersUrl(chemin) {
   if (!chemin) return null;
   const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
@@ -665,6 +676,9 @@ function Accueil() {
   const [popupFiche, setPopupFiche] = React.useState(null); // illu pour popup fiche
   const [popupColo, setPopupColo] = React.useState(null); // { url, coloId, pseudo, coloriste } pour popup coloriage social
   const [loading, setLoading] = React.useState(true);
+  const [showCategories, setShowCategories] = React.useState(false);
+  const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
+  const moisPatreon = getMoisPatreonDisponibles();
 
   React.useEffect(() => {
     const h = () => setIsMobile(window.innerWidth <= 600);
@@ -681,6 +695,12 @@ function Accueil() {
       document.removeEventListener('contextmenu', blockContext);
       document.removeEventListener('dragstart', blockDrag);
     };
+  }, []);
+
+  React.useEffect(() => {
+    const handler = () => { setShowCategories(false); setShowPatreonMenu(false); };
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
   }, []);
 
   React.useEffect(() => {
@@ -792,6 +812,11 @@ function Accueil() {
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
+        .dropdown-cat { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.96); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 200; min-width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); }
+        .dropdown-item { display: block; width: 100%; padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
+        .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
+        .dropdown-item-patreon { display: block; width: 100%; padding: 6px 10px; color: rgba(255,210,80,0.75); font-size: 12px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
+        .dropdown-item-patreon:hover { background: rgba(255,210,80,0.12); color: rgba(255,210,80,1); }
         .shining-logo { position: relative; overflow: hidden; }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
@@ -833,7 +858,34 @@ function Accueil() {
             <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
               <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/accueil' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/accueil')} />
               <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', ...(location.pathname === '/livres' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/livres')} />
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catalogue" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/catalogue')} />
+              <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0', overflow: 'visible' }}>
+                <img src={`${R2}/site/pastille_categories.png`} alt="Catalogue" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); }} />
+                {showCategories && (
+                  <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
+                    {CATEGORIES.map(cat => (
+                      <button key={cat} className="dropdown-item"
+                        onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>
+                        {cat}
+                      </button>
+                    ))}
+                    <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
+                    <button className="dropdown-item" style={{ color: 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }} onClick={() => setShowPatreonMenu(v => !v)}>
+                      <span>⭐ Patreon 2026</span>
+                      <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showPatreonMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                    </button>
+                    {showPatreonMenu && (
+                      <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,210,80,0.2)', marginLeft: '14px', marginTop: '4px' }}>
+                        {moisPatreon.map(mois => (
+                          <button key={mois} className="dropdown-item-patreon"
+                            onClick={() => { navigate('/catalogue', { state: { sousCategorie: mois } }); setShowCategories(false); setShowPatreonMenu(false); }}>
+                            {mois.replace('Patreon - ', '')}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
             <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
