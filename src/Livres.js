@@ -3,6 +3,7 @@ import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
+import BandeLegale from './BandeLegale';
 import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -1065,6 +1066,8 @@ function Livres() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
+
+      <BandeLegale />
 
       {/* ── POPUP RECUEIL OU LIVRE ── */}
       {popupItem && (

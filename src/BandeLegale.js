@@ -329,7 +329,7 @@ const COULEUR_RGB = {
 
 export default function BandeLegale() {
   const [actif, setActif] = React.useState(null);
-  const [visible, setVisible] = React.useState(true); // DEBUG : toujours visible
+  const [visible, setVisible] = React.useState(false);
   const panneauRef = React.useRef(null);
 
   React.useEffect(() => {
