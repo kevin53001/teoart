@@ -521,6 +521,8 @@ function Accueil() {
   const [favoris, setFavoris] = React.useState([]);
   const [popup, setPopup] = React.useState(null); // { images, index } pour zoom image
   const [popupFiche, setPopupFiche] = React.useState(null); // illu pour popup fiche
+  const [popupFicheListe, setPopupFicheListe] = React.useState([]);
+  const [popupFicheIndex, setPopupFicheIndex] = React.useState(0);
   const [popupColo, setPopupColo] = React.useState(null); // { url, coloId, pseudo, coloriste } pour popup coloriage social
   const [loading, setLoading] = React.useState(true);
   const [showCategories, setShowCategories] = React.useState(false);
@@ -684,7 +686,24 @@ function Accueil() {
 
       {/* Popup fiche illustration */}
       {popupFiche && userId && (
-        <PopupFicheIllu illu={popupFiche} onClose={() => setPopupFiche(null)} userId={userId} userPseudo={userPseudo} />
+        <PopupFicheIllu
+          illu={popupFiche}
+          illustrations={popupFicheListe}
+          onClose={() => setPopupFiche(null)}
+          onOpenSimilaire={(illu) => setPopupFiche(illu)}
+          onSuivant={popupFicheListe.length > 1 ? () => {
+            const next = (popupFicheIndex + 1) % popupFicheListe.length;
+            setPopupFiche(popupFicheListe[next]);
+            setPopupFicheIndex(next);
+          } : () => {}}
+          onPrecedent={popupFicheListe.length > 1 ? () => {
+            const prev = (popupFicheIndex - 1 + popupFicheListe.length) % popupFicheListe.length;
+            setPopupFiche(popupFicheListe[prev]);
+            setPopupFicheIndex(prev);
+          } : () => {}}
+          userId={userId}
+          userPseudo={userPseudo}
+        />
       )}
 
       {/* Boutons flottants (déco + scroll-to-top) */}
@@ -828,12 +847,12 @@ function Accueil() {
                 />
                 <EncartDefilant titre="Best sellers" pastille={`${R2}/site/pastille_best.png`} couleur="#ff3eb5"
                   images={bestSellers}
-                  onFiche={(illu) => setPopupFiche(illu)}
+                  onFiche={(illu) => { const idx = bestSellers.findIndex(i => i.id === illu.id); setPopupFicheListe(bestSellers); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
                 <EncartDefilant titre="Favoris TeoArt" pastille={`${R2}/site/pastille_favoris.png`} couleur="#a78bfa"
                   images={favoris}
-                  onFiche={(illu) => setPopupFiche(illu)}
+                  onFiche={(illu) => { const idx = favoris.findIndex(i => i.id === illu.id); setPopupFicheListe(favoris); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
               </div>

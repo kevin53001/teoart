@@ -768,8 +768,8 @@ function Livres() {
           onToggleJeVeux={() => toggleJeVeuxIllu(popupIllu.id)}
           onClose={() => setPopupIllu(null)}
           onOpenSimilaire={(illu) => setPopupIllu(illu)}
-          onSuivant={popupIlluListe.length > 1 ? popupIlluSuivant : null}
-          onPrecedent={popupIlluListe.length > 1 ? popupIlluPrecedent : null}
+          onSuivant={popupIlluListe.length > 1 ? popupIlluSuivant : () => {}}
+          onPrecedent={popupIlluListe.length > 1 ? popupIlluPrecedent : () => {}}
           userPseudo={userPseudo}
           userId={userId}
           onColoUploaded={() => setColoriages(prev => ({ ...prev, [popupIllu.id]: true }))}
