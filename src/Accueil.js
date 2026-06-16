@@ -519,6 +519,8 @@ function Accueil() {
   const [coloriages, setColoriages] = React.useState([]);
   const [bestSellers, setBestSellers] = React.useState([]);
   const [favoris, setFavoris] = React.useState([]);
+  const [illusBS, setIllusBS] = React.useState([]); // objets illu pour PopupFicheIllu
+  const [illusFav, setIllusFav] = React.useState([]); // objets illu pour PopupFicheIllu
   const [popup, setPopup] = React.useState(null); // { images, index } pour zoom image
   const [popupFiche, setPopupFiche] = React.useState(null); // illu pour popup fiche
   const [popupFicheListe, setPopupFicheListe] = React.useState([]);
@@ -620,10 +622,12 @@ function Accueil() {
       // Best sellers — avec données illu pour popup fiche
       const { data: bs } = await supabase.from('illustrations').select('id, nom, annee, categorie, prix, visuels, description, tags, livres_ids, recueils_ids').eq('statut', 'published').eq('best_seller', true).limit(12);
       setBestSellers((bs || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illu: i })).filter(i => i.url));
+      setIllusBS((bs || []).filter(i => getVisuelB(i.visuels)))
 
       // Favoris TeoArt — avec données illu pour popup fiche
       const { data: fav } = await supabase.from('illustrations').select('id, nom, annee, categorie, prix, visuels, description, tags, livres_ids, recueils_ids').eq('statut', 'published').eq('favori', true).limit(12);
       setFavoris((fav || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom, illu: i })).filter(i => i.url));
+      setIllusFav((fav || []).filter(i => getVisuelB(i.visuels)));
 
       setLoading(false);
     };
@@ -847,12 +851,12 @@ function Accueil() {
                 />
                 <EncartDefilant titre="Best sellers" pastille={`${R2}/site/pastille_best.png`} couleur="#ff3eb5"
                   images={bestSellers}
-                  onFiche={(illu) => { const idx = bestSellers.findIndex(i => i.id === illu.id); setPopupFicheListe(bestSellers); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
+                  onFiche={(illu) => { const idx = illusBS.findIndex(i => i.id === illu.id); setPopupFicheListe(illusBS); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
                 <EncartDefilant titre="Favoris TeoArt" pastille={`${R2}/site/pastille_favoris.png`} couleur="#a78bfa"
                   images={favoris}
-                  onFiche={(illu) => { const idx = favoris.findIndex(i => i.id === illu.id); setPopupFicheListe(favoris); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
+                  onFiche={(illu) => { const idx = illusFav.findIndex(i => i.id === illu.id); setPopupFicheListe(illusFav); setPopupFicheIndex(idx >= 0 ? idx : 0); setPopupFiche(illu); }}
                   onZoom={(imgs, i) => setPopup({ images: imgs, index: i })}
                 />
               </div>

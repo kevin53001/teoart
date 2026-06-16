@@ -112,8 +112,6 @@ function Presentation() {
   const [popupGlobal, setPopupGlobal] = React.useState(null); // { images, index }
   const [userId, setUserId] = React.useState(null);
   const [popupOnglet, setPopupOnglet] = React.useState(null);
-  const [popupOngletIndex, setPopupOngletIndex] = React.useState(0);
-  const [illustrationsOnglet, setIllustrationsOnglet] = React.useState([]);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -138,6 +136,9 @@ function Presentation() {
       const { data } = await supabase.from('presentation').select('*').order('ordre', { ascending: true });
       setEncarts(data || []);
       setLoading(false);
+      // Charger illustrations pour similaires dans PopupFicheIllu
+      const { data: illusData } = await supabase.from('illustrations').select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids').eq('statut', 'published').limit(200);
+      setIllustrationsOnglet(illusData || []);
     };
     charger();
   }, []);
@@ -274,28 +275,11 @@ function Presentation() {
       </div>
 
       <BandeLegale />
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu, liste) => {
-        const l = liste || [illu];
-        setIllustrationsOnglet(l);
-        setPopupOngletIndex(l.findIndex(i => i.id === illu.id) ?? 0);
-        setPopupOnglet(illu);
-      }} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupOnglet(illu)} />
       {popupOnglet && (
         <PopupFicheIllu
           illu={popupOnglet}
-          illustrations={illustrationsOnglet}
           onClose={() => setPopupOnglet(null)}
-          onOpenSimilaire={(illu) => setPopupOnglet(illu)}
-          onSuivant={illustrationsOnglet.length > 1 ? () => {
-            const next = (popupOngletIndex + 1) % illustrationsOnglet.length;
-            setPopupOnglet(illustrationsOnglet[next]);
-            setPopupOngletIndex(next);
-          } : () => {}}
-          onPrecedent={illustrationsOnglet.length > 1 ? () => {
-            const prev = (popupOngletIndex - 1 + illustrationsOnglet.length) % illustrationsOnglet.length;
-            setPopupOnglet(illustrationsOnglet[prev]);
-            setPopupOngletIndex(prev);
-          } : () => {}}
           userId={userId}
           userPseudo=""
         />
