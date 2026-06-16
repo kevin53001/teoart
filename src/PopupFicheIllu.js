@@ -293,7 +293,7 @@ export default function PopupFicheIllu({
       } else setColosPropres([]);
     };
     charger();
-  }, [illu.id, illu.livres_ids, illu.recueils_ids]);
+  }, [illu, illu?.id, illu?.livres_ids, illu?.recueils_ids]);
 
   const getUrlVisuelActif = (index) => { if (index < visuels.length) return visuels[index]; return colosPropres[index - visuels.length]?.image_url || null; };
   const getColoActif = (index) => { if (index < visuels.length) return null; return colosPropres[index - visuels.length] || null; };
