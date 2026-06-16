@@ -256,9 +256,7 @@ export default function PopupFicheIllu({
   onOuvrirLivre = null,
   onFiltrerPatreon = null,
 }) {
-  if (!illu) return null;
-
-  const visuelsChemins = getVisuelsOrdonnes(illu.visuels);
+  const visuelsChemins = getVisuelsOrdonnes(illu?.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
   const [colosPropres, setColosPropres] = React.useState([]);
   const [visuelActif, setVisuelActif] = React.useState(0);
@@ -272,6 +270,7 @@ export default function PopupFicheIllu({
   const [livresIllu, setLivresIllu] = React.useState([]);
 
   React.useEffect(() => {
+    if (!illu) return;
     setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null); setLivresIllu([]); setColosPropres([]);
     const charger = async () => {
       const resultats = [];
@@ -306,7 +305,7 @@ export default function PopupFicheIllu({
   const coloriste = estVisuelCChemin(cheminActif) ? extraireColoriste(cheminActif) : null;
 
   const similaires = React.useMemo(() => {
-    if (!illu.tags || illu.tags.length === 0) return [];
+    if (!illu || !illu.tags || illu.tags.length === 0) return [];
     return illustrations.filter(i => i.id !== illu.id && i.tags && i.tags.some(t => illu.tags.includes(t)))
       .sort((a, b) => b.tags.filter(t => illu.tags.includes(t)).length - a.tags.filter(t => illu.tags.includes(t)).length)
       .slice(0, 20);
@@ -337,6 +336,8 @@ export default function PopupFicheIllu({
     } catch (e) { console.error(e); }
     setColoEnvoi(false);
   };
+
+  if (!illu) return null;
 
   return (
     <>
