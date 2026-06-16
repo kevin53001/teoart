@@ -906,7 +906,7 @@ function Livres() {
   const TAILLE_ILLUS = isMobile ? 85 : 100;
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
+    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }

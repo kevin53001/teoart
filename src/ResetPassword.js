@@ -94,7 +94,7 @@ function ResetPassword() {
   };
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
 
       <img src={`${R2}/site/Logo.png`} alt="logo" style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', marginBottom: '32px' }} />
 

@@ -352,7 +352,7 @@ function Catalogue() {
   const labelFiltre = sousCategorie ? ` · ${sousCategorie}` : (categorie !== 'Tout' ? ` · ${categorie}` : '');
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
+    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
