@@ -897,6 +897,16 @@ function Livres() {
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "'Segoe UI', sans-serif", overflowX: 'hidden' }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }
+        .zoom-like-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.5); font-size: 12px; transition: color .2s; padding: 0; }
+        .zoom-like-btn.actif { color: #ff4d7d; }
+        .zoom-like-btn:hover { color: #ff4d7d; }
+        .zoom-commentaire-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 11px; width: 100%; resize: none; font-family: inherit; }
+        .zoom-commentaire-input:focus { outline: none; border-color: rgba(0,212,212,0.4); }
+        .zoom-commentaire-input::placeholder { color: rgba(255,255,255,0.3); }
+        .zoom-commentaire { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .zoom-commentaire:last-child { border-bottom: none; }
+
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
