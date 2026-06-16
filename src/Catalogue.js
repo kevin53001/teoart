@@ -66,9 +66,11 @@ function getMoisPatreonDisponibles() {
 
 // Bandeau promo
 const PALIERS_PROMO = [
-  { texte: '✦ Dès 3 illustrations : -15% sur ta commande ✦', couleur: '#00d4d4' },
-  { texte: '✦ Dès 6 illustrations : -25% sur ta commande ✦', couleur: 'rgba(255,210,80,0.95)' },
-  { texte: '✦ Dès 10 illustrations : -35% sur ta commande ✦', couleur: '#ff3eb5' },
+  { texte: '✦ Dès 3 illustrations : -15%', mention: '(hors livres et recueils)', couleur: '#00d4d4', glow: 'glowPromo0' },
+  { texte: '✦ Dès 6 illustrations : -25%', mention: '(hors livres et recueils)', couleur: 'rgba(255,210,80,0.95)', glow: 'glowPromo1' },
+  { texte: '✦ Dès 10 illustrations : -35%', mention: '(hors livres et recueils)', couleur: '#ff3eb5', glow: 'glowPromo2' },
+  { texte: '✦ Dès 2 livres PDF : -15% sur tes livres ✦', mention: null, couleur: '#b47fff', glow: 'glowPromo3' },
+  { texte: '✦ Dès 2 recueils : -20% sur tes recueils ✦', mention: null, couleur: '#00ffcc', glow: 'glowPromo4' },
 ];
 
 function BandeauPromo() {
@@ -76,10 +78,14 @@ function BandeauPromo() {
   return (
     <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 0 0', position: 'relative', zIndex: 40, overflow: 'hidden' }}>
       <div style={{ maxWidth: '860px', width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)', position: 'relative' }}>
-        <div style={{ display: 'flex', animation: 'scrollPromo 22s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
+        <div style={{ display: 'flex', animation: 'scrollPromo 30s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
           {items.map((p, i) => (
-            <span key={i} style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', padding: '0 48px', letterSpacing: '0.5px', animation: `glowPromo${i % 3} 2.5s ease-in-out infinite`, animationDelay: `${(i % 3) * 0.4}s` }}>
-              {p.texte}
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap', padding: '0 40px', animation: `${p.glow} 2.5s ease-in-out infinite`, animationDelay: `${(i % 5) * 0.3}s` }}>
+              <span style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.5px' }}>{p.texte}</span>
+              {p.mention && (
+                <span style={{ color: p.couleur, fontSize: '9px', fontWeight: 'normal', opacity: 0.75 }}>{p.mention}</span>
+              )}
+              {!p.mention && ''}
             </span>
           ))}
         </div>
@@ -334,6 +340,8 @@ function Catalogue() {
         @keyframes glowPromo0 { 0%, 100% { text-shadow: 0 0 4px rgba(0,212,212,0.3); } 50% { text-shadow: 0 0 12px rgba(0,212,212,0.9), 0 0 20px rgba(0,212,212,0.5); } }
         @keyframes glowPromo1 { 0%, 100% { text-shadow: 0 0 4px rgba(255,210,80,0.3); } 50% { text-shadow: 0 0 12px rgba(255,210,80,0.9), 0 0 20px rgba(255,210,80,0.5); } }
         @keyframes glowPromo2 { 0%, 100% { text-shadow: 0 0 4px rgba(255,62,181,0.3); } 50% { text-shadow: 0 0 12px rgba(255,62,181,0.9), 0 0 20px rgba(255,62,181,0.5); } }
+        @keyframes glowPromo3 { 0%, 100% { text-shadow: 0 0 4px rgba(180,127,255,0.3); } 50% { text-shadow: 0 0 12px rgba(180,127,255,0.9), 0 0 20px rgba(180,127,255,0.5); } }
+        @keyframes glowPromo4 { 0%, 100% { text-shadow: 0 0 4px rgba(0,255,204,0.3); } 50% { text-shadow: 0 0 12px rgba(0,255,204,0.9), 0 0 20px rgba(0,255,204,0.5); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
