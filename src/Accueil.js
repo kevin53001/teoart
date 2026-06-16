@@ -307,6 +307,12 @@ function PopupFiche({ illu, onClose, userId, userPseudo }) {
                   </p>
                 </div>
               )}
+              {/* Mention droits d'auteur */}
+              <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '10px', lineHeight: '1.6', margin: 0, fontStyle: 'italic' }}>
+                  L'ensemble des illustrations disponibles sur ce site (même les gratuites) sont destinées à un usage personnel uniquement. Toute reproduction, redistribution, revente ou utilisation commerciale est interdite sans autorisation écrite de Kevin Teo'Art.
+                </p>
+              </div>
               {livresIllu.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>
@@ -923,7 +929,7 @@ function Accueil() {
             {/* ── Encart message d'accueil ── */}
             <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '24px 20px' : '36px 40px', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
               <p style={{ color: '#fff', fontSize: isMobile ? '20px' : '26px', fontWeight: 'bold', marginBottom: '16px', letterSpacing: '0.5px' }}>
-                ✨ Bienvenue dans mon Univers
+                Bienvenue dans mon Univers
               </p>
               <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: isMobile ? '13px' : '15px', lineHeight: '1.9', marginBottom: '28px' }}>
                 Vous êtes ici dans un endroit étrange où les dessins s'accumulent plus vite que les bonnes résolutions.<br /><br />

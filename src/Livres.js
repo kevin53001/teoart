@@ -3,7 +3,6 @@ import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
-import BandeLegale from './BandeLegale';
 import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -430,6 +429,12 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: '1.7' }}>{formatDescription(illu.description)}</p>
                 </div>
               )}
+              {/* Mention droits d'auteur */}
+              <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '10px', lineHeight: '1.6', margin: 0, fontStyle: 'italic' }}>
+                  L'ensemble des illustrations disponibles sur ce site (même les gratuites) sont destinées à un usage personnel uniquement. Toute reproduction, redistribution, revente ou utilisation commerciale est interdite sans autorisation écrite de Kevin Teo'Art.
+                </p>
+              </div>
               {livresIllu.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>Dans :</span>
@@ -1066,8 +1071,6 @@ function Livres() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
-
-      <BandeLegale />
 
       {/* ── POPUP RECUEIL OU LIVRE ── */}
       {popupItem && (
