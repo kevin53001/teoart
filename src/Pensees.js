@@ -980,7 +980,7 @@ function Pensees() {
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
                     <button key={cat} className="dropdown-item"
-                      onClick={() => { navigate('/catalogue'); setShowCategories(false); }}>
+                      onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>
                       {cat}
                     </button>
                   ))}
@@ -997,7 +997,7 @@ function Pensees() {
                     <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,210,80,0.2)', marginLeft: '14px', marginTop: '4px' }}>
                       {moisPatreon.map(mois => (
                         <button key={mois} className="dropdown-item-patreon"
-                          onClick={() => { navigate('/catalogue'); setShowCategories(false); }}>
+                          onClick={() => { navigate('/catalogue', { state: { sousCategorie: mois } }); setShowCategories(false); setShowPatreonMenu(false); }}>
                           {mois.replace('Patreon - ', '')}
                         </button>
                       ))}

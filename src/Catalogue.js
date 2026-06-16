@@ -196,6 +196,19 @@ function Catalogue() {
     return () => document.removeEventListener('click', handler);
   }, []);
 
+  // Pré-filtrer depuis la nav des autres pages
+  React.useEffect(() => {
+    if (location.state?.categorie) {
+      setCategorie(location.state.categorie);
+      setSousCategorie('');
+      setPage(1);
+    } else if (location.state?.sousCategorie) {
+      setSousCategorie(location.state.sousCategorie);
+      setCategorie('Tout');
+      setPage(1);
+    }
+  }, [location.state]);
+
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
