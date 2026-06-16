@@ -193,9 +193,9 @@ function ZoomSocialVisuelC({ visuelUrl, coloriste, userId, userPseudo }) {
             {jaLike ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
               : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
           </svg>
-          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime \u2713" : "J'aime"}</span>
+          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
         </button>
-        {coloriste && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>\ud83c\udfa8 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriste}</span></span>}
+        {coloriste && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriste}</span></span>}
       </div>
       {commentaires.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
@@ -208,7 +208,7 @@ function ZoomSocialVisuelC({ visuelUrl, coloriste, userId, userPseudo }) {
         </div>
       )}
       <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-        <textarea className="zoom-commentaire-input" rows={1} placeholder="Ajouter un commentaire\u2026" value={texte}
+        <textarea className="zoom-commentaire-input" rows={1} placeholder="Ajouter un commentaire…" value={texte}
           onChange={e => setTexte(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
           style={{ flex: 1 }} />
