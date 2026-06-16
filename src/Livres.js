@@ -69,7 +69,7 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
   };
 
   return (
-    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
+    <div ref={wrapRef} style={{ perspective: '800px' }}>
       <div ref={cardRef} className="teoart-card"
         onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClick}
         style={{ width: `${taille}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
@@ -125,7 +125,7 @@ function VignetteIllu({ illu, taille, jAi, jeVeux, aColorie, onToggleJAi, onTogg
 
   return (
     <div onClick={onClick}
-      style={{ flexShrink: 0, width: `${taille}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', position: 'relative', cursor: 'pointer', transition: 'border-color .2s, transform .2s' }}
+      style={{ width: `${taille}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: '#0a0a0a', position: 'relative', cursor: 'pointer', transition: 'border-color .2s, transform .2s' }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,212,0.4)'; e.currentTarget.style.transform = 'scale(1.04)'; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'scale(1)'; }}>
       {urlIllu
@@ -597,7 +597,7 @@ function Livres() {
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
               <SectionTitre couleur="#00d4d4" label="Recueils" />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${TAILLE_RECUEIL}px, 1fr))`, gap: '16px', marginBottom: '40px' }}>
                 {recueils.map(r => (
                   <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
                     jAi={collection[`recueil_${r.id}`]?.j_ai || false}
@@ -611,7 +611,7 @@ function Livres() {
               <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,210,80,0.2), transparent)', marginBottom: '40px' }} />
 
               <SectionTitre couleur="rgba(255,255,255,0.6)" label="Tous les livres" />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${TAILLE_LIVRE}px, 1fr))`, gap: '16px' }}>
                 {tousLivres.map(l => (
                   <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
                     jAi={collection[`livre_${l.id}`]?.j_ai || false}
@@ -722,7 +722,7 @@ function Livres() {
                                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                   {illustrationsOuvertes.length} illustration{illustrationsOuvertes.length > 1 ? 's' : ''} — cliquer pour ouvrir la fiche
                                 </p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${TAILLE_ILLUS}px, 1fr))`, gap: '8px' }}>
                                   {illustrationsOuvertes.map(illu => (
                                     <VignetteIllu key={illu.id} illu={illu} taille={TAILLE_ILLUS}
                                       jAi={collectionIllus[illu.id]?.j_ai || false}
@@ -834,7 +834,7 @@ function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggl
       <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
         {illustrations.length} illustration{illustrations.length > 1 ? 's' : ''} — cliquer pour ouvrir la fiche
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${taille}px, 1fr))`, gap: '8px' }}>
         {illustrations.map(illu => (
           <VignetteIllu key={illu.id} illu={illu} taille={taille}
             jAi={collectionIllus?.[illu.id]?.j_ai || false}
