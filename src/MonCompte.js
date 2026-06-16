@@ -812,4 +812,279 @@ function getVisuelsOrdonnes(visuels) {
   return result;
 }
 
+function MonCompte() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [userId, setUserId] = React.useState(null);
+  const [userPseudo, setUserPseudo] = React.useState('');
+  const [avatarUrl, setAvatarUrl] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
+  const [showCategories, setShowCategories] = React.useState(false);
+  const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
+  const moisPatreon = getMoisPatreonDisponibles();
+  const [onglet, setOnglet] = React.useState(null);
+  const [showFavoris, setShowFavoris] = React.useState(false);
+  const [stats, setStats] = React.useState({ totalIllus: 0, jAi: 0, colorie: 0, jeVeux: 0 });
+  const [popupIllu, setPopupIllu] = React.useState(null);
+  const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
+  const [popupIlluList, setPopupIlluList] = React.useState([]);
+  const [popupCollection] = React.useState({});
+  const [popupColoriages] = React.useState({});
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  React.useEffect(() => {
+    const blockContext = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    const blockDrag = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
+    document.addEventListener('contextmenu', blockContext);
+    document.addEventListener('dragstart', blockDrag);
+    return () => {
+      document.removeEventListener('contextmenu', blockContext);
+      document.removeEventListener('dragstart', blockDrag);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const charger = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate('/'); return; }
+      setUserId(user.id);
+      const { data: profil } = await supabase.from('profils').select('pseudo, avatar_url').eq('id', user.id).single();
+      setUserPseudo(profil?.pseudo || 'Anonyme');
+      setAvatarUrl(profil?.avatar_url);
+      const { count: total } = await supabase.from('illustrations').select('id', { count: 'exact', head: true }).eq('statut', 'published');
+      const { count: jAiCount } = await supabase.from('collection').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('j_ai', true);
+      const { count: colorieCount } = await supabase.from('coloriages').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { count: jeVeuxCount } = await supabase.from('collection').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('je_veux', true);
+      setStats({ totalIllus: total || 0, jAi: jAiCount || 0, colorie: colorieCount || 0, jeVeux: jeVeuxCount || 0 });
+      setLoading(false);
+    };
+    charger();
+  }, [navigate]);
+
+  const P = isMobile ? 44 : 80;
+  const L = isMobile ? 70 : 120;
+  const GAP_NAV = isMobile ? 0 : 8;
+  const MARGIN_NAV = isMobile ? 2 : 12;
+  const H_NAV = isMobile ? 80 : 120;
+  const pctJai = stats.totalIllus > 0 ? (stats.jAi / stats.totalIllus) * 100 : 0;
+  const pctColo = stats.totalIllus > 0 ? (stats.colorie / stats.totalIllus) * 100 : 0;
+  const pctJeVeux = stats.totalIllus > 0 ? (stats.jeVeux / stats.totalIllus) * 100 : 0;
+
+  const BTNS_CONFIG = [
+    { id: 'collection', label: '📚 Ma Collection', couleur: '#ff3eb5', couleurRgb: '255,62,181' },
+    { id: 'favoris',    label: '♡ Mes Favoris',    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'coloriages', label: '🎨 Mes Coloriages', couleur: '#00d4d4', couleurRgb: '0,212,212' },
+    { id: 'infos',      label: '👤 Mes Infos',      couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
+    { id: 'commandes',  label: '🛒 Mes Commandes',  couleur: '#ff3eb5', couleurRgb: '255,62,181' },
+  ];
+
+  return (
+    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+        .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
+        .barre-right { animation: scrollRight ${SPEED} linear infinite; }
+        .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
+        .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
+        .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }
+        .zoom-like-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.5); font-size: 12px; transition: color .2s; padding: 0; }
+        .zoom-like-btn.actif { color: #ff4d7d; }
+        .zoom-like-btn:hover { color: #ff4d7d; }
+        .zoom-commentaire-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 11px; width: 100%; resize: none; font-family: inherit; }
+        .zoom-commentaire-input:focus { outline: none; border-color: rgba(0,212,212,0.4); }
+        .zoom-commentaire-input::placeholder { color: rgba(255,255,255,0.3); }
+        .zoom-commentaire { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .zoom-commentaire:last-child { border-bottom: none; }
+
+
+        .dropdown-cat { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.96); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 200; min-width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); }
+        .dropdown-item { display: block; width: 100%; padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
+        .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
+        .dropdown-item-patreon { display: block; width: 100%; padding: 6px 10px; color: rgba(255,210,80,0.75); font-size: 12px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
+        .dropdown-item-patreon:hover { background: rgba(255,210,80,0.12); color: rgba(255,210,80,1); }
+        .btn-onglet { position: relative; overflow: hidden; border-radius: 14px; padding: 12px 20px; cursor: pointer; font-size: 13px; font-weight: bold; transition: transform .2s, box-shadow .2s; flex: 1; min-width: 120px; }
+        .btn-onglet::before { content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%; background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 75%, transparent 100%); transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen; }
+        .btn-onglet.shining::before { animation: btn-shine 0.8s ease-in-out forwards; }
+        @keyframes btn-shine { 0% { left: -150%; } 100% { left: 220%; } }
+        .btn-onglet:hover { transform: scale(1.04); }
+        .btn-onglet.actif { transform: scale(1.07); }
+        .shining-logo { position: relative; overflow: hidden; }
+        .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
+        @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
+        @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
+      `}</style>
+
+      <BoutonsFlottants />
+      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
+
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
+        <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
+      </div>
+
+      <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
+        <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/accueil' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/accueil')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', ...(location.pathname === '/livres' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/livres')} />
+            <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0', overflow: 'visible' }}>
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); }} />
+              {showCategories && (
+                <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
+                  {CATEGORIES.map(cat => (
+                    <button key={cat} className="dropdown-item"
+                      onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>
+                      {cat}
+                    </button>
+                  ))}
+                  <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
+                  <button className="dropdown-item" style={{ color: 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }} onClick={() => setShowPatreonMenu(v => !v)}>
+                    <span>⭐ Patreon 2026</span>
+                    <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showPatreonMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                  </button>
+                  {showPatreonMenu && (
+                    <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,210,80,0.2)', marginLeft: '14px', marginTop: '4px' }}>
+                      {moisPatreon.map(mois => (
+                        <button key={mois} className="dropdown-item-patreon"
+                          onClick={() => { navigate('/catalogue', { state: { sousCategorie: mois } }); setShowCategories(false); setShowPatreonMenu(false); }}>
+                          {mois.replace('Patreon - ', '')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/pensees' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/pensees')} />
+            <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => {}} />
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/mon-compte' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/mon-compte')} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            {BARRES.map((barre, i) => (
+              <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content', opacity: barre.opacite }}>
+                  {[...barre.images, ...barre.images].map((img, j) => <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', display: 'block' }} />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '32px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
+          {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
+            <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* ── POINT 6 : Titre centré, une seule ligne blanche ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
+                {avatarUrl && (
+                  <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
+                )}
+                <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  MON COMPTE — Ma Collection Kevin Teo'Art
+                </p>
+              </div>
+
+              {/* ── Triple jauge globale (point 1 déjà appliqué dans UneBarre) ── */}
+              <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '18px 24px' }}>
+                <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={14} showLabels={true} />
+                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '10px', textAlign: 'center' }}>
+                  {stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} favoris
+                </p>
+              </div>
+
+              {/* ── Boutons onglets ── */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+                {BTNS_CONFIG.map(btn => {
+                  const actif = btn.id === 'favoris' ? showFavoris : onglet === btn.id;
+                  return <BoutonOnglet key={btn.id} label={btn.label} couleur={btn.couleur} couleurRgb={btn.couleurRgb} actif={actif}
+                    onClick={() => { if (btn.id === 'favoris') { setShowFavoris(true); setOnglet(null); } else { setOnglet(btn.id); setShowFavoris(false); } }} />;
+                })}
+              </div>
+
+              {/* ── Badges hexagonaux ── */}
+              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
+
+              {onglet === 'collection' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMaCollection userId={userId} totalIllus={stats.totalIllus} /></div>}
+              {showFavoris && (
+                <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
+                  <SectionMesFavoris
+                    userId={userId}
+                    userPseudo={userPseudo}
+                    onOuvrirPopup={(illu, index, list) => {
+                      setPopupIllu(illu);
+                      setPopupIlluIndex(index);
+                      setPopupIlluList(list);
+                    }}
+                  />
+                </div>
+              )}
+              {onglet === 'coloriages' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesColoriages userId={userId} userPseudo={userPseudo} /></div>}
+              {onglet === 'infos'   && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesInfos userId={userId} /></div>}
+              {onglet === 'commandes' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesCommandes userId={userId} /></div>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
+        <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
+          <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
+          <div onClick={() => window.open('https://www.instagram.com/kevin_teoart/', '_blank')} style={{ position: 'absolute', top: 0, left: 0, width: '33.33%', height: '100%', cursor: 'pointer' }} />
+          <div onClick={() => window.open('https://patreon.com/u119601283?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink', '_blank')} style={{ position: 'absolute', top: 0, left: '33.33%', width: '33.33%', height: '100%', cursor: 'pointer' }} />
+          <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
+        </div>
+      </div>
+
+      <BandeLegale />
+      {popupIllu && (
+        <PopupFicheIllu
+          illu={popupIllu}
+          illustrations={popupIlluList}
+          jAi={popupCollection[popupIllu.id]?.j_ai || false}
+          jeVeux={popupCollection[popupIllu.id]?.je_veux || false}
+          aColorié={popupColoriages[popupIllu.id] || false}
+          onToggleJAi={() => {}}
+          onToggleJeVeux={() => {}}
+          onClose={() => setPopupIllu(null)}
+          onOpenSimilaire={(illu) => setPopupIllu(illu)}
+          onSuivant={() => {
+            const next = (popupIlluIndex + 1) % popupIlluList.length;
+            setPopupIllu(popupIlluList[next]);
+            setPopupIlluIndex(next);
+          }}
+          onPrecedent={() => {
+            const prev = (popupIlluIndex - 1 + popupIlluList.length) % popupIlluList.length;
+            setPopupIllu(popupIlluList[prev]);
+            setPopupIlluIndex(prev);
+          }}
+          userPseudo={userPseudo}
+          userId={userId}
+          onColoUploaded={() => {}}
+        />
+      )}
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
+    </div>
+  );
+}
+
 export default MonCompte;

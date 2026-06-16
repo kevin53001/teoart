@@ -281,6 +281,9 @@ function Presentation() {
           userPseudo={userPseudo}
         />
       )}
+    </div>
+  );
+}
 
 function EncartPresentation({ enc, idx, isMobile, onOuvrirPopup }) {
   const [ouvert, setOuvert] = React.useState(false);

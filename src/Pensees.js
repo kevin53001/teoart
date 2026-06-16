@@ -1250,7 +1250,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           illu={popupOnglet}
           onClose={() => setPopupOnglet(null)}
           userId={userId}
-          userPseudo={userPseudo}
+          userPseudo={pseudo}
         />
       )}
     </div>
