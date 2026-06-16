@@ -51,7 +51,7 @@ function UneBarre({ pct, couleur, label, delai = 0, hauteur = 8, showLabel = tru
     const step = (ts) => {
       if (!start) start = ts;
       const prog = Math.min((ts - start) / duree, 1);
-      setAffiche(Math.round(prog * pct));
+      setAffiche(parseFloat((prog * pct).toFixed(2)));
       if (prog < 1) requestAnimationFrame(step);
     };
     const t2 = setTimeout(() => requestAnimationFrame(step), 200 + delai);
@@ -119,26 +119,26 @@ function VignetteIlluLecture({ illu, taille = 100, aColorie = false }) {
 // ─── Badges hexagonaux ────────────────────────────────────────────────────────
 
 const BADGES_FAN = [
-  { id: 'fan_bronze', lignes: ['Fan', 'Bronze'], seuil: 25, couleur: '#cd7f32', rgb: '205,127,50',  textColor: '#fff3e0', serie: 'fan',
-    message: "Tu possèdes déjà 1 dessin sur 4 de ma collection... t'as commencé fort ! Merci du fond du cœur. Mais chut, j'ai au moins 10 nouvelles créations qui arrivent chaque mois — garde un œil sur ta jauge !" },
-  { id: 'fan_argent', lignes: ['Fan', 'Argent'], seuil: 50, couleur: '#c0c0c0', rgb: '192,192,192', textColor: '#1a1a2e', serie: 'fan',
-    message: "La moitié de mon univers est chez toi, c'est dingue ! Un grand MERCI à toi. Mais attention... chaque mois une flopée de nouveaux dessins débarque et ta collection va devoir suivre le rythme !" },
-  { id: 'fan_or',     lignes: ['Fan', 'Or'],     seuil: 75, couleur: '#ffd700', rgb: '255,215,0',   textColor: '#3d2b00', serie: 'fan',
-    message: "3 dessins sur 4 chez toi ? Tu es officiellement obsédé(e) et j'adore ça. Je ne sais même pas quoi dire tellement je suis touché(e). Mais voilà, je suis productif(ve) — au moins 10 dessins par mois — et ce badge va falloir le mériter encore et encore..." },
+  { id: 'fan_bronze', lignes: ['Fan', 'Bronze'], seuil: 20, couleur: '#cd7f32', rgb: '205,127,50',  textColor: '#fff3e0', serie: 'fan',
+    message: "Tu possèdes au moins 1 dessin sur 5 de ma collection... t'as commencé fort ! Merci du fond du cœur. Mais chut, j'ai au moins 10 nouvelles créations qui arrivent chaque mois, garde un œil sur ta jauge!" },
+  { id: 'fan_argent', lignes: ['Fan', 'Argent'], seuil: 40, couleur: '#c0c0c0', rgb: '192,192,192', textColor: '#1a1a2e', serie: 'fan',
+    message: "Une bonne partie de mon univers est déjà entre tes mains, c'est dingue ! Un grand MERCI à toi. Mais attention... chaque mois une flopée de nouveaux dessins débarque et ta collection va devoir suivre le rythme si tu veux maintenir ce niveau!" },
+  { id: 'fan_or',     lignes: ['Fan', 'Or'],     seuil: 60, couleur: '#ffd700', rgb: '255,215,0',   textColor: '#3d2b00', serie: 'fan',
+    message: "Au moins 3 dessins sur 5 chez toi ? Tu es officiellement passionné(e) et j'adore ça. Je ne sais même pas quoi dire tellement je suis touché. Mais voilà, je suis productif, au moins 10 dessins par mois, et ce badge va falloir le mériter encore et encore..." },
   { id: 'fan_ultime', lignes: ['Fan', 'Ultime'], seuil: 80, couleur: '#00d4d4', rgb: '0,212,212',   textColor: '#003333', serie: 'fan',
-    message: "80% de ma collection chez toi. C'est une performance. Je suis sincèrement touché(e) et un peu intimidé(e). Mais je sors au moins 10 dessins par mois, et ce badge au sommet... il va falloir rester dans la course si tu veux maintenir ce niveau." },
+    message: "Tu possèdes au moins 80% de ma collection. C'est une sacré performance. Je suis sincèrement touché et un peu intimidé j'avoue. Mais je sors au moins 10 dessins par mois, il va falloir rester dans la course si tu veux maintenir ce niveau." },
 ];
 const BADGES_COLO = [
   { id: 'colo_herbe',       lignes: ['Coloriste', 'en herbe'],    seuil: 10, couleur: '#a8e063', rgb: '168,224,99',  textColor: '#1a2e00', serie: 'colo',
-    message: "Tes crayons commencent à chauffer ! 10% de mes dessins colorés, c'est un début prometteur. Mais ce badge est capricieux... j'ajoute au minimum 10 dessins par mois, alors range pas tes feutres !" },
+    message: "Tes crayons commencent à chauffer ! Au moins 10% de mes dessins coloriés, c'est un début prometteur. Mais ce badge est capricieux... j'ajoute au minimum 10 dessins par mois, alors ne range pas ton matos !" },
   { id: 'colo_raisonnable', lignes: ['Coloriste', 'raisonnable'], seuil: 20, couleur: '#4a9eff', rgb: '74,158,255',  textColor: '#001433', serie: 'colo',
-    message: "Raisonnable ? Toi ? On va dire ça... 20% de colorié c'est déjà très bien ! Mais 'raisonnable' ça veut dire qu'il reste 80% qui attendent tes couleurs. Et vu que j'arrive chaque mois avec de nouveaux dessins, tes crayons ont du boulot !" },
+    message: "Raisonnable ? Toi ? On va dire ça... au minimum 20% de colorié c'est déjà très bien ! Mais 'raisonnable' ça veut dire qu'il reste 80% qui attendent tes couleurs. Et vu que j'arrive chaque mois avec de nouveaux dessins, tes crayons ont du boulot !" },
   { id: 'colo_productif',   lignes: ['Coloriste', 'productif'],   seuil: 30, couleur: '#a78bfa', rgb: '167,139,250', textColor: '#1a0033', serie: 'colo',
-    message: "Productif c'est le mot ! 30% de mes dessins ont eu droit à ta touche magique. Mais attention, je sors au moins 10 nouveaux dessins chaque mois comme un lapin sort des chapeaux... va falloir accélérer la cadence !" },
+    message: "Productif c'est le mot ! Au moins un tiers de mes dessins ont eu droit à ta touche magique. Mais attention, je sors au moins 10 nouveaux dessins chaque mois comme un lapin sort des chapeaux... va falloir accélérer la cadence !" },
   { id: 'colo_intense',     lignes: ['Coloriste', 'intense'],     seuil: 40, couleur: '#ff6b35', rgb: '255,107,53',  textColor: '#3d1000', serie: 'colo',
-    message: "INTENSE. C'est le seul mot. 40% colorié, tes feutres doivent être à bout de souffle ! Un immense merci pour autant d'amour mis dans mes dessins. Mais le seuil bouge avec ma prod — minimum 10 dessins par mois — alors repose pas tes mains trop longtemps !" },
+    message: "INTENSE. C'est vraiment le mot qui va bien. Au moins 40% de mes dessins coloriés, tes feutres doivent être à bout de souffle ! Un immense merci pour autant d'amour mis dans mes dessins. Mais le seuil bouge avec ma prod, minimum 10 dessins par mois, alors ne repose pas tes mains trop longtemps !" },
   { id: 'colo_fou',         lignes: ['Coloriste', 'fou'],         seuil: 50, couleur: '#ff3eb5', rgb: '255,62,181',  textColor: '#3d0025', serie: 'colo',
-    message: "50%. UN DESSIN SUR DEUX. T'es complètement fou/folle et je t'adore pour ça. Tes crayons méritent une retraite bien méritée... mais pas tout de suite, parce que j'arrive chaque mois avec au moins 10 nouveaux dessins. COURAGE." },
+    message: "AU MOINS UN DESSIN SUR DEUX sont passés sous tes couleurs. T'es complètement fou et je t'adore pour ça. Tes crayons méritent une retraite bien méritée... mais pas tout de suite, parce que ma collection se renouvelle tous les mois. COURAGE." },
 ];
 
 // Hexagone à coins arrondis via path SVG
@@ -2095,9 +2095,6 @@ function MonCompte() {
                 </p>
               </div>
 
-              {/* ── Badges hexagonaux ── */}
-              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
-
               {/* ── Boutons onglets ── */}
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
                 {BTNS_CONFIG.map(btn => {
@@ -2106,6 +2103,9 @@ function MonCompte() {
                     onClick={() => { if (btn.id === 'favoris') { setShowFavoris(true); setOnglet(null); } else { setOnglet(btn.id); setShowFavoris(false); } }} />;
                 })}
               </div>
+
+              {/* ── Badges hexagonaux ── */}
+              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
 
               {onglet === 'collection' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMaCollection userId={userId} totalIllus={stats.totalIllus} /></div>}
               {showFavoris && (
