@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import Cropper from 'react-easy-crop';
 import PaysInput from './PaysInput';
+import BandeLegale from './BandeLegale';
 
 const R2 = 'https://images.kevinteoart.fr';
 
@@ -418,6 +419,8 @@ function Inscription() {
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
+
+      <BandeLegale />
     </div>
   );
 }
