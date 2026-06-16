@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Ordre gauche → droite : Mentions - Confidentialité - CGV - Droits - Contact
 const ITEMS = [
   { id: 'mentions',        label: 'Mentions légales',            couleur: '#FFD700' },
   { id: 'confidentialite', label: 'Politique de confidentialité', couleur: '#FF6EB4' },
@@ -28,6 +27,7 @@ Site internet : https://kevinteoart.fr
 
 HÉBERGEMENT
 
+Le site est hébergé par :
 Vercel Inc.
 440 N Barranca Avenue #4133
 Covina, CA 91723 — États-Unis
@@ -327,11 +327,30 @@ const COULEUR_RGB = {
   '#00D4D4': '0,212,212',
 };
 
+// Effet carte premium : gradient noir avec reflet
+function styleCartePremium(couleur, actif) {
+  const rgb = COULEUR_RGB[couleur];
+  if (actif) {
+    return {
+      background: `linear-gradient(135deg, rgba(${rgb},0.18) 0%, rgba(0,0,0,0.95) 50%, rgba(${rgb},0.10) 100%)`,
+      boxShadow: `0 0 10px rgba(${rgb},0.25), inset 0 1px 0 rgba(255,255,255,0.08)`,
+      border: `1px solid rgba(${rgb},0.5)`,
+    };
+  }
+  return {
+    background: 'none',
+    boxShadow: 'none',
+    border: '1px solid transparent',
+  };
+}
+
 export default function BandeLegale() {
   const [actif, setActif] = React.useState(null);
   const [visible, setVisible] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const panneauRef = React.useRef(null);
 
+  // Détection scroll
   React.useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -344,61 +363,133 @@ export default function BandeLegale() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleItem = (id) => setActif(prev => prev === id ? null : id);
+  // Resize
+  React.useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+
+  // Reset scroll du panneau quand on change de bouton
+  const toggleItem = (id) => {
+    setActif(prev => {
+      if (prev !== id && panneauRef.current) {
+        panneauRef.current.scrollTop = 0;
+      }
+      return prev === id ? null : id;
+    });
+  };
+
   const contenu = actif ? CONTENUS[actif] : null;
   const couleurActif = actif ? ITEMS.find(i => i.id === actif)?.couleur : null;
+  const rgbActif = couleurActif ? COULEUR_RGB[couleurActif] : null;
+
+  // Largeur commune bande + panneau (~2-3cm de marge de chaque côté)
+  const LARGEUR = 'calc(100% - 56px)';
+  const LARGEUR_MAX = '1100px';
+
+  // Lignes mobile : [3 premiers] [2 derniers]
+  const ligne1 = ITEMS.slice(0, 3);
+  const ligne2 = ITEMS.slice(3);
+
+  const renderBouton = (item) => (
+    <button
+      key={item.id}
+      onClick={e => { e.stopPropagation(); toggleItem(item.id); }}
+      style={{
+        ...styleCartePremium(item.couleur, actif === item.id),
+        cursor: 'pointer',
+        padding: '5px 12px',
+        borderRadius: '20px',
+        fontFamily: 'var(--font-bouton)',
+        fontSize: isMobile ? '10px' : '11px',
+        color: actif === item.id ? item.couleur : 'rgba(255,255,255,0.5)',
+        transition: 'all 0.2s ease',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {item.label}
+    </button>
+  );
 
   return (
     <>
-      {/* Panneau contenu légal */}
+      {/* Panneau texte légal — même largeur que la bande */}
       <div style={{
         position: 'fixed',
-        bottom: '44px',
-        left: 0,
-        right: 0,
+        bottom: isMobile ? '64px' : '48px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: LARGEUR,
+        maxWidth: LARGEUR_MAX,
         zIndex: 998,
         overflow: 'hidden',
-        maxHeight: actif ? '70vh' : '0',
+        maxHeight: actif ? '65vh' : '0',
         transition: 'max-height 0.4s ease',
+        borderRadius: '16px 16px 0 0',
       }}>
         <div
           ref={panneauRef}
           style={{
             background: 'rgba(8,8,8,0.98)',
-            borderTop: `1px solid ${couleurActif || 'rgba(255,255,255,0.1)'}`,
-            padding: '20px 28px 28px',
+            border: couleurActif ? `1px solid rgba(${rgbActif},0.3)` : '1px solid rgba(255,255,255,0.08)',
+            borderBottom: 'none',
+            borderRadius: '16px 16px 0 0',
             overflowY: 'auto',
-            maxHeight: '70vh',
+            maxHeight: '65vh',
           }}
           onClick={e => e.stopPropagation()}
         >
           {contenu && (
             <>
+              {/* Titre sticky avec effet carte premium coloré */}
               <div style={{
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                background: `linear-gradient(135deg, rgba(${rgbActif},0.35) 0%, rgba(10,10,10,0.98) 60%, rgba(${rgbActif},0.15) 100%)`,
+                boxShadow: `0 2px 16px rgba(${rgbActif},0.2), inset 0 1px 0 rgba(255,255,255,0.1)`,
+                borderBottom: `1px solid rgba(${rgbActif},0.3)`,
+                padding: '14px 20px 12px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '16px',
-                position: 'sticky',
-                top: 0,
-                background: 'rgba(8,8,8,0.98)',
-                paddingBottom: '12px',
-                borderBottom: `1px solid rgba(${COULEUR_RGB[couleurActif]},0.2)`,
               }}>
-                <span style={{ fontFamily: 'var(--font-titre)', fontSize: '20px', color: couleurActif }}>
+                {/* Reflet carte premium */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)`,
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-titre)',
+                  fontSize: isMobile ? '16px' : '20px',
+                  color: couleurActif,
+                  textShadow: `0 0 12px rgba(${rgbActif},0.5)`,
+                }}>
                   {contenu.titre}
                 </span>
                 <button
                   onClick={() => setActif(null)}
-                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer', lineHeight: 1, padding: '4px 8px' }}
+                  style={{
+                    background: 'none', border: 'none',
+                    color: 'rgba(255,255,255,0.4)',
+                    fontSize: '18px', cursor: 'pointer',
+                    lineHeight: 1, padding: '2px 6px',
+                    fontFamily: 'var(--font-bouton)',
+                  }}
                 >✕</button>
               </div>
+
+              {/* Texte */}
               <div style={{
+                padding: '20px 24px 28px',
                 color: 'rgba(255,255,255,0.82)',
                 fontFamily: 'var(--font-texte)',
                 fontSize: '15px',
                 lineHeight: '1.75',
                 whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
               }}>
                 {contenu.texte}
               </div>
@@ -407,66 +498,56 @@ export default function BandeLegale() {
         </div>
       </div>
 
-      {/* Bande noire fixe */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0, left: 0, right: 0,
-          height: '44px',
-          background: '#000',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
-          zIndex: 999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.4s ease',
-        }}
+      {/* Bande légale — noire, effet carte premium, bords arrondis */}
+      <div style={{
+        position: 'fixed',
+        bottom: '4px',
+        left: '50%',
+        transform: visible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(120%)',
+        transition: 'transform 0.4s ease',
+        width: LARGEUR,
+        maxWidth: LARGEUR_MAX,
+        height: isMobile ? '56px' : '44px',
+        zIndex: 999,
+        borderRadius: '22px',
+        background: 'linear-gradient(135deg, #1a1a1a 0%, #000 50%, #1a1a1a 100%)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
         onClick={() => { if (actif) setActif(null); }}
       >
+        {/* Reflet carte premium */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-evenly',
-          width: '100%',
-          maxWidth: '750px',
-          padding: '0 12px',
-        }}>
-          {ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={e => { e.stopPropagation(); toggleItem(item.id); }}
-              style={{
-                background: actif === item.id ? `rgba(${COULEUR_RGB[item.couleur]},0.13)` : 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                fontFamily: 'var(--font-bouton)',
-                fontSize: '11px',
-                color: actif === item.id ? item.couleur : 'rgba(255,255,255,0.45)',
-                transition: 'color 0.2s, background 0.2s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span style={{
-                display: 'inline-block',
-                width: '7px', height: '7px',
-                borderRadius: '50%',
-                background: item.couleur,
-                marginRight: '5px',
-                verticalAlign: 'middle',
-                boxShadow: `0 0 5px ${item.couleur}`,
-                opacity: actif === item.id ? 1 : 0.6,
-              }} />
-              {item.label}
-            </button>
-          ))}
-        </div>
+          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+          pointerEvents: 'none',
+        }} />
+
+        {isMobile ? (
+          // Mobile : 3 + 2
+          <>
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', marginBottom: '2px' }}>
+              {ligne1.map(renderBouton)}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+              {ligne2.map(renderBouton)}
+            </div>
+          </>
+        ) : (
+          // Desktop : 5 boutons en ligne
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-evenly', width: '100%', padding: '0 16px' }}>
+            {ITEMS.map(renderBouton)}
+          </div>
+        )}
       </div>
 
-      {/* Espace réservé pour ne pas masquer le bas de page */}
-      <div style={{ height: visible ? '44px' : '0', transition: 'height 0.4s ease' }} />
+      {/* Espace réservé */}
+      <div style={{ height: visible ? (isMobile ? '68px' : '56px') : '0', transition: 'height 0.4s ease' }} />
     </>
   );
 }
