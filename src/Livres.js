@@ -231,7 +231,7 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
   return (
     <>
       {zoomIndex !== null && (
-        <div onClick={() => setZoomIndex(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
+        <div onClick={() => setZoomIndex(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }} onClick={e => e.stopPropagation()}>
             {urlZoom && <img src={urlZoom} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px' }} />}
           </div>
@@ -266,6 +266,10 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)' }}>🎨 {getColoActif(visuelActif).pseudo}</div>
                 )}
               </div>
+              {/* Social likes/commentaires si visuel C actif */}
+              {visuelActif >= visuels.length && getColoActif(visuelActif) && (
+                <ZoomSocial coloriage={getColoActif(visuelActif)} userId={userId} userPseudo={userPseudo} />
+              )}
               {totalVisuels > 1 && (
                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                   {visuels.map((url, i) => (

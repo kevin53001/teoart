@@ -990,6 +990,10 @@ function PopupFiche({ illu, illustrations, jAi, jeVeux, aColorié, onToggleJAi, 
                   <div style={{ position: 'absolute', bottom: '12px', right: '6px', background: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 7px', fontSize: '9px', color: 'rgba(255,210,80,0.9)' }}>🎨 {getColoActif(visuelActif).pseudo}</div>
                 )}
               </div>
+              {/* Social likes/commentaires si visuel C actif */}
+              {visuelActif >= visuels.length && getColoActif(visuelActif) && (
+                <ZoomSocial coloriage={getColoActif(visuelActif)} userId={userId} userPseudo={userPseudo} />
+              )}
               {totalVisuels > 1 && (
                 <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                   {visuels.map((url, i) => (
