@@ -38,20 +38,12 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (session === undefined) return (
-    <>
-      <SplashScreen onTermine={() => setSplashTermine(true)} />
-      <div style={{ background: '#000', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(0,212,212,0.2)', borderTop: '3px solid #00d4d4', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </>
+  if (session === undefined || !splashTermine) return (
+    <SplashScreen onTermine={() => setSplashTermine(true)} />
   );
 
   return (
-    <>
-      {!splashTermine && <SplashScreen onTermine={() => setSplashTermine(true)} />}
-      <BrowserRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
         <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
@@ -67,7 +59,6 @@ function App() {
       </Routes>
       <BannerePWA />
     </BrowserRouter>
-    </>
   );
 }
 
