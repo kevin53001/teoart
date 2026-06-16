@@ -23,7 +23,7 @@ const BARRES = [
   { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.05 },
 ];
 
-const CATEGORIES = ['Tout', 'Portrait', 'Kawaii/Chibi', 'Manga', 'Noël', 'Halloween', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Animaux'];
+const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
 
 const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 function getMoisPatreonDisponibles() {
@@ -226,6 +226,7 @@ function Presentation() {
                         </div>
                       ) : (
                       <button key={cat} className="dropdown-item"
+                        style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}}
                         onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>
                         {cat}
                       </button>
