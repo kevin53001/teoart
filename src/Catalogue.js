@@ -152,7 +152,7 @@ function Catalogue() {
   const PAR_PAGE = 40;
 
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles, ajouterIllustration, estDansPanier } = usePanier();
+  const { nbArticles, ajouterIllustration } = usePanier();
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
