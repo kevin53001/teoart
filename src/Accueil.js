@@ -645,8 +645,9 @@ function Accueil() {
   const H_NAV = isMobile ? 80 : 120;
 
   const pctJai = stats.totalIllus > 0 ? (stats.jAi / stats.totalIllus) * 100 : 0;
-  const pctColo = stats.totalIllus > 0 ? (stats.colorie / stats.totalIllus) * 100 : 0;
-  const pctJeVeux = stats.totalIllus > 0 ? (stats.jeVeux / stats.totalIllus) * 100 : 0;
+  const pctColo = stats.jAi > 0 ? (stats.colorie / stats.jAi) * 100 : 0;
+  const illusManquantes = stats.totalIllus - stats.jAi;
+  const pctJeVeux = illusManquantes > 0 ? (stats.jeVeux / illusManquantes) * 100 : 0;
 
   const BTNS = [
     { label: 'Constitue ta collection', pastille: `${R2}/site/pastille_mon_compte.png`, couleur: '#ff3eb5',              couleurRgb: '255,62,181',  onClick: () => navigate('/mon-compte'),   disabled: false },
@@ -856,7 +857,7 @@ function Accueil() {
               <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '18px 24px' }}>
                 <TripleJauge pctJai={pctJai} pctColo={pctColo} pctJeVeux={pctJeVeux} />
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '10px', textAlign: 'center' }}>
-                  {stats.jAi} / {stats.totalIllus} illustrations · {stats.colorie} coloriages · {stats.jeVeux} en liste de souhaits
+                  {stats.jAi} / {stats.totalIllus} illustrations possédées · {stats.colorie} / {stats.jAi} coloriées · {stats.jeVeux} / {illusManquantes} souhaitées parmi les illustrations manquantes
                 </p>
               </div>
             )}
