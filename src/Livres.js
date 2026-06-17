@@ -745,10 +745,13 @@ function Livres() {
                     return (
                       <div style={{ marginBottom: '10px' }}>
                         {infoPays ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '10px', padding: '6px 14px' }}>
-                            <span style={{ color: 'rgba(255,210,80,1)', fontSize: '26px', fontWeight: 'bold' }}>{infoPays.prix}</span>
-                            <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '15px', fontWeight: 'bold' }}>{infoPays.symbole || '€'}</span>
-                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version Reliée · {paysActif}</span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '10px', padding: '6px 14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ color: 'rgba(255,210,80,1)', fontSize: '26px', fontWeight: 'bold' }}>{infoPays.prix}</span>
+                              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '15px', fontWeight: 'bold' }}>{infoPays.symbole || '€'}</span>
+                              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version Reliée</span>
+                            </div>
+                            <span style={{ color: 'rgba(255,210,80,0.55)', fontSize: '10px', marginTop: '2px' }}>✓ Frais de port inclus</span>
                           </div>
                         ) : (
                           <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '10px', padding: '6px 14px' }}>
@@ -787,17 +790,26 @@ function Livres() {
                   </button>
                 </div>
 
-                {/* ── Sélecteur PDF / Relié (coches) ── */}
+                {/* ── Sélecteur PDF / Relié (boutons premium + coches) ── */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ color: !modeRelie ? '#ff3eb5' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>PDF</span>
+                  {/* Bouton PDF */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <div onClick={() => setModeRelie(false)} style={{ cursor: 'pointer', padding: '7px 16px', borderRadius: '10px', background: !modeRelie ? 'linear-gradient(135deg, #ff3eb5, #c9007a)' : 'rgba(255,62,181,0.08)', border: !modeRelie ? 'none' : '1px solid rgba(255,62,181,0.25)', boxShadow: !modeRelie ? '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' : 'none', transition: 'all .25s', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '13px' }}>📄</span>
+                      <span style={{ color: !modeRelie ? '#fff' : 'rgba(255,62,181,0.4)', fontSize: '12px', fontWeight: 'bold', transition: 'color .2s', letterSpacing: '0.5px' }}>PDF</span>
+                    </div>
                     <div onClick={() => setModeRelie(false)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: !modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: !modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: !modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
                       <div style={{ position: 'absolute', top: '2px', left: !modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: !modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: !modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
                     </div>
                   </div>
+
+                  {/* Bouton Relié */}
                   {popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>Relié</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div onClick={() => setModeRelie(true)} style={{ cursor: 'pointer', padding: '7px 16px', borderRadius: '10px', background: modeRelie ? 'linear-gradient(135deg, #ffd24d, #c48a00)' : 'rgba(255,210,80,0.08)', border: modeRelie ? 'none' : '1px solid rgba(255,210,80,0.25)', boxShadow: modeRelie ? '0 4px 14px rgba(255,210,80,0.45), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none', transition: 'all .25s', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '13px' }}>📚</span>
+                        <span style={{ color: modeRelie ? '#000' : 'rgba(255,210,80,0.4)', fontSize: '12px', fontWeight: 'bold', transition: 'color .2s', letterSpacing: '0.5px' }}>Relié</span>
+                      </div>
                       <div onClick={() => setModeRelie(true)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
                         <div style={{ position: 'absolute', top: '2px', left: modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
                       </div>
