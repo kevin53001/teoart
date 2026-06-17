@@ -793,7 +793,7 @@ function Livres() {
                 {(() => {
                   const desc = modeRelie ? (popupItem.description_relie || popupItem.description) : popupItem.description;
                   return desc ? (
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px' }}>{desc}</p>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px', whiteSpace: 'pre-line' }}>{desc}</p>
                   ) : null;
                 })()}
 
