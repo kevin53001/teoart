@@ -1240,6 +1240,11 @@ function Livres() {
                   onClick={async () => {
                     if (collection[`${popupType}_${popupItem.id}`]?.j_ai) { setConfirmJaiRelie('relie'); return; }
                     const paysChoisi = userPays || reliePaysSaisi;
+                    if (!userPays && paysChoisi && userId) {
+                      await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                      setUserPays(paysChoisi);
+                    }
+                    const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
                     const zoneKey = resoudrePays(paysChoisi, prixData);
                     const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
                     const prixRelie = infoPays ? infoPays.prix : 0;
