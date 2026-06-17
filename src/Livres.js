@@ -345,6 +345,7 @@ function Livres() {
   const [reliePaysSaisi, setReliePaysSaisi] = React.useState('');
   const [reliePaysFiltre, setReliePaysFiltre] = React.useState([]);
   const [relieLuAccepte, setRelieLuAccepte] = React.useState(false);
+  const [confirmAjout, setConfirmAjout] = React.useState(null);
 
   // Popup fiche illustration
   const [popupIllu, setPopupIllu] = React.useState(null);
@@ -877,10 +878,9 @@ function Livres() {
                     <>
                       {/* Encart info -75% PDF */}
                       {popupItem.prix && (
-                        <div style={{ background: 'rgba(255,62,181,0.07)', border: '1px solid rgba(255,62,181,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+                        <div style={{ background: 'rgba(255,62,181,0.07)', border: '1px solid rgba(255,62,181,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '10px' }}>
                           <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '11px', lineHeight: '1.6' }}>
-                            Saviez-vous ? En ajoutant la version reliée à votre panier, le PDF de ce {popupType === 'recueil' ? 'recueil' : 'livre'} vous sera proposé à{' '}
+                            En ajoutant la version reliée à votre panier, le PDF de ce {popupType === 'recueil' ? 'recueil' : 'livre'} vous sera proposé à{' '}
                             <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>−75%</span>{' '}
                             (soit <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>{(parseFloat(popupItem.prix) * 0.25).toFixed(2)} €</span> au lieu de {parseFloat(popupItem.prix).toFixed(2)} €).
                           </p>
@@ -1152,41 +1152,47 @@ function Livres() {
             </div>
 
             {/* Boutons Annuler / Valider */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {/* Bouton Relié + PDF si le PDF existe */}
-              {popupItem.prix && relieLuAccepte && (userPays || reliePaysSaisi) && (() => {
-                const paysCheck = userPays || reliePaysSaisi;
-                const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                const zoneKey = resoudrePays(paysCheck, prixData);
-                const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
-                if (!infoPays) return null;
-                const prixRelie = parseFloat(infoPays.prix) || 0;
-                const prixPdfReduit = parseFloat(popupItem.prix) * 0.25;
-                const prixTotal = (prixRelie + prixPdfReduit).toFixed(2);
-                return (
-                  <button
-                    onClick={async () => {
-                      const paysChoisi = userPays || reliePaysSaisi;
-                      if (!userPays && paysChoisi && userId) {
-                        await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
-                        setUserPays(paysChoisi);
-                      }
-                      const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
-                      ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, infoPays.delai, popupType, popupItem.prix, imageUrl);
-                      setPopupRelie(false);
-                      setRelieLuAccepte(false);
-                    }}
-                    style={{ width: '100%', background: 'linear-gradient(135deg, rgba(255,210,80,0.9), rgba(255,62,181,0.7))', border: 'none', borderRadius: '10px', padding: '12px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <span>📚+📄</span>
-                    <span>Relié + PDF (−75%) — {prixTotal} € au total</span>
-                  </button>
-                );
-              })()}
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {/* Annuler */}
                 <button onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }}
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                   Annuler
                 </button>
+
+                {/* Bouton Relié + PDF — au milieu, rose premium */}
+                {popupItem.prix && relieLuAccepte && (userPays || reliePaysSaisi) && (() => {
+                  const paysCheck = userPays || reliePaysSaisi;
+                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                  const zoneKey = resoudrePays(paysCheck, prixData);
+                  const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
+                  if (!infoPays) return null;
+                  const prixRelie = parseFloat(infoPays.prix) || 0;
+                  const prixPdfReduit = parseFloat(popupItem.prix) * 0.25;
+                  const prixTotal = (prixRelie + prixPdfReduit).toFixed(2);
+                  return (
+                    <button
+                      onClick={async () => {
+                        const paysChoisi = userPays || reliePaysSaisi;
+                        if (!userPays && paysChoisi && userId) {
+                          await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                          setUserPays(paysChoisi);
+                        }
+                        const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                        ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, infoPays.delai, popupType, popupItem.prix, imageUrl);
+                        setPopupRelie(false);
+                        setRelieLuAccepte(false);
+                        setConfirmAjout('relie_pdf');
+                        setTimeout(() => setConfirmAjout(null), 2500);
+                      }}
+                      style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)', letterSpacing: '0.3px' }}>
+                      Relié + PDF −75%<br />
+                      <span style={{ fontSize: '11px', opacity: 0.85 }}>{prixTotal} € au total</span>
+                    </button>
+                  );
+                })()}
+
+                {/* Bouton Relié uniquement — or premium */}
                 <button
                   disabled={!relieLuAccepte || (!(userPays || reliePaysSaisi))}
                   onClick={async () => {
@@ -1204,11 +1210,22 @@ function Livres() {
                     ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType);
                     setPopupRelie(false);
                     setRelieLuAccepte(false);
+                    setConfirmAjout('relie');
+                    setTimeout(() => setConfirmAjout(null), 2500);
                   }}
-                  style={{ background: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '#000' : 'rgba(255,210,80,0.3)', fontWeight: 'bold', fontSize: '13px', cursor: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'pointer' : 'default', fontFamily: 'inherit', transition: 'all .2s' }}>
+                  style={{ flex: 1, position: 'relative', overflow: 'hidden', background: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'linear-gradient(135deg, #ffd24d, #c48a00)' : 'rgba(255,210,80,0.15)', border: 'none', borderRadius: '10px', padding: '12px 14px', color: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '#000' : 'rgba(255,210,80,0.3)', fontWeight: 'bold', fontSize: '13px', cursor: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'pointer' : 'default', fontFamily: 'inherit', boxShadow: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '0 4px 14px rgba(255,210,80,0.4), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none', transition: 'all .2s', letterSpacing: '0.3px' }}>
                   Relié uniquement
                 </button>
               </div>
+
+              {/* Confirmation visuelle ajout panier */}
+              {confirmAjout && (
+                <div style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '10px', padding: '10px 14px', textAlign: 'center', animation: 'fadeInDown 0.3s ease' }}>
+                  <p style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>
+                    {confirmAjout === 'relie_pdf' ? 'Version reliée + PDF ajoutés au panier' : 'Version reliée ajoutée au panier'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

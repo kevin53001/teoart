@@ -396,11 +396,18 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, pctJai, pctColo]);
 
+  // Tous les badges obtenus pour calculer les délais d'animation
+  const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
+  const obtenus = tousLesBadges.filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil);
+
   const getDelai = (id) => {
+    // Nouveaux badges : délai prioritaire basé sur leur ordre d'obtention
     if (nouveauxBadges.includes(id)) {
-      const idx = nouveauxBadges.indexOf(id);
-      return idx * 700;
+      return nouveauxBadges.indexOf(id) * 700;
     }
+    // Badges déjà obtenus : animation à chaque chargement, décalée par position
+    const idx = obtenus.findIndex(b => b.id === id);
+    if (idx >= 0) return idx * 300;
     return null;
   };
 
@@ -428,7 +435,8 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .hex-badge { transition: transform 0.2s; }
+        .hex-badge { transition: transform 0.2s; opacity: 0; }
+        .hex-badge.obtenu.badge-nouveau { opacity: 1; }
         .hex-badge.obtenu:hover { transform: scale(1.1) translateY(-2px); }
       `}</style>
 
@@ -438,7 +446,7 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
         {promoNotif && (
           <div style={{ width: '100%', background: 'linear-gradient(135deg, rgba(255,210,80,0.12), rgba(255,62,181,0.08))', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
             <button onClick={() => setPromoNotif(null)} style={{ position: 'absolute', top: '10px', right: '12px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
-            <p style={{ color: 'rgba(255,210,80,1)', fontSize: '13px', fontWeight: 'bold' }}>🎉 Nouveau badge débloqué !</p>
+            <p style={{ color: 'rgba(255,210,80,1)', fontSize: '13px', fontWeight: 'bold' }}>Nouveau badge débloqué !</p>
             {promoNotif.fan && (
               <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: 1.6 }}>
                 <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>Badge {promoNotif.fan.nomBadge}</span> — tu bénéficies de <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>−{Math.round(promoNotif.fan.taux * 100)}%</span> sur ta prochaine commande (tous articles confondus, après les autres réductions).
