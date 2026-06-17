@@ -860,11 +860,11 @@ function Livres() {
               })()}
             </div>
 
-            {/* ── DESCRIPTION — pleine largeur sous la ligne haute ── */}
+            {/* ── DESCRIPTION — alignée avec la colonne centrale ── */}
             {(() => {
               const desc = modeRelie ? (popupItem.description_relie || popupItem.description) : popupItem.description;
               return desc ? (
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px' }}>{desc}</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px', paddingLeft: '128px' }}>{desc}</p>
               ) : null;
             })()}
 
