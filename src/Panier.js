@@ -101,29 +101,7 @@ function IndicateurEtapes({ etape, isMobile }) {
   );
 }
 
-// ─── Champ formulaire réutilisable ────────────────────────────────────────────
-function ChampFormulaire({ label, obligatoire, type = 'text', value, onChange, placeholder, autoComplete }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-      <label style={{ color: obligatoire ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: obligatoire ? '600' : 'normal' }}>
-        {label}{obligatoire && <span style={{ color: '#ff3eb5', marginLeft: '3px' }}>*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        style={{
-          background: 'rgba(255,255,255,0.06)',
-          border: `1px solid ${value.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`,
-          borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none',
-          transition: 'border-color .2s',
-        }}
-      />
-    </div>
-  );
-}
+
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
@@ -852,15 +830,18 @@ function EtapeConfirmation({ infos, isMobile }) {
       {/* Message de remerciement */}
       <div style={{ textAlign: 'center', maxWidth: '440px' }}>
         <h2 style={{ color: '#00d4d4', fontSize: isMobile ? '20px' : '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-          {prenom ? `Merci ${prenom} !` : 'Commande confirmée !'}
+          Merci {prenom} !
         </h2>
         <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.18)', borderRadius: '16px', padding: '20px 24px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', lineHeight: '1.85' }}>
-            {prenom ? `Merci ${prenom}` : 'Merci'} pour ta confiance et ton soutien.<br />
-            Chaque achat compte vraiment et m'aide à continuer à créer et à partager mon univers avec vous.<br />
-            J'espère que mes créations t'apporteront autant de bonheur à colorier qu'à moi à les dessiner.<br />
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', lineHeight: '1.95' }}>
+            Ta commande vient d'arriver dans mon atelier.<br />
+            Un ou plusieurs coloriages viennent de trouver un nouveau foyer, et commencent déjà à s'imaginer entre tes mains, prêts à rencontrer tes couleurs.<br />
             <br />
-            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', fontStyle: 'italic' }}>— Kevin Teo'Art</span>
+            Merci pour ta confiance et ton soutien. Chaque commande me permet de continuer à créer de nouveaux univers et de nouvelles histoires à colorier.<br />
+            J'espère qu'ils t'accompagneront dans de beaux moments de création.<br />
+            <br />
+            À très vite.<br />
+            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', fontStyle: 'italic' }}>Kevin Teo'Art</span>
           </p>
         </div>
       </div>
