@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import { usePanier } from './PanierContext';
 import BoutonsFlottants from './BoutonsFlottants';
@@ -446,7 +446,6 @@ function EtapeConfirmation({ infos, isMobile }) {
 // ─── Page principale Panier ───────────────────────────────────────────────────
 export default function Panier() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { nbArticles, viderPanier } = usePanier();
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
