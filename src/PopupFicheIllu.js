@@ -277,8 +277,6 @@ export default function PopupFicheIllu({
 
   const dansPanier = illu ? estDansPanier('illustration', illu.id) : false;
 
-  const [confirmJai, setConfirmJai] = React.useState(false);
-
   const handleDlGratuit = async () => {
     if (dlGratuit !== 'idle' || !illu?.fichier_pdf) return;
     setDlGratuit('loading');
