@@ -295,7 +295,7 @@ function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansP
   };
   return (
     <button onClick={handleAjouter} disabled={dansPanier}
-      style={{ background: dansPanier ? 'rgba(0,212,212,0.15)' : ajoutConfirme ? 'rgba(0,212,212,0.3)' : '#ff3eb5', border: dansPanier ? '1px solid rgba(0,212,212,0.4)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#000', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s' }}>
+      style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
       {dansPanier ? '✓ Dans le panier' : ajoutConfirme ? '✓ Ajouté !' : (
         <>
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -887,7 +887,7 @@ function Livres() {
                         </div>
                       )}
                       <button onClick={() => { setPopupRelie(true); setReliePaysSaisi(''); setReliePaysFiltre([]); setRelieLuAccepte(false); }}
-                        style={{ background: 'rgba(255,210,80,1)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
+                        style={{ background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(255,210,80,0.4), inset 0 1px 0 rgba(255,255,255,0.2)' }}>
                         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
                           <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />

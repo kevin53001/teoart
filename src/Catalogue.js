@@ -812,11 +812,15 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
         {ok ? <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px' }}>🎉 Coloriage partagé ! Merci {userPseudo} !</p> : (
           <>
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px' }}>Pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
-            <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '10px', display: 'block', width: '100%' }} />
+            <label style={{ display: 'block', cursor: 'pointer', marginBottom: '14px' }}>
+              <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ display: 'none' }} />
+              <div style={{ background: coloImage ? 'linear-gradient(135deg, rgba(0,212,212,0.22), rgba(0,153,170,0.22))' : 'rgba(255,255,255,0.07)', border: `1px solid ${coloImage ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '8px 12px', color: coloImage ? '#00d4d4' : 'rgba(255,255,255,0.5)', fontSize: '11px', textAlign: 'center', transition: 'all .2s', boxShadow: coloImage ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : 'none' }}>
+                {coloImage ? `✓ ${coloImage.name}` : 'Choisir une image'}
+              </div>
+            </label>
             <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={() => handleUpload(false)} disabled={envoi} style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', opacity: envoi ? 0.6 : 1 }}>✓ Sans image</button>
-              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.8), rgba(255,160,40,0.8))' : 'rgba(255,255,255,0.04)', border: `1px solid ${coloImage ? 'transparent' : 'rgba(255,255,255,0.1)'}`, borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1 }}>🎨 Avec image</button>
+              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.9), rgba(200,130,0,0.9))' : 'rgba(255,255,255,0.04)', border: coloImage ? 'none' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1, boxShadow: coloImage ? '0 3px 10px rgba(255,210,80,0.35), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none' }}>Valider</button>
               <button onClick={onClose} style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '8px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer' }}>Annuler</button>
             </div>
           </>
