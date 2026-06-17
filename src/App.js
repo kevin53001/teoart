@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
+import { PanierProvider } from './PanierContext';
 import Connexion from './Connexion';
 import Inscription from './Inscription';
 import Selection from './Selection';
@@ -13,6 +14,7 @@ import ResetPassword from './ResetPassword';
 import Accueil from './Accueil';
 import BannerePWA from './BannerePWA';
 import SplashScreen from './SplashScreen';
+import Panier from './Panier';
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -51,22 +53,25 @@ function App() {
   );
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
-        <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
-        <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
-        <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
-        <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />
-        <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
-        <Route path="/mon-compte" element={session ? <MonCompte /> : <Navigate to="/" />} />
-        <Route path="/presentation" element={session ? <Presentation /> : <Navigate to="/" />} />
-        <Route path="/pensees" element={session ? <Pensees /> : <Navigate to="/" />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/accueil" element={session ? <Accueil /> : <Navigate to="/" />} />
-      </Routes>
-      <BannerePWA />
-    </BrowserRouter>
+    <PanierProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
+          <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
+          <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
+          <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
+          <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />
+          <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
+          <Route path="/mon-compte" element={session ? <MonCompte /> : <Navigate to="/" />} />
+          <Route path="/presentation" element={session ? <Presentation /> : <Navigate to="/" />} />
+          <Route path="/pensees" element={session ? <Pensees /> : <Navigate to="/" />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/accueil" element={session ? <Accueil /> : <Navigate to="/" />} />
+          <Route path="/panier" element={session ? <Panier /> : <Navigate to="/" />} />
+        </Routes>
+        <BannerePWA />
+      </BrowserRouter>
+    </PanierProvider>
   );
 }
 
