@@ -280,8 +280,7 @@ function Catalogue() {
     const SOUS_CAT_KAWAII = ['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'];
     if (sousCategorie) {
       if (SOUS_CAT_KAWAII.includes(sousCategorie)) {
-        // Filtre sous-catégorie Kawaii/Chibi
-        if (i.categorie !== 'Kawaii/Chibi') return false;
+        // Filtre sous-catégorie Kawaii/Chibi (sans contrainte sur categorie principale)
         if (i.sous_categorie_kawaii !== sousCategorie) return false;
       } else {
         // Filtre Patreon : chercher dans sous_categorie_patreon
