@@ -98,7 +98,7 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             </svg>
           </div>
         )}
-        <div className="badge-panier-v" onClick={e => e.stopPropagation()} title="Ajouter au panier">
+        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onClick && onClick(); }} title="Voir la fiche">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
@@ -274,6 +274,14 @@ function Livres() {
   const [illustrationsOuvertes, setIllustrationsOuvertes] = React.useState([]);
   const [loadingIllus, setLoadingIllus] = React.useState(false);
 
+  // Version reliée
+  const [modeRelie, setModeRelie] = React.useState(false);
+  const [userPays, setUserPays] = React.useState('');
+  const [popupRelie, setPopupRelie] = React.useState(false);
+  const [reliePaysSaisi, setReliePaysSaisi] = React.useState('');
+  const [reliePaysFiltre, setReliePaysFiltre] = React.useState([]);
+  const [relieLuAccepte, setRelieLuAccepte] = React.useState(false);
+
   // Popup fiche illustration
   const [popupIllu, setPopupIllu] = React.useState(null);
   const [popupIlluListe, setPopupIlluListe] = React.useState([]);
@@ -302,11 +310,12 @@ function Livres() {
       if (!user) { navigate('/'); return; }
       setUserId(user.id);
 
-      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+      const { data: profil } = await supabase.from('profils').select('pseudo, pays').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
+      if (profil?.pays) setUserPays(profil.pays);
 
-      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, description').eq('statut', 'published').order('annee', { ascending: false });
-      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, description').in('statut', ['published', 'dossier']).order('nom');
+      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, description, relie_disponible, statut_relie, prix_relie, description_relie').eq('statut', 'published').order('annee', { ascending: false });
+      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, description, relie_disponible, statut_relie, prix_relie, description_relie').in('statut', ['published', 'dossier']).order('nom');
 
       // Toutes les illustrations pour la PopupFiche (similaires)
       const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
@@ -357,7 +366,7 @@ function Livres() {
           }
         } else {
           const livreTrouve = (l || []).find(li => li.id === item.id);
-          if (livreTrouve) { setPopupItem(livreTrouve); setPopupType('livre'); }
+          if (livreTrouve) { setPopupItem(livreTrouve); setPopupType('livre'); setModeRelie(false); }
         }
       }
     };
@@ -367,7 +376,7 @@ function Livres() {
   const ouvrirRecueil = async (recueil) => {
     const livresDuRecueil = tousLesLivres.filter(l => l.recueils_ids && l.recueils_ids.includes(recueil.id));
     setContenuPopup(livresDuRecueil); setPopupItem(recueil); setPopupType('recueil');
-    setItemOuvert(null); setIllustrationsOuvertes([]);
+    setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false);
     const key = `recueil_${recueil.id}`;
     if (!collection[key]?.j_ai) {
       const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [recueil.id]);
@@ -645,7 +654,7 @@ function Livres() {
                     jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(l.id, 'livre')}
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
-                    onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); }} />
+                    onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }} />
                 ))}
                 {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-l-${i}`} style={{ width: `${TAILLE_LIVRE}px`, height: 0 }} />)}
               </div>
@@ -666,24 +675,65 @@ function Livres() {
 
       {/* ── POPUP RECUEIL OU LIVRE ── */}
       {popupItem && (
-        <div onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div onClick={() => { setPopupItem(null); setItemOuvert(null); setModeRelie(false); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} className="popup-anim"
             style={{ background: '#111', border: `1px solid ${popupType === 'recueil' ? 'rgba(0,212,212,0.3)' : 'rgba(255,210,80,0.25)'}`, borderRadius: '20px', maxWidth: '860px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative', padding: '24px' }}>
 
-            <button onClick={() => { setPopupItem(null); setItemOuvert(null); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+            <button onClick={() => { setPopupItem(null); setItemOuvert(null); setModeRelie(false); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
 
             <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
               <VisuelsItem item={popupItem} />
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                {/* Label type */}
                 <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
                   {popupType === 'recueil' ? 'Recueil' : 'Livre'}
                 </p>
-                <p style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{popupItem.nom}</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '12px' }}>
-                  {popupItem.annee}{popupItem.prix ? ` · ${popupItem.prix} €` : ''}
+                {/* Nom */}
+                <p style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>{popupItem.nom}</p>
+
+                {/* ── PRIX bien visible ── */}
+                {!modeRelie ? (
+                  popupItem.prix ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', background: 'rgba(255,62,181,0.12)', border: '1px solid rgba(255,62,181,0.35)', borderRadius: '10px', padding: '6px 14px', marginBottom: '10px' }}>
+                      <span style={{ color: '#ff3eb5', fontSize: '26px', fontWeight: 'bold' }}>{popupItem.prix}</span>
+                      <span style={{ color: 'rgba(255,62,181,0.7)', fontSize: '15px', fontWeight: 'bold' }}>€</span>
+                      <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version PDF</span>
+                    </div>
+                  ) : null
+                ) : (
+                  (() => {
+                    const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                    const paysActif = userPays || reliePaysSaisi;
+                    const infoPays = paysActif && prixData ? (prixData[paysActif] || null) : null;
+                    return (
+                      <div style={{ marginBottom: '10px' }}>
+                        {infoPays ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '10px', padding: '6px 14px' }}>
+                            <span style={{ color: 'rgba(255,210,80,1)', fontSize: '26px', fontWeight: 'bold' }}>{infoPays.prix}</span>
+                            <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '15px', fontWeight: 'bold' }}>{infoPays.symbole || '€'}</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version Reliée</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '10px', padding: '6px 14px' }}>
+                            <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '18px', fontWeight: 'bold' }}>Prix variable</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px' }}>selon le pays</span>
+                          </div>
+                        )}
+                        <p style={{ color: 'rgba(255,210,80,0.6)', fontSize: '11px', marginTop: '6px' }}>📦 Délai estimé : entre 7 jours et 3 semaines selon le pays</p>
+                        {infoPays && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '2px' }}>⏱ Pour votre pays : {infoPays.delai}</p>}
+                      </div>
+                    );
+                  })()
+                )}
+
+                {/* ── Infos secondaires ── */}
+                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', marginBottom: '12px' }}>
+                  {popupItem.annee}
                   {popupType === 'recueil' ? ` · ${contenuPopup.length} livre${contenuPopup.length > 1 ? 's' : ''}` : ''}
                 </p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+
+                {/* ── Boutons J'ai / Je veux ── */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
                   <button onClick={() => toggleJAi(popupItem.id, popupType)}
                     style={{ background: collection[`${popupType}_${popupItem.id}`]?.j_ai ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: collection[`${popupType}_${popupItem.id}`]?.j_ai ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: collection[`${popupType}_${popupItem.id}`]?.j_ai ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
                     {collection[`${popupType}_${popupItem.id}`]?.j_ai ? "✓ J'ai" : "✕ J'ai"}
@@ -698,17 +748,73 @@ function Livres() {
                     </svg>
                     Je veux
                   </button>
-                  <button style={{ background: '#ff3eb5', border: 'none', borderRadius: '8px', padding: '6px 12px', color: '#000', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
-                      <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                    </svg>
-                    Panier
-                  </button>
                 </div>
-                {popupItem.description && (
-                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '12px' }}>{popupItem.description}</p>
-                )}
+
+                {/* ── Double bouton panier + coches PDF/Relié ── */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {/* Bouton PDF */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={() => { if (!modeRelie) { /* ajouter au panier PDF */ } }}
+                      style={{ background: !modeRelie ? '#ff3eb5' : 'rgba(255,62,181,0.25)', border: !modeRelie ? 'none' : '1px solid rgba(255,62,181,0.3)', borderRadius: '8px', padding: '8px 14px', color: !modeRelie ? '#000' : 'rgba(255,62,181,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: !modeRelie ? 1 : 0.5 }}>
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
+                        <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                      </svg>
+                      PDF
+                    </button>
+                    {/* Coche PDF */}
+                    <div onClick={() => setModeRelie(false)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: !modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: !modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: !modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
+                      <div style={{ position: 'absolute', top: '2px', left: !modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: !modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: !modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
+                    </div>
+                  </div>
+
+                  {/* Bouton Relié (si disponible) */}
+                  {popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        onClick={() => { if (modeRelie) setPopupRelie(true); }}
+                        style={{ background: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: modeRelie ? 'none' : '1px solid rgba(255,210,80,0.35)', borderRadius: '8px', padding: '8px 14px', color: modeRelie ? '#000' : 'rgba(255,210,80,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: modeRelie ? 1 : 0.5 }}>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
+                          <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                        </svg>
+                        Relié
+                      </button>
+                      {/* Coche Relié */}
+                      <div onClick={() => setModeRelie(true)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
+                        <div style={{ position: 'absolute', top: '2px', left: modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description selon mode */}
+                {(() => {
+                  const desc = modeRelie ? (popupItem.description_relie || popupItem.description) : popupItem.description;
+                  return desc ? (
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px' }}>{desc}</p>
+                  ) : null;
+                })()}
+
+                {/* Disponibilité reliée si mode relié */}
+                {modeRelie && (() => {
+                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                  if (!prixData) return null;
+                  const zones = Object.keys(prixData);
+                  return (
+                    <div style={{ marginTop: '12px', background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
+                      <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', marginBottom: '6px' }}>📦 Pays disponibles :</p>
+                      {zones.map(z => (
+                        <div key={z} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>{z}</span>
+                          <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px' }}>{prixData[z].prix} {prixData[z].symbole || '€'} · {prixData[z].delai}</span>
+                        </div>
+                      ))}
+                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '6px' }}>Monaco, Andorre et Suisse exclus de la Zone Euro.</p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -836,6 +942,163 @@ function Livres() {
           </div>
         </div>
       )}
+      {/* ── POPUP COMMANDE RELIÉE ── */}
+      {popupRelie && popupItem && (
+        <div onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} className="popup-anim"
+            style={{ background: '#111', border: '1px solid rgba(255,210,80,0.35)', borderRadius: '20px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '28px 28px 24px', position: 'relative' }}>
+            <button onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+
+            <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', paddingRight: '24px' }}>
+              📚 Comment se déroule la commande d'un livre relié ?
+            </p>
+
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', lineHeight: '1.8' }}>
+                Lorsque vous commandez un livre relié sur la boutique, je m'occupe personnellement du suivi de votre commande du début à la fin.
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', lineHeight: '1.8', marginTop: '10px' }}>
+                Une fois votre commande enregistrée, je transmets les informations nécessaires à Amazon, qui assure l'impression à la demande et l'expédition du livre. Vous recevrez ensuite les informations de suivi dès qu'elles seront disponibles.
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', lineHeight: '1.8', marginTop: '10px' }}>
+                En cas de problème (colis perdu, livre endommagé, erreur d'impression, etc.), il vous suffit de me contacter directement. Je me charge des démarches auprès d'Amazon afin de trouver la solution la plus adaptée à votre situation.
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px', lineHeight: '1.8', marginTop: '10px' }}>
+                Vous bénéficiez ainsi d'un interlocuteur unique tout au long du processus, sans avoir à gérer vous-même les échanges avec Amazon. Cela me permet également de suivre personnellement chaque commande et de vous accompagner si nécessaire.
+              </p>
+            </div>
+
+            {/* Pays */}
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginBottom: '6px' }}>🌍 Votre pays de résidence</p>
+              {userPays ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ background: 'rgba(0,212,212,0.1)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '8px 14px', color: '#00d4d4', fontSize: '13px', fontWeight: 'bold', flex: 1 }}>
+                    {userPays}
+                  </div>
+                  <button onClick={() => setUserPays('')} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 10px', color: 'rgba(255,255,255,0.4)', fontSize: '11px', cursor: 'pointer' }}>Modifier</button>
+                </div>
+              ) : (
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={reliePaysSaisi}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setReliePaysSaisi(val);
+                      if (val.length >= 2) {
+                        const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : {};
+                        const zones = Object.keys(prixData);
+                        // Liste complète de pays mappés vers leurs zones
+                        const PAYS_ZONES = {
+                          'France': 'France', 'Belgique': 'Belgique',
+                          'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                          'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                          'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                          'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                          'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                          'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
+                          'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
+                          'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
+                          'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
+                          'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
+                          'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
+                          'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
+                        };
+                        const correspondants = Object.keys(PAYS_ZONES).filter(p => p.toLowerCase().startsWith(val.toLowerCase()) && zones.includes(PAYS_ZONES[p]));
+                        setReliePaysFiltre(correspondants);
+                      } else {
+                        setReliePaysFiltre([]);
+                      }
+                    }}
+                    placeholder="Tapez votre pays (ex: France, Belgique...)"
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '13px', fontFamily: 'inherit', outline: 'none' }}
+                  />
+                  {reliePaysFiltre.length > 0 && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a1a', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', zIndex: 10, marginTop: '2px', overflow: 'hidden' }}>
+                      {reliePaysFiltre.map(p => (
+                        <button key={p} onClick={() => { setReliePaysSaisi(p); setReliePaysFiltre([]); }}
+                          style={{ display: 'block', width: '100%', padding: '9px 14px', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.8)', fontSize: '13px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,210,80,0.1)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Prix selon pays saisi */}
+              {(() => {
+                const paysCheck = userPays || reliePaysSaisi;
+                if (!paysCheck || reliePaysFiltre.length > 0) return null;
+                const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                if (!prixData) return null;
+                // Chercher la zone correspondante
+                const PAYS_ZONES = {
+                  'France': 'France', 'Belgique': 'Belgique',
+                  'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                  'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                  'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                  'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                  'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                  'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
+                  'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
+                  'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
+                  'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
+                  'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
+                  'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
+                  'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
+                };
+                const zoneKey = prixData[paysCheck] ? paysCheck : PAYS_ZONES[paysCheck];
+                const info = zoneKey ? prixData[zoneKey] : null;
+                if (info) return (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '8px', padding: '8px 12px' }}>
+                    <span style={{ color: 'rgba(255,210,80,1)', fontSize: '20px', fontWeight: 'bold' }}>{info.prix} {info.symbole || '€'}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>· délai estimé : {info.delai}</span>
+                  </div>
+                );
+                return <p style={{ color: 'rgba(255,100,100,0.7)', fontSize: '11px', marginTop: '6px' }}>⚠️ La commande n'est pas disponible dans votre pays pour l'instant.</p>;
+              })()}
+            </div>
+
+            {/* Case lu et accepté */}
+            <div onClick={() => setRelieLuAccepte(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '20px', padding: '10px 12px', background: relieLuAccepte ? 'rgba(0,212,212,0.08)' : 'rgba(255,255,255,0.04)', border: `1px solid ${relieLuAccepte ? 'rgba(0,212,212,0.35)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '10px', transition: 'all .2s' }}>
+              <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${relieLuAccepte ? '#00d4d4' : 'rgba(255,255,255,0.3)'}`, background: relieLuAccepte ? '#00d4d4' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .2s', boxShadow: relieLuAccepte ? '0 0 6px rgba(0,212,212,0.5)' : 'none' }}>
+                {relieLuAccepte && <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold' }}>✓</span>}
+              </div>
+              <span style={{ color: relieLuAccepte ? '#00d4d4' : 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.5' }}>
+                J'ai lu et j'accepte les conditions de commande d'un livre relié.
+              </span>
+            </div>
+
+            {/* Boutons Annuler / Valider */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }}
+                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Annuler
+              </button>
+              <button
+                disabled={!relieLuAccepte || (!(userPays || reliePaysSaisi))}
+                onClick={async () => {
+                  const paysChoisi = userPays || reliePaysSaisi;
+                  // Sauvegarder le pays dans Mes Infos si pas déjà renseigné
+                  if (!userPays && paysChoisi && userId) {
+                    await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                    setUserPays(paysChoisi);
+                  }
+                  // TODO: logique d'ajout au panier reliée
+                  setPopupRelie(false);
+                  setRelieLuAccepte(false);
+                }}
+                style={{ background: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '#000' : 'rgba(255,210,80,0.3)', fontWeight: 'bold', fontSize: '13px', cursor: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'pointer' : 'default', fontFamily: 'inherit', transition: 'all .2s' }}>
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BandeLegale />
       <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </div>
