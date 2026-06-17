@@ -278,8 +278,7 @@ export default function PopupFicheIllu({
   const dansPanier = illu ? estDansPanier('illustration', illu.id) : false;
 
   const handleDlGratuit = async () => {
-    console.log('FREE clic — dlGratuit:', dlGratuit, '| fichier_pdf:', illu?.fichier_pdf, '| prix:', illu?.prix, '| userId:', userId);
-    if (dlGratuit !== 'idle' || !illu?.fichier_pdf) { console.log('BLOQUÉ ici'); return; }
+    if (dlGratuit !== 'idle' || !illu?.fichier_pdf) return;
     setDlGratuit('loading');
     try {
       const resp = await fetch('/api/download-free', {

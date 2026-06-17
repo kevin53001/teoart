@@ -526,7 +526,6 @@ function Livres() {
     setItemOuvert(livre); setLoadingIllus(true); setIllustrationsOuvertes([]);
     const { data } = await supabase.from('illustrations').select('id, nom, visuels, annee, prix, fichier_pdf, categorie, description, tags, livres_ids, recueils_ids').eq('statut', 'published').contains('livres_ids', [livre.id]).order('nom');
     const illus = data || [];
-    console.log('illustrationsOuvertes sample:', illus[0]);
     setIllustrationsOuvertes(illus); setLoadingIllus(false);
     if (illus.length > 0) {
       const key = `livre_${livre.id}`;
@@ -1361,7 +1360,7 @@ function PopupContenuLivre({ livre, taille, collectionIllus, coloriages, onToggl
 
   React.useEffect(() => {
     supabase.from('illustrations')
-      .select('id, nom, visuels, annee, prix, categorie, description, tags, livres_ids, recueils_ids')
+      .select('id, nom, visuels, annee, prix, fichier_pdf, categorie, description, tags, livres_ids, recueils_ids')
       .eq('statut', 'published')
       .contains('livres_ids', [livre.id])
       .order('nom')
