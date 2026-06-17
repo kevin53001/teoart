@@ -447,7 +447,7 @@ function Livres() {
       const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, fichier_pdf, description, relie_disponible, statut_relie, prix_relie, description_relie').in('statut', ['published', 'dossier']).order('nom');
 
       // Toutes les illustrations pour la PopupFiche (similaires)
-      const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
+      const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
       setToutes(illus || []);
 
       setRecueils(r || []);
@@ -524,7 +524,7 @@ function Livres() {
   const ouvrirLivre = async (livre) => {
     if (itemOuvert?.id === livre.id) { setItemOuvert(null); setIllustrationsOuvertes([]); return; }
     setItemOuvert(livre); setLoadingIllus(true); setIllustrationsOuvertes([]);
-    const { data } = await supabase.from('illustrations').select('id, nom, visuels, annee, prix, categorie, description, tags, livres_ids, recueils_ids').eq('statut', 'published').contains('livres_ids', [livre.id]).order('nom');
+    const { data } = await supabase.from('illustrations').select('id, nom, visuels, annee, prix, fichier_pdf, categorie, description, tags, livres_ids, recueils_ids').eq('statut', 'published').contains('livres_ids', [livre.id]).order('nom');
     const illus = data || [];
     setIllustrationsOuvertes(illus); setLoadingIllus(false);
     if (illus.length > 0) {
