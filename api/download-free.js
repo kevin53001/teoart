@@ -34,9 +34,11 @@ module.exports = async (req, res) => {
     }
 
     // Générer URL signée R2 (valable 60 secondes)
+    const nomFichier = fichierPdf.split('/').pop();
     const command = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: fichierPdf,
+      ResponseContentDisposition: `attachment; filename="${nomFichier}"`,
     });
     const url = await getSignedUrl(s3, command, { expiresIn: 60 });
 
