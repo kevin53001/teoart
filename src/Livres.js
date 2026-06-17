@@ -246,6 +246,39 @@ function SectionTitre({ couleur, label }) {
   );
 }
 
+const PAYS_ZONES = {
+  'france': 'France', 'belgique': 'Belgique',
+  'allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+  'espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+  'italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+  'portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+  'pays-bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+  'autriche': 'Zone Euro — autres pays', 'finlande': 'Zone Euro — autres pays',
+  'grèce': 'Zone Euro — autres pays', 'grece': 'Zone Euro — autres pays',
+  'irlande': 'Zone Euro — autres pays', 'luxembourg': 'Zone Euro — autres pays',
+  'malte': 'Zone Euro — autres pays', 'slovaquie': 'Zone Euro — autres pays',
+  'slovénie': 'Zone Euro — autres pays', 'slovenie': 'Zone Euro — autres pays',
+  'estonie': 'Zone Euro — autres pays', 'lettonie': 'Zone Euro — autres pays',
+  'lituanie': 'Zone Euro — autres pays', 'chypre': 'Zone Euro — autres pays',
+  'croatie': 'Zone Euro — autres pays', 'grande-bretagne': 'Zone Euro — autres pays',
+};
+
+// Résout un pays (quelle que soit la casse) vers la clé de zone dans prix_relie
+function resoudrePays(pays, prixData) {
+  if (!pays || !prixData) return null;
+  const zones = Object.keys(prixData);
+  // 1. Correspondance directe insensible à la casse
+  const directe = zones.find(z => z.toLowerCase() === pays.toLowerCase());
+  if (directe) return directe;
+  // 2. Via le mapping PAYS_ZONES
+  const zoneViaMap = PAYS_ZONES[pays.toLowerCase()];
+  if (zoneViaMap) {
+    const trouvee = zones.find(z => z.toLowerCase() === zoneViaMap.toLowerCase());
+    if (trouvee) return trouvee;
+  }
+  return null;
+}
+
 function Livres() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -705,24 +738,9 @@ function Livres() {
                 ) : (
                   (() => {
                     const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                    const PAYS_ZONES_FICHE = {
-                      'France': 'France', 'Belgique': 'Belgique',
-                      'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                      'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                      'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                      'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                      'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                      'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
-                      'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
-                      'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
-                      'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
-                      'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
-                      'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
-                      'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
-                    };
                     const paysActif = userPays;
-                    const zoneKey = paysActif && prixData ? (prixData[paysActif] ? paysActif : PAYS_ZONES_FICHE[paysActif]) : null;
-                    const infoPays = zoneKey && prixData ? (prixData[zoneKey] || null) : null;
+                    const zoneKey = resoudrePays(paysActif, prixData);
+                    const infoPays = zoneKey ? prixData[zoneKey] : null;
                     return (
                       <div style={{ marginBottom: '10px' }}>
                         {infoPays ? (
@@ -1010,24 +1028,10 @@ function Livres() {
                       if (val.length >= 2) {
                         const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : {};
                         const zones = Object.keys(prixData);
-                        // Liste complète de pays mappés vers leurs zones
-                        const PAYS_ZONES = {
-                          'France': 'France', 'Belgique': 'Belgique',
-                          'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                          'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                          'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                          'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                          'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                          'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
-                          'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
-                          'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
-                          'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
-                          'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
-                          'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
-                          'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
-                        };
-                        const correspondants = Object.keys(PAYS_ZONES).filter(p => p.toLowerCase().startsWith(val.toLowerCase()) && zones.includes(PAYS_ZONES[p]));
-                        setReliePaysFiltre(correspondants);
+                        const correspondants = Object.keys(PAYS_ZONES).filter(p => p.startsWith(val.toLowerCase()) && zones.includes(PAYS_ZONES[p]));
+                        // Afficher avec la casse correcte (première lettre maj)
+                        const correspondantsAffiches = correspondants.map(p => p.charAt(0).toUpperCase() + p.slice(1));
+                        setReliePaysFiltre(correspondantsAffiches);
                       } else {
                         setReliePaysFiltre([]);
                       }
@@ -1055,23 +1059,7 @@ function Livres() {
                 if (!paysCheck || reliePaysFiltre.length > 0) return null;
                 const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
                 if (!prixData) return null;
-                // Chercher la zone correspondante
-                const PAYS_ZONES = {
-                  'France': 'France', 'Belgique': 'Belgique',
-                  'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                  'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                  'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                  'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                  'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
-                  'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
-                  'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
-                  'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
-                  'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
-                  'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
-                  'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
-                  'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
-                };
-                const zoneKey = prixData[paysCheck] ? paysCheck : PAYS_ZONES[paysCheck];
+                const zoneKey = resoudrePays(paysCheck, prixData);
                 const info = zoneKey ? prixData[zoneKey] : null;
                 if (info) return (
                   <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '8px', padding: '8px 12px' }}>
