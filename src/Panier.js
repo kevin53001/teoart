@@ -103,38 +103,22 @@ function IndicateurEtapes({ etape, isMobile }) {
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
-  const { articles, reductions, supprimerArticle, setBadgesFans } = usePanier();
+  const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
 
-  // Chargement des badges fans depuis Supabase
+  // Chargement de la promo badge active depuis Supabase
   React.useEffect(() => {
-    const chargerBadges = async () => {
+    const chargerPromo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: profil } = await supabase.from('profils').select('badges').eq('id', user.id).single();
-      if (!profil?.badges) return;
-      const badges = profil.badges; // objet { illustrations: [...], livres: [...], recueils: [...] }
-      // Définition des taux par badge (du plus haut au plus bas)
-      const NIVEAUX = [
-        { nom: 'Fan Platine', taux: 0.20 },
-        { nom: 'Fan Or', taux: 0.15 },
-        { nom: 'Fan Argent', taux: 0.10 },
-        { nom: 'Fan Bronze', taux: 0.05 },
-      ];
-      const meilleurBadge = (listeBadges) => {
-        if (!listeBadges || listeBadges.length === 0) return null;
-        for (const niveau of NIVEAUX) {
-          if (listeBadges.includes(niveau.nom)) return { nomBadge: niveau.nom, taux: niveau.taux };
-        }
-        return null;
-      };
-      setBadgesFans({
-        illustrations: meilleurBadge(badges.illustrations),
-        livres: meilleurBadge(badges.livres),
-        recueils: meilleurBadge(badges.recueils),
-      });
+      const { data: profil } = await supabase.from('profils')
+        .select('promo_badge_active')
+        .eq('id', user.id).single();
+      if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
+        setPromoBadge(profil.promo_badge_active);
+      }
     };
-    chargerBadges();
-  }, [setBadgesFans]);
+    chargerPromo();
+  }, [setPromoBadge]);
 
   const labelType = (type) => {
     if (type === 'illustration') return { label: 'Illustration', couleur: '#ff3eb5' };
@@ -155,10 +139,10 @@ function EtapePanier({ onContinuer, isMobile }) {
   }
 
   const sections = [
-    { type: 'illustration', titre: 'Illustrations', taux: reductions.tauxIllus, tauxBadge: reductions.tauxBadgeIllus, total: reductions.totalIllus, totalBrut: reductions.totalIllusBrut, message: reductions.messageIllus, explication: reductions.explicationIllus, explicationBadge: reductions.explicationBadgeIllus },
-    { type: 'livre_pdf', titre: 'Livres PDF', taux: reductions.tauxLivres, tauxBadge: reductions.tauxBadgeLivres, total: reductions.totalLivres, totalBrut: reductions.totalLivresBrut, message: reductions.messageLivres, explication: reductions.explicationLivres, explicationBadge: reductions.explicationBadgeLivres },
-    { type: 'recueil', titre: 'Recueils', taux: reductions.tauxRecueils, tauxBadge: reductions.tauxBadgeRecueils, total: reductions.totalRecueils, totalBrut: reductions.totalRecueilsBrut, message: reductions.messageRecueils, explication: reductions.explicationRecueils, explicationBadge: reductions.explicationBadgeRecueils },
-    { type: 'relie', titre: 'Versions Reliées', taux: 0, tauxBadge: 0, total: reductions.totalRelies, totalBrut: reductions.totalReliesBrut, message: null, explication: null, explicationBadge: null },
+    { type: 'illustration', titre: 'Illustrations', taux: reductions.tauxIllus, total: reductions.totalIllus, totalBrut: reductions.totalIllusBrut, message: reductions.messageIllus, explication: reductions.explicationIllus },
+    { type: 'livre_pdf', titre: 'Livres PDF', taux: reductions.tauxLivres, total: reductions.totalLivres, totalBrut: reductions.totalLivresBrut, message: reductions.messageLivres, explication: reductions.explicationLivres },
+    { type: 'recueil', titre: 'Recueils', taux: reductions.tauxRecueils, total: reductions.totalRecueils, totalBrut: reductions.totalRecueilsBrut, message: reductions.messageRecueils, explication: reductions.explicationRecueils },
+    { type: 'relie', titre: 'Versions Reliées', taux: 0, total: reductions.totalRelies, totalBrut: reductions.totalReliesBrut, message: null, explication: null },
   ];
 
   return (
@@ -170,18 +154,11 @@ function EtapePanier({ onContinuer, isMobile }) {
           <div key={section.type}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>{section.titre}</h3>
-              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {section.taux > 0 && (
-                  <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>
-                    −{Math.round(section.taux * 100)}% appliqué
-                  </span>
-                )}
-                {section.tauxBadge > 0 && (
-                  <span style={{ background: 'rgba(255,210,80,0.15)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '20px', padding: '2px 10px', color: 'rgba(255,210,80,0.95)', fontSize: '12px', fontWeight: 'bold' }}>
-                    🏅 −{Math.round(section.tauxBadge * 100)}% badge
-                  </span>
-                )}
-              </div>
+              {section.taux > 0 && (
+                <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>
+                  −{Math.round(section.taux * 100)}% appliqué
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -225,12 +202,6 @@ function EtapePanier({ onContinuer, isMobile }) {
               </div>
             )}
 
-            {section.explicationBadge && (
-              <div style={{ background: 'rgba(255,210,80,0.07)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
-                <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px' }}>🏅 {section.explicationBadge}</p>
-              </div>
-            )}
-
             {section.message && (
               <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
                 <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {section.message}</p>
@@ -239,6 +210,30 @@ function EtapePanier({ onContinuer, isMobile }) {
           </div>
         );
       })}
+
+      {/* Sous-total après paliers si badge actif */}
+      {reductions.tauxBadgeTotal > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Sous-total après réductions</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{reductions.totalApresPaliers.toFixed(2)} €</span>
+        </div>
+      )}
+
+      {/* Bloc promo badge */}
+      {reductions.explicationBadge && (
+        <div style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.08), rgba(255,62,181,0.06))', border: '1px solid rgba(255,210,80,0.35)', borderRadius: '12px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'rgba(255,210,80,0.95)', fontSize: '12px', fontWeight: 'bold' }}>🏅 Réduction badge</span>
+            <span style={{ color: '#ff3eb5', fontSize: '14px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxBadgeTotal * 100)}%</span>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: 1.5 }}>{reductions.explicationBadge.texte}</p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '2px' }}>
+            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{reductions.totalApresPaliers.toFixed(2)} €</span>
+            <span style={{ color: '#ff3eb5', fontSize: '13px', fontWeight: 'bold' }}>−{reductions.remiseBadge.toFixed(2)} €</span>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontStyle: 'italic' }}>Valable une seule fois — sera consommée à la validation du paiement.</p>
+        </div>
+      )}
 
       {/* Total général */}
       <div style={{ background: 'rgba(255,62,181,0.06)', border: '1px solid rgba(255,62,181,0.2)', borderRadius: '14px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -333,11 +328,17 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
           );
         })}
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
-        {(reductions.tauxIllus > 0 || reductions.tauxLivres > 0 || reductions.tauxRecueils > 0) && (
+        {(reductions.tauxIllus > 0 || reductions.tauxLivres > 0 || reductions.tauxRecueils > 0 || reductions.tauxBadgeTotal > 0) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {reductions.tauxIllus > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction illustrations (−{Math.round(reductions.tauxIllus * 100)}%)</span><span style={{ color: '#00d4d4', fontSize: '12px' }}>−{(reductions.totalIllusBrut - reductions.totalIllus).toFixed(2)} €</span></div>}
             {reductions.tauxLivres > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction livres PDF (−{Math.round(reductions.tauxLivres * 100)}%)</span><span style={{ color: '#00d4d4', fontSize: '12px' }}>−{(reductions.totalLivresBrut - reductions.totalLivres).toFixed(2)} €</span></div>}
             {reductions.tauxRecueils > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction recueils (−{Math.round(reductions.tauxRecueils * 100)}%)</span><span style={{ color: '#00d4d4', fontSize: '12px' }}>−{(reductions.totalRecueilsBrut - reductions.totalRecueils).toFixed(2)} €</span></div>}
+            {reductions.tauxBadgeTotal > 0 && reductions.explicationBadge && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                <span style={{ color: 'rgba(255,210,80,0.85)', fontSize: '12px', flex: 1 }}>🏅 {reductions.explicationBadge.detail} (−{Math.round(reductions.tauxBadgeTotal * 100)}% sur sous-total)</span>
+                <span style={{ color: '#ff3eb5', fontSize: '12px', flexShrink: 0 }}>−{reductions.remiseBadge.toFixed(2)} €</span>
+              </div>
+            )}
             <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
           </div>
         )}
@@ -528,7 +529,17 @@ export default function Panier() {
     charger();
   }, []);
 
-  const handleSuccesPaiement = (paymentIntentId) => {
+  const handleSuccesPaiement = async (paymentIntentId) => {
+    // Consommer la promo badge si elle était active
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profil } = await supabase.from('profils').select('promo_badge_active').eq('id', user.id).single();
+        if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
+          await supabase.from('profils').update({ promo_badge_active: {} }).eq('id', user.id);
+        }
+      }
+    } catch {}
     viderPanier();
     setEtape(5);
   };

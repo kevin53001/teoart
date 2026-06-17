@@ -4,7 +4,7 @@ export const PanierContext = React.createContext();
 
 // ─── Calcul des réductions ────────────────────────────────────────────────────
 
-function calcReductions(articles, badgesFans = {}) {
+function calcReductions(articles, promoBadge = {}) {
   const illus    = articles.filter(a => a.type === 'illustration');
   const livres   = articles.filter(a => a.type === 'livre_pdf');
   const recueils = articles.filter(a => a.type === 'recueil');
@@ -14,86 +14,77 @@ function calcReductions(articles, badgesFans = {}) {
   const nbLivres   = livres.reduce((s, a) => s + a.quantite, 0);
   const nbRecueils = recueils.reduce((s, a) => s + a.quantite, 0);
 
-  // Taux paliers
+  // ── Paliers ──
   let tauxIllus = 0;
   if (nbIllus >= 10) tauxIllus = 0.35;
   else if (nbIllus >= 6) tauxIllus = 0.25;
   else if (nbIllus >= 3) tauxIllus = 0.15;
-
   const tauxLivres   = nbLivres >= 2 ? 0.15 : 0;
   const tauxRecueils = nbRecueils >= 2 ? 0.20 : 0;
 
-  // Totaux bruts
+  // ── Totaux bruts ──
   const totalIllusBrut    = illus.reduce((s, a) => s + a.prix * a.quantite, 0);
   const totalLivresBrut   = livres.reduce((s, a) => s + a.prix * a.quantite, 0);
   const totalRecueilsBrut = recueils.reduce((s, a) => s + a.prix * a.quantite, 0);
   const totalReliesBrut   = relies.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
 
-  // Totaux après réduction paliers
+  // ── Après paliers ──
   const totalIllus    = totalIllusBrut * (1 - tauxIllus);
   const totalLivres   = totalLivresBrut * (1 - tauxLivres);
   const totalRecueils = totalRecueilsBrut * (1 - tauxRecueils);
   const totalRelies   = totalReliesBrut;
+  const totalApresPaliers = totalIllus + totalLivres + totalRecueils + totalRelies;
 
-  // ── Badges fans ──
-  // badgesFans = { illustrations: { nomBadge: 'Fan Bronze', taux: 0.05 }, livres: {...}, recueils: {...} }
-  const badgeIllus    = badgesFans.illustrations || null;
-  const badgeLivres   = badgesFans.livres || null;
-  const badgeRecueils = badgesFans.recueils || null;
+  // ── Badges (cumul direct fan + colo, appliqué sur total après paliers) ──
+  const tauxFan  = promoBadge.fan?.taux  || 0;
+  const tauxColo = promoBadge.colo?.taux || 0;
+  const tauxBadgeTotal = tauxFan + tauxColo; // cumul direct
+  const remiseBadge = totalApresPaliers * tauxBadgeTotal;
+  const totalGeneral = Math.max(0, totalApresPaliers - remiseBadge);
 
-  // Appliquer le badge seulement si aucune réduction palier n'est déjà active sur la catégorie
-  const tauxBadgeIllus    = (badgeIllus && tauxIllus === 0)    ? badgeIllus.taux    : 0;
-  const tauxBadgeLivres   = (badgeLivres && tauxLivres === 0)   ? badgeLivres.taux   : 0;
-  const tauxBadgeRecueils = (badgeRecueils && tauxRecueils === 0) ? badgeRecueils.taux : 0;
-
-  const totalIllus2    = totalIllus    * (1 - tauxBadgeIllus);
-  const totalLivres2   = totalLivres   * (1 - tauxBadgeLivres);
-  const totalRecueils2 = totalRecueils * (1 - tauxBadgeRecueils);
-
-  const totalGeneral = totalIllus2 + totalLivres2 + totalRecueils2 + totalRelies;
-
-  // Messages incitatifs paliers
+  // ── Messages incitatifs paliers ──
   let messageIllus = null;
   if (nbIllus === 1) messageIllus = 'Plus que 2 illustrations pour obtenir −15% !';
   else if (nbIllus === 2) messageIllus = 'Plus que 1 illustration pour obtenir −15% !';
   else if (nbIllus >= 3 && nbIllus < 6) messageIllus = `Plus que ${6 - nbIllus} illustration${6 - nbIllus > 1 ? 's' : ''} pour obtenir −25% !`;
   else if (nbIllus >= 6 && nbIllus < 10) messageIllus = `Plus que ${10 - nbIllus} illustration${10 - nbIllus > 1 ? 's' : ''} pour obtenir −35% !`;
+  const messageLivres   = nbLivres === 1 ? "Plus qu'un livre PDF pour obtenir −15% sur tous vos livres !" : null;
+  const messageRecueils = nbRecueils === 1 ? "Plus qu'un recueil pour obtenir −20% sur tous vos recueils !" : null;
 
-  let messageLivres   = nbLivres === 1 ? 'Plus qu\'un livre PDF pour obtenir −15% sur tous vos livres !' : null;
-  let messageRecueils = nbRecueils === 1 ? 'Plus qu\'un recueil pour obtenir −20% sur tous vos recueils !' : null;
-
-  // Explications réductions actives (pourquoi ce %)
+  // ── Explications paliers ──
   let explicationIllus = null;
   if (tauxIllus > 0) {
     const palier = tauxIllus === 0.35 ? 10 : tauxIllus === 0.25 ? 6 : 3;
     explicationIllus = `Vous avez ajouté ${nbIllus} illustration${nbIllus > 1 ? 's' : ''} : vous bénéficiez de −${Math.round(tauxIllus * 100)}% (palier ${palier}+)`;
   }
-  let explicationLivres = null;
-  if (tauxLivres > 0) explicationLivres = `Vous avez ajouté ${nbLivres} livres PDF : vous bénéficiez de −15% sur tous vos livres`;
-  let explicationRecueils = null;
-  if (tauxRecueils > 0) explicationRecueils = `Vous avez ajouté ${nbRecueils} recueils : vous bénéficiez de −20% sur tous vos recueils`;
+  const explicationLivres   = tauxLivres > 0   ? `Vous avez ajouté ${nbLivres} livres PDF : vous bénéficiez de −15% sur tous vos livres` : null;
+  const explicationRecueils = tauxRecueils > 0 ? `Vous avez ajouté ${nbRecueils} recueils : vous bénéficiez de −20% sur tous vos recueils` : null;
 
-  // Explications badges fans
-  let explicationBadgeIllus    = null;
-  let explicationBadgeLivres   = null;
-  let explicationBadgeRecueils = null;
-  if (tauxBadgeIllus > 0 && badgeIllus)
-    explicationBadgeIllus = `Vous avez obtenu le badge "${badgeIllus.nomBadge}" : vous bénéficiez de −${Math.round(tauxBadgeIllus * 100)}% de réduction sur votre première commande d'illustrations`;
-  if (tauxBadgeLivres > 0 && badgeLivres)
-    explicationBadgeLivres = `Vous avez obtenu le badge "${badgeLivres.nomBadge}" : vous bénéficiez de −${Math.round(tauxBadgeLivres * 100)}% de réduction sur votre première commande de livres`;
-  if (tauxBadgeRecueils > 0 && badgeRecueils)
-    explicationBadgeRecueils = `Vous avez obtenu le badge "${badgeRecueils.nomBadge}" : vous bénéficiez de −${Math.round(tauxBadgeRecueils * 100)}% de réduction sur votre première commande de recueils`;
+  // ── Explication badge ──
+  let explicationBadge = null;
+  if (tauxBadgeTotal > 0) {
+    const parties = [];
+    if (promoBadge.fan)  parties.push(`Badge ${promoBadge.fan.nomBadge} (−${Math.round(tauxFan * 100)}%)`);
+    if (promoBadge.colo) parties.push(`Badge ${promoBadge.colo.nomBadge} (−${Math.round(tauxColo * 100)}%)`);
+    explicationBadge = {
+      detail: parties.join(' + '),
+      tauxTotal: tauxBadgeTotal,
+      montantRemise: remiseBadge,
+      texte: parties.length > 1
+        ? `${parties.join(' + ')} = −${Math.round(tauxBadgeTotal * 100)}% cumulés appliqués sur le sous-total après réductions`
+        : `${parties[0]} appliqué sur le sous-total après réductions`,
+    };
+  }
 
   return {
-    tauxIllus, tauxLivres, tauxRecueils,
-    tauxBadgeIllus, tauxBadgeLivres, tauxBadgeRecueils,
+    tauxIllus, tauxLivres, tauxRecueils, tauxBadgeTotal,
     totalIllusBrut, totalLivresBrut, totalRecueilsBrut, totalReliesBrut,
-    totalIllus: totalIllus2, totalLivres: totalLivres2, totalRecueils: totalRecueils2, totalRelies,
-    totalGeneral,
+    totalIllus, totalLivres, totalRecueils, totalRelies,
+    totalApresPaliers, remiseBadge, totalGeneral,
     nbIllus, nbLivres, nbRecueils,
     messageIllus, messageLivres, messageRecueils,
     explicationIllus, explicationLivres, explicationRecueils,
-    explicationBadgeIllus, explicationBadgeLivres, explicationBadgeRecueils,
+    explicationBadge,
   };
 }
 
@@ -107,13 +98,11 @@ export function PanierProvider({ children }) {
     } catch { return []; }
   });
 
-  // Badges fans alimentés depuis Panier.js via setBadgesFans()
-  const [badgesFans, setBadgesFans] = React.useState({});
+  // Promo badge active — alimentée depuis Panier.js après lecture Supabase
+  const [promoBadge, setPromoBadge] = React.useState({});
 
   React.useEffect(() => {
-    try {
-      localStorage.setItem('panier_kevinteoart', JSON.stringify(articles));
-    } catch {}
+    try { localStorage.setItem('panier_kevinteoart', JSON.stringify(articles)); } catch {}
   }, [articles]);
 
   const ajouterIllustration = (illu) => {
@@ -148,12 +137,12 @@ export function PanierProvider({ children }) {
   const viderPanier = () => setArticles([]);
   const estDansPanier = (type, id) => articles.some(a => a.type === type && a.id === id);
   const nbArticles = articles.reduce((s, a) => s + a.quantite, 0);
-  const reductions = calcReductions(articles, badgesFans);
+  const reductions = calcReductions(articles, promoBadge);
 
   return (
     <PanierContext.Provider value={{
-      articles, nbArticles, reductions, badgesFans,
-      setBadgesFans,
+      articles, nbArticles, reductions, promoBadge,
+      setPromoBadge,
       ajouterIllustration, ajouterLivrePdf, ajouterRecueil, ajouterRelie,
       supprimerArticle, viderPanier, estDansPanier,
     }}>

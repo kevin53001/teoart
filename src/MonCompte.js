@@ -309,9 +309,17 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
   );
 }
 
-function BadgesHexagonaux({ pctJai, pctColo }) {
+// Taux de réduction par badge id
+const TAUX_BADGE = {
+  fan_bronze: 0.05, fan_argent: 0.10, fan_or: 0.20, fan_ultime: 0.25,
+  colo_herbe: 0.05, colo_raisonnable: 0.10, colo_productif: 0.20, colo_intense: 0.25, colo_fou: 0.30,
+};
+
+function BadgesHexagonaux({ pctJai, pctColo, userId }) {
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
-  const [badgeOuvert, setBadgeOuvert] = React.useState(null); // id du badge dont le message est affiché
+  const [badgeOuvert, setBadgeOuvert] = React.useState(null);
+  const [nouveauxBadges, setNouveauxBadges] = React.useState([]); // badges fraîchement débloqués cette session
+  const [promoNotif, setPromoNotif] = React.useState(null); // { fan, colo } — notif promo à afficher
 
   React.useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth <= 600);
@@ -319,12 +327,84 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
+  // ── Détection et enregistrement des nouveaux badges ──
+  React.useEffect(() => {
+    if (!userId || pctJai === undefined || pctColo === undefined) return;
+    const detecter = async () => {
+      const { data: profil } = await supabase.from('profils')
+        .select('badges_obtenus, promo_badge_active')
+        .eq('id', userId).single();
+
+      const dejObtenus = profil?.badges_obtenus || [];
+      const promoActive = profil?.promo_badge_active || {};
+
+      // Badges actuellement mérités selon les %
+      const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
+      const meritesMaintenant = tousLesBadges.filter(b =>
+        (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil
+      ).map(b => b.id);
+
+      // Nouveaux = mérités maintenant mais jamais obtenus avant
+      const nouveaux = meritesMaintenant.filter(id => !dejObtenus.includes(id));
+      if (nouveaux.length === 0) return;
+
+      setNouveauxBadges(nouveaux);
+
+      // Historique mis à jour
+      const nouvelHistorique = [...new Set([...dejObtenus, ...meritesMaintenant])];
+
+      // Calculer la meilleure promo fan parmi les NOUVEAUX badges fan
+      const nouveauxFan  = nouveaux.filter(id => BADGES_FAN.find(b => b.id === id));
+      const nouveauxColo = nouveaux.filter(id => BADGES_COLO.find(b => b.id === id));
+
+      // Dans chaque catégorie : le plus haut badge NOUVEAU (les autres sont grillés sans être utilisés)
+      const meilleurNouveauFan = [...BADGES_FAN].reverse().find(b => nouveauxFan.includes(b.id));
+      const meilleurNouveauColo = [...BADGES_COLO].reverse().find(b => nouveauxColo.includes(b.id));
+
+      // Nouvelle promo active = fusionner avec l'éventuelle promo déjà active non consommée
+      // (on ne remplace une promo active que si le nouveau badge est plus haut)
+      const nouvellePromo = { ...promoActive };
+
+      if (meilleurNouveauFan) {
+        const tauxNouveau = TAUX_BADGE[meilleurNouveauFan.id];
+        const tauxActuel = promoActive.fan?.taux || 0;
+        if (tauxNouveau > tauxActuel) {
+          nouvellePromo.fan = { nomBadge: meilleurNouveauFan.lignes.join(' '), taux: tauxNouveau };
+        }
+      }
+      if (meilleurNouveauColo) {
+        const tauxNouveau = TAUX_BADGE[meilleurNouveauColo.id];
+        const tauxActuel = promoActive.colo?.taux || 0;
+        if (tauxNouveau > tauxActuel) {
+          nouvellePromo.colo = { nomBadge: meilleurNouveauColo.lignes.join(' '), taux: tauxNouveau };
+        }
+      }
+
+      // Sauvegarder en base
+      await supabase.from('profils').update({
+        badges_obtenus: nouvelHistorique,
+        promo_badge_active: nouvellePromo,
+      }).eq('id', userId);
+
+      // Afficher la notif promo si une nouvelle promo a été débloquée
+      const notif = {};
+      if (meilleurNouveauFan) notif.fan = nouvellePromo.fan;
+      if (meilleurNouveauColo) notif.colo = nouvellePromo.colo;
+      if (Object.keys(notif).length > 0) setPromoNotif(notif);
+    };
+    detecter();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, pctJai, pctColo]);
+
   const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
   const obtenus = tousLesBadges.filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil);
 
   const getDelai = (id) => {
-    const idx = obtenus.findIndex(b => b.id === id);
-    return idx >= 0 ? idx * 700 : null;
+    if (nouveauxBadges.includes(id)) {
+      const idx = nouveauxBadges.indexOf(id);
+      return idx * 700;
+    }
+    return null;
   };
 
   const handleBadgeClick = (id) => {
@@ -358,6 +438,30 @@ function BadgesHexagonaux({ pctJai, pctColo }) {
       `}</style>
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+
+        {/* ── Notification nouvelle promo badge ── */}
+        {promoNotif && (
+          <div style={{ width: '100%', background: 'linear-gradient(135deg, rgba(255,210,80,0.12), rgba(255,62,181,0.08))', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '14px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+            <button onClick={() => setPromoNotif(null)} style={{ position: 'absolute', top: '10px', right: '12px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            <p style={{ color: 'rgba(255,210,80,1)', fontSize: '13px', fontWeight: 'bold' }}>🎉 Nouveau badge débloqué !</p>
+            {promoNotif.fan && (
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: 1.6 }}>
+                <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>Badge {promoNotif.fan.nomBadge}</span> — tu bénéficies de <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>−{Math.round(promoNotif.fan.taux * 100)}%</span> sur ta prochaine commande (tous articles confondus, après les autres réductions).
+              </p>
+            )}
+            {promoNotif.colo && (
+              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: 1.6 }}>
+                <span style={{ color: 'rgba(255,210,80,0.9)', fontWeight: 'bold' }}>Badge {promoNotif.colo.nomBadge}</span> — tu bénéficies de <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>−{Math.round(promoNotif.colo.taux * 100)}%</span> sur ta prochaine commande (tous articles confondus, après les autres réductions).
+              </p>
+            )}
+            {promoNotif.fan && promoNotif.colo && (
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', fontStyle: 'italic' }}>
+                Ces deux réductions se cumulent : −{Math.round((promoNotif.fan.taux + promoNotif.colo.taux) * 100)}% au total sur ta prochaine commande. Valable une seule fois.
+              </p>
+            )}
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>La réduction sera automatiquement appliquée à ton prochain passage en caisse.</p>
+          </div>
+        )}
 
         {/* ── Fan ── */}
         <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '12px', padding: isMobile ? '8px 10px' : '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', flex: '1 1 auto' }}>
