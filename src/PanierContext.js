@@ -10,30 +10,41 @@ function calcReductions(articles, promoBadge = {}) {
   const recueils = articles.filter(a => a.type === 'recueil');
   const relies   = articles.filter(a => a.type === 'relie');
 
-  const nbIllus    = illus.reduce((s, a) => s + a.quantite, 0);
-  const nbLivres   = livres.reduce((s, a) => s + a.quantite, 0);
-  const nbRecueils = recueils.reduce((s, a) => s + a.quantite, 0);
+  // Reliés classés par sous-type (livre ou recueil)
+  const reliesLivres   = relies.filter(a => a.sousType !== 'recueil'); // par défaut = livre
+  const reliesRecueils = relies.filter(a => a.sousType === 'recueil');
+
+  const nbIllus = illus.reduce((s, a) => s + a.quantite, 0);
+  // Palier livres : PDF + reliés livres
+  const nbLivresTotal   = livres.reduce((s, a) => s + a.quantite, 0) + reliesLivres.reduce((s, a) => s + a.quantite, 0);
+  // Palier recueils : PDF + reliés recueils
+  const nbRecueilsTotal = recueils.reduce((s, a) => s + a.quantite, 0) + reliesRecueils.reduce((s, a) => s + a.quantite, 0);
 
   // ── Paliers ──
   let tauxIllus = 0;
   if (nbIllus >= 10) tauxIllus = 0.35;
   else if (nbIllus >= 6) tauxIllus = 0.25;
   else if (nbIllus >= 3) tauxIllus = 0.15;
-  const tauxLivres   = nbLivres >= 2 ? 0.15 : 0;
-  const tauxRecueils = nbRecueils >= 2 ? 0.20 : 0;
+  const tauxLivres   = nbLivresTotal >= 2 ? 0.15 : 0;
+  const tauxRecueils = nbRecueilsTotal >= 2 ? 0.20 : 0;
 
   // ── Totaux bruts ──
   const totalIllusBrut    = illus.reduce((s, a) => s + a.prix * a.quantite, 0);
   const totalLivresBrut   = livres.reduce((s, a) => s + a.prix * a.quantite, 0);
   const totalRecueilsBrut = recueils.reduce((s, a) => s + a.prix * a.quantite, 0);
-  const totalReliesBrut   = relies.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
+  // Les reliés ont leur propre prix (prixRelie), la réduction palier s'applique dessus aussi
+  const totalReliesLivresBrut   = reliesLivres.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
+  const totalReliesRecueilsBrut = reliesRecueils.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
 
   // ── Après paliers ──
-  const totalIllus    = totalIllusBrut * (1 - tauxIllus);
-  const totalLivres   = totalLivresBrut * (1 - tauxLivres);
-  const totalRecueils = totalRecueilsBrut * (1 - tauxRecueils);
-  const totalRelies   = totalReliesBrut;
-  const totalApresPaliers = totalIllus + totalLivres + totalRecueils + totalRelies;
+  const totalIllus           = totalIllusBrut * (1 - tauxIllus);
+  const totalLivres          = totalLivresBrut * (1 - tauxLivres);
+  const totalRecueils        = totalRecueilsBrut * (1 - tauxRecueils);
+  const totalReliesLivres    = totalReliesLivresBrut * (1 - tauxLivres);
+  const totalReliesRecueils  = totalReliesRecueilsBrut * (1 - tauxRecueils);
+  const totalReliesBrut      = totalReliesLivresBrut + totalReliesRecueilsBrut;
+  const totalRelies          = totalReliesLivres + totalReliesRecueils;
+  const totalApresPaliers    = totalIllus + totalLivres + totalRecueils + totalRelies;
 
   // ── Badges (cumul direct fan + colo, appliqué sur total après paliers) ──
   const tauxFan  = promoBadge.fan?.taux  || 0;
@@ -48,8 +59,8 @@ function calcReductions(articles, promoBadge = {}) {
   else if (nbIllus === 2) messageIllus = 'Plus que 1 illustration pour obtenir −15% !';
   else if (nbIllus >= 3 && nbIllus < 6) messageIllus = `Plus que ${6 - nbIllus} illustration${6 - nbIllus > 1 ? 's' : ''} pour obtenir −25% !`;
   else if (nbIllus >= 6 && nbIllus < 10) messageIllus = `Plus que ${10 - nbIllus} illustration${10 - nbIllus > 1 ? 's' : ''} pour obtenir −35% !`;
-  const messageLivres   = nbLivres === 1 ? "Plus qu'un livre PDF pour obtenir −15% sur tous vos livres !" : null;
-  const messageRecueils = nbRecueils === 1 ? "Plus qu'un recueil pour obtenir −20% sur tous vos recueils !" : null;
+  const messageLivres   = nbLivresTotal === 1 ? "Ajoutez un autre livre (PDF ou relié) pour obtenir −15% sur tous vos livres !" : null;
+  const messageRecueils = nbRecueilsTotal === 1 ? "Ajoutez un autre recueil (PDF ou relié) pour obtenir −20% sur tous vos recueils !" : null;
 
   // ── Explications paliers ──
   let explicationIllus = null;
@@ -57,8 +68,8 @@ function calcReductions(articles, promoBadge = {}) {
     const palier = tauxIllus === 0.35 ? 10 : tauxIllus === 0.25 ? 6 : 3;
     explicationIllus = `Vous avez ajouté ${nbIllus} illustration${nbIllus > 1 ? 's' : ''} : vous bénéficiez de −${Math.round(tauxIllus * 100)}% (palier ${palier}+)`;
   }
-  const explicationLivres   = tauxLivres > 0   ? `Vous avez ajouté ${nbLivres} livres PDF : vous bénéficiez de −15% sur tous vos livres` : null;
-  const explicationRecueils = tauxRecueils > 0 ? `Vous avez ajouté ${nbRecueils} recueils : vous bénéficiez de −20% sur tous vos recueils` : null;
+  const explicationLivres   = tauxLivres > 0   ? `${nbLivresTotal} livre${nbLivresTotal > 1 ? 's' : ''} dans votre panier (PDF et/ou reliés) : −15% appliqué sur tous vos livres` : null;
+  const explicationRecueils = tauxRecueils > 0 ? `${nbRecueilsTotal} recueil${nbRecueilsTotal > 1 ? 's' : ''} dans votre panier (PDF et/ou reliés) : −20% appliqué sur tous vos recueils` : null;
 
   // ── Explication badge ──
   let explicationBadge = null;
@@ -79,9 +90,11 @@ function calcReductions(articles, promoBadge = {}) {
   return {
     tauxIllus, tauxLivres, tauxRecueils, tauxBadgeTotal,
     totalIllusBrut, totalLivresBrut, totalRecueilsBrut, totalReliesBrut,
+    totalReliesLivresBrut, totalReliesRecueilsBrut,
     totalIllus, totalLivres, totalRecueils, totalRelies,
+    totalReliesLivres, totalReliesRecueils,
     totalApresPaliers, remiseBadge, totalGeneral,
-    nbIllus, nbLivres, nbRecueils,
+    nbIllus, nbLivresTotal, nbRecueilsTotal,
     messageIllus, messageLivres, messageRecueils,
     explicationIllus, explicationLivres, explicationRecueils,
     explicationBadge,
@@ -126,10 +139,10 @@ export function PanierProvider({ children }) {
     });
   };
 
-  const ajouterRelie = (livre, pays, prixRelie, delai) => {
+  const ajouterRelie = (livre, pays, prixRelie, delai, sousType = 'livre') => {
     setArticles(prev => {
       if (prev.find(a => a.type === 'relie' && a.id === livre.id)) return prev;
-      return [...prev, { type: 'relie', id: livre.id, nom: livre.nom, image: livre.image || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, quantite: 1 }];
+      return [...prev, { type: 'relie', id: livre.id, nom: livre.nom, image: livre.image || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 }];
     });
   };
 

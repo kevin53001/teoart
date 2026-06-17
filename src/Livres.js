@@ -1160,7 +1160,7 @@ function Livres() {
                   const prixRelie = infoPays ? infoPays.prix : 0;
                   const delai = infoPays ? infoPays.delai : 'délai variable';
                   const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
-                  ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai);
+                  ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType);
                   setPopupRelie(false);
                   setRelieLuAccepte(false);
                 }}
