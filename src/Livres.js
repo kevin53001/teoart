@@ -705,15 +705,31 @@ function Livres() {
                 ) : (
                   (() => {
                     const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                    const paysActif = userPays || reliePaysSaisi;
-                    const infoPays = paysActif && prixData ? (prixData[paysActif] || null) : null;
+                    const PAYS_ZONES_FICHE = {
+                      'France': 'France', 'Belgique': 'Belgique',
+                      'Allemagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                      'Espagne': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                      'Italie': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                      'Portugal': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                      'Pays-Bas': 'Allemagne / Espagne / Italie / Portugal / Pays-Bas',
+                      'Autriche': 'Zone Euro — autres pays', 'Finlande': 'Zone Euro — autres pays',
+                      'Grèce': 'Zone Euro — autres pays', 'Irlande': 'Zone Euro — autres pays',
+                      'Luxembourg': 'Zone Euro — autres pays', 'Malte': 'Zone Euro — autres pays',
+                      'Slovaquie': 'Zone Euro — autres pays', 'Slovénie': 'Zone Euro — autres pays',
+                      'Estonie': 'Zone Euro — autres pays', 'Lettonie': 'Zone Euro — autres pays',
+                      'Lituanie': 'Zone Euro — autres pays', 'Chypre': 'Zone Euro — autres pays',
+                      'Croatie': 'Zone Euro — autres pays', 'Grande-Bretagne': 'Zone Euro — autres pays',
+                    };
+                    const paysActif = userPays;
+                    const zoneKey = paysActif && prixData ? (prixData[paysActif] ? paysActif : PAYS_ZONES_FICHE[paysActif]) : null;
+                    const infoPays = zoneKey && prixData ? (prixData[zoneKey] || null) : null;
                     return (
                       <div style={{ marginBottom: '10px' }}>
                         {infoPays ? (
                           <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '10px', padding: '6px 14px' }}>
                             <span style={{ color: 'rgba(255,210,80,1)', fontSize: '26px', fontWeight: 'bold' }}>{infoPays.prix}</span>
                             <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '15px', fontWeight: 'bold' }}>{infoPays.symbole || '€'}</span>
-                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version Reliée</span>
+                            <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginLeft: '4px' }}>Version Reliée · {paysActif}</span>
                           </div>
                         ) : (
                           <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '10px', padding: '6px 14px' }}>
@@ -722,7 +738,7 @@ function Livres() {
                           </div>
                         )}
                         <p style={{ color: 'rgba(255,210,80,0.6)', fontSize: '11px', marginTop: '6px' }}>📦 Délai estimé : entre 7 jours et 3 semaines selon le pays</p>
-                        {infoPays && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '2px' }}>⏱ Pour votre pays : {infoPays.delai}</p>}
+                        {infoPays && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '2px' }}>⏱ Pour {paysActif} : {infoPays.delai}</p>}
                       </div>
                     );
                   })()
@@ -752,44 +768,47 @@ function Livres() {
                   </button>
                 </div>
 
-                {/* ── Double bouton panier + coches PDF/Relié ── */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  {/* Bouton PDF */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                    <button
-                      onClick={() => setModeRelie(false)}
-                      style={{ background: !modeRelie ? '#ff3eb5' : 'rgba(255,62,181,0.25)', border: !modeRelie ? 'none' : '1px solid rgba(255,62,181,0.3)', borderRadius: '8px', padding: '8px 14px', color: !modeRelie ? '#000' : 'rgba(255,62,181,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: !modeRelie ? 1 : 0.5 }}>
-                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
-                        <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                      </svg>
-                      PDF
-                    </button>
-                    {/* Coche PDF */}
+                {/* ── Sélecteur PDF / Relié (coches) ── */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {/* Coche PDF */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ color: !modeRelie ? '#ff3eb5' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>PDF</span>
                     <div onClick={() => setModeRelie(false)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: !modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: !modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: !modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
                       <div style={{ position: 'absolute', top: '2px', left: !modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: !modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: !modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
                     </div>
                   </div>
 
-                  {/* Bouton Relié (si disponible) */}
                   {popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <button
-                        onClick={() => { setModeRelie(true); }}
-                        style={{ background: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: modeRelie ? 'none' : '1px solid rgba(255,210,80,0.35)', borderRadius: '8px', padding: '8px 14px', color: modeRelie ? '#000' : 'rgba(255,210,80,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: modeRelie ? 1 : 0.5 }}>
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
-                          <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                        </svg>
-                        Relié
-                      </button>
-                      {/* Coche Relié */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>Relié</span>
                       <div onClick={() => setModeRelie(true)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
                         <div style={{ position: 'absolute', top: '2px', left: modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* ── Bouton Ajouter au panier ── */}
+                {!modeRelie ? (
+                  <button style={{ background: '#ff3eb5', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+                      <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                    </svg>
+                    Ajouter au panier — Version PDF
+                  </button>
+                ) : (
+                  popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
+                    <button onClick={() => { setPopupRelie(true); setReliePaysSaisi(''); setReliePaysFiltre([]); setRelieLuAccepte(false); }}
+                      style={{ background: 'rgba(255,210,80,1)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+                        <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                      </svg>
+                      Ajouter au panier — Version Reliée
+                    </button>
+                  )
+                )}
 
                 {/* Description selon mode */}
                 {(() => {
