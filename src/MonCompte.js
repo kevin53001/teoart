@@ -892,13 +892,33 @@ function SectionMaCollection({ userId, totalIllus }) {
 function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
   const [illus, setIllus] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [dlGratuits, setDlGratuits] = React.useState({});
+
+  const handleDlGratuit = async (illu) => {
+    if (dlGratuits[illu.id] && dlGratuits[illu.id] !== 'idle') return;
+    if (!illu.fichier_pdf) return;
+    setDlGratuits(prev => ({ ...prev, [illu.id]: 'loading' }));
+    try {
+      const resp = await fetch('/api/download-free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, itemId: illu.id, itemType: 'illustration', fichierPdf: illu.fichier_pdf }),
+      });
+      const { url, error } = await resp.json();
+      if (error) throw new Error(error);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${illu.nom}.pdf`; a.click();
+      setDlGratuits(prev => ({ ...prev, [illu.id]: 'done' }));
+      setTimeout(() => setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })), 3000);
+    } catch { setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })); }
+  };
 
   React.useEffect(() => {
     const charger = async () => {
       const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', userId).eq('je_veux', true);
       if (!coll || coll.length === 0) { setLoading(false); return; }
       const ids = coll.map(c => c.illustration_id);
-      const { data: illusData } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').in('id', ids).order('nom');
+      const { data: illusData } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids').in('id', ids).order('nom');
       setIllus(illusData || []);
       setLoading(false);
     };
@@ -928,9 +948,18 @@ function SectionMesFavoris({ userId, userPseudo, onOuvrirPopup }) {
               <div style={{ position: 'absolute', top: '3px', right: '3px' }}>
                 <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff3eb5" /></svg>
               </div>
+              {illu.prix !== null && illu.prix !== undefined && parseFloat(illu.prix) === 0 && (
+                <div onClick={e => { e.stopPropagation(); handleDlGratuit(illu); }}
+                  style={{ position: 'absolute', bottom: '26px', right: '3px', background: dlGratuits[illu.id] === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', border: dlGratuits[illu.id] === 'done' ? '1px solid #00d4d4' : 'none', borderRadius: '4px', padding: '2px 5px', fontSize: '7px', fontWeight: 'bold', color: dlGratuits[illu.id] === 'done' ? '#00d4d4' : '#000', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,212,212,0.4)', letterSpacing: '0.3px' }}>
+                  {dlGratuits[illu.id] === 'loading' ? '...' : dlGratuits[illu.id] === 'done' ? '✓' : 'FREE'}
+                </div>
+              )}
               <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.85)' }}>
                 <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
-                {illu.prix && <p style={{ color: '#ff3eb5', fontSize: '8px' }}>{illu.prix} €</p>}
+                {illu.prix !== null && illu.prix !== undefined && (parseFloat(illu.prix) === 0
+                  ? <p style={{ color: '#00d4d4', fontSize: '8px', fontWeight: 'bold' }}>GRATUIT</p>
+                  : illu.prix ? <p style={{ color: '#ff3eb5', fontSize: '8px' }}>{illu.prix} €</p> : null
+                )}
               </div>
             </div>
           );
