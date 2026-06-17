@@ -138,78 +138,155 @@ function EtapePanier({ onContinuer, isMobile }) {
     );
   }
 
-  const sections = [
-    { type: 'illustration', titre: 'Illustrations', taux: reductions.tauxIllus, total: reductions.totalIllus, totalBrut: reductions.totalIllusBrut, message: reductions.messageIllus, explication: reductions.explicationIllus },
-    { type: 'livre_pdf', titre: 'Livres PDF', taux: reductions.tauxLivres, total: reductions.totalLivres, totalBrut: reductions.totalLivresBrut, message: reductions.messageLivres, explication: reductions.explicationLivres },
-    { type: 'recueil', titre: 'Recueils', taux: reductions.tauxRecueils, total: reductions.totalRecueils, totalBrut: reductions.totalRecueilsBrut, message: reductions.messageRecueils, explication: reductions.explicationRecueils },
-    { type: 'relie', titre: 'Versions Reliées', taux: 0, total: reductions.totalRelies, totalBrut: reductions.totalReliesBrut, message: null, explication: null },
-  ];
+  // ── Helpers affichage article ──
+  const ArticleLigne = ({ article, decale = false, prixOverride = null, tauxPromo = null }) => {
+    const { label, couleur } = labelType(article.type);
+    const prixBrut = article.type === 'relie' ? (article.prixRelie || 0) : (article.prix || 0);
+    const prixFinal = prixOverride !== null ? prixOverride : prixBrut;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: decale ? 'rgba(255,62,181,0.04)' : 'rgba(255,255,255,0.04)', border: `1px solid ${decale ? 'rgba(255,62,181,0.15)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '12px', padding: '10px 12px', marginLeft: decale ? '20px' : '0' }}>
+        {article.image && <img src={article.image} alt={article.nom} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ color: decale ? 'rgba(255,255,255,0.75)' : '#fff', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{article.nom}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+            <span style={{ background: `${couleur}22`, border: `1px solid ${couleur}44`, borderRadius: '10px', padding: '1px 6px', color: couleur, fontSize: '10px' }}>{label}</span>
+            {article.type === 'relie' && article.pays && <span style={{ color: 'rgba(255,210,80,0.6)', fontSize: '10px' }}>📦 {article.pays} · {article.delai}</span>}
+            {tauxPromo && <span style={{ background: 'rgba(255,62,181,0.15)', border: '1px solid rgba(255,62,181,0.3)', borderRadius: '10px', padding: '1px 6px', color: '#ff3eb5', fontSize: '10px', fontWeight: 'bold' }}>−{Math.round(tauxPromo * 100)}% relié</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          {tauxPromo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', textDecoration: 'line-through' }}>{prixBrut.toFixed(2)} €</span>}
+          <span style={{ color: tauxPromo ? '#ff3eb5' : '#fff', fontSize: '13px', fontWeight: 'bold' }}>{prixFinal.toFixed(2)} €</span>
+          <button onClick={() => supprimerArticle(article.type, article.id)}
+            style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '3px 7px', color: 'rgba(255,100,100,0.6)', fontSize: '13px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Section illustrations ──
+  const illus = articles.filter(a => a.type === 'illustration');
+
+  // ── Section livres fusionnée (reliés + PDFs groupés par titre) ──
+  const reliesLivres   = articles.filter(a => a.type === 'relie' && a.sousType === 'livre');
+  const reliesRecueils = articles.filter(a => a.type === 'relie' && a.sousType === 'recueil');
+  // reliés sans sousType (legacy) → affichés séparément
+  const reliesLegacy   = articles.filter(a => a.type === 'relie' && !a.sousType);
+  const livresPdf      = articles.filter(a => a.type === 'livre_pdf');
+  const recueilsPdf    = articles.filter(a => a.type === 'recueil');
+
+  const { idsReliesLivres, idsReliesRecueils } = reductions;
+
+  // Construire liste ordonnée : pour chaque relié livre, afficher son PDF dessous si présent
+  const lignesLivres = [];
+  reliesLivres.forEach(relie => {
+    lignesLivres.push({ article: relie, decale: false, tauxPromo: null });
+    const pdfAssoc = livresPdf.find(l => l.id === relie.id);
+    if (pdfAssoc) {
+      const prixReduit = pdfAssoc.prix * (1 - 0.75);
+      lignesLivres.push({ article: pdfAssoc, decale: true, prixOverride: prixReduit, tauxPromo: 0.75 });
+    }
+  });
+  // PDFs sans relié correspondant
+  livresPdf.filter(l => !idsReliesLivres.has(l.id)).forEach(l => {
+    lignesLivres.push({ article: l, decale: false, tauxPromo: null });
+  });
+
+  // Même logique pour recueils
+  const lignesRecueils = [];
+  reliesRecueils.forEach(relie => {
+    lignesRecueils.push({ article: relie, decale: false, tauxPromo: null });
+    const pdfAssoc = recueilsPdf.find(r => r.id === relie.id);
+    if (pdfAssoc) {
+      const prixReduit = pdfAssoc.prix * (1 - 0.75);
+      lignesRecueils.push({ article: pdfAssoc, decale: true, prixOverride: prixReduit, tauxPromo: 0.75 });
+    }
+  });
+  recueilsPdf.filter(r => !idsReliesRecueils.has(r.id)).forEach(r => {
+    lignesRecueils.push({ article: r, decale: false, tauxPromo: null });
+  });
+
+  // Total affiché livres (après palier + promo PDF)
+  const totalLivresAffiche = reductions.totalLivres + reductions.totalReliesLivres;
+  const totalLivresBrutAffiche = reductions.totalLivresBrut + reductions.totalReliesLivresBrut;
+  const totalRecueilsAffiche = reductions.totalRecueils + reductions.totalReliesRecueils;
+  const totalRecueilsBrutAffiche = reductions.totalRecueilsBrut + reductions.totalReliesRecueilsBrut;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {sections.map(section => {
-        const articlesSection = articles.filter(a => a.type === section.type);
-        if (articlesSection.length === 0) return null;
-        return (
-          <div key={section.type}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>{section.titre}</h3>
-              {section.taux > 0 && (
-                <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>
-                  −{Math.round(section.taux * 100)}% appliqué
-                </span>
-              )}
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {articlesSection.map(article => {
-                const { label, couleur } = labelType(article.type);
-                const prixAffiche = article.type === 'relie' ? article.prixRelie : article.prix;
-                return (
-                  <div key={`${article.type}-${article.id}`} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px' }}>
-                    {article.image && (
-                      <img src={article.image} alt={article.nom} style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '7px', flexShrink: 0 }} />
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{article.nom}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                        <span style={{ background: `${couleur}22`, border: `1px solid ${couleur}44`, borderRadius: '10px', padding: '1px 7px', color: couleur, fontSize: '10px' }}>{label}</span>
-                        {article.type === 'relie' && article.pays && (
-                          <span style={{ color: 'rgba(255,210,80,0.6)', fontSize: '10px' }}>📦 {article.pays} · {article.delai}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                      <span style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{parseFloat(prixAffiche).toFixed(2)} €</span>
-                      <button onClick={() => supprimerArticle(article.type, article.id)}
-                        style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '4px 8px', color: 'rgba(255,100,100,0.6)', fontSize: '14px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {section.taux > 0 && section.totalBrut !== section.total && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', paddingRight: '4px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{section.totalBrut.toFixed(2)} €</span>
-                <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{section.total.toFixed(2)} €</span>
-              </div>
-            )}
-
-            {section.explication && (
-              <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
-                <p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {section.explication}</p>
-              </div>
-            )}
-
-            {section.message && (
-              <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
-                <p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {section.message}</p>
-              </div>
-            )}
+      {/* ── Illustrations ── */}
+      {illus.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations</h3>
+            {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
           </div>
-        );
-      })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} />)}
+          </div>
+          {reductions.tauxIllus > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{reductions.totalIllusBrut.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{reductions.totalIllus.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationIllus && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationIllus}</p></div>}
+          {reductions.messageIllus && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageIllus}</p></div>}
+        </div>
+      )}
+
+      {/* ── Livres (reliés + PDFs groupés) ── */}
+      {lignesLivres.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Livres</h3>
+            {reductions.tauxLivres > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxLivres * 100)}% sur les reliés</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+          </div>
+          {totalLivresBrutAffiche !== totalLivresAffiche && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{totalLivresBrutAffiche.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{totalLivresAffiche.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationLivres && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationLivres}</p></div>}
+          {reductions.messageLivres && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageLivres}</p></div>}
+        </div>
+      )}
+
+      {/* ── Recueils (reliés + PDFs groupés) ── */}
+      {lignesRecueils.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Recueils</h3>
+            {reductions.tauxRecueils > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxRecueils * 100)}% sur les reliés</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+          </div>
+          {totalRecueilsBrutAffiche !== totalRecueilsAffiche && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{totalRecueilsBrutAffiche.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{totalRecueilsAffiche.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationRecueils && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationRecueils}</p></div>}
+          {reductions.messageRecueils && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageRecueils}</p></div>}
+        </div>
+      )}
+
+      {/* ── Reliés legacy (sans sousType) ── */}
+      {reliesLegacy.length > 0 && (
+        <div>
+          <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Versions Reliées</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {reliesLegacy.map(a => <ArticleLigne key={`relie-${a.id}`} article={a} />)}
+          </div>
+        </div>
+      )}
 
       {/* Sous-total après paliers si badge actif */}
       {reductions.tauxBadgeTotal > 0 && (

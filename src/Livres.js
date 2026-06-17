@@ -328,7 +328,7 @@ function Livres() {
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles, ajouterLivrePdf, ajouterRecueil, ajouterRelie, estDansPanier } = usePanier();
+  const { nbArticles, ajouterLivrePdf, ajouterRecueil, ajouterRelie, ajouterRelieEtPdf, estDansPanier } = usePanier();
 
   // Popup recueil/livre
   const [popupItem, setPopupItem] = React.useState(null);
@@ -874,14 +874,27 @@ function Livres() {
                   ) : null
                 ) : (
                   popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
-                    <button onClick={() => { setPopupRelie(true); setReliePaysSaisi(''); setReliePaysFiltre([]); setRelieLuAccepte(false); }}
-                      style={{ background: 'rgba(255,210,80,1)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
-                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
-                        <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                      </svg>
-                      Ajouter au panier — Version Reliée
-                    </button>
+                    <>
+                      {/* Encart info -75% PDF */}
+                      {popupItem.prix && (
+                        <div style={{ background: 'rgba(255,62,181,0.07)', border: '1px solid rgba(255,62,181,0.25)', borderRadius: '10px', padding: '10px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+                          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '11px', lineHeight: '1.6' }}>
+                            Saviez-vous ? En ajoutant la version reliée à votre panier, le PDF de ce {popupType === 'recueil' ? 'recueil' : 'livre'} vous sera proposé à{' '}
+                            <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>−75%</span>{' '}
+                            (soit <span style={{ color: '#ff3eb5', fontWeight: 'bold' }}>{(parseFloat(popupItem.prix) * 0.25).toFixed(2)} €</span> au lieu de {parseFloat(popupItem.prix).toFixed(2)} €).
+                          </p>
+                        </div>
+                      )}
+                      <button onClick={() => { setPopupRelie(true); setReliePaysSaisi(''); setReliePaysFiltre([]); setRelieLuAccepte(false); }}
+                        style={{ background: 'rgba(255,210,80,1)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+                          <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+                        </svg>
+                        Ajouter au panier — Version Reliée
+                      </button>
+                    </>
                   )
                 )}
               </div>
@@ -1139,34 +1152,63 @@ function Livres() {
             </div>
 
             {/* Boutons Annuler / Valider */}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }}
-                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                Annuler
-              </button>
-              <button
-                disabled={!relieLuAccepte || (!(userPays || reliePaysSaisi))}
-                onClick={async () => {
-                  const paysChoisi = userPays || reliePaysSaisi;
-                  // Sauvegarder le pays dans Mes Infos si pas déjà renseigné
-                  if (!userPays && paysChoisi && userId) {
-                    await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
-                    setUserPays(paysChoisi);
-                  }
-                  // Récupérer le prix et délai selon le pays
-                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                  const zoneKey = resoudrePays(paysChoisi, prixData);
-                  const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
-                  const prixRelie = infoPays ? infoPays.prix : 0;
-                  const delai = infoPays ? infoPays.delai : 'délai variable';
-                  const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
-                  ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType);
-                  setPopupRelie(false);
-                  setRelieLuAccepte(false);
-                }}
-                style={{ background: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '#000' : 'rgba(255,210,80,0.3)', fontWeight: 'bold', fontSize: '13px', cursor: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'pointer' : 'default', fontFamily: 'inherit', transition: 'all .2s' }}>
-                Ajouter au panier
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Bouton Relié + PDF si le PDF existe */}
+              {popupItem.prix && relieLuAccepte && (userPays || reliePaysSaisi) && (() => {
+                const paysCheck = userPays || reliePaysSaisi;
+                const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                const zoneKey = resoudrePays(paysCheck, prixData);
+                const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
+                if (!infoPays) return null;
+                const prixRelie = parseFloat(infoPays.prix) || 0;
+                const prixPdfReduit = parseFloat(popupItem.prix) * 0.25;
+                const prixTotal = (prixRelie + prixPdfReduit).toFixed(2);
+                return (
+                  <button
+                    onClick={async () => {
+                      const paysChoisi = userPays || reliePaysSaisi;
+                      if (!userPays && paysChoisi && userId) {
+                        await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                        setUserPays(paysChoisi);
+                      }
+                      const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                      ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, infoPays.delai, popupType, popupItem.prix, imageUrl);
+                      setPopupRelie(false);
+                      setRelieLuAccepte(false);
+                    }}
+                    style={{ width: '100%', background: 'linear-gradient(135deg, rgba(255,210,80,0.9), rgba(255,62,181,0.7))', border: 'none', borderRadius: '10px', padding: '12px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <span>📚+📄</span>
+                    <span>Relié + PDF (−75%) — {prixTotal} € au total</span>
+                  </button>
+                );
+              })()}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setPopupRelie(false); setRelieLuAccepte(false); }}
+                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Annuler
+                </button>
+                <button
+                  disabled={!relieLuAccepte || (!(userPays || reliePaysSaisi))}
+                  onClick={async () => {
+                    const paysChoisi = userPays || reliePaysSaisi;
+                    if (!userPays && paysChoisi && userId) {
+                      await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                      setUserPays(paysChoisi);
+                    }
+                    const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                    const zoneKey = resoudrePays(paysChoisi, prixData);
+                    const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
+                    const prixRelie = infoPays ? infoPays.prix : 0;
+                    const delai = infoPays ? infoPays.delai : 'délai variable';
+                    const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                    ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType);
+                    setPopupRelie(false);
+                    setRelieLuAccepte(false);
+                  }}
+                  style={{ background: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: (relieLuAccepte && (userPays || reliePaysSaisi)) ? '#000' : 'rgba(255,210,80,0.3)', fontWeight: 'bold', fontSize: '13px', cursor: (relieLuAccepte && (userPays || reliePaysSaisi)) ? 'pointer' : 'default', fontFamily: 'inherit', transition: 'all .2s' }}>
+                  Relié uniquement
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -2,6 +2,8 @@ import React from 'react';
 
 export const PanierContext = React.createContext();
 
+const TAUX_PDF_RELIE = 0.75; // -75% sur le PDF si le relié du même titre est dans le panier
+
 // ─── Calcul des réductions ────────────────────────────────────────────────────
 
 function calcReductions(articles, promoBadge = {}) {
@@ -10,15 +12,29 @@ function calcReductions(articles, promoBadge = {}) {
   const recueils = articles.filter(a => a.type === 'recueil');
   const relies   = articles.filter(a => a.type === 'relie');
 
-  // Reliés classés par sous-type (livre ou recueil)
-  const reliesLivres   = relies.filter(a => a.sousType !== 'recueil'); // par défaut = livre
+  // sousType explicite uniquement — évite les doublons sur articles legacy sans sousType
+  const reliesLivres   = relies.filter(a => a.sousType === 'livre');
   const reliesRecueils = relies.filter(a => a.sousType === 'recueil');
 
+  // IDs des reliés présents (pour détecter les PDFs éligibles à -75%)
+  const idsReliesLivres   = new Set(reliesLivres.map(a => a.id));
+  const idsReliesRecueils = new Set(reliesRecueils.map(a => a.id));
+
+  // PDFs éligibles à -75% : même id qu'un relié dans le panier
+  // Ces PDFs sont EXCLUS du palier (ne comptent pas pour déclencher -15%/-20%)
+  const livresPdfAvecRelie   = livres.filter(a => idsReliesLivres.has(a.id));
+  const livresPdfSansRelie   = livres.filter(a => !idsReliesLivres.has(a.id));
+  const recueilsPdfAvecRelie = recueils.filter(a => idsReliesRecueils.has(a.id));
+  const recueilsPdfSansRelie = recueils.filter(a => !idsReliesRecueils.has(a.id));
+
   const nbIllus = illus.reduce((s, a) => s + a.quantite, 0);
-  // Palier livres : PDF + reliés livres
-  const nbLivresTotal   = livres.reduce((s, a) => s + a.quantite, 0) + reliesLivres.reduce((s, a) => s + a.quantite, 0);
-  // Palier recueils : PDF + reliés recueils
-  const nbRecueilsTotal = recueils.reduce((s, a) => s + a.quantite, 0) + reliesRecueils.reduce((s, a) => s + a.quantite, 0);
+
+  // Palier livres : PDF sans relié correspondant + reliés livres
+  const nbLivresTotal   = livresPdfSansRelie.reduce((s, a) => s + a.quantite, 0)
+                        + reliesLivres.reduce((s, a) => s + a.quantite, 0);
+  // Palier recueils : PDF sans relié correspondant + reliés recueils
+  const nbRecueilsTotal = recueilsPdfSansRelie.reduce((s, a) => s + a.quantite, 0)
+                        + reliesRecueils.reduce((s, a) => s + a.quantite, 0);
 
   // ── Paliers ──
   let tauxIllus = 0;
@@ -29,47 +45,66 @@ function calcReductions(articles, promoBadge = {}) {
   const tauxRecueils = nbRecueilsTotal >= 2 ? 0.20 : 0;
 
   // ── Totaux bruts ──
-  const totalIllusBrut    = illus.reduce((s, a) => s + a.prix * a.quantite, 0);
-  const totalLivresBrut   = livres.reduce((s, a) => s + a.prix * a.quantite, 0);
-  const totalRecueilsBrut = recueils.reduce((s, a) => s + a.prix * a.quantite, 0);
-  // Les reliés ont leur propre prix (prixRelie), la réduction palier s'applique dessus aussi
+  const totalIllusBrut = illus.reduce((s, a) => s + a.prix * a.quantite, 0);
+
+  // PDFs sans relié → soumis au palier
+  const totalLivresSansRelieBrut   = livresPdfSansRelie.reduce((s, a) => s + a.prix * a.quantite, 0);
+  const totalRecueilsSansRelieBrut = recueilsPdfSansRelie.reduce((s, a) => s + a.prix * a.quantite, 0);
+
+  // PDFs avec relié → -75%, pas de palier
+  const totalLivresAvecRelieBrut   = livresPdfAvecRelie.reduce((s, a) => s + a.prix * a.quantite, 0);
+  const totalRecueilsAvecRelieBrut = recueilsPdfAvecRelie.reduce((s, a) => s + a.prix * a.quantite, 0);
+
   const totalReliesLivresBrut   = reliesLivres.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
   const totalReliesRecueilsBrut = reliesRecueils.reduce((s, a) => s + (a.prixRelie || 0) * a.quantite, 0);
+  const totalReliesBrut         = totalReliesLivresBrut + totalReliesRecueilsBrut;
 
-  // ── Après paliers ──
-  const totalIllus           = totalIllusBrut * (1 - tauxIllus);
-  const totalLivres          = totalLivresBrut * (1 - tauxLivres);
-  const totalRecueils        = totalRecueilsBrut * (1 - tauxRecueils);
-  const totalReliesLivres    = totalReliesLivresBrut * (1 - tauxLivres);
-  const totalReliesRecueils  = totalReliesRecueilsBrut * (1 - tauxRecueils);
-  const totalReliesBrut      = totalReliesLivresBrut + totalReliesRecueilsBrut;
-  const totalRelies          = totalReliesLivres + totalReliesRecueils;
-  const totalApresPaliers    = totalIllus + totalLivres + totalRecueils + totalRelies;
+  // Pour compatibilité affichage (totalBrut affiché dans sections)
+  const totalLivresBrut   = totalLivresSansRelieBrut + totalLivresAvecRelieBrut;
+  const totalRecueilsBrut = totalRecueilsSansRelieBrut + totalRecueilsAvecRelieBrut;
 
-  // ── Badges (cumul direct fan + colo, appliqué sur total après paliers) ──
-  const tauxFan  = promoBadge.fan?.taux  || 0;
-  const tauxColo = promoBadge.colo?.taux || 0;
-  const tauxBadgeTotal = tauxFan + tauxColo; // cumul direct
-  const remiseBadge = totalApresPaliers * tauxBadgeTotal;
-  const totalGeneral = Math.max(0, totalApresPaliers - remiseBadge);
+  // ── Après paliers et promos PDF ──
+  const totalIllus = totalIllusBrut * (1 - tauxIllus);
 
-  // ── Messages incitatifs paliers ──
+  // Livres : PDFs sans relié → palier ; PDFs avec relié → -75% ; reliés → palier
+  const totalLivresSansRelie   = totalLivresSansRelieBrut * (1 - tauxLivres);
+  const totalLivresAvecRelie   = totalLivresAvecRelieBrut * (1 - TAUX_PDF_RELIE);
+  const totalReliesLivres      = totalReliesLivresBrut * (1 - tauxLivres);
+  const totalLivres            = totalLivresSansRelie + totalLivresAvecRelie;
+
+  // Recueils : même logique
+  const totalRecueilsSansRelie   = totalRecueilsSansRelieBrut * (1 - tauxRecueils);
+  const totalRecueilsAvecRelie   = totalRecueilsAvecRelieBrut * (1 - TAUX_PDF_RELIE);
+  const totalReliesRecueils      = totalReliesRecueilsBrut * (1 - tauxRecueils);
+  const totalRecueils            = totalRecueilsSansRelie + totalRecueilsAvecRelie;
+
+  const totalRelies = totalReliesLivres + totalReliesRecueils;
+  const totalApresPaliers = totalIllus + totalLivres + totalRecueils + totalRelies;
+
+  // ── Badges (cumul direct fan + colo) ──
+  const tauxFan        = promoBadge.fan?.taux  || 0;
+  const tauxColo       = promoBadge.colo?.taux || 0;
+  const tauxBadgeTotal = tauxFan + tauxColo;
+  const remiseBadge    = totalApresPaliers * tauxBadgeTotal;
+  const totalGeneral   = Math.max(0, totalApresPaliers - remiseBadge);
+
+  // ── Messages incitatifs ──
   let messageIllus = null;
   if (nbIllus === 1) messageIllus = 'Plus que 2 illustrations pour obtenir −15% !';
   else if (nbIllus === 2) messageIllus = 'Plus que 1 illustration pour obtenir −15% !';
   else if (nbIllus >= 3 && nbIllus < 6) messageIllus = `Plus que ${6 - nbIllus} illustration${6 - nbIllus > 1 ? 's' : ''} pour obtenir −25% !`;
   else if (nbIllus >= 6 && nbIllus < 10) messageIllus = `Plus que ${10 - nbIllus} illustration${10 - nbIllus > 1 ? 's' : ''} pour obtenir −35% !`;
-  const messageLivres   = nbLivresTotal === 1 ? "Ajoutez un autre livre (PDF ou relié) pour obtenir −15% sur tous vos livres !" : null;
-  const messageRecueils = nbRecueilsTotal === 1 ? "Ajoutez un autre recueil (PDF ou relié) pour obtenir −20% sur tous vos recueils !" : null;
+  const messageLivres   = nbLivresTotal === 1 ? "Ajoutez un autre livre (PDF ou relié) pour obtenir −15% !" : null;
+  const messageRecueils = nbRecueilsTotal === 1 ? "Ajoutez un autre recueil (PDF ou relié) pour obtenir −20% !" : null;
 
   // ── Explications paliers ──
   let explicationIllus = null;
   if (tauxIllus > 0) {
     const palier = tauxIllus === 0.35 ? 10 : tauxIllus === 0.25 ? 6 : 3;
-    explicationIllus = `Vous avez ajouté ${nbIllus} illustration${nbIllus > 1 ? 's' : ''} : vous bénéficiez de −${Math.round(tauxIllus * 100)}% (palier ${palier}+)`;
+    explicationIllus = `${nbIllus} illustration${nbIllus > 1 ? 's' : ''} : −${Math.round(tauxIllus * 100)}% appliqué (palier ${palier}+)`;
   }
-  const explicationLivres   = tauxLivres > 0   ? `${nbLivresTotal} livre${nbLivresTotal > 1 ? 's' : ''} dans votre panier (PDF et/ou reliés) : −15% appliqué sur tous vos livres` : null;
-  const explicationRecueils = tauxRecueils > 0 ? `${nbRecueilsTotal} recueil${nbRecueilsTotal > 1 ? 's' : ''} dans votre panier (PDF et/ou reliés) : −20% appliqué sur tous vos recueils` : null;
+  const explicationLivres   = tauxLivres > 0   ? `${nbLivresTotal} livre${nbLivresTotal > 1 ? 's' : ''} (PDF + reliés) : −15% appliqué` : null;
+  const explicationRecueils = tauxRecueils > 0 ? `${nbRecueilsTotal} recueil${nbRecueilsTotal > 1 ? 's' : ''} (PDF + reliés) : −20% appliqué` : null;
 
   // ── Explication badge ──
   let explicationBadge = null;
@@ -82,8 +117,8 @@ function calcReductions(articles, promoBadge = {}) {
       tauxTotal: tauxBadgeTotal,
       montantRemise: remiseBadge,
       texte: parties.length > 1
-        ? `${parties.join(' + ')} = −${Math.round(tauxBadgeTotal * 100)}% cumulés appliqués sur le sous-total après réductions`
-        : `${parties[0]} appliqué sur le sous-total après réductions`,
+        ? `${parties.join(' + ')} = −${Math.round(tauxBadgeTotal * 100)}% cumulés appliqués sur le sous-total`
+        : `${parties[0]} appliqué sur le sous-total`,
     };
   }
 
@@ -91,10 +126,13 @@ function calcReductions(articles, promoBadge = {}) {
     tauxIllus, tauxLivres, tauxRecueils, tauxBadgeTotal,
     totalIllusBrut, totalLivresBrut, totalRecueilsBrut, totalReliesBrut,
     totalReliesLivresBrut, totalReliesRecueilsBrut,
+    totalLivresAvecRelieBrut, totalRecueilsAvecRelieBrut,
     totalIllus, totalLivres, totalRecueils, totalRelies,
     totalReliesLivres, totalReliesRecueils,
+    totalLivresAvecRelie, totalRecueilsAvecRelie,
     totalApresPaliers, remiseBadge, totalGeneral,
     nbIllus, nbLivresTotal, nbRecueilsTotal,
+    idsReliesLivres, idsReliesRecueils,
     messageIllus, messageLivres, messageRecueils,
     explicationIllus, explicationLivres, explicationRecueils,
     explicationBadge,
@@ -111,7 +149,6 @@ export function PanierProvider({ children }) {
     } catch { return []; }
   });
 
-  // Promo badge active — alimentée depuis Panier.js après lecture Supabase
   const [promoBadge, setPromoBadge] = React.useState({});
 
   React.useEffect(() => {
@@ -146,6 +183,21 @@ export function PanierProvider({ children }) {
     });
   };
 
+  // Ajouter relié + PDF du même titre en une fois
+  const ajouterRelieEtPdf = (item, pays, prixRelie, delai, sousType, prixPdf, imagePdf) => {
+    setArticles(prev => {
+      let next = [...prev];
+      if (!next.find(a => a.type === 'relie' && a.id === item.id)) {
+        next.push({ type: 'relie', id: item.id, nom: item.nom, image: item.image || imagePdf || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 });
+      }
+      const typePdf = sousType === 'recueil' ? 'recueil' : 'livre_pdf';
+      if (!next.find(a => a.type === typePdf && a.id === item.id)) {
+        next.push({ type: typePdf, id: item.id, nom: item.nom, prix: parseFloat(prixPdf) || 0, image: item.image || imagePdf || null, quantite: 1 });
+      }
+      return next;
+    });
+  };
+
   const supprimerArticle = (type, id) => setArticles(prev => prev.filter(a => !(a.type === type && a.id === id)));
   const viderPanier = () => setArticles([]);
   const estDansPanier = (type, id) => articles.some(a => a.type === type && a.id === id);
@@ -156,7 +208,7 @@ export function PanierProvider({ children }) {
     <PanierContext.Provider value={{
       articles, nbArticles, reductions, promoBadge,
       setPromoBadge,
-      ajouterIllustration, ajouterLivrePdf, ajouterRecueil, ajouterRelie,
+      ajouterIllustration, ajouterLivrePdf, ajouterRecueil, ajouterRelie, ajouterRelieEtPdf,
       supprimerArticle, viderPanier, estDansPanier,
     }}>
       {children}
