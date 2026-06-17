@@ -103,7 +103,38 @@ function IndicateurEtapes({ etape, isMobile }) {
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
-  const { articles, reductions, supprimerArticle } = usePanier();
+  const { articles, reductions, supprimerArticle, setBadgesFans } = usePanier();
+
+  // Chargement des badges fans depuis Supabase
+  React.useEffect(() => {
+    const chargerBadges = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profil } = await supabase.from('profils').select('badges').eq('id', user.id).single();
+      if (!profil?.badges) return;
+      const badges = profil.badges; // objet { illustrations: [...], livres: [...], recueils: [...] }
+      // Définition des taux par badge (du plus haut au plus bas)
+      const NIVEAUX = [
+        { nom: 'Fan Platine', taux: 0.20 },
+        { nom: 'Fan Or', taux: 0.15 },
+        { nom: 'Fan Argent', taux: 0.10 },
+        { nom: 'Fan Bronze', taux: 0.05 },
+      ];
+      const meilleurBadge = (listeBadges) => {
+        if (!listeBadges || listeBadges.length === 0) return null;
+        for (const niveau of NIVEAUX) {
+          if (listeBadges.includes(niveau.nom)) return { nomBadge: niveau.nom, taux: niveau.taux };
+        }
+        return null;
+      };
+      setBadgesFans({
+        illustrations: meilleurBadge(badges.illustrations),
+        livres: meilleurBadge(badges.livres),
+        recueils: meilleurBadge(badges.recueils),
+      });
+    };
+    chargerBadges();
+  }, [setBadgesFans]);
 
   const labelType = (type) => {
     if (type === 'illustration') return { label: 'Illustration', couleur: '#ff3eb5' };
@@ -124,10 +155,10 @@ function EtapePanier({ onContinuer, isMobile }) {
   }
 
   const sections = [
-    { type: 'illustration', titre: 'Illustrations', taux: reductions.tauxIllus, total: reductions.totalIllus, totalBrut: reductions.totalIllusBrut, message: reductions.messageIllus },
-    { type: 'livre_pdf', titre: 'Livres PDF', taux: reductions.tauxLivres, total: reductions.totalLivres, totalBrut: reductions.totalLivresBrut, message: reductions.messageLivres },
-    { type: 'recueil', titre: 'Recueils', taux: reductions.tauxRecueils, total: reductions.totalRecueils, totalBrut: reductions.totalRecueilsBrut, message: reductions.messageRecueils },
-    { type: 'relie', titre: 'Versions Reliées', taux: 0, total: reductions.totalRelies, totalBrut: reductions.totalReliesBrut, message: null },
+    { type: 'illustration', titre: 'Illustrations', taux: reductions.tauxIllus, tauxBadge: reductions.tauxBadgeIllus, total: reductions.totalIllus, totalBrut: reductions.totalIllusBrut, message: reductions.messageIllus, explication: reductions.explicationIllus, explicationBadge: reductions.explicationBadgeIllus },
+    { type: 'livre_pdf', titre: 'Livres PDF', taux: reductions.tauxLivres, tauxBadge: reductions.tauxBadgeLivres, total: reductions.totalLivres, totalBrut: reductions.totalLivresBrut, message: reductions.messageLivres, explication: reductions.explicationLivres, explicationBadge: reductions.explicationBadgeLivres },
+    { type: 'recueil', titre: 'Recueils', taux: reductions.tauxRecueils, tauxBadge: reductions.tauxBadgeRecueils, total: reductions.totalRecueils, totalBrut: reductions.totalRecueilsBrut, message: reductions.messageRecueils, explication: reductions.explicationRecueils, explicationBadge: reductions.explicationBadgeRecueils },
+    { type: 'relie', titre: 'Versions Reliées', taux: 0, tauxBadge: 0, total: reductions.totalRelies, totalBrut: reductions.totalReliesBrut, message: null, explication: null, explicationBadge: null },
   ];
 
   return (
@@ -139,11 +170,18 @@ function EtapePanier({ onContinuer, isMobile }) {
           <div key={section.type}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>{section.titre}</h3>
-              {section.taux > 0 && (
-                <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>
-                  −{Math.round(section.taux * 100)}% appliqué
-                </span>
-              )}
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {section.taux > 0 && (
+                  <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>
+                    −{Math.round(section.taux * 100)}% appliqué
+                  </span>
+                )}
+                {section.tauxBadge > 0 && (
+                  <span style={{ background: 'rgba(255,210,80,0.15)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '20px', padding: '2px 10px', color: 'rgba(255,210,80,0.95)', fontSize: '12px', fontWeight: 'bold' }}>
+                    🏅 −{Math.round(section.tauxBadge * 100)}% badge
+                  </span>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -178,6 +216,18 @@ function EtapePanier({ onContinuer, isMobile }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', paddingRight: '4px' }}>
                 <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{section.totalBrut.toFixed(2)} €</span>
                 <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{section.total.toFixed(2)} €</span>
+              </div>
+            )}
+
+            {section.explication && (
+              <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
+                <p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {section.explication}</p>
+              </div>
+            )}
+
+            {section.explicationBadge && (
+              <div style={{ background: 'rgba(255,210,80,0.07)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}>
+                <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px' }}>🏅 {section.explicationBadge}</p>
               </div>
             )}
 

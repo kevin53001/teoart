@@ -48,7 +48,7 @@ function cheminVersUrl(chemin) {
 
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
-function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -99,9 +99,10 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             </svg>
           </div>
         )}
-        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onPanier ? onPanier() : (onClick && onClick()); }} title={onPanier ? "Ajouter au panier" : "Voir la fiche"}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onPanier ? onPanier() : (onClick && onClick()); }} title={dansPanier ? 'Déjà dans le panier' : onPanier ? 'Ajouter au panier' : 'Voir la fiche'}
+          style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
           </svg>
         </div>
@@ -327,7 +328,7 @@ function Livres() {
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles, ajouterLivrePdf, ajouterRecueil, estDansPanier } = usePanier();
+  const { nbArticles, ajouterLivrePdf, ajouterRecueil, ajouterRelie, estDansPanier } = usePanier();
 
   // Popup recueil/livre
   const [popupItem, setPopupItem] = React.useState(null);
@@ -706,6 +707,7 @@ function Livres() {
                     onToggleJAi={() => toggleJAi(r.id, 'recueil')}
                     onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
                     onClick={() => ouvrirRecueil(r)}
+                    dansPanier={estDansPanier((!r.relie_disponible || r.statut_relie !== 'published') ? 'recueil' : 'relie', r.id)}
                     onPanier={(!r.relie_disponible || r.statut_relie !== 'published') && r.prix ? () => {
                       const imageUrl = cheminVersUrl(r.visuel_presentation);
                       ajouterRecueil({ ...r, image: imageUrl });
@@ -725,6 +727,7 @@ function Livres() {
                     onToggleJAi={() => toggleJAi(l.id, 'livre')}
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
                     onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }}
+                    dansPanier={estDansPanier((!l.relie_disponible || l.statut_relie !== 'published') ? 'livre_pdf' : 'relie', l.id)}
                     onPanier={(!l.relie_disponible || l.statut_relie !== 'published') && l.prix ? () => {
                       const imageUrl = cheminVersUrl(l.visuel_presentation);
                       ajouterLivrePdf({ ...l, image: imageUrl });
@@ -1150,7 +1153,14 @@ function Livres() {
                     await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
                     setUserPays(paysChoisi);
                   }
-                  // TODO: logique d'ajout au panier reliée
+                  // Récupérer le prix et délai selon le pays
+                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                  const zoneKey = resoudrePays(paysChoisi, prixData);
+                  const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
+                  const prixRelie = infoPays ? infoPays.prix : 0;
+                  const delai = infoPays ? infoPays.delai : 'délai variable';
+                  const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                  ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai);
                   setPopupRelie(false);
                   setRelieLuAccepte(false);
                 }}
