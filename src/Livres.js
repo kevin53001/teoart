@@ -48,7 +48,7 @@ function cheminVersUrl(chemin) {
 
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
-function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -99,7 +99,7 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             </svg>
           </div>
         )}
-        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onClick && onClick(); }} title="Voir la fiche">
+        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onPanier ? onPanier() : (onClick && onClick()); }} title={onPanier ? "Ajouter au panier" : "Voir la fiche"}>
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
@@ -280,6 +280,34 @@ function resoudrePays(pays, prixData) {
   return null;
 }
 
+// ─── Bouton panier PDF (livre ou recueil) ────────────────────────────────────
+function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansPanier }) {
+  const [ajoutConfirme, setAjoutConfirme] = React.useState(false);
+  const dansPanier = estDansPanier(type === 'recueil' ? 'recueil' : 'livre_pdf', item.id);
+  const handleAjouter = () => {
+    if (dansPanier) return;
+    const imageUrl = cheminVersUrl(item.visuel_presentation);
+    if (type === 'recueil') ajouterRecueil({ ...item, image: imageUrl });
+    else ajouterLivrePdf({ ...item, image: imageUrl });
+    setAjoutConfirme(true);
+    setTimeout(() => setAjoutConfirme(false), 2000);
+  };
+  return (
+    <button onClick={handleAjouter} disabled={dansPanier}
+      style={{ background: dansPanier ? 'rgba(0,212,212,0.15)' : ajoutConfirme ? 'rgba(0,212,212,0.3)' : '#ff3eb5', border: dansPanier ? '1px solid rgba(0,212,212,0.4)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#000', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s' }}>
+      {dansPanier ? '✓ Dans le panier' : ajoutConfirme ? '✓ Ajouté !' : (
+        <>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
+            <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+          </svg>
+          Ajouter au panier — Version PDF
+        </>
+      )}
+    </button>
+  );
+}
+
 function Livres() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -299,7 +327,7 @@ function Livres() {
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles } = usePanier();
+  const { nbArticles, ajouterLivrePdf, ajouterRecueil, estDansPanier } = usePanier();
 
   // Popup recueil/livre
   const [popupItem, setPopupItem] = React.useState(null);
@@ -677,7 +705,11 @@ function Livres() {
                     jeVeux={collection[`recueil_${r.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(r.id, 'recueil')}
                     onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
-                    onClick={() => ouvrirRecueil(r)} />
+                    onClick={() => ouvrirRecueil(r)}
+                    onPanier={(!r.relie_disponible || r.statut_relie !== 'published') && r.prix ? () => {
+                      const imageUrl = cheminVersUrl(r.visuel_presentation);
+                      ajouterRecueil({ ...r, image: imageUrl });
+                    } : null} />
                 ))}
                 {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-r-${i}`} style={{ width: `${TAILLE_RECUEIL}px`, height: 0 }} />)}
               </div>
@@ -692,7 +724,11 @@ function Livres() {
                     jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(l.id, 'livre')}
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
-                    onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }} />
+                    onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }}
+                    onPanier={(!l.relie_disponible || l.statut_relie !== 'published') && l.prix ? () => {
+                      const imageUrl = cheminVersUrl(l.visuel_presentation);
+                      ajouterLivrePdf({ ...l, image: imageUrl });
+                    } : null} />
                 ))}
                 {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-l-${i}`} style={{ width: `${TAILLE_LIVRE}px`, height: 0 }} />)}
               </div>
@@ -824,13 +860,15 @@ function Livres() {
 
                 {/* ── Bouton Ajouter au panier ── */}
                 {!modeRelie ? (
-                  <button style={{ background: '#ff3eb5', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit' }}>
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
-                      <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-                    </svg>
-                    Ajouter au panier — Version PDF
-                  </button>
+                  popupItem.prix ? (
+                    <BoutonPanierPdf
+                      item={popupItem}
+                      type={popupType}
+                      ajouterLivrePdf={ajouterLivrePdf}
+                      ajouterRecueil={ajouterRecueil}
+                      estDansPanier={estDansPanier}
+                    />
+                  ) : null
                 ) : (
                   popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
                     <button onClick={() => { setPopupRelie(true); setReliePaysSaisi(''); setReliePaysFiltre([]); setRelieLuAccepte(false); }}

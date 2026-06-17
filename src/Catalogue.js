@@ -152,7 +152,7 @@ function Catalogue() {
   const PAR_PAGE = 40;
 
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles } = usePanier();
+  const { nbArticles, ajouterIllustration, estDansPanier } = usePanier();
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -622,6 +622,10 @@ function Catalogue() {
                     onToggleJeVeux={(e) => toggleJeVeux(illu.id, e)}
                     onClickPopup={() => ouvrirPopup(illu, idx)}
                     onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
+                    onAjouterPanier={illu.prix ? () => {
+                      const imageUrl = getVisuelPresentation(illu.visuels);
+                      ajouterIllustration({ ...illu, image: imageUrl });
+                    } : null}
                   />
                 ))}
               </div>
@@ -697,7 +701,7 @@ function Catalogue() {
   );
 }
 
-function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette }) {
+function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier }) {
   const wrapRef = React.useRef(null);
   const cardRef = React.useRef(null);
   const [visuelIndex, setVisuelIndex] = React.useState(0);
@@ -756,7 +760,7 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
               : (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/><circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/></g>)}
           </svg>
         </div>
-        <div className="badge-panier" onClick={(e) => e.stopPropagation()} title="Ajouter au panier">
+        <div className="badge-panier" onClick={(e) => { e.stopPropagation(); onAjouterPanier && onAjouterPanier(); }} title="Ajouter au panier">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
             <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
