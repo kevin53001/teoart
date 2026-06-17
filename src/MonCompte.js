@@ -428,8 +428,6 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
           to   { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         .badge-nouveau { animation: badge-apparition 1.4s cubic-bezier(0.34,1.56,0.64,1) both; }
-        .hex-badge.obtenu { opacity: 0; }
-        .hex-badge.obtenu.badge-nouveau { opacity: 1; }
         .hex-badge { transition: transform 0.2s; }
         .hex-badge.obtenu:hover { transform: scale(1.1) translateY(-2px); }
       `}</style>
