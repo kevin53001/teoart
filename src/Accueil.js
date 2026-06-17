@@ -441,11 +441,19 @@ function ZoomSocialAccueil({ coloId, pseudo, userId, userPseudo }) {
   );
 }
 
-function PopupColoAccueil({ img, userId, userPseudo, onClose }) {
+function PopupColoAccueil({ img, userId, userPseudo, onClose, onPrecedent, onSuivant, total, index }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', maxWidth: '480px', width: '100%', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '32px', height: '32px', color: '#fff', fontSize: '18px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        {/* Flèches navigation */}
+        {total > 1 && (
+          <>
+            <button onClick={e => { e.stopPropagation(); onPrecedent(); }} style={{ position: 'absolute', left: '8px', top: '40%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '22px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+            <button onClick={e => { e.stopPropagation(); onSuivant(); }} style={{ position: 'absolute', right: '8px', top: '40%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '22px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+            <p style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.35)', fontSize: '11px', zIndex: 5, pointerEvents: 'none' }}>{index + 1} / {total}</p>
+          </>
+        )}
         <img src={img.url} alt={img.nom} style={{ width: '100%', maxHeight: '420px', objectFit: 'contain', display: 'block', background: '#000' }} />
         <ZoomSocialAccueil coloId={img.coloId} pseudo={img.pseudo} userId={userId} userPseudo={userPseudo} />
       </div>
@@ -537,6 +545,7 @@ function Accueil() {
   const [popupFicheListe, setPopupFicheListe] = React.useState([]);
   const [popupFicheIndex, setPopupFicheIndex] = React.useState(0);
   const [popupColo, setPopupColo] = React.useState(null); // { url, coloId, pseudo, coloriste } pour popup coloriage social
+  const [popupColoIndex, setPopupColoIndex] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
@@ -700,7 +709,26 @@ function Accueil() {
 
       {/* Popup zoom image */}
       {popup && <PopupZoom images={popup.images} indexDepart={popup.index} onClose={() => setPopup(null)} />}
-      {popupColo && <PopupColoAccueil img={popupColo} userId={userId} userPseudo={userPseudo} onClose={() => setPopupColo(null)} />}
+      {popupColo && <PopupColoAccueil
+        img={popupColo}
+        userId={userId}
+        userPseudo={userPseudo}
+        onClose={() => setPopupColo(null)}
+        total={coloriages.filter(c => c.coloId).length}
+        index={popupColoIndex}
+        onPrecedent={() => {
+          const colosAvecId = coloriages.filter(c => c.coloId);
+          const prev = (popupColoIndex - 1 + colosAvecId.length) % colosAvecId.length;
+          setPopupColoIndex(prev);
+          setPopupColo(colosAvecId[prev]);
+        }}
+        onSuivant={() => {
+          const colosAvecId = coloriages.filter(c => c.coloId);
+          const next = (popupColoIndex + 1) % colosAvecId.length;
+          setPopupColoIndex(next);
+          setPopupColo(colosAvecId[next]);
+        }}
+      />}
 
       {/* Popup fiche illustration */}
       {popupFiche && userId && (
@@ -886,8 +914,12 @@ function Accueil() {
                   images={coloriages}
                   onZoom={(imgs, i) => {
                     const img = imgs[i];
-                    if (img.coloId) setPopupColo(img);
-                    else setPopup({ images: imgs, index: i });
+                    if (img.coloId) {
+                      const colosAvecId = coloriages.filter(c => c.coloId);
+                      const idx = colosAvecId.findIndex(c => c.coloId === img.coloId);
+                      setPopupColoIndex(idx >= 0 ? idx : 0);
+                      setPopupColo(img);
+                    } else setPopup({ images: imgs, index: i });
                   }}
                 />
                 <EncartDefilant titre="Best sellers" pastille={`${R2}/site/pastille_best.png`} couleur="#ff3eb5"

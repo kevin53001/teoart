@@ -793,6 +793,7 @@ function Livres() {
                     onClick={() => ouvrirRecueil(r)}
                     dansPanier={estDansPanier((!r.relie_disponible || r.statut_relie !== 'published') ? 'recueil' : 'relie', r.id)}
                     onPanier={(!r.relie_disponible || r.statut_relie !== 'published') && r.prix && parseFloat(r.prix) > 0 ? () => {
+                      if (estDansPanier('recueil', r.id)) { supprimerArticle('recueil', r.id); return; }
                       const imageUrl = cheminVersUrl(r.visuel_presentation);
                       ajouterRecueil({ ...r, image: imageUrl });
                     } : null}
@@ -815,6 +816,7 @@ function Livres() {
                     onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }}
                     dansPanier={estDansPanier((!l.relie_disponible || l.statut_relie !== 'published') ? 'livre_pdf' : 'relie', l.id)}
                     onPanier={(!l.relie_disponible || l.statut_relie !== 'published') && l.prix && parseFloat(l.prix) > 0 ? () => {
+                      if (estDansPanier('livre_pdf', l.id)) { supprimerArticle('livre_pdf', l.id); return; }
                       const imageUrl = cheminVersUrl(l.visuel_presentation);
                       ajouterLivrePdf({ ...l, image: imageUrl });
                     } : null}

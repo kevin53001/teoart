@@ -154,7 +154,7 @@ function Catalogue() {
   const PAR_PAGE = 40;
 
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles, ajouterIllustration, estDansPanier } = usePanier();
+  const { nbArticles, ajouterIllustration, estDansPanier, supprimerArticle } = usePanier();
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -647,6 +647,7 @@ function Catalogue() {
                     onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
                     dansPanier={illu.prix && parseFloat(illu.prix) > 0 ? estDansPanier('illustration', illu.id) : false}
                     onAjouterPanier={illu.prix && parseFloat(illu.prix) > 0 ? () => {
+                      if (estDansPanier('illustration', illu.id)) { supprimerArticle('illustration', illu.id); return; }
                       if (collection[illu.id]?.j_ai) { setConfirmJaiCat(illu); return; }
                       const imageUrl = getVisuelPresentation(illu.visuels);
                       ajouterIllustration({ ...illu, image: imageUrl });
