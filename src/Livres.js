@@ -683,6 +683,8 @@ function Livres() {
 
             <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
               <VisuelsItem item={popupItem} />
+
+              {/* Zone centrale : infos + prix + boutons */}
               <div style={{ flex: 1, minWidth: '200px' }}>
                 {/* Label type */}
                 <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
@@ -755,7 +757,7 @@ function Livres() {
                   {/* Bouton PDF */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                     <button
-                      onClick={() => { if (!modeRelie) { /* ajouter au panier PDF */ } }}
+                      onClick={() => setModeRelie(false)}
                       style={{ background: !modeRelie ? '#ff3eb5' : 'rgba(255,62,181,0.25)', border: !modeRelie ? 'none' : '1px solid rgba(255,62,181,0.3)', borderRadius: '8px', padding: '8px 14px', color: !modeRelie ? '#000' : 'rgba(255,62,181,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: !modeRelie ? 1 : 0.5 }}>
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
@@ -773,7 +775,7 @@ function Livres() {
                   {popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       <button
-                        onClick={() => { if (modeRelie) setPopupRelie(true); }}
+                        onClick={() => { setModeRelie(true); }}
                         style={{ background: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.2)', border: modeRelie ? 'none' : '1px solid rgba(255,210,80,0.35)', borderRadius: '8px', padding: '8px 14px', color: modeRelie ? '#000' : 'rgba(255,210,80,0.4)', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all .25s', opacity: modeRelie ? 1 : 0.5 }}>
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="9" cy="21" r="1.4" fill="currentColor" /><circle cx="19" cy="21" r="1.4" fill="currentColor" />
@@ -796,26 +798,26 @@ function Livres() {
                     <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px' }}>{desc}</p>
                   ) : null;
                 })()}
-
-                {/* Disponibilité reliée si mode relié */}
-                {modeRelie && (() => {
-                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                  if (!prixData) return null;
-                  const zones = Object.keys(prixData);
-                  return (
-                    <div style={{ marginTop: '12px', background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
-                      <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', marginBottom: '6px' }}>📦 Pays disponibles :</p>
-                      {zones.map(z => (
-                        <div key={z} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>{z}</span>
-                          <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px' }}>{prixData[z].prix} {prixData[z].symbole || '€'} · {prixData[z].delai}</span>
-                        </div>
-                      ))}
-                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '6px' }}>Monaco, Andorre et Suisse exclus de la Zone Euro.</p>
-                    </div>
-                  );
-                })()}
               </div>
+
+              {/* ── Tableau pays disponibles — haut à droite, visible uniquement en mode Relié ── */}
+              {modeRelie && popupItem.relie_disponible && (() => {
+                const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                if (!prixData) return null;
+                const zones = Object.keys(prixData);
+                return (
+                  <div style={{ minWidth: '200px', maxWidth: '240px', background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '10px 14px', alignSelf: 'flex-start' }}>
+                    <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', marginBottom: '8px' }}>📦 Pays disponibles</p>
+                    {zones.map(z => (
+                      <div key={z} style={{ padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>{z}</p>
+                        <p style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px' }}>{prixData[z].prix} {prixData[z].symbole || '€'} · {prixData[z].delai}</p>
+                      </div>
+                    ))}
+                    <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', marginTop: '6px', fontStyle: 'italic' }}>Monaco, Andorre et Suisse exclus.</p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* CONTENU RECUEIL */}
