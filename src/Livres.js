@@ -1226,6 +1226,16 @@ function Livres() {
                       onClick={async () => {
                         if (collection[`${popupType}_${popupItem.id}`]?.j_ai) { setConfirmJaiRelie('relie_pdf'); return; }
                         const paysChoisi = userPays || reliePaysSaisi;
+                        if (!userPays && paysChoisi && userId) {
+                          await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
+                          setUserPays(paysChoisi);
+                        }
+                        const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                        ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, infoPays.delai, popupType, popupItem.prix, imageUrl);
+                        setPopupRelie(false);
+                        setRelieLuAccepte(false);
+                        setConfirmAjout('relie_pdf');
+                        setTimeout(() => setConfirmAjout(null), 2500);
                       }}
                       style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)', letterSpacing: '0.3px' }}>
                       Relié + PDF −75%<br />

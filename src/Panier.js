@@ -104,9 +104,7 @@ function IndicateurEtapes({ etape, isMobile }) {
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
-  const [popupPanier, setPopupPanier] = React.useState(null); // { type, id, nom, image, modeRelie }
-  const [illusData, setIllusData] = React.useState({});
-  const [livresData, setLivresData] = React.useState({});
+  const [popupPanier, setPopupPanier] = React.useState(null);
 
   // Chargement de la promo badge active depuis Supabase
   React.useEffect(() => {
