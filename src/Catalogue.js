@@ -180,7 +180,7 @@ function Catalogue() {
   React.useEffect(() => {
     if (location.state?.categorie) {
       setCategorie(location.state.categorie);
-      setSousCategorie('');
+      setSousCategorie(location.state.sousCategorie || '');
       setPage(1);
     } else if (location.state?.sousCategorie) {
       setSousCategorie(location.state.sousCategorie);
