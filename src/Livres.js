@@ -718,7 +718,7 @@ function Livres() {
               <VisuelsItem item={popupItem} />
 
               {/* Zone centrale : infos + prix + boutons */}
-              <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 {/* Label type */}
                 <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
                   {popupType === 'recueil' ? 'Recueil' : 'Livre'}
@@ -835,26 +835,26 @@ function Livres() {
                     <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px' }}>{desc}</p>
                   ) : null;
                 })()}
-
-                {/* Tableau pays — sous la description, en mode Relié uniquement */}
-                {modeRelie && popupItem.relie_disponible && (() => {
-                  const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
-                  if (!prixData) return null;
-                  const zones = Object.keys(prixData);
-                  return (
-                    <div style={{ marginTop: '14px', background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '10px 14px' }}>
-                      <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', marginBottom: '8px' }}>📦 Pays disponibles</p>
-                      {zones.map(z => (
-                        <div key={z} style={{ padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>{z}</p>
-                          <p style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px' }}>{prixData[z].prix} {prixData[z].symbole || '€'} · {prixData[z].delai}</p>
-                        </div>
-                      ))}
-                      <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', marginTop: '6px', fontStyle: 'italic' }}>Monaco, Andorre et Suisse exclus.</p>
-                    </div>
-                  );
-                })()}
               </div>
+
+              {/* ── Tableau pays — 3ème colonne, visible uniquement en mode Relié ── */}
+              {modeRelie && popupItem.relie_disponible && (() => {
+                const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                if (!prixData) return null;
+                const zones = Object.keys(prixData);
+                return (
+                  <div style={{ width: '180px', flexShrink: 0, background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '10px 14px', alignSelf: 'flex-start' }}>
+                    <p style={{ color: 'rgba(255,210,80,0.8)', fontSize: '11px', fontWeight: 'bold', marginBottom: '8px' }}>📦 Pays disponibles</p>
+                    {zones.map(z => (
+                      <div key={z} style={{ padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>{z}</p>
+                        <p style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px' }}>{prixData[z].prix} {prixData[z].symbole || '€'} · {prixData[z].delai}</p>
+                      </div>
+                    ))}
+                    <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '9px', marginTop: '6px', fontStyle: 'italic' }}>Monaco, Andorre et Suisse exclus.</p>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* CONTENU RECUEIL */}
