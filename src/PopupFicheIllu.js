@@ -275,10 +275,21 @@ export default function PopupFicheIllu({
 
   const dansPanier = illu ? estDansPanier('illustration', illu.id) : false;
 
+  const [confirmJai, setConfirmJai] = React.useState(false);
+
   const handleAjouterPanier = () => {
     if (!illu || dansPanier) return;
+    if (jAi) { setConfirmJai(true); return; }
     const imageUrl = visuels[0] || null;
     ajouterIllustration({ ...illu, image: imageUrl });
+    setAjoutConfirme(true);
+    setTimeout(() => setAjoutConfirme(false), 2000);
+  };
+
+  const confirmerAjoutMalgréJai = () => {
+    const imageUrl = visuels[0] || null;
+    ajouterIllustration({ ...illu, image: imageUrl });
+    setConfirmJai(false);
     setAjoutConfirme(true);
     setTimeout(() => setAjoutConfirme(false), 2000);
   };
@@ -378,6 +389,21 @@ export default function PopupFicheIllu({
 
       {/* Fond overlay */}
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 20px' }}>
+
+        {/* Popup "J'ai déjà ça" */}
+        {confirmJai && (
+          <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+            <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 24px', maxWidth: '340px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <p style={{ fontSize: '32px' }}>👀</p>
+              <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Eh, tu l'as déjà celui-là !</p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.6 }}>Tu as coché "J'ai" sur cette illustration... Tu collectionnes les doublons maintenant ? C'est pour offrir ?</p>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button onClick={() => setConfirmJai(false)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer' }}>Oups, annuler</button>
+                <button onClick={confirmerAjoutMalgréJai} style={{ flex: 1, background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(255,210,80,0.35)' }}>Oui, j'assume !</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Flèches navigation entre illustrations */}
         <button onClick={(e) => { e.stopPropagation(); onPrecedent(); }} style={{ position: 'fixed', left: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1010 }}>‹</button>
         <button onClick={(e) => { e.stopPropagation(); onSuivant(); }} style={{ position: 'fixed', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1010 }}>›</button>

@@ -282,30 +282,53 @@ function resoudrePays(pays, prixData) {
 }
 
 // ─── Bouton panier PDF (livre ou recueil) ────────────────────────────────────
-function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansPanier }) {
+function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansPanier, jAi = false }) {
   const [ajoutConfirme, setAjoutConfirme] = React.useState(false);
+  const [confirmJai, setConfirmJai] = React.useState(false);
   const dansPanier = estDansPanier(type === 'recueil' ? 'recueil' : 'livre_pdf', item.id);
-  const handleAjouter = () => {
-    if (dansPanier) return;
+
+  const doAjouter = () => {
     const imageUrl = cheminVersUrl(item.visuel_presentation);
     if (type === 'recueil') ajouterRecueil({ ...item, image: imageUrl });
     else ajouterLivrePdf({ ...item, image: imageUrl });
     setAjoutConfirme(true);
     setTimeout(() => setAjoutConfirme(false), 2000);
   };
+
+  const handleAjouter = () => {
+    if (dansPanier) return;
+    if (jAi) { setConfirmJai(true); return; }
+    doAjouter();
+  };
+
   return (
-    <button onClick={handleAjouter} disabled={dansPanier}
-      style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
-      {dansPanier ? '✓ Dans le panier' : ajoutConfirme ? '✓ Ajouté !' : (
-        <>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" />
-            <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-          </svg>
-          Ajouter au panier — Version PDF
-        </>
+    <>
+      {confirmJai && (
+        <div onClick={() => setConfirmJai(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 24px', maxWidth: '340px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: '32px' }}>👀</p>
+            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Eh, tu l'as déjà celui-là !</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.6 }}>Tu as coché "J'ai" sur ce {type === 'recueil' ? 'recueil' : 'livre'}... Tu collectionnes les doublons maintenant ? C'est pour offrir ?</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmJai(false)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer' }}>Oups, annuler</button>
+              <button onClick={() => { setConfirmJai(false); doAjouter(); }} style={{ flex: 1, background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(255,210,80,0.35)' }}>Oui, j'assume !</button>
+            </div>
+          </div>
+        </div>
       )}
-    </button>
+      <button onClick={handleAjouter} disabled={dansPanier}
+        style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+        {dansPanier ? '✓ Dans le panier' : ajoutConfirme ? '✓ Ajouté !' : (
+          <>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1.4" fill="#fff" /><circle cx="19" cy="21" r="1.4" fill="#fff" />
+              <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+            </svg>
+            Ajouter au panier — Version PDF
+          </>
+        )}
+      </button>
+    </>
   );
 }
 
@@ -346,6 +369,7 @@ function Livres() {
   const [reliePaysFiltre, setReliePaysFiltre] = React.useState([]);
   const [relieLuAccepte, setRelieLuAccepte] = React.useState(false);
   const [confirmAjout, setConfirmAjout] = React.useState(null);
+  const [confirmJaiRelie, setConfirmJaiRelie] = React.useState(null); // 'relie' | 'relie_pdf' | null
 
   // Popup fiche illustration
   const [popupIllu, setPopupIllu] = React.useState(null);
@@ -871,6 +895,7 @@ function Livres() {
                       ajouterLivrePdf={ajouterLivrePdf}
                       ajouterRecueil={ajouterRecueil}
                       estDansPanier={estDansPanier}
+                      jAi={collection[`${popupType}_${popupItem.id}`]?.j_ai || false}
                     />
                   ) : null
                 ) : (
@@ -1160,6 +1185,32 @@ function Livres() {
                   Annuler
                 </button>
 
+                {/* Popup intermédiaire J'ai déjà ça */}
+                {confirmJaiRelie && (
+                  <div style={{ background: 'rgba(255,210,80,0.08)', border: '1px solid rgba(255,210,80,0.35)', borderRadius: '12px', padding: '16px', marginBottom: '10px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <p style={{ fontSize: '24px' }}>👀</p>
+                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>Eh, tu l'as déjà celui-là !</p>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: 1.6 }}>Tu as coché "J'ai" sur ce {popupType === 'recueil' ? 'recueil' : 'livre'}... Tu collectionnes les doublons maintenant ? C'est pour offrir ?</p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => setConfirmJaiRelie(null)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', cursor: 'pointer' }}>Oups, annuler</button>
+                      <button onClick={async () => {
+                        const paysChoisi = userPays || reliePaysSaisi;
+                        if (!userPays && paysChoisi && userId) { await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId); setUserPays(paysChoisi); }
+                        const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
+                        const zoneKey = resoudrePays(paysChoisi, prixData);
+                        const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
+                        const prixRelie = infoPays ? parseFloat(infoPays.prix) : 0;
+                        const delai = infoPays ? infoPays.delai : 'délai variable';
+                        const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
+                        if (confirmJaiRelie === 'relie_pdf') ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType, popupItem.prix, imageUrl);
+                        else ajouterRelie({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, delai, popupType);
+                        setConfirmJaiRelie(null); setPopupRelie(false); setRelieLuAccepte(false);
+                        setConfirmAjout(confirmJaiRelie); setTimeout(() => setConfirmAjout(null), 2500);
+                      }} style={{ flex: 1, background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '8px', padding: '8px', color: '#000', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>Oui, j'assume !</button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Bouton Relié + PDF — au milieu, rose premium */}
                 {popupItem.prix && relieLuAccepte && (userPays || reliePaysSaisi) && (() => {
                   const paysCheck = userPays || reliePaysSaisi;
@@ -1173,17 +1224,8 @@ function Livres() {
                   return (
                     <button
                       onClick={async () => {
+                        if (collection[`${popupType}_${popupItem.id}`]?.j_ai) { setConfirmJaiRelie('relie_pdf'); return; }
                         const paysChoisi = userPays || reliePaysSaisi;
-                        if (!userPays && paysChoisi && userId) {
-                          await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
-                          setUserPays(paysChoisi);
-                        }
-                        const imageUrl = cheminVersUrl(popupItem.visuel_presentation);
-                        ajouterRelieEtPdf({ ...popupItem, image: imageUrl }, paysChoisi, prixRelie, infoPays.delai, popupType, popupItem.prix, imageUrl);
-                        setPopupRelie(false);
-                        setRelieLuAccepte(false);
-                        setConfirmAjout('relie_pdf');
-                        setTimeout(() => setConfirmAjout(null), 2500);
                       }}
                       style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '10px', padding: '12px 14px', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)', letterSpacing: '0.3px' }}>
                       Relié + PDF −75%<br />
@@ -1196,12 +1238,8 @@ function Livres() {
                 <button
                   disabled={!relieLuAccepte || (!(userPays || reliePaysSaisi))}
                   onClick={async () => {
+                    if (collection[`${popupType}_${popupItem.id}`]?.j_ai) { setConfirmJaiRelie('relie'); return; }
                     const paysChoisi = userPays || reliePaysSaisi;
-                    if (!userPays && paysChoisi && userId) {
-                      await supabase.from('profils').update({ pays: paysChoisi }).eq('id', userId);
-                      setUserPays(paysChoisi);
-                    }
-                    const prixData = popupItem.prix_relie ? (typeof popupItem.prix_relie === 'string' ? JSON.parse(popupItem.prix_relie) : popupItem.prix_relie) : null;
                     const zoneKey = resoudrePays(paysChoisi, prixData);
                     const infoPays = zoneKey && prixData ? prixData[zoneKey] : null;
                     const prixRelie = infoPays ? infoPays.prix : 0;

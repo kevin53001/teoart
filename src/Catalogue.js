@@ -148,6 +148,7 @@ function Catalogue() {
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
   const [popupColo, setPopupColo] = React.useState(null);
+  const [confirmJaiCat, setConfirmJaiCat] = React.useState(null); // illu à ajouter après confirmation
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
@@ -624,6 +625,7 @@ function Catalogue() {
                     onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
                     dansPanier={illu.prix ? estDansPanier('illustration', illu.id) : false}
                     onAjouterPanier={illu.prix ? () => {
+                      if (collection[illu.id]?.j_ai) { setConfirmJaiCat(illu); return; }
                       const imageUrl = getVisuelPresentation(illu.visuels);
                       ajouterIllustration({ ...illu, image: imageUrl });
                     } : null}
@@ -679,6 +681,20 @@ function Catalogue() {
         <PopupColoVignette illu={popupColo} userId={userId} userPseudo={userPseudo}
           onClose={() => setPopupColo(null)}
           onUploaded={() => { handleColoUploaded(popupColo.id); setPopupColo(null); }} />
+      )}
+
+      {confirmJaiCat && (
+        <div onClick={() => setConfirmJaiCat(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 24px', maxWidth: '340px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: '32px' }}>👀</p>
+            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Eh, tu l'as déjà celle-là !</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.6 }}>Tu as coché "J'ai" sur cette illustration... Tu collectionnes les doublons maintenant ? C'est pour offrir ?</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setConfirmJaiCat(null)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer' }}>Oups, annuler</button>
+              <button onClick={() => { const imageUrl = getVisuelPresentation(confirmJaiCat.visuels); ajouterIllustration({ ...confirmJaiCat, image: imageUrl }); setConfirmJaiCat(null); }} style={{ flex: 1, background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(255,210,80,0.35)' }}>Oui, j'assume !</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmation && (

@@ -7,7 +7,7 @@ import Cloche from './Cloche';
 import BandeLegale from './BandeLegale';
 import OngletsLateraux from './OngletsLateraux';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -15,7 +15,7 @@ const SPEED = '80s';
 const IMG_W = 110;
 const IMG_H = 150;
 const GAP = 6;
-const STRIPE_PUBLIC_KEY = 'pk_test_51TjEyo57G7nd8gWxQzKDp4eMEahmHKzEvC2Ie9Kmn12u9XsjxGjVnTc1l4x6Kx5CgzHKbz90rzJA7ov4VFN0rsAC00AURgb7Mn';
+const STRIPE_PUBLIC_KEY = 'pk_live_REMPLACER_PAR_CLE_PUBLIQUE_PROD'; // TODO: remplacer par pk_live_...
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 
 const BARRES = [
@@ -104,6 +104,9 @@ function IndicateurEtapes({ etape, isMobile }) {
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
+  const [popupPanier, setPopupPanier] = React.useState(null); // { type, id, nom, image, modeRelie }
+  const [illusData, setIllusData] = React.useState({});
+  const [livresData, setLivresData] = React.useState({});
 
   // Chargement de la promo badge active depuis Supabase
   React.useEffect(() => {
@@ -139,13 +142,20 @@ function EtapePanier({ onContinuer, isMobile }) {
   }
 
   // ── Helpers affichage article ──
-  const ArticleLigne = ({ article, decale = false, prixOverride = null, tauxPromo = null }) => {
+  const ArticleLigne = ({ article, decale = false, prixOverride = null, tauxPromo = null, onClickMiniature = null }) => {
     const { label, couleur } = labelType(article.type);
     const prixBrut = article.type === 'relie' ? (article.prixRelie || 0) : (article.prix || 0);
     const prixFinal = prixOverride !== null ? prixOverride : prixBrut;
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: decale ? 'rgba(255,62,181,0.04)' : 'rgba(255,255,255,0.04)', border: `1px solid ${decale ? 'rgba(255,62,181,0.15)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '12px', padding: '10px 12px', marginLeft: decale ? '20px' : '0' }}>
-        {article.image && <img src={article.image} alt={article.nom} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />}
+        {article.image && (
+          <img src={article.image} alt={article.nom}
+            onClick={onClickMiniature || undefined}
+            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0, cursor: onClickMiniature ? 'pointer' : 'default', transition: onClickMiniature ? 'opacity .2s' : 'none' }}
+            onMouseEnter={e => { if (onClickMiniature) e.currentTarget.style.opacity = '0.75'; }}
+            onMouseLeave={e => { if (onClickMiniature) e.currentTarget.style.opacity = '1'; }}
+          />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ color: decale ? 'rgba(255,255,255,0.75)' : '#fff', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{article.nom}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
@@ -215,7 +225,22 @@ function EtapePanier({ onContinuer, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* ── Illustrations ── */}
+      {/* Popup miniature cliquable — lien vers la fiche */}
+      {popupPanier && (
+        <div onClick={() => setPopupPanier(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '24px', maxWidth: '320px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {popupPanier.image && <img src={popupPanier.image} alt={popupPanier.nom} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', margin: '0 auto' }} />}
+            <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{popupPanier.nom}</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Voir la fiche complète ?</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setPopupPanier(null)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', cursor: 'pointer' }}>Annuler</button>
+              <button onClick={() => { setPopupPanier(null); window.open(`/livres#${popupPanier.id}`, '_blank'); }} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(0,212,212,0.35)' }}>
+                Voir la fiche
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {illus.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -223,7 +248,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} />)}
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => setPopupPanier({ type: 'illustration', id: a.id, nom: a.nom, image: a.image })} />)}
           </div>
           {reductions.tauxIllus > 0 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -244,7 +269,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxLivres > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxLivres * 100)}% sur les reliés</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} onClickMiniature={() => setPopupPanier({ type: l.article.type === 'relie' ? 'relie' : 'livre', id: l.article.id, nom: l.article.nom, image: l.article.image, modeRelie: l.article.type === 'relie' })} />)}
           </div>
           {totalLivresBrutAffiche !== totalLivresAffiche && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -265,7 +290,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxRecueils > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxRecueils * 100)}% sur les reliés</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} onClickMiniature={() => setPopupPanier({ type: l.article.type === 'relie' ? 'relie' : 'recueil', id: l.article.id, nom: l.article.nom, image: l.article.image, modeRelie: l.article.type === 'relie' })} />)}
           </div>
           {totalRecueilsBrutAffiche !== totalRecueilsAffiche && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -382,9 +407,10 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
 }
 
 // ─── Étape 3 : Récapitulatif ──────────────────────────────────────────────────
-function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setRetractation }) {
+function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setRetractation, cgvAcceptees, setCgvAcceptees }) {
   const { articles, reductions } = usePanier();
   const aPdf = articles.some(a => a.type !== 'relie');
+  const peutContinuer = cgvAcceptees && (!aPdf || retractation);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -432,7 +458,20 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
         {infos.prenom && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginTop: '2px' }}>{infos.prenom}</p>}
       </div>
 
-      {/* Case rétractation — obligatoire si produits numériques */}
+      {/* Case CGV — obligatoire */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${cgvAcceptees ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer', transition: 'border-color .2s' }}
+        onClick={() => setCgvAcceptees(v => !v)}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: `2px solid ${cgvAcceptees ? '#00d4d4' : 'rgba(255,255,255,0.3)'}`, background: cgvAcceptees ? '#00d4d4' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', transition: 'all .2s', boxShadow: cgvAcceptees ? '0 0 8px rgba(0,212,212,0.4)' : 'none' }}>
+            {cgvAcceptees && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: '1.6' }}>
+            J'ai lu et j'accepte les <strong style={{ color: '#fff' }}>Conditions Générales de Vente</strong>. <strong style={{ color: '#00d4d4' }}>Obligatoire pour finaliser la commande.</strong>
+          </p>
+        </div>
+      </div>
+
+      {/* Case rétractation — uniquement si produits numériques */}
       {aPdf && (
         <div style={{ background: 'rgba(0,212,212,0.05)', border: `1px solid ${retractation ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer', transition: 'border-color .2s' }}
           onClick={() => setRetractation(v => !v)}>
@@ -441,7 +480,7 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
               {retractation && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
             </div>
             <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: '1.6' }}>
-              Je reconnais que ma commande contient des <strong style={{ color: '#fff' }}>biens numériques à téléchargement immédiat</strong> et je renonce expressément à mon droit de rétractation de 14 jours conformément à l'article L.221-28 du Code de la consommation. <strong style={{ color: '#00d4d4' }}>Cette case est obligatoire pour finaliser votre commande.</strong>
+              Je reconnais que mon droit de rétractation de 14 jours ne s'applique pas aux fichiers numériques (illustrations, livres et recueils en PDF) dès lors que le téléchargement a été initié, conformément à l'article L221-28 du Code de la consommation. Cette renonciation ne concerne pas les versions reliées, pour lesquelles le droit de rétractation légal reste pleinement applicable. <strong style={{ color: '#00d4d4' }}>Obligatoire pour finaliser la commande.</strong>
             </p>
           </div>
         </div>
@@ -451,7 +490,7 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
         <button onClick={onRetour} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '14px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
           ← Retour
         </button>
-        <button onClick={onContinuer} disabled={aPdf && !retractation} style={{ flex: 2, background: (!aPdf || retractation) ? 'linear-gradient(135deg, #ff3eb5, #cc2090)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '12px', padding: '14px', color: (!aPdf || retractation) ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '14px', cursor: (!aPdf || retractation) ? 'pointer' : 'default', boxShadow: (!aPdf || retractation) ? '0 4px 20px rgba(255,62,181,0.3)' : 'none' }}>
+        <button onClick={onContinuer} disabled={!peutContinuer} style={{ flex: 2, background: peutContinuer ? 'linear-gradient(135deg, #ff3eb5, #cc2090)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '12px', padding: '14px', color: peutContinuer ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '14px', cursor: peutContinuer ? 'pointer' : 'default', boxShadow: peutContinuer ? '0 4px 20px rgba(255,62,181,0.3)' : 'none' }}>
           Procéder au paiement →
         </button>
       </div>
@@ -471,24 +510,18 @@ function FormulaireStripe({ montantCentimes, infos, onSucces, onRetour }) {
     setChargement(true);
     setErreur(null);
     try {
-      // Créer le PaymentIntent côté serveur
-      const resp = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montant: montantCentimes, email: infos.email }),
-      });
-      const { clientSecret, error: serverError } = await resp.json();
-      if (serverError) throw new Error(serverError);
-
-      const cardElement = elements.getElement(CardElement);
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: { email: infos.email, name: infos.prenom || undefined },
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + '/panier',
+          payment_method_data: {
+            billing_details: { email: infos.email, name: infos.prenom || undefined },
+          },
         },
+        redirect: 'if_required',
       });
       if (error) throw new Error(error.message);
-      if (paymentIntent.status === 'succeeded') onSucces(paymentIntent.id);
+      if (paymentIntent?.status === 'succeeded') onSucces(paymentIntent.id);
     } catch (e) {
       setErreur(e.message);
     }
@@ -500,17 +533,13 @@ function FormulaireStripe({ montantCentimes, infos, onSucces, onRetour }) {
       <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Paiement sécurisé</h2>
 
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Carte bancaire</p>
-        <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '14px' }}>
-          <CardElement options={{
-            style: {
-              base: { color: '#fff', fontSize: '15px', fontFamily: 'inherit', '::placeholder': { color: 'rgba(255,255,255,0.3)' } },
-              invalid: { color: '#ff4d4d' },
-            },
-            hidePostalCode: true,
-          }} />
-        </div>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '8px' }}>🔒 Paiement sécurisé par Stripe · Google Pay et Apple Pay acceptés</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Choisissez votre moyen de paiement</p>
+        <PaymentElement options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay', 'paypal'],
+          defaultValues: { billingDetails: { email: infos.email, name: infos.prenom || '' } },
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '12px' }}>Paiement sécurisé par Stripe · CB, Apple Pay, Google Pay acceptés</p>
       </div>
 
       {erreur && (
@@ -535,9 +564,42 @@ function FormulaireStripe({ montantCentimes, infos, onSucces, onRetour }) {
 function EtapePaiement({ onSucces, onRetour, isMobile, infos }) {
   const { reductions } = usePanier();
   const montantCentimes = Math.round(reductions.totalGeneral * 100);
+  const [clientSecret, setClientSecret] = React.useState(null);
+  const [erreurInit, setErreurInit] = React.useState(null);
+
+  React.useEffect(() => {
+    const init = async () => {
+      try {
+        const resp = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ montant: montantCentimes, email: infos.email }),
+        });
+        const { clientSecret: cs, error } = await resp.json();
+        if (error) throw new Error(error);
+        setClientSecret(cs);
+      } catch (e) {
+        setErreurInit(e.message);
+      }
+    };
+    init();
+  }, [montantCentimes, infos.email]);
+
+  if (erreurInit) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+      <p style={{ color: '#ff6b6b', fontSize: '14px', marginBottom: '16px' }}>Erreur lors de l'initialisation du paiement : {erreurInit}</p>
+      <button onClick={onRetour} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>← Retour</button>
+    </div>
+  );
+
+  if (!clientSecret) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Initialisation du paiement...</p>
+    </div>
+  );
 
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night', variables: { colorPrimary: '#ff3eb5', colorBackground: '#111', colorText: '#ffffff', colorDanger: '#ff4d4d', borderRadius: '8px' } } }}>
       <FormulaireStripe montantCentimes={montantCentimes} infos={infos} onSucces={onSucces} onRetour={onRetour} />
     </Elements>
   );
@@ -546,27 +608,112 @@ function EtapePaiement({ onSucces, onRetour, isMobile, infos }) {
 // ─── Étape 5 : Confirmation ───────────────────────────────────────────────────
 function EtapeConfirmation({ infos, isMobile }) {
   const navigate = useNavigate();
+  const { articles } = usePanier();
+  const [liensTelechargement, setLiensTelechargement] = React.useState([]);
+  const [liens_charges, setLiensCharges] = React.useState(false);
+  const [telechargements, setTelechargements] = React.useState({});
+
+  const aRelie = articles.some(a => a.type === 'relie');
+  const articlesPdf = articles.filter(a => a.type === 'illustration' || a.type === 'livre_pdf' || a.type === 'recueil');
+
+  React.useEffect(() => {
+    const chargerLiens = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('commandes_articles')
+          .select('id, nom, type, lien_telechargement')
+          .eq('user_id', user.id)
+          .in('type', ['illustration', 'livre_pdf', 'recueil'])
+          .eq('commande_recente', true)
+          .order('created_at', { ascending: false });
+        setLiensTelechargement(data || []);
+      } catch {}
+      setLiensCharges(true);
+    };
+    chargerLiens();
+  }, []);
+
+  const handleTelecharger = (id, url) => {
+    if (telechargements[id]) return;
+    setTelechargements(prev => ({ ...prev, [id]: true }));
+    window.open(url, '_blank');
+  };
+
   return (
-    <div style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', padding: '40px 20px' }}>
+
+      {/* Icône succès */}
       <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(0,212,212,0.15)', border: '3px solid #00d4d4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}>✓</div>
-      <div>
-        <h2 style={{ color: '#00d4d4', fontSize: '22px', fontWeight: 'bold', marginBottom: '8px' }}>Commande confirmée !</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Merci {infos.prenom ? infos.prenom : ''} pour votre achat.</p>
+
+      {/* Remerciement */}
+      <div style={{ textAlign: 'center' }}>
+        <h2 style={{ color: '#00d4d4', fontSize: '22px', fontWeight: 'bold', marginBottom: '12px' }}>Commande confirmée !</h2>
+        <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '16px 24px', maxWidth: '420px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '13px', lineHeight: '1.8' }}>
+            Merci {infos.prenom ? <strong style={{ color: '#fff' }}>{infos.prenom}</strong> : ''} pour votre confiance et votre soutien.<br />
+            Chaque achat compte énormément et m'aide à continuer à créer.<br />
+            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px' }}>— Kevin Teo'Art</span>
+          </p>
+        </div>
       </div>
-      <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '16px 24px', maxWidth: '400px', width: '100%' }}>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>
-          Un email de confirmation avec vos liens de téléchargement a été envoyé à <strong style={{ color: '#fff' }}>{infos.email}</strong>.<br /><br />
-          Vos fichiers sont également disponibles dans votre espace <strong style={{ color: '#00d4d4' }}>Mon Compte → Ma Collection</strong>.
-        </p>
-      </div>
+
+      {/* Liens de téléchargement PDF */}
+      {articlesPdf.length > 0 && (
+        <div style={{ width: '100%', maxWidth: '460px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Vos téléchargements</p>
+          {!liens_charges ? (
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', textAlign: 'center' }}>Préparation de vos fichiers...</p>
+          ) : liensTelechargement.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {liensTelechargement.map(article => {
+                const deja = telechargements[article.id];
+                return (
+                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 14px' }}>
+                    <p style={{ color: deja ? 'rgba(255,255,255,0.35)' : '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{article.nom}</p>
+                    <button
+                      onClick={() => handleTelecharger(article.id, article.lien_telechargement)}
+                      disabled={deja}
+                      style={{ background: deja ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '8px', padding: '7px 14px', color: deja ? 'rgba(255,255,255,0.3)' : '#fff', fontWeight: 'bold', fontSize: '12px', cursor: deja ? 'default' : 'pointer', flexShrink: 0, boxShadow: deja ? 'none' : '0 3px 10px rgba(255,62,181,0.35), inset 0 1px 0 rgba(255,255,255,0.15)', whiteSpace: 'nowrap' }}>
+                      {deja ? '✓ Téléchargé' : 'Télécharger'}
+                    </button>
+                  </div>
+                );
+              })}
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '8px', textAlign: 'center', lineHeight: 1.6 }}>
+                Ces liens sont utilisables une seule fois depuis cette page.<br />
+                Retrouvez vos téléchargements et votre facture dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
+              </p>
+            </div>
+          ) : (
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', textAlign: 'center' }}>
+              Vos liens de téléchargement sont disponibles dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Message livres reliés */}
+      {aRelie && (
+        <div style={{ width: '100%', maxWidth: '460px', background: 'rgba(255,210,80,0.07)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '12px', padding: '16px' }}>
+          <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px' }}>Version(s) reliée(s)</p>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: '1.7' }}>
+            Votre commande reliée est en cours de traitement. Vous serez notifié à chaque étape : validation de la commande, expédition et livraison estimée.
+          </p>
+        </div>
+      )}
+
+      {/* Boutons navigation */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        <button onClick={() => navigate('/mon-compte')} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/mon-compte')} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,212,212,0.35)' }}>
           Mon Compte
         </button>
         <button onClick={() => navigate('/catalogue')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 24px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }}>
           Continuer mes achats
         </button>
       </div>
+
     </div>
   );
 }
@@ -583,7 +730,14 @@ export default function Panier() {
   const [etape, setEtape] = React.useState(1);
   const [infos, setInfos] = React.useState({ email: '', prenom: '' });
   const [retractation, setRetractation] = React.useState(false);
+  const [cgvAcceptees, setCgvAcceptees] = React.useState(false);
+  const encartRef = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
+
+  const allerEtape = (n) => {
+    setEtape(n);
+    setTimeout(() => { encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  };
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -746,11 +900,11 @@ export default function Panier() {
             {etape < 5 && <IndicateurEtapes etape={etape} isMobile={isMobile} />}
 
             {/* Tunnel */}
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '32px' }}>
-              {etape === 1 && <EtapePanier onContinuer={() => setEtape(2)} isMobile={isMobile} />}
-              {etape === 2 && <EtapeInfos onContinuer={() => setEtape(3)} onRetour={() => setEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} />}
-              {etape === 3 && <EtapeRecap onContinuer={() => setEtape(4)} onRetour={() => setEtape(2)} isMobile={isMobile} infos={infos} retractation={retractation} setRetractation={setRetractation} />}
-              {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => setEtape(3)} isMobile={isMobile} infos={infos} />}
+            <div ref={encartRef} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '32px' }}>
+              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
+              {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} />}
+              {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
+              {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
               {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} />}
             </div>
 
