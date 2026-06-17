@@ -396,9 +396,6 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, pctJai, pctColo]);
 
-  const tousLesBadges = [...BADGES_FAN, ...BADGES_COLO];
-  const obtenus = tousLesBadges.filter(b => (b.serie === 'fan' ? pctJai : pctColo) >= b.seuil);
-
   const getDelai = (id) => {
     if (nouveauxBadges.includes(id)) {
       const idx = nouveauxBadges.indexOf(id);
