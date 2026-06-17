@@ -277,9 +277,11 @@ function Catalogue() {
 
   const toggleJeVeux = async (illuId, e) => {
     e && e.stopPropagation();
+    if (!userId) return;
     const nouveau = !(collection[illuId]?.je_veux || false);
     setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false });
+    const { error } = await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false }, { onConflict: 'user_id,illustration_id' });
+    if (error) console.error('toggleJeVeux error:', error);
   };
 
   const handleColoUploaded = (illuId) => { setColoriages(prev => ({ ...prev, [illuId]: true })); };
