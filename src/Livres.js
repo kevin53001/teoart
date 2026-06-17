@@ -714,11 +714,12 @@ function Livres() {
 
             <button onClick={() => { setPopupItem(null); setItemOuvert(null); setModeRelie(false); }} style={{ position: 'absolute', top: '14px', right: '14px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '22px', cursor: 'pointer' }}>✕</button>
 
-            <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap' }}>
+            {/* ── LIGNE HAUTE : visuel + infos + tableau pays ── */}
+            <div style={{ display: 'flex', gap: '18px', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap' }}>
               <VisuelsItem item={popupItem} />
 
               {/* Zone centrale : infos + prix + boutons */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
                 {/* Label type */}
                 <p style={{ color: popupType === 'recueil' ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
                   {popupType === 'recueil' ? 'Recueil' : 'Livre'}
@@ -788,14 +789,12 @@ function Livres() {
 
                 {/* ── Sélecteur PDF / Relié (coches) ── */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '12px' }}>
-                  {/* Coche PDF */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                     <span style={{ color: !modeRelie ? '#ff3eb5' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>PDF</span>
                     <div onClick={() => setModeRelie(false)} style={{ cursor: 'pointer', width: '28px', height: '16px', borderRadius: '8px', background: !modeRelie ? '#00d4d4' : 'rgba(255,255,255,0.1)', border: !modeRelie ? 'none' : '1px solid rgba(255,255,255,0.2)', position: 'relative', transition: 'all .25s', boxShadow: !modeRelie ? '0 0 8px rgba(0,212,212,0.6)' : 'none' }}>
                       <div style={{ position: 'absolute', top: '2px', left: !modeRelie ? '14px' : '2px', width: '12px', height: '12px', borderRadius: '50%', background: !modeRelie ? '#fff' : 'rgba(255,255,255,0.3)', transition: 'left .25s', boxShadow: !modeRelie ? '0 0 4px rgba(0,212,212,0.8)' : 'none' }} />
                     </div>
                   </div>
-
                   {popupItem.relie_disponible && popupItem.statut_relie === 'published' && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                       <span style={{ color: modeRelie ? 'rgba(255,210,80,1)' : 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 'bold', transition: 'color .2s' }}>Relié</span>
@@ -827,14 +826,6 @@ function Livres() {
                     </button>
                   )
                 )}
-
-                {/* Description selon mode */}
-                {(() => {
-                  const desc = modeRelie ? (popupItem.description_relie || popupItem.description) : popupItem.description;
-                  return desc ? (
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginTop: '14px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px' }}>{desc}</p>
-                  ) : null;
-                })()}
               </div>
 
               {/* ── Tableau pays — 3ème colonne, visible uniquement en mode Relié ── */}
@@ -856,6 +847,14 @@ function Livres() {
                 );
               })()}
             </div>
+
+            {/* ── DESCRIPTION — pleine largeur sous la ligne haute ── */}
+            {(() => {
+              const desc = modeRelie ? (popupItem.description_relie || popupItem.description) : popupItem.description;
+              return desc ? (
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.7', marginBottom: '20px', whiteSpace: 'pre-line', maxHeight: 'calc(1.7em * 10)', overflowY: 'auto', paddingRight: '6px' }}>{desc}</p>
+              ) : null;
+            })()}
 
             {/* CONTENU RECUEIL */}
             {popupType === 'recueil' && contenuPopup.length > 0 && (
