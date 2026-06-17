@@ -265,6 +265,15 @@ function EncartDefilant({ titre, pastille, couleur, images, onZoom, onFiche }) {
             Réalisé par {imgCur.coloriste}
           </div>
         )}
+        {/* Flèches navigation — toujours visibles, indépendantes du clic image */}
+        {images.length > 1 && (
+          <>
+            <button onClick={e => { e.stopPropagation(); goTo((cur - 1 + images.length) % images.length); }}
+              style={{ position: 'absolute', left: '4px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '26px', height: '26px', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, lineHeight: 1 }}>‹</button>
+            <button onClick={e => { e.stopPropagation(); goTo((cur + 1) % images.length); }}
+              style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '26px', height: '26px', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5, lineHeight: 1 }}>›</button>
+          </>
+        )}
       </div>
       {images.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', padding: '8px' }}>

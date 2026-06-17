@@ -257,7 +257,7 @@ export default function PopupFicheIllu({
   onOuvrirLivre = null,
   onFiltrerPatreon = null,
 }) {
-  const { ajouterIllustration, estDansPanier } = usePanier();
+  const { ajouterIllustration, estDansPanier, supprimerArticle } = usePanier();
   const [ajoutConfirme, setAjoutConfirme] = React.useState(false);
   const [confirmJai, setConfirmJai] = React.useState(false);
   const [dlGratuit, setDlGratuit] = React.useState('idle'); // idle | loading | done
@@ -296,7 +296,8 @@ export default function PopupFicheIllu({
   };
 
   const handleAjouterPanier = () => {
-    if (!illu || dansPanier) return;
+    if (!illu) return;
+    if (dansPanier) { supprimerArticle('illustration', illu.id); return; }
     if (jAi) { setConfirmJai(true); return; }
     const imageUrl = visuels[0] || null;
     ajouterIllustration({ ...illu, image: imageUrl });
@@ -492,9 +493,9 @@ export default function PopupFicheIllu({
                       {dlGratuit === 'loading' ? '⏳' : dlGratuit === 'done' ? '✓ Téléchargé' : 'FREE'}
                     </button>
                   ) : illu.prix && (
-                    <button onClick={handleAjouterPanier} disabled={dansPanier}
-                      style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '8px', padding: '6px 10px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '11px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
-                      {dansPanier ? <>✓ Dans le panier</> : ajoutConfirme ? <>✓ Ajouté !</> : (
+                    <button onClick={handleAjouterPanier}
+                      style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '8px', padding: '6px 10px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+                      {dansPanier ? <>✕ Retirer</> : ajoutConfirme ? <>✓ Ajouté !</> : (
                         <><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1.4" fill="#fff" /><circle cx="19" cy="21" r="1.4" fill="#fff" /><path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" /></svg>Panier</>
                       )}
                     </button>
