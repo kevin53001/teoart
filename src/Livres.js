@@ -48,7 +48,7 @@ function cheminVersUrl(chemin) {
 
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
-function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -99,16 +99,28 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
             </svg>
           </div>
         )}
-        <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onPanier ? onPanier() : (onClick && onClick()); }} title={dansPanier ? 'Déjà dans le panier' : onPanier ? 'Ajouter au panier' : 'Voir la fiche'}
-          style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
-            <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-          </svg>
-        </div>
+        {onTelechargerGratuit ? (
+          <div onClick={e => { e.stopPropagation(); onTelechargerGratuit(); }}
+            title="Télécharger gratuitement"
+            style={{ position: 'absolute', bottom: '6px', right: '6px', zIndex: 20, cursor: dlGratuitState !== 'idle' ? 'default' : 'pointer', width: '28px', height: '28px', borderRadius: '50%', background: dlGratuitState === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s', boxShadow: dlGratuitState === 'done' ? 'none' : '0 2px 8px rgba(0,212,212,0.6), inset 0 1px 0 rgba(255,255,255,0.2)', border: dlGratuitState === 'done' ? '2px solid #00d4d4' : 'none' }}
+            onMouseEnter={e => { if (dlGratuitState === 'idle') e.currentTarget.style.transform = 'scale(1.12)'; }}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+            {dlGratuitState === 'loading' ? <span style={{ fontSize: '10px' }}>⏳</span>
+              : dlGratuitState === 'done' ? <span style={{ color: '#00d4d4', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
+              : <span style={{ color: '#000', fontSize: '8px', fontWeight: 'bold', letterSpacing: '0.3px' }}>FREE</span>}
+          </div>
+        ) : (
+          <div className="badge-panier-v" onClick={e => { e.stopPropagation(); onPanier ? onPanier() : (onClick && onClick()); }} title={dansPanier ? 'Déjà dans le panier' : onPanier ? 'Ajouter au panier' : 'Voir la fiche'}
+            style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
+              <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+            </svg>
+          </div>
+        )}
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
           <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.nom}</p>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}{item.prix ? ` · ${item.prix} €` : ''}</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px' }}>{item.annee}{item.prix !== null && item.prix !== undefined ? (parseFloat(item.prix) === 0 ? ' · GRATUIT' : ` · ${item.prix} €`) : ''}</p>
         </div>
       </div>
     </div>
@@ -396,7 +408,8 @@ function Livres() {
   const [reliePaysFiltre, setReliePaysFiltre] = React.useState([]);
   const [relieLuAccepte, setRelieLuAccepte] = React.useState(false);
   const [confirmAjout, setConfirmAjout] = React.useState(null);
-  const [confirmJaiRelie, setConfirmJaiRelie] = React.useState(null); // 'relie' | 'relie_pdf' | null
+  const [confirmJaiRelie, setConfirmJaiRelie] = React.useState(null);
+  const [dlGratuits, setDlGratuits] = React.useState({});
 
   // Popup fiche illustration
   const [popupIllu, setPopupIllu] = React.useState(null);
@@ -542,6 +555,25 @@ function Livres() {
         setCollectionIllus(prev => { const next = { ...prev }; illuIds.forEach(id => { next[id] = { ...prev[id], j_ai: nouveau }; }); return next; });
       }
     } catch (e) { console.error(e); }
+  };
+
+  const handleDlGratuitLivre = async (item, type) => {
+    if (dlGratuits[item.id] && dlGratuits[item.id] !== 'idle') return;
+    if (!item.fichier_pdf) return;
+    setDlGratuits(prev => ({ ...prev, [item.id]: 'loading' }));
+    try {
+      const resp = await fetch('/api/download-free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, itemId: item.id, itemType: type, fichierPdf: item.fichier_pdf }),
+      });
+      const { url, error } = await resp.json();
+      if (error) throw new Error(error);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${item.nom}.pdf`; a.click();
+      setDlGratuits(prev => ({ ...prev, [item.id]: 'done' }));
+      setTimeout(() => setDlGratuits(prev => ({ ...prev, [item.id]: 'idle' })), 3000);
+    } catch { setDlGratuits(prev => ({ ...prev, [item.id]: 'idle' })); }
   };
 
   const toggleJAi = (itemId, type) => {
@@ -760,10 +792,12 @@ function Livres() {
                     onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
                     onClick={() => ouvrirRecueil(r)}
                     dansPanier={estDansPanier((!r.relie_disponible || r.statut_relie !== 'published') ? 'recueil' : 'relie', r.id)}
-                    onPanier={(!r.relie_disponible || r.statut_relie !== 'published') && r.prix ? () => {
+                    onPanier={(!r.relie_disponible || r.statut_relie !== 'published') && r.prix && parseFloat(r.prix) > 0 ? () => {
                       const imageUrl = cheminVersUrl(r.visuel_presentation);
                       ajouterRecueil({ ...r, image: imageUrl });
-                    } : null} />
+                    } : null}
+                    onTelechargerGratuit={r.prix !== null && r.prix !== undefined && parseFloat(r.prix) === 0 ? () => handleDlGratuitLivre(r, 'recueil') : null}
+                    dlGratuitState={dlGratuits[r.id] || 'idle'} />
                 ))}
                 {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-r-${i}`} style={{ width: `${TAILLE_RECUEIL}px`, height: 0 }} />)}
               </div>
@@ -780,10 +814,12 @@ function Livres() {
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}
                     onClick={() => { setPopupItem(l); setPopupType('livre'); setItemOuvert(null); setIllustrationsOuvertes([]); setModeRelie(false); }}
                     dansPanier={estDansPanier((!l.relie_disponible || l.statut_relie !== 'published') ? 'livre_pdf' : 'relie', l.id)}
-                    onPanier={(!l.relie_disponible || l.statut_relie !== 'published') && l.prix ? () => {
+                    onPanier={(!l.relie_disponible || l.statut_relie !== 'published') && l.prix && parseFloat(l.prix) > 0 ? () => {
                       const imageUrl = cheminVersUrl(l.visuel_presentation);
                       ajouterLivrePdf({ ...l, image: imageUrl });
-                    } : null} />
+                    } : null}
+                    onTelechargerGratuit={l.prix !== null && l.prix !== undefined && parseFloat(l.prix) === 0 ? () => handleDlGratuitLivre(l, 'livre') : null}
+                    dlGratuitState={dlGratuits[l.id] || 'idle'} />
                 ))}
                 {Array.from({ length: 10 }).map((_, i) => <div key={`fantome-l-${i}`} style={{ width: `${TAILLE_LIVRE}px`, height: 0 }} />)}
               </div>
