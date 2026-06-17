@@ -259,6 +259,8 @@ export default function PopupFicheIllu({
 }) {
   const { ajouterIllustration, estDansPanier } = usePanier();
   const [ajoutConfirme, setAjoutConfirme] = React.useState(false);
+  const [confirmJai, setConfirmJai] = React.useState(false);
+  const [dlGratuit, setDlGratuit] = React.useState('idle'); // idle | loading | done
 
   const visuelsChemins = getVisuelsOrdonnes(illu?.visuels);
   const visuels = visuelsChemins.map(v => cheminVersUrl(v)).filter(Boolean);
@@ -276,6 +278,24 @@ export default function PopupFicheIllu({
   const dansPanier = illu ? estDansPanier('illustration', illu.id) : false;
 
   const [confirmJai, setConfirmJai] = React.useState(false);
+
+  const handleDlGratuit = async () => {
+    if (dlGratuit !== 'idle' || !illu?.fichier_pdf) return;
+    setDlGratuit('loading');
+    try {
+      const resp = await fetch('/api/download-free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, itemId: illu.id, itemType: 'illustration', fichierPdf: illu.fichier_pdf }),
+      });
+      const { url, error } = await resp.json();
+      if (error) throw new Error(error);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${illu.nom}.pdf`; a.click();
+      setDlGratuit('done');
+      setTimeout(() => setDlGratuit('idle'), 3000);
+    } catch { setDlGratuit('idle'); }
+  };
 
   const handleAjouterPanier = () => {
     if (!illu || dansPanier) return;
@@ -466,41 +486,21 @@ export default function PopupFicheIllu({
                   {aColorié ? 'Colorié ✓' : 'Mon colo'}
                 </button>
 
-                {/* Bouton panier */}
-                {illu.prix && (
-                  <button
-                    onClick={handleAjouterPanier}
-                    disabled={dansPanier}
-                    style={{
-                      background: dansPanier
-                        ? 'rgba(0,212,212,0.18)'
-                        : ajoutConfirme
-                          ? 'linear-gradient(135deg, #00d4d4, #009999)'
-                          : 'linear-gradient(135deg, #ff3eb5, #c9007a)',
-                      border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none',
-                      borderRadius: '8px',
-                      padding: '6px 10px',
-                      color: dansPanier ? '#00d4d4' : '#fff',
-                      fontWeight: 'bold',
-                      fontSize: '11px',
-                      cursor: dansPanier ? 'default' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all .2s',
-                      boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
-                    }}>
-                    {dansPanier ? (
-                      <>✓ Dans le panier</>
-                    ) : ajoutConfirme ? (
-                      <>✓ Ajouté !</>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1.4" fill="#000" /><circle cx="19" cy="21" r="1.4" fill="#000" /><path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" /></svg>
-                        Panier
-                      </>
-                    )}
-                  </button>
+                {/* Bouton FREE ou Panier */}
+                {illu.prix !== undefined && illu.prix !== null && (
+                  parseFloat(illu.prix) === 0 ? (
+                    <button onClick={handleDlGratuit} disabled={dlGratuit === 'loading'}
+                      style={{ background: dlGratuit === 'done' ? 'rgba(0,212,212,0.18)' : 'linear-gradient(135deg, #00d4d4, #009999)', border: dlGratuit === 'done' ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '8px', padding: '6px 12px', color: dlGratuit === 'done' ? '#00d4d4' : '#000', fontWeight: 'bold', fontSize: '11px', cursor: dlGratuit !== 'idle' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s', boxShadow: dlGratuit === 'done' ? 'none' : '0 4px 14px rgba(0,212,212,0.45), inset 0 1px 0 rgba(255,255,255,0.15)', letterSpacing: '0.5px' }}>
+                      {dlGratuit === 'loading' ? '⏳' : dlGratuit === 'done' ? '✓ Téléchargé' : 'FREE'}
+                    </button>
+                  ) : illu.prix && (
+                    <button onClick={handleAjouterPanier} disabled={dansPanier}
+                      style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '8px', padding: '6px 10px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '11px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+                      {dansPanier ? <>✓ Dans le panier</> : ajoutConfirme ? <>✓ Ajouté !</> : (
+                        <><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1.4" fill="#fff" /><circle cx="19" cy="21" r="1.4" fill="#fff" /><path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" /></svg>Panier</>
+                      )}
+                    </button>
+                  )
                 )}
               </div>
 

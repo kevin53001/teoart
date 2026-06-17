@@ -282,10 +282,30 @@ function resoudrePays(pays, prixData) {
 }
 
 // ─── Bouton panier PDF (livre ou recueil) ────────────────────────────────────
-function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansPanier, jAi = false }) {
+function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansPanier, jAi = false, userId = null }) {
   const [ajoutConfirme, setAjoutConfirme] = React.useState(false);
   const [confirmJai, setConfirmJai] = React.useState(false);
+  const [dlGratuit, setDlGratuit] = React.useState('idle');
   const dansPanier = estDansPanier(type === 'recueil' ? 'recueil' : 'livre_pdf', item.id);
+  const estGratuit = item.prix !== null && item.prix !== undefined && parseFloat(item.prix) === 0;
+
+  const handleDlGratuit = async () => {
+    if (dlGratuit !== 'idle' || !item.fichier_pdf) return;
+    setDlGratuit('loading');
+    try {
+      const resp = await fetch('/api/download-free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, itemId: item.id, itemType: type, fichierPdf: item.fichier_pdf }),
+      });
+      const { url, error } = await resp.json();
+      if (error) throw new Error(error);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${item.nom}.pdf`; a.click();
+      setDlGratuit('done');
+      setTimeout(() => setDlGratuit('idle'), 3000);
+    } catch { setDlGratuit('idle'); }
+  };
 
   const doAjouter = () => {
     const imageUrl = cheminVersUrl(item.visuel_presentation);
@@ -316,8 +336,14 @@ function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansP
           </div>
         </div>
       )}
-      <button onClick={handleAjouter} disabled={dansPanier}
-        style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+      {estGratuit ? (
+        <button onClick={handleDlGratuit} disabled={dlGratuit === 'loading'}
+          style={{ background: dlGratuit === 'done' ? 'rgba(0,212,212,0.18)' : 'linear-gradient(135deg, #00d4d4, #009999)', border: dlGratuit === 'done' ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dlGratuit === 'done' ? '#00d4d4' : '#000', fontWeight: 'bold', fontSize: '13px', cursor: dlGratuit !== 'idle' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dlGratuit === 'done' ? 'none' : '0 4px 14px rgba(0,212,212,0.45), inset 0 1px 0 rgba(255,255,255,0.15)', letterSpacing: '0.5px' }}>
+          {dlGratuit === 'loading' ? '⏳ Préparation...' : dlGratuit === 'done' ? '✓ Téléchargé' : 'FREE — Télécharger le PDF'}
+        </button>
+      ) : (
+        <button onClick={handleAjouter} disabled={dansPanier}
+          style={{ background: dansPanier ? 'rgba(0,212,212,0.18)' : ajoutConfirme ? 'linear-gradient(135deg, #00d4d4, #009999)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: dansPanier ? '1px solid rgba(0,212,212,0.5)' : 'none', borderRadius: '10px', padding: '10px 20px', color: dansPanier ? '#00d4d4' : '#fff', fontWeight: 'bold', fontSize: '13px', cursor: dansPanier ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '7px', fontFamily: 'inherit', transition: 'all .2s', boxShadow: dansPanier ? 'none' : '0 4px 14px rgba(255,62,181,0.45), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
         {dansPanier ? '✓ Dans le panier' : ajoutConfirme ? '✓ Ajouté !' : (
           <>
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -328,6 +354,7 @@ function BoutonPanierPdf({ item, type, ajouterLivrePdf, ajouterRecueil, estDansP
           </>
         )}
       </button>
+      )}
     </>
   );
 }
@@ -403,8 +430,8 @@ function Livres() {
       setUserPseudo(profil?.pseudo || 'Anonyme');
       if (profil?.pays) setUserPays(profil.pays);
 
-      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, description, relie_disponible, statut_relie, prix_relie, description_relie').eq('statut', 'published').order('annee', { ascending: false });
-      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, description, relie_disponible, statut_relie, prix_relie, description_relie').in('statut', ['published', 'dossier']).order('nom');
+      const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, fichier_pdf, description, relie_disponible, statut_relie, prix_relie, description_relie').eq('statut', 'published').order('annee', { ascending: false });
+      const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, fichier_pdf, description, relie_disponible, statut_relie, prix_relie, description_relie').in('statut', ['published', 'dossier']).order('nom');
 
       // Toutes les illustrations pour la PopupFiche (similaires)
       const { data: illus } = await supabase.from('illustrations').select('id, nom, annee, categorie, visuels, prix, description, tags, livres_ids, recueils_ids').eq('statut', 'published').order('nom');
@@ -896,6 +923,7 @@ function Livres() {
                       ajouterRecueil={ajouterRecueil}
                       estDansPanier={estDansPanier}
                       jAi={collection[`${popupType}_${popupItem.id}`]?.j_ai || false}
+                      userId={userId}
                     />
                   ) : null
                 ) : (

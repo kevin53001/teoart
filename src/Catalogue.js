@@ -148,7 +148,8 @@ function Catalogue() {
   const [userPseudo, setUserPseudo] = React.useState('');
   const [confirmation, setConfirmation] = React.useState(null);
   const [popupColo, setPopupColo] = React.useState(null);
-  const [confirmJaiCat, setConfirmJaiCat] = React.useState(null); // illu à ajouter après confirmation
+  const [confirmJaiCat, setConfirmJaiCat] = React.useState(null);
+  const [dlGratuits, setDlGratuits] = React.useState({}); // { [illu.id]: 'idle'|'loading'|'done' } // illu à ajouter après confirmation
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const PAR_PAGE = 40;
 
@@ -201,7 +202,7 @@ function Catalogue() {
       setUserPseudo(profil?.pseudo || 'Anonyme');
       const { data: illus } = await supabase
         .from('illustrations')
-        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, description, tags, livres_ids, recueils_ids')
+        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
       const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
@@ -216,6 +217,25 @@ function Catalogue() {
     };
     charger();
   }, [navigate]);
+
+  const handleDlGratuitCat = async (illu) => {
+    if (dlGratuits[illu.id] && dlGratuits[illu.id] !== 'idle') return;
+    if (!illu.fichier_pdf) return;
+    setDlGratuits(prev => ({ ...prev, [illu.id]: 'loading' }));
+    try {
+      const resp = await fetch('/api/download-free', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, itemId: illu.id, itemType: 'illustration', fichierPdf: illu.fichier_pdf }),
+      });
+      const { url, error } = await resp.json();
+      if (error) throw new Error(error);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${illu.nom}.pdf`; a.click();
+      setDlGratuits(prev => ({ ...prev, [illu.id]: 'done' }));
+      setTimeout(() => setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })), 3000);
+    } catch { setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })); }
+  };
 
   const handleToggleJAi = (illuId, e) => {
     e && e.stopPropagation();
@@ -623,12 +643,14 @@ function Catalogue() {
                     onToggleJeVeux={(e) => toggleJeVeux(illu.id, e)}
                     onClickPopup={() => ouvrirPopup(illu, idx)}
                     onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
-                    dansPanier={illu.prix ? estDansPanier('illustration', illu.id) : false}
-                    onAjouterPanier={illu.prix ? () => {
+                    dansPanier={illu.prix && parseFloat(illu.prix) > 0 ? estDansPanier('illustration', illu.id) : false}
+                    onAjouterPanier={illu.prix && parseFloat(illu.prix) > 0 ? () => {
                       if (collection[illu.id]?.j_ai) { setConfirmJaiCat(illu); return; }
                       const imageUrl = getVisuelPresentation(illu.visuels);
                       ajouterIllustration({ ...illu, image: imageUrl });
                     } : null}
+                    onTelechargerGratuit={illu.prix !== null && illu.prix !== undefined && parseFloat(illu.prix) === 0 ? () => handleDlGratuitCat(illu) : null}
+                    dlGratuitState={dlGratuits[illu.id] || 'idle'}
                   />
                 ))}
               </div>
@@ -718,7 +740,7 @@ function Catalogue() {
   );
 }
 
-function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier, dansPanier = false }) {
+function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
   const wrapRef = React.useRef(null);
   const cardRef = React.useRef(null);
   const [visuelIndex, setVisuelIndex] = React.useState(0);
@@ -777,16 +799,28 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
               : (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/><circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/></g>)}
           </svg>
         </div>
-        <div className="badge-panier" onClick={(e) => { e.stopPropagation(); onAjouterPanier && onAjouterPanier(); }} title={dansPanier ? 'Déjà dans le panier' : 'Ajouter au panier'}
-          style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
-            <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-          </svg>
-        </div>
+        {onTelechargerGratuit ? (
+          <div onClick={(e) => { e.stopPropagation(); onTelechargerGratuit(); }}
+            title="Télécharger gratuitement"
+            style={{ position: 'absolute', bottom: '8px', right: '8px', zIndex: 20, cursor: dlGratuitState !== 'idle' ? 'default' : 'pointer', width: '36px', height: '36px', borderRadius: '50%', background: dlGratuitState === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s', boxShadow: dlGratuitState === 'done' ? 'none' : '0 3px 10px rgba(0,212,212,0.65), inset 0 1px 0 rgba(255,255,255,0.2)', border: dlGratuitState === 'done' ? '2px solid #00d4d4' : 'none' }}
+            onMouseEnter={e => { if (dlGratuitState === 'idle') e.currentTarget.style.transform = 'scale(1.12)'; }}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+            {dlGratuitState === 'loading' ? <span style={{ fontSize: '12px' }}>⏳</span>
+              : dlGratuitState === 'done' ? <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>✓</span>
+              : <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.3px' }}>FREE</span>}
+          </div>
+        ) : onAjouterPanier ? (
+          <div className="badge-panier" onClick={(e) => { e.stopPropagation(); onAjouterPanier && onAjouterPanier(); }} title={dansPanier ? 'Déjà dans le panier' : 'Ajouter au panier'}
+            style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
+              <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
+            </svg>
+          </div>
+        ) : null}
         <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
           <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
-          <p style={{ color: '#00d4d4', fontSize: '11px' }}>{illu.prix ? `${illu.prix} €` : ''}</p>
+          <p style={{ color: parseFloat(illu.prix) === 0 ? '#00d4d4' : '#00d4d4', fontSize: '11px', fontWeight: parseFloat(illu.prix) === 0 ? 'bold' : 'normal' }}>{parseFloat(illu.prix) === 0 ? 'GRATUIT' : illu.prix ? `${illu.prix} €` : ''}</p>
         </div>
       </div>
     </div>
