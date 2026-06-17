@@ -198,7 +198,7 @@ function Catalogue() {
       setUserPseudo(profil?.pseudo || 'Anonyme');
       const { data: illus } = await supabase
         .from('illustrations')
-        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, description, tags, livres_ids, recueils_ids')
+        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, visuels, prix, description, tags, livres_ids, recueils_ids')
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
       const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
@@ -277,8 +277,9 @@ function Catalogue() {
   };
 
   let illustrationsFiltrees = illustrations.filter(i => {
+    const SOUS_CAT_KAWAII = ['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'];
     if (sousCategorie) {
-      if (categorie === 'Kawaii/Chibi') {
+      if (SOUS_CAT_KAWAII.includes(sousCategorie)) {
         // Filtre sous-catégorie Kawaii/Chibi
         if (i.categorie !== 'Kawaii/Chibi') return false;
         if (i.sous_categorie_kawaii !== sousCategorie) return false;
