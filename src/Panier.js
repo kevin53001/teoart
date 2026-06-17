@@ -1106,7 +1106,7 @@ export default function Panier() {
             {etape < 5 && <IndicateurEtapes etape={etape} isMobile={isMobile} />}
 
             {/* Tunnel */}
-            <div ref={encartRef} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '32px' }}>
+            <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
               {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
