@@ -387,6 +387,25 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
         promo_badge_active: nouvellePromo,
       }).eq('id', userId);
 
+      // Insérer une notification dans la cloche pour chaque nouveau badge
+      const tousLesBadgesMap = Object.fromEntries([...BADGES_FAN, ...BADGES_COLO].map(b => [b.id, b]));
+      const notifsAInserer = nouveaux.map(badgeId => {
+        const badge = tousLesBadgesMap[badgeId];
+        const taux = TAUX_BADGE[badgeId] || 0;
+        return {
+          user_id: userId,
+          type: 'badge_obtenu',
+          contenu: {
+            niveau: badge.lignes.join(' '),
+            remise: taux > 0 ? Math.round(taux * 100) : null,
+          },
+          lu: false,
+        };
+      });
+      if (notifsAInserer.length > 0) {
+        await supabase.from('notifications').insert(notifsAInserer);
+      }
+
       // Afficher la notif promo si une nouvelle promo a été débloquée
       const notif = {};
       if (meilleurNouveauFan) notif.fan = nouvellePromo.fan;
