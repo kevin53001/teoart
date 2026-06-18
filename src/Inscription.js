@@ -254,7 +254,7 @@ function Inscription() {
       </div>
 
       {/* ZONE BARRES + ENCARTS */}
-      <div style={{ position: 'relative', width: '100%' }}>
+      <div style={{ position: 'relative', width: '100%', marginBottom: '-6px' }}>
 
         {/* Barres défilantes en fond — répétées pour couvrir toute la hauteur */}
         <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', pointerEvents: 'none', zIndex: 1 }}>
@@ -279,7 +279,7 @@ function Inscription() {
         <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.85) 75%, #000 100%)', zIndex: 2, pointerEvents: 'none' }} />
 
         {/* ENCARTS en flux normal */}
-        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', padding: '16px 20px 32px' }}>
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', padding: '16px 20px 0' }}>
 
           {success ? (
             <div className="encart-inscription" style={{ ...encartStyle, textAlign: 'center', marginTop: '20px' }}>
