@@ -547,6 +547,8 @@ function Accueil() {
   const [popupColo, setPopupColo] = React.useState(null); // { url, coloId, pseudo, coloriste } pour popup coloriage social
   const [popupColoIndex, setPopupColoIndex] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
+  const [collection, setCollection] = React.useState({});
+  const [coloriagesMap, setColoriagesMap] = React.useState({});
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
@@ -582,7 +584,15 @@ function Accueil() {
       if (!user) { navigate('/'); return; }
       setUserId(user.id);
 
-      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+      // Chargement collection pour j_ai / je_veux dans les popups
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
+      const collMap = {};
+      (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
+      setCollection(collMap);
+      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+      const colosMap = {};
+      (colos || []).forEach(c => { colosMap[c.illustration_id] = true; });
+      setColoriagesMap(colosMap);
       setUserPseudo(profil?.pseudo || profil?.prenom || 'Anonyme');
 
       // Stats collection
@@ -678,6 +688,26 @@ function Accueil() {
 
   const anyPopup = popup || popupFiche;
 
+  const toggleJAi = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(collection[illuId]?.j_ai || false);
+    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: collection[illuId]?.j_ai_auto || false, j_ai_achete: collection[illuId]?.j_ai_achete || false, je_veux: collection[illuId]?.je_veux || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
+
+  const toggleJeVeux = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(collection[illuId]?.je_veux || false);
+    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false, j_ai_achete: collection[illuId]?.j_ai_achete || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
+
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
       <style>{`
@@ -735,6 +765,12 @@ function Accueil() {
         <PopupFicheIllu
           illu={popupFiche}
           illustrations={popupFicheListe}
+          jAi={collection[popupFiche.id]?.j_ai || false}
+          jAiAchete={collection[popupFiche.id]?.j_ai_achete || false}
+          jeVeux={collection[popupFiche.id]?.je_veux || false}
+          aColorié={coloriagesMap[popupFiche.id] || false}
+          onToggleJAi={() => toggleJAi(popupFiche.id)}
+          onToggleJeVeux={() => toggleJeVeux(popupFiche.id)}
           onClose={() => setPopupFiche(null)}
           onOpenSimilaire={(illu) => setPopupFiche(illu)}
           onSuivant={popupFicheListe.length > 1 ? () => {
