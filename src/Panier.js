@@ -104,7 +104,7 @@ function IndicateurEtapes({ etape, isMobile }) {
 
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
-function EtapePanier({ onContinuer, onAperçuConfirmation, isMobile }) {
+function EtapePanier({ onContinuer, isMobile }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
   const [popupPanier, setPopupPanier] = React.useState(null);
 
@@ -339,12 +339,7 @@ function EtapePanier({ onContinuer, onAperçuConfirmation, isMobile }) {
         Continuer →
       </button>
 
-      {/* Bouton temporaire — prévisualisation confirmation (à supprimer avant prod) */}
-      {onAperçuConfirmation && (
-        <button onClick={onAperçuConfirmation} style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,210,80,0.4)', borderRadius: '12px', padding: '10px', color: 'rgba(255,210,80,0.6)', fontSize: '12px', cursor: 'pointer' }}>
-          Aperçu confirmation (dev)
-        </button>
-      )}
+
     </div>
   );
 }
@@ -1182,7 +1177,7 @@ export default function Panier() {
 
             {/* Tunnel */}
             <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
-              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} onAperçuConfirmation={() => allerEtape(5)} isMobile={isMobile} />}
+              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
