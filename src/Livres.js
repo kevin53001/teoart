@@ -48,7 +48,7 @@ function cheminVersUrl(chemin) {
 
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
-function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle', isNew = false }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -69,6 +69,10 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
     const el = cardRef.current;
     el.classList.remove('shining'); void el.offsetWidth; el.classList.add('shining');
   };
+  React.useEffect(() => {
+    if (isNew && cardRef.current) cardRef.current.classList.add('nouveau');
+    else if (cardRef.current) cardRef.current.classList.remove('nouveau');
+  }, [isNew]);
 
   return (
     <div ref={wrapRef} style={{ perspective: '800px' }}>
@@ -381,6 +385,8 @@ function Livres() {
   const [loading, setLoading] = React.useState(true);
   const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [userId, setUserId] = React.useState(null);
+  const [refDateLivre, setRefDateLivre] = React.useState(null);
+  const [refDateRecueil, setRefDateRecueil] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [collection, setCollection] = React.useState({});
   const [itemsAuto, setItemsAuto] = React.useState({ recueils: new Set(), livres: new Set() });
@@ -442,6 +448,8 @@ function Livres() {
       const { data: profil } = await supabase.from('profils').select('pseudo, pays, created_at, dernier_vu_livres_pdf, dernier_vu_livres_relie, dernier_vu_recueils_pdf, dernier_vu_recueils_relie').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
       if (profil?.pays) setUserPays(profil.pays);
+      setRefDateLivre(new Date(profil?.dernier_vu_livres_pdf || profil?.created_at));
+      setRefDateRecueil(new Date(profil?.dernier_vu_recueils_pdf || profil?.created_at));
 
       const { data: r } = await supabase.from('recueils').select('id, nom, slug, annee, visuel_presentation, visuel_front, visuel_back, prix, fichier_pdf, description, relie_disponible, statut_relie, prix_relie, description_relie').eq('statut', 'published').order('annee', { ascending: false });
       const { data: l } = await supabase.from('livres').select('id, nom, slug, annee, recueils_ids, visuel_presentation, visuel_front, visuel_back, prix, fichier_pdf, description, relie_disponible, statut_relie, prix_relie, description_relie').in('statut', ['published', 'dossier']).order('nom');
@@ -705,6 +713,15 @@ function Livres() {
         .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
         @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
         .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
+        @keyframes halo-nouveau {
+          0%   { box-shadow: 0 0 0px 0px rgba(0,212,212,0), 0 0 0px 0px rgba(255,62,181,0), 0 0 0px 0px rgba(255,210,80,0); }
+          20%  { box-shadow: 0 0 12px 4px rgba(0,212,212,0.7), 0 0 0px 0px rgba(255,62,181,0), 0 0 0px 0px rgba(255,210,80,0); }
+          40%  { box-shadow: 0 0 12px 4px rgba(0,212,212,0.4), 0 0 14px 5px rgba(255,62,181,0.6), 0 0 0px 0px rgba(255,210,80,0); }
+          60%  { box-shadow: 0 0 8px 2px rgba(0,212,212,0.2), 0 0 12px 4px rgba(255,62,181,0.4), 0 0 16px 6px rgba(255,210,80,0.6); }
+          80%  { box-shadow: 0 0 6px 2px rgba(0,212,212,0.5), 0 0 10px 3px rgba(255,62,181,0.5), 0 0 12px 4px rgba(255,210,80,0.4); }
+          100% { box-shadow: 0 0 10px 3px rgba(0,212,212,0.6), 0 0 12px 4px rgba(255,62,181,0.5), 0 0 14px 5px rgba(255,210,80,0.5); }
+        }
+        .teoart-card.nouveau { animation: halo-nouveau 2.4s ease-in-out infinite; border-color: rgba(0,212,212,0.5) !important; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
         img { -webkit-user-drag: none; user-drag: none; pointer-events: auto; }
@@ -830,7 +847,7 @@ function Livres() {
               <SectionTitre couleur="#00d4d4" label="Recueils" />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
                 {recueils.map(r => (
-                  <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL}
+                  <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL} isNew={refDateRecueil && r.created_at ? new Date(r.created_at) > refDateRecueil : false}
                     jAi={collection[`recueil_${r.id}`]?.j_ai || false}
                     jeVeux={collection[`recueil_${r.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(r.id, 'recueil')}
@@ -853,7 +870,7 @@ function Livres() {
               <SectionTitre couleur="rgba(255,255,255,0.6)" label="Tous les livres" />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
                 {tousLivres.map(l => (
-                  <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE}
+                  <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE} isNew={refDateLivre && l.created_at ? new Date(l.created_at) > refDateLivre : false}
                     jAi={collection[`livre_${l.id}`]?.j_ai || false}
                     jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(l.id, 'livre')}
