@@ -439,7 +439,7 @@ function Livres() {
       if (!user) { navigate('/'); return; }
       setUserId(user.id);
 
-      const { data: profil } = await supabase.from('profils').select('pseudo, pays').eq('id', user.id).single();
+      const { data: profil } = await supabase.from('profils').select('pseudo, pays, created_at, dernier_vu_livres_pdf, dernier_vu_livres_relie, dernier_vu_recueils_pdf, dernier_vu_recueils_relie').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
       if (profil?.pays) setUserPays(profil.pays);
 
@@ -503,6 +503,31 @@ function Livres() {
       }
 
       setCollection(collMap);
+
+      // ── Notifs nouveaux livres / recueils ─────────────────────────────
+      const refLivrePdf   = profil?.dernier_vu_livres_pdf    || profil?.created_at;
+      const refLivreRelie = profil?.dernier_vu_livres_relie  || profil?.created_at;
+      const refRecueilPdf = profil?.dernier_vu_recueils_pdf  || profil?.created_at;
+      const refRecueilRel = profil?.dernier_vu_recueils_relie|| profil?.created_at;
+
+      const livresPublies = (l || []).filter(li => li.visuel_presentation); // vrais livres seulement
+
+      const nLivrePdf   = refLivrePdf   ? livresPublies.filter(li => li.prix         && new Date(li.created_at) > new Date(refLivrePdf)).length   : 0;
+      const nLivreRelie = refLivreRelie  ? livresPublies.filter(li => li.relie_disponible && new Date(li.created_at) > new Date(refLivreRelie)).length : 0;
+      const nRecueilPdf = refRecueilPdf  ? (r || []).filter(ri => ri.prix             && new Date(ri.created_at) > new Date(refRecueilPdf)).length  : 0;
+      const nRecueilRel = refRecueilRel  ? (r || []).filter(ri => ri.relie_disponible && new Date(ri.created_at) > new Date(refRecueilRel)).length  : 0;
+
+      const insererNotif = async (type, count) => {
+        if (count <= 0) return;
+        await supabase.from('notifications').delete().eq('user_id', user.id).eq('type', type).eq('lu', false);
+        await supabase.from('notifications').insert({ user_id: user.id, type, contenu: { count }, lu: false });
+      };
+      await insererNotif('nouveau_livre_pdf',    nLivrePdf);
+      await insererNotif('nouveau_livre_relie',  nLivreRelie);
+      await insererNotif('nouveau_recueil_pdf',  nRecueilPdf);
+      await insererNotif('nouveau_recueil_relie',nRecueilRel);
+      // ─────────────────────────────────────────────────────────────────
+
       setLoading(false);
 
       if (location.state?.ouvrirItem) {
