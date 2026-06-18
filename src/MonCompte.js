@@ -1396,25 +1396,36 @@ function SectionMesInfos({ userId }) {
 }
 
 function SectionMesCommandes({ userId }) {
-  const [commandes, setCommandes] = React.useState([]);
+  const [articles, setArticles] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [telechargement, setTelechargement] = React.useState({});
 
   React.useEffect(() => {
-    supabase.from('commandes').select('*').eq('user_id', userId).order('created_at', { ascending: false }).then(({ data }) => { setCommandes(data || []); setLoading(false); });
+    supabase
+      .from('commandes_articles')
+      .select('id, user_id, commande_id, nom, type, fichier_pdf, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setArticles(data || []); setLoading(false); });
   }, [userId]);
 
-  const telechargerFichier = async (commande, type) => {
-    const key = `${commande.id}_${type}`;
+  const telecharger = async (article) => {
+    const key = article.id;
+    if (telechargement[key]) return;
     setTelechargement(p => ({ ...p, [key]: true }));
     try {
-      const cheminR2 = type === 'produit' ? commande.fichier_pdf : commande.facture_pdf;
-      const response = await fetch('/api/download-secure', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemin: cheminR2, userId }) });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const response = await fetch('/api/refresh-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: article.id, userId: user.id }),
+      });
       const data = await response.json();
       if (data.url) {
         const a = document.createElement('a');
         a.href = data.url;
-        a.download = type === 'produit' ? `${commande.nom_produit}.pdf` : `Facture_${commande.id.slice(0, 8)}.pdf`;
+        a.target = '_blank';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
       }
     } catch (e) { console.error(e); }
@@ -1422,24 +1433,41 @@ function SectionMesCommandes({ userId }) {
   };
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
-  if (commandes.length === 0) return (
+  if (articles.length === 0) return (
     <div style={{ textAlign: 'center', padding: '40px 0' }}>
       <p style={{ fontSize: '32px', marginBottom: '12px' }}>🛒</p>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Aucune commande pour l'instant.</p>
     </div>
   );
 
+  const parCommande = {};
+  articles.forEach(a => {
+    if (!parCommande[a.commande_id]) parCommande[a.commande_id] = [];
+    parCommande[a.commande_id].push(a);
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {commandes.map(cmd => (
-        <div key={cmd.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>{cmd.nom_produit}</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}{cmd.prix ? ` · ${cmd.prix} €` : ''}</p>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {cmd.fichier_pdf && <button onClick={() => telechargerFichier(cmd, 'produit')} disabled={telechargement[`${cmd.id}_produit`]} style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '7px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer' }}>{telechargement[`${cmd.id}_produit`] ? '...' : '⬇ Télécharger'}</button>}
-            {cmd.facture_pdf && <button onClick={() => telechargerFichier(cmd, 'facture')} disabled={telechargement[`${cmd.id}_facture`]} style={{ background: 'rgba(255,210,80,0.1)', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', padding: '7px 12px', color: 'rgba(255,210,80,0.8)', fontSize: '11px', cursor: 'pointer' }}>{telechargement[`${cmd.id}_facture`] ? '...' : '🧾 Facture'}</button>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {Object.entries(parCommande).map(([commandeId, items]) => (
+        <div key={commandeId} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+            Commande du {new Date(items[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {items.map(item => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <p style={{ color: '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nom}</p>
+                {item.fichier_pdf ? (
+                  <button
+                    onClick={() => telecharger(item)}
+                    style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '7px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
+                    {telechargement[item.id] ? '...' : 'Télécharger'}
+                  </button>
+                ) : (
+                  <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', flexShrink: 0 }}>Version reliée — en cours de traitement</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       ))}
