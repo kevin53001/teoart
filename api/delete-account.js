@@ -18,10 +18,15 @@ module.exports = async (req, res) => {
 
     // 1. Supprimer les données dans toutes les tables liées
     await supabase.from('commandes_articles').delete().eq('user_id', userId);
+    await supabase.from('commandes').delete().eq('user_id', userId);
     await supabase.from('collection').delete().eq('user_id', userId);
+    await supabase.from('collection_livres').delete().eq('user_id', userId);
     await supabase.from('coloriages').delete().eq('user_id', userId);
     await supabase.from('likes_coloriages').delete().eq('user_id', userId);
+    await supabase.from('likes_pensees').delete().eq('user_id', userId);
     await supabase.from('commentaires_coloriages').delete().eq('user_id', userId);
+    await supabase.from('commentaires_pensees').delete().eq('user_id', userId);
+    await supabase.from('pensees_vues').delete().eq('user_id', userId);
     await supabase.from('notifications').delete().eq('user_id', userId);
     await supabase.from('telechargements_gratuits').delete().eq('user_id', userId);
     await supabase.from('profils').delete().eq('id', userId);
