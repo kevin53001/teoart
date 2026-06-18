@@ -1875,9 +1875,6 @@ function MonCompte() {
                 })}
               </div>
 
-              {/* ── Badges hexagonaux ── */}
-              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
-
               {onglet === 'collection' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMaCollection userId={userId} totalIllus={stats.totalIllus} /></div>}
               {showFavoris && (
                 <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}>
@@ -1895,6 +1892,9 @@ function MonCompte() {
               {onglet === 'coloriages' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesColoriages userId={userId} userPseudo={userPseudo} /></div>}
               {onglet === 'infos'   && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,210,80,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesInfos userId={userId} /></div>}
               {onglet === 'commandes' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesCommandes userId={userId} /></div>}
+
+              {/* ── Badges hexagonaux — toujours en bas ── */}
+              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
 import BandeLegale from './BandeLegale';
 import OngletsLateraux from './OngletsLateraux';
+import PopupFicheIllu from './PopupFicheIllu';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -106,7 +107,30 @@ function IndicateurEtapes({ etape, isMobile }) {
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
 function EtapePanier({ onContinuer, isMobile }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
-  const [popupPanier, setPopupPanier] = React.useState(null);
+  const [popupIllu, setPopupIllu] = React.useState(null);
+  const [popupIlluChargement, setPopupIlluChargement] = React.useState(false);
+  const [userId, setUserIdLocal] = React.useState(null);
+  const [userPseudo, setUserPseudo] = React.useState('');
+
+  React.useEffect(() => {
+    const chargerUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserIdLocal(user.id);
+      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+      if (profil?.pseudo) setUserPseudo(profil.pseudo);
+    };
+    chargerUser();
+  }, []);
+
+  const ouvrirPopupIllu = async (illuId) => {
+    setPopupIlluChargement(true);
+    try {
+      const { data } = await supabase.from('illustrations').select('*').eq('id', illuId).single();
+      if (data) setPopupIllu(data);
+    } catch {}
+    setPopupIlluChargement(false);
+  };
 
   // Chargement de la promo badge active depuis Supabase
   React.useEffect(() => {
@@ -207,21 +231,23 @@ function EtapePanier({ onContinuer, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* Popup miniature cliquable */}
-      {popupPanier && (
-        <div onClick={() => setPopupPanier(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '24px', maxWidth: '320px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {popupPanier.image && <img src={popupPanier.image} alt={popupPanier.nom} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', margin: '0 auto' }} />}
-            <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}>{popupPanier.nom}</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Voir la fiche complète ?</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setPopupPanier(null)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.5)', fontSize: '13px', cursor: 'pointer' }}>Annuler</button>
-              <button onClick={() => { setPopupPanier(null); window.open(`/livres#${popupPanier.id}`, '_blank'); }} style={{ flex: 1, background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(0,212,212,0.35)' }}>
-                Voir la fiche
-              </button>
-            </div>
-          </div>
+      {/* PopupFicheIllu */}
+      {popupIlluChargement && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>Chargement...</p>
         </div>
+      )}
+      {popupIllu && (
+        <PopupFicheIllu
+          illu={popupIllu}
+          illustrations={[popupIllu]}
+          userId={userId}
+          userPseudo={userPseudo}
+          onClose={() => setPopupIllu(null)}
+          onOpenSimilaire={() => {}}
+          onSuivant={() => {}}
+          onPrecedent={() => {}}
+        />
       )}
 
       {/* Encart TVA */}
@@ -240,7 +266,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => setPopupPanier({ type: 'illustration', id: a.id, nom: a.nom, image: a.image })} />)}
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => ouvrirPopupIllu(a.id)} />)}
           </div>
           {reductions.tauxIllus > 0 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -261,7 +287,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxLivres > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxLivres * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} onClickMiniature={() => setPopupPanier({ type: l.article.type === 'relie' ? 'relie' : 'livre', id: l.article.id, nom: l.article.nom, image: l.article.image, modeRelie: l.article.type === 'relie' })} />)}
+            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
           </div>
           {totalLivresBrutAffiche !== totalLivresAffiche && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -282,7 +308,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxRecueils > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxRecueils * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} onClickMiniature={() => setPopupPanier({ type: l.article.type === 'relie' ? 'relie' : 'recueil', id: l.article.id, nom: l.article.nom, image: l.article.image, modeRelie: l.article.type === 'relie' })} />)}
+            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
           </div>
           {totalRecueilsBrutAffiche !== totalRecueilsAffiche && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
