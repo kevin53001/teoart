@@ -136,10 +136,40 @@ function Presentation() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserId(user.id);
+      let profil = null;
+      if (user) {
+        setUserId(user.id);
+        const { data: p } = await supabase.from('profils').select('created_at, dernier_vu_presentation').eq('id', user.id).maybeSingle();
+        profil = p;
+      }
       const { data } = await supabase.from('presentation').select('*').order('ordre', { ascending: true });
       setEncarts(data || []);
       setLoading(false);
+
+      // ── Notif nouvelle présentation ───────────────────────────────────
+      if (user && profil) {
+        const ref = profil.dernier_vu_presentation || profil.created_at;
+        const refDate = new Date(ref);
+        const encarts = data || [];
+        // On cherche le plus récent encart ajouté après la référence
+        const nouveaux = encarts.filter(e => new Date(e.created_at) > refDate);
+        if (nouveaux.length > 0) {
+          const dernierTitre = nouveaux[nouveaux.length - 1]?.titre || '';
+          await supabase.from('notifications')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('type', 'nouvelle_presentation')
+            .eq('lu', false);
+          await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'nouvelle_presentation',
+            contenu: { count: nouveaux.length, derniere_titre: dernierTitre },
+            lu: false,
+          });
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────
+
       // Charger illustrations pour similaires dans PopupFicheIllu
       const { data: illusData } = await supabase.from('illustrations').select('id, nom, visuels, prix, description, tags, annee, categorie, livres_ids, recueils_ids').eq('statut', 'published').limit(200);
       setIllustrationsOnglet(illusData || []);
