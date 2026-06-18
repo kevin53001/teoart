@@ -47,9 +47,9 @@ const STATUT_COLOR = {
 
 const s = {
   shell: { display:'flex', height:'100vh', background:'#07070f', fontFamily:'sans-serif', fontSize:'13px', color:'#e0e0f0', overflow:'hidden' },
-  sidebar: { width:'172px', flexShrink:0, borderRight:'1px solid #00e5ff22', background:'linear-gradient(180deg, #0a0a18 0%, #050508 100%)', display:'flex', flexDirection:'column' },
+  sidebar: { width:'172px', flexShrink:0, borderRight:'1px solid #00e5ff55', background:'linear-gradient(180deg, #08081a 0%, #002a3a 100%)', display:'flex', flexDirection:'column' },
   sidebarLogo: { padding:'14px 16px 12px', borderBottom:'1px solid #00e5ff1a' },
-  logoImg: { width:'36px', height:'36px', borderRadius:'50%', marginBottom:'6px', display:'block' },
+  logoImg: { width:'88px', height:'88px', borderRadius:'50%', marginBottom:'8px', display:'block' },
   logoName: { fontSize:'13px', fontWeight:600, color:'#e8e8f8', letterSpacing:'0.01em' },
   logoSub: { fontSize:'10px', color:'#00e5ff77', marginTop:'2px' },
   navItem: (active) => ({
@@ -63,7 +63,7 @@ const s = {
   sidebarBottom: { marginTop:'auto', padding:'14px 16px', borderTop:'1px solid #00e5ff1a' },
   liveDot: { width:'6px', height:'6px', borderRadius:'50%', background:'#22c55e', display:'inline-block', marginRight:'6px', animation:'pulse 2s infinite' },
   main: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
-  topbar: { height:'46px', flexShrink:0, borderBottom:'1px solid #00e5ff22', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', background:'linear-gradient(90deg, #05050d 0%, #001a22 100%)' },
+  topbar: { height:'46px', flexShrink:0, borderBottom:'1px solid #00e5ff66', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', background:'linear-gradient(90deg, #07070f 0%, #003a50 100%)' },
   topbarTitle: { fontSize:'14px', fontWeight:500, background:'linear-gradient(90deg, #e8e8f8 0%, #00e5ff 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' },
   topbarDate: { fontSize:'11px', color:'#44445a' },
   content: { flex:1, overflow:'auto', padding:'16px' },
@@ -322,6 +322,10 @@ export default function Admin() {
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#22c55e', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#22c55e', display:'inline-block', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite', flexShrink:0 }} />
             Temps réel actif
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#38bdf8', marginBottom:'6px' }}>
+            <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#38bdf8', display:'inline-block', boxShadow:'0 0 6px #38bdf8', flexShrink:0 }} />
+            <span>Inscrits aujourd'hui : <strong>{stats?.nb_inscrits_mois ?? '—'}</strong></span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#f97316', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#f97316', display:'inline-block', boxShadow:'0 0 6px #f97316', flexShrink:0 }} />
