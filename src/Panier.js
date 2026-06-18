@@ -123,7 +123,13 @@ function EtapePanier({ onContinuer, isMobile }) {
     chargerUser();
   }, []);
 
-  const ouvrirPopupIllu = async (illuId) => {
+  const ouvrirPopupIllu = async (illuId, e) => {
+    // Scroller pour centrer le point de clic dans la fenêtre
+    if (e) {
+      const clickY = e.clientY + window.scrollY;
+      const cible = clickY - window.innerHeight / 2;
+      window.scrollTo({ top: Math.max(0, cible), behavior: 'instant' });
+    }
     setPopupIlluChargement(true);
     try {
       const { data } = await supabase.from('illustrations').select('*').eq('id', illuId).single();
@@ -174,7 +180,7 @@ function EtapePanier({ onContinuer, isMobile }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: decale ? 'rgba(255,62,181,0.04)' : 'rgba(255,255,255,0.05)', border: `1px solid ${decale ? 'rgba(255,62,181,0.15)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '12px', padding: '10px 12px', marginLeft: decale ? '20px' : '0' }}>
         {article.image && (
           <img src={article.image} alt={article.nom}
-            onClick={onClickMiniature || undefined}
+            onClick={onClickMiniature ? (e) => onClickMiniature(e) : undefined}
             style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, cursor: onClickMiniature ? 'pointer' : 'default', transition: onClickMiniature ? 'opacity .2s' : 'none' }}
             onMouseEnter={e => { if (onClickMiniature) e.currentTarget.style.opacity = '0.75'; }}
             onMouseLeave={e => { if (onClickMiniature) e.currentTarget.style.opacity = '1'; }}
@@ -266,7 +272,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => ouvrirPopupIllu(a.id)} />)}
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={(e) => ouvrirPopupIllu(a.id, e)} />)}
           </div>
           {reductions.tauxIllus > 0 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
