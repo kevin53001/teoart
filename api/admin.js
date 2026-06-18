@@ -1,0 +1,249 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
+
+const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
+
+// ─── EMAIL BREVO ───────────────────────────────────────────────
+async function envoyerEmailBrevo(destinataire, sujet, contenuHtml) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'api-key': process.env.BREVO_API_KEY },
+    body: JSON.stringify({
+      sender: { name: "Kevin Teo'Art", email: 'kevinteoart@outlook.fr' },
+      to: [{ email: destinataire }],
+      subject: sujet,
+      htmlContent: contenuHtml
+    })
+  })
+  if (!res.ok) throw new Error(`Brevo error: ${await res.text()}`)
+}
+
+function emailExpedition({ prenom, nom, titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client }) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222">
+      <h2 style="color:#333">Votre commande est en route !</h2>
+      <p>Bonjour ${prenom} ${nom},</p>
+      <p>Votre exemplaire de <strong>${titre}</strong> a été expédié.</p>
+      ${livreur ? `<p><strong>Transporteur :</strong> ${livreur}</p>` : ''}
+      ${numero_suivi ? `<p><strong>Numéro de suivi :</strong> ${numero_suivi}</p>` : ''}
+      ${lien_suivi ? `<p><a href="${lien_suivi}" style="color:#0066cc">Suivre ma commande</a></p>` : ''}
+      ${date_livraison_estimee ? `<p><strong>Livraison estimée :</strong> ${date_livraison_estimee}</p>` : ''}
+      ${note_client ? `<p><em>${note_client}</em></p>` : ''}
+      <p>Pour toute question : <a href="mailto:kevinteoart@outlook.fr">kevinteoart@outlook.fr</a></p>
+      <p>Merci pour votre confiance,<br><strong>Kevin Teo'Art</strong></p>
+    </div>`
+}
+
+function emailLivraison({ prenom, nom, titre, note_client }) {
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222">
+      <h2 style="color:#333">Votre commande est livrée !</h2>
+      <p>Bonjour ${prenom} ${nom},</p>
+      <p>Votre exemplaire de <strong>${titre}</strong> a bien été livré.</p>
+      ${note_client ? `<p><em>${note_client}</em></p>` : ''}
+      <p>J'espère qu'il vous plaira ! Pour toute question : <a href="mailto:kevinteoart@outlook.fr">kevinteoart@outlook.fr</a></p>
+      <p>Bonne lecture,<br><strong>Kevin Teo'Art</strong></p>
+    </div>`
+}
+
+// ─── ACTIONS ───────────────────────────────────────────────────
+
+async function actionStats(userId) {
+  const [
+    { count: nb_inscrits },
+    { count: nb_commandes },
+    { count: nb_coloriages },
+    { data: profils },
+    { data: commandesRaw },
+    { data: coloriagesRaw },
+    { data: commentsRaw1 },
+    { data: commentsRaw2 },
+    { data: likesRaw1 },
+    { data: likesRaw2 }
+  ] = await Promise.all([
+    supabase.from('profils').select('*', { count: 'exact', head: true }),
+    supabase.from('commandes').select('*', { count: 'exact', head: true }),
+    supabase.from('coloriages').select('*', { count: 'exact', head: true }),
+    supabase.from('profils').select('id, prenom, nom, email, created_at'),
+    supabase.from('commandes').select('user_id, montant_total'),
+    supabase.from('coloriages').select('user_id'),
+    supabase.from('commentaires_coloriages').select('user_id'),
+    supabase.from('commentaires_pensees').select('user_id'),
+    supabase.from('likes_coloriages').select('user_id'),
+    supabase.from('likes_pensees').select('user_id')
+  ])
+
+  const ca_total = (commandesRaw || []).reduce((s, c) => s + (c.montant_total || 0), 0)
+
+  const commandesParUser = {}
+  ;(commandesRaw || []).forEach(c => {
+    commandesParUser[c.user_id] = {
+      nb: (commandesParUser[c.user_id]?.nb || 0) + 1,
+      total: (commandesParUser[c.user_id]?.total || 0) + (c.montant_total || 0)
+    }
+  })
+  const coloriagesParUser = {}
+  ;(coloriagesRaw || []).forEach(c => { coloriagesParUser[c.user_id] = (coloriagesParUser[c.user_id] || 0) + 1 })
+  const commentairesParUser = {}
+  ;[...(commentsRaw1 || []), ...(commentsRaw2 || [])].forEach(c => { commentairesParUser[c.user_id] = (commentairesParUser[c.user_id] || 0) + 1 })
+  const likesParUser = {}
+  ;[...(likesRaw1 || []), ...(likesRaw2 || [])].forEach(l => { likesParUser[l.user_id] = (likesParUser[l.user_id] || 0) + 1 })
+
+  const usagers = (profils || []).map(u => ({
+    id: u.id, prenom: u.prenom, nom: u.nom, email: u.email, inscrit_le: u.created_at,
+    nb_commandes: commandesParUser[u.id]?.nb || 0,
+    ca_genere: commandesParUser[u.id]?.total || 0,
+    nb_coloriages: coloriagesParUser[u.id] || 0,
+    nb_commentaires: commentairesParUser[u.id] || 0,
+    nb_likes: likesParUser[u.id] || 0
+  }))
+
+  return { global: { nb_inscrits, nb_commandes, nb_coloriages, ca_total }, usagers }
+}
+
+async function actionGetCommandes() {
+  const { data: articles, error } = await supabase
+    .from('commandes_articles')
+    .select('*, commandes(user_id, created_at, montant_total)')
+    .eq('type', 'relie')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  const userIds = [...new Set((articles || []).map(a => a.commandes?.user_id).filter(Boolean))]
+  const { data: profils } = await supabase
+    .from('profils')
+    .select('id, prenom, nom, email, telephone, adresse, code_postal, ville, pays')
+    .in('id', userIds.length > 0 ? userIds : ['none'])
+
+  const profilMap = {}
+  ;(profils || []).forEach(p => { profilMap[p.id] = p })
+
+  const emailMap = {}
+  for (const uid of userIds) {
+    const { data } = await supabase.auth.admin.getUserById(uid)
+    if (data?.user?.email) emailMap[uid] = data.user.email
+  }
+
+  const commandes = (articles || []).map(a => {
+    const uid = a.commandes?.user_id
+    const p = profilMap[uid] || {}
+    return {
+      id: a.id, commande_id: a.commande_id, nom_article: a.nom,
+      statut: a.statut || 'en_attente',
+      livreur: a.livreur, numero_suivi: a.numero_suivi,
+      lien_suivi: a.lien_suivi, date_livraison_estimee: a.date_livraison_estimee,
+      note_client: a.note_client,
+      notif_envoyee_expedition: a.notif_envoyee_expedition,
+      notif_envoyee_livraison: a.notif_envoyee_livraison,
+      date_commande: a.commandes?.created_at,
+      client: {
+        id: uid, prenom: p.prenom || '', nom: p.nom || '',
+        email: p.email || emailMap[uid] || '',
+        telephone: p.telephone || '', adresse: p.adresse || '',
+        code_postal: p.code_postal || '', ville: p.ville || '', pays: p.pays || ''
+      }
+    }
+  })
+  return { commandes }
+}
+
+async function actionUpdateCommande(body) {
+  const { commande_article_id, statut, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client } = body
+
+  const { data: article, error: artErr } = await supabase
+    .from('commandes_articles')
+    .select('*, commandes(user_id)')
+    .eq('id', commande_article_id)
+    .single()
+
+  if (artErr || !article) throw new Error('Article introuvable')
+
+  const clientUserId = article.commandes?.user_id
+  if (!clientUserId) throw new Error('user_id client introuvable')
+
+  const { data: profil } = await supabase.from('profils').select('prenom, nom, email').eq('id', clientUserId).single()
+  const { data: authData } = await supabase.auth.admin.getUserById(clientUserId)
+  const emailClient = profil?.email || authData?.user?.email
+
+  const updateData = { statut }
+  if (livreur !== undefined) updateData.livreur = livreur
+  if (numero_suivi !== undefined) updateData.numero_suivi = numero_suivi
+  if (lien_suivi !== undefined) updateData.lien_suivi = lien_suivi
+  if (date_livraison_estimee !== undefined) updateData.date_livraison_estimee = date_livraison_estimee
+  if (note_client !== undefined) updateData.note_client = note_client
+  if (statut === 'expediee') updateData.notif_envoyee_expedition = true
+  if (statut === 'livree') updateData.notif_envoyee_livraison = true
+
+  const { error: updateErr } = await supabase.from('commandes_articles').update(updateData).eq('id', commande_article_id)
+  if (updateErr) throw updateErr
+
+  const prenom = profil?.prenom || ''
+  const nom = profil?.nom || ''
+  const titre = article.nom || 'votre livre'
+
+  await supabase.from('notifications').insert({
+    user_id: clientUserId,
+    type: statut === 'expediee' ? 'commande_expediee' : statut === 'livree' ? 'commande_livree' : 'commande_maj',
+    contenu: { titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client },
+    lu: false
+  })
+
+  if (emailClient) {
+    if (statut === 'expediee') {
+      await envoyerEmailBrevo(emailClient, `Votre commande "${titre}" est en route !`,
+        emailExpedition({ prenom, nom, titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client }))
+    } else if (statut === 'livree') {
+      await envoyerEmailBrevo(emailClient, `Votre commande "${titre}" a été livrée !`,
+        emailLivraison({ prenom, nom, titre, note_client }))
+    } else {
+      await envoyerEmailBrevo(emailClient, `Mise à jour de votre commande "${titre}"`,
+        emailExpedition({ prenom, nom, titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client }))
+    }
+  }
+
+  return { ok: true }
+}
+
+async function actionDeleteComment(body) {
+  const { commentaire_id, table } = body
+  if (!['commentaires_coloriages', 'commentaires_pensees'].includes(table)) throw new Error('Table invalide')
+  const { error } = await supabase.from(table).delete().eq('id', commentaire_id)
+  if (error) throw error
+  return { ok: true }
+}
+
+// ─── HANDLER PRINCIPAL ─────────────────────────────────────────
+export default async function handler(req, res) {
+  const userId = req.method === 'GET' ? req.query.userId : req.body?.userId
+  const action = req.method === 'GET' ? req.query.action : req.body?.action
+
+  if (userId !== ADMIN_USER_ID) return res.status(403).json({ error: 'Accès refusé' })
+
+  try {
+    if (action === 'stats') {
+      if (req.method !== 'GET') return res.status(405).end()
+      return res.status(200).json(await actionStats(userId))
+    }
+    if (action === 'get-commandes') {
+      if (req.method !== 'GET') return res.status(405).end()
+      return res.status(200).json(await actionGetCommandes())
+    }
+    if (action === 'update-commande') {
+      if (req.method !== 'POST') return res.status(405).end()
+      return res.status(200).json(await actionUpdateCommande(req.body))
+    }
+    if (action === 'delete-comment') {
+      if (req.method !== 'POST') return res.status(405).end()
+      return res.status(200).json(await actionDeleteComment(req.body))
+    }
+    return res.status(400).json({ error: 'Action inconnue' })
+  } catch (err) {
+    console.error('admin error:', err)
+    return res.status(500).json({ error: err.message })
+  }
+}

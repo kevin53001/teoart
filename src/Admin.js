@@ -165,7 +165,7 @@ export default function Admin() {
   // Chargement données
   const chargerStats = useCallback(async () => {
     if (!userId) return
-    const res = await fetch(`/api/admin-stats?userId=${userId}`)
+    const res = await fetch(`/api/admin?action=stats&userId=${userId}`)
     const data = await res.json()
     if (data.global) setStats(data.global)
     if (data.usagers) setUsagers(data.usagers)
@@ -173,7 +173,7 @@ export default function Admin() {
 
   const chargerCommandes = useCallback(async () => {
     if (!userId) return
-    const res = await fetch(`/api/admin-get-commandes?userId=${userId}`)
+    const res = await fetch(`/api/admin?action=get-commandes&userId=${userId}`)
     const data = await res.json()
     if (data.commandes) setCommandes(data.commandes)
   }, [userId])
@@ -213,10 +213,10 @@ export default function Admin() {
   // Actions commandes
   const majStatut = async (id, statut) => {
     const suivi = suiviData[id] || {}
-    const res = await fetch('/api/admin-update-commande', {
+    const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, commande_article_id: id, statut, ...suivi })
+      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, statut, ...suivi })
     })
     const data = await res.json()
     if (data.ok) {
@@ -231,10 +231,10 @@ export default function Admin() {
   const validerSuivi = async (id) => {
     const suivi = suiviData[id] || {}
     const cmd = commandes.find(c => c.id === id)
-    const res = await fetch('/api/admin-update-commande', {
+    const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, commande_article_id: id, statut: cmd.statut, ...suivi })
+      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, statut: cmd.statut, ...suivi })
     })
     const data = await res.json()
     if (data.ok) {
@@ -248,10 +248,10 @@ export default function Admin() {
 
   // Suppression commentaire
   const supprimerCommentaire = async (id, table) => {
-    const res = await fetch('/api/admin-delete-comment', {
+    const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, commentaire_id: id, table })
+      body: JSON.stringify({ action: 'delete-comment', userId, commentaire_id: id, table })
     })
     const data = await res.json()
     if (data.ok) {
