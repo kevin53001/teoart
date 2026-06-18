@@ -15,6 +15,7 @@ import Accueil from './Accueil';
 import BannerePWA from './BannerePWA';
 import SplashScreen from './SplashScreen';
 import Panier from './Panier';
+import Admin from './Admin';
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -93,6 +94,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/accueil" element={session ? <Accueil /> : <Navigate to="/" />} />
           <Route path="/panier" element={session ? <Panier /> : <Navigate to="/" />} />
+          <Route path="/admin-kt2024" element={<Admin />} />
         </Routes>
         <BannerePWA />
       </BrowserRouter>
