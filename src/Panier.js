@@ -828,7 +828,7 @@ function EtapePaiement({ onSucces, onRetour, isMobile, infos }) {
 }
 
 // ─── Étape 5 : Confirmation ───────────────────────────────────────────────────
-function EtapeConfirmation({ infos, isMobile, articlesAchetes = [] }) {
+function EtapeConfirmation({ infos, isMobile, articlesAchetes = [], paymentIntentId = null }) {
   const navigate = useNavigate();
   const articles = articlesAchetes;
   const [liensTelechargement, setLiensTelechargement] = React.useState([]);
@@ -843,13 +843,14 @@ function EtapeConfirmation({ infos, isMobile, articlesAchetes = [] }) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
-        const { data } = await supabase
+        let query = supabase
           .from('commandes_articles')
           .select('id, nom, type, fichier_pdf')
           .eq('user_id', user.id)
-          .in('type', ['illustration', 'livre_pdf', 'recueil'])
-          .eq('commande_recente', true)
-          .order('created_at', { ascending: false });
+          .in('type', ['illustration', 'livre_pdf', 'recueil']);
+        if (paymentIntentId) query = query.eq('commande_id', paymentIntentId);
+        else query = query.eq('commande_recente', true);
+        const { data } = await query.order('created_at', { ascending: false });
         setLiensTelechargement(data || []);
       } catch {}
       setLiensCharges(true);
@@ -1109,11 +1110,13 @@ export default function Panier() {
   }, []);
 
   const [articlesAchetes, setArticlesAchetes] = React.useState([]);
+  const [dernierPaymentIntentId, setDernierPaymentIntentId] = React.useState(null);
 
   const handleSuccesPaiement = async (paymentIntentId) => {
     // ── Snapshot du panier AVANT de le vider ─────────────────────────────
     const snapshotArticles = [...articles];
     setArticlesAchetes(snapshotArticles);
+    setDernierPaymentIntentId(paymentIntentId);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -1394,7 +1397,7 @@ export default function Panier() {
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
-              {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} articlesAchetes={articlesAchetes} />}
+              {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} articlesAchetes={articlesAchetes} paymentIntentId={dernierPaymentIntentId} />}
             </div>
 
           </div>
