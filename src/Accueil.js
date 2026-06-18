@@ -584,18 +584,18 @@ function Accueil() {
       if (!user) { navigate('/'); return; }
       setUserId(user.id);
 
+      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+      setUserPseudo(profil?.pseudo || profil?.prenom || 'Anonyme');
+
       // Chargement collection pour j_ai / je_veux dans les popups
       const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
       const collMap = {};
       (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
       setCollection(collMap);
-      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+      const { data: colosCollection } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
       const colosMap = {};
-      (colos || []).forEach(c => { colosMap[c.illustration_id] = true; });
+      (colosCollection || []).forEach(c => { colosMap[c.illustration_id] = true; });
       setColoriagesMap(colosMap);
-      setUserPseudo(profil?.pseudo || profil?.prenom || 'Anonyme');
-
-      // Stats collection
       const { count: total } = await supabase.from('illustrations').select('id', { count: 'exact', head: true }).eq('statut', 'published');
       const { count: jAiCount } = await supabase.from('collection').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('j_ai', true);
       const { count: colorieCount } = await supabase.from('coloriages').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
