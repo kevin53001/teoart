@@ -1205,7 +1205,7 @@ export default function Panier() {
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
             {/* Encart titre */}
-            <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '16px 20px' : '20px 32px', backdropFilter: 'blur(10px)', textAlign: 'center', marginBottom: '20px', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '16px 20px' : '20px 32px', textAlign: 'center', marginBottom: '20px', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
               <h1 style={{ color: '#fff', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', marginBottom: '6px' }}>
                 Mon Panier
               </h1>
@@ -1216,7 +1216,7 @@ export default function Panier() {
             {etape < 5 && <div style={{ marginTop: '20px' }}><IndicateurEtapes etape={etape} isMobile={isMobile} /></div>}
 
             {/* Tunnel */}
-            <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
+            <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px' }}>
               {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} onOuvrirIllu={ouvrirPopupIllu} />}
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
