@@ -113,9 +113,9 @@ const s = {
 
   // Commentaires
   cmtCard: (flagged) => ({
-    background:'#0d0d1a', border: flagged ? '1px solid #ff3eb544' : '1px solid #ffffff0f',
-    borderRadius:'10px', padding:'12px 14px', marginBottom:'8px',
-    background: flagged ? 'rgba(255,62,181,0.04)' : '#0d0d1a'
+    background: flagged ? 'rgba(255,62,181,0.04)' : '#0d0d1a',
+    border: flagged ? '1px solid #ff3eb544' : '1px solid #ffffff0f',
+    borderRadius:'10px', padding:'12px 14px', marginBottom:'8px'
   }),
   cmtHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px' },
   cmtUser: { fontSize:'11px', color:'#44445a' },
