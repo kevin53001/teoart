@@ -8,7 +8,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 );
 
 const r2 = new S3Client({
