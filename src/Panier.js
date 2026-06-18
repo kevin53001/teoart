@@ -969,6 +969,7 @@ export default function Panier() {
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
   const [userId, setUserId] = React.useState(null);
+  const [userPseudo, setUserPseudo] = React.useState('');
   const [etape, setEtape] = React.useState(1);
   const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
@@ -1054,6 +1055,7 @@ export default function Panier() {
         setUserId(user.id);
         const { data: profil } = await supabase.from('profils').select('pseudo, email, prenom, nom, adresse, complement, code_postal, ville, etat, pays').eq('id', user.id).single();
         if (profil) {
+          if (profil.pseudo) setUserPseudo(profil.pseudo);
           setInfos(prev => ({
             ...prev,
             email:       profil.email || user.email || '',
