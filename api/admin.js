@@ -50,61 +50,119 @@ function emailLivraison({ prenom, nom, titre, note_client }) {
     </div>`
 }
 
-// ─── ACTIONS ───────────────────────────────────────────────────
+// ─── STATS ─────────────────────────────────────────────────────
+async function actionStats() {
+  const now = new Date()
+  const debutMois    = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const debutMoisM1  = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+  const finMoisM1    = debutMois
+  const debutMoisM2  = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString()
+  const finMoisM2    = debutMoisM1
 
-async function actionStats(userId) {
+  const dans = (arr, d, f) => (arr||[]).filter(x => x.created_at >= d && (!f || x.created_at < f))
+  const mois  = arr => dans(arr, debutMois)
+  const moisM1 = arr => dans(arr, debutMoisM1, finMoisM1)
+  const moisM2 = arr => dans(arr, debutMoisM2, finMoisM2)
+  const ca = arr => (arr||[]).reduce((s,c) => s + (c.prix||0), 0)
+
   const [
-    { count: nb_inscrits },
-    { count: nb_commandes },
-    { count: nb_coloriages },
     { data: profils },
     { data: commandesRaw },
     { data: coloriagesRaw },
-    { data: commentsRaw1 },
-    { data: commentsRaw2 },
-    { data: likesRaw1 },
-    { data: likesRaw2 }
+    { data: commentsColoRaw },
+    { data: commentsPenseesRaw },
+    { data: likesColoRaw },
+    { data: likesPenseesRaw },
+    { data: penseesRaw },
+    { data: reliesRaw }
   ] = await Promise.all([
-    supabase.from('profils').select('*', { count: 'exact', head: true }),
-    supabase.from('commandes').select('*', { count: 'exact', head: true }),
-    supabase.from('coloriages').select('*', { count: 'exact', head: true }),
     supabase.from('profils').select('id, prenom, nom, email, created_at'),
-    supabase.from('commandes').select('user_id, montant_total'),
-    supabase.from('coloriages').select('user_id'),
-    supabase.from('commentaires_coloriages').select('user_id'),
-    supabase.from('commentaires_pensees').select('user_id'),
-    supabase.from('likes_coloriages').select('user_id'),
-    supabase.from('likes_pensees').select('user_id')
+    supabase.from('commandes_articles').select('user_id, prix, created_at'),
+    supabase.from('coloriages').select('user_id, created_at'),
+    supabase.from('commentaires_coloriages').select('user_id, created_at'),
+    supabase.from('commentaires_pensees').select('user_id, created_at'),
+    supabase.from('likes_coloriages').select('user_id, created_at'),
+    supabase.from('likes_pensees').select('user_id, created_at'),
+    supabase.from('pensees').select('id, created_at').eq('source', 'kevin'),
+    supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie')
   ])
 
-  const ca_total = (commandesRaw || []).reduce((s, c) => s + (c.montant_total || 0), 0)
+  // Inscrits
+  const nb_inscrits       = (profils||[]).length
+  const nb_inscrits_mois  = mois(profils).length
+  const nb_inscrits_m1    = moisM1(profils).length
+  const nb_inscrits_m2    = moisM2(profils).length
 
+  // Commandes
+  const cmds_mois          = mois(commandesRaw)
+  const nb_commandes       = (commandesRaw||[]).length
+  const nb_commandes_mois  = cmds_mois.length
+  const ca_total           = ca(commandesRaw)
+  const ca_mois            = ca(cmds_mois)
+  const ca_m1              = ca(moisM1(commandesRaw))
+  const ca_m2              = ca(moisM2(commandesRaw))
+  const panier_moyen_total = nb_commandes > 0 ? ca_total / nb_commandes : 0
+  const panier_moyen_mois  = nb_commandes_mois > 0 ? ca_mois / nb_commandes_mois : 0
+
+  // Reliés
+  const nb_relies_total = (reliesRaw||[]).length
+  const nb_relies_mois  = mois(reliesRaw).length
+
+  // Coloriages
+  const nb_coloriages       = (coloriagesRaw||[]).length
+  const nb_coloriages_mois  = mois(coloriagesRaw).length
+  const nb_comments_colo       = (commentsColoRaw||[]).length
+  const nb_comments_colo_mois  = mois(commentsColoRaw).length
+  const nb_likes_colo          = (likesColoRaw||[]).length
+  const nb_likes_colo_mois     = mois(likesColoRaw).length
+
+  // Pensées
+  const nb_pensees              = (penseesRaw||[]).length
+  const nb_pensees_mois         = mois(penseesRaw).length
+  const nb_comments_pensees      = (commentsPenseesRaw||[]).length
+  const nb_comments_pensees_mois = mois(commentsPenseesRaw).length
+  const nb_likes_pensees         = (likesPenseesRaw||[]).length
+  const nb_likes_pensees_mois    = mois(likesPenseesRaw).length
+
+  // Tableau usagers
   const commandesParUser = {}
-  ;(commandesRaw || []).forEach(c => {
+  ;(commandesRaw||[]).forEach(c => {
     commandesParUser[c.user_id] = {
-      nb: (commandesParUser[c.user_id]?.nb || 0) + 1,
-      total: (commandesParUser[c.user_id]?.total || 0) + (c.montant_total || 0)
+      nb:    (commandesParUser[c.user_id]?.nb    || 0) + 1,
+      total: (commandesParUser[c.user_id]?.total || 0) + (c.prix||0)
     }
   })
   const coloriagesParUser = {}
-  ;(coloriagesRaw || []).forEach(c => { coloriagesParUser[c.user_id] = (coloriagesParUser[c.user_id] || 0) + 1 })
+  ;(coloriagesRaw||[]).forEach(c => { coloriagesParUser[c.user_id] = (coloriagesParUser[c.user_id]||0) + 1 })
   const commentairesParUser = {}
-  ;[...(commentsRaw1 || []), ...(commentsRaw2 || [])].forEach(c => { commentairesParUser[c.user_id] = (commentairesParUser[c.user_id] || 0) + 1 })
+  ;[...(commentsColoRaw||[]), ...(commentsPenseesRaw||[])].forEach(c => { commentairesParUser[c.user_id] = (commentairesParUser[c.user_id]||0) + 1 })
   const likesParUser = {}
-  ;[...(likesRaw1 || []), ...(likesRaw2 || [])].forEach(l => { likesParUser[l.user_id] = (likesParUser[l.user_id] || 0) + 1 })
+  ;[...(likesColoRaw||[]), ...(likesPenseesRaw||[])].forEach(l => { likesParUser[l.user_id] = (likesParUser[l.user_id]||0) + 1 })
 
-  const usagers = (profils || []).map(u => ({
+  const usagers = (profils||[]).map(u => ({
     id: u.id, prenom: u.prenom, nom: u.nom, email: u.email, inscrit_le: u.created_at,
-    nb_commandes: commandesParUser[u.id]?.nb || 0,
-    ca_genere: commandesParUser[u.id]?.total || 0,
-    nb_coloriages: coloriagesParUser[u.id] || 0,
+    nb_commandes:    commandesParUser[u.id]?.nb    || 0,
+    ca_genere:       commandesParUser[u.id]?.total || 0,
+    nb_coloriages:   coloriagesParUser[u.id]   || 0,
     nb_commentaires: commentairesParUser[u.id] || 0,
-    nb_likes: likesParUser[u.id] || 0
+    nb_likes:        likesParUser[u.id]        || 0
   }))
 
-  return { global: { nb_inscrits, nb_commandes, nb_coloriages, ca_total }, usagers }
+  return {
+    global: {
+      nb_inscrits, nb_inscrits_mois, nb_inscrits_m1, nb_inscrits_m2,
+      nb_commandes, nb_commandes_mois,
+      ca_total, ca_mois, ca_m1, ca_m2,
+      panier_moyen_total, panier_moyen_mois,
+      nb_relies_total, nb_relies_mois,
+      nb_coloriages, nb_coloriages_mois, nb_comments_colo, nb_comments_colo_mois, nb_likes_colo, nb_likes_colo_mois,
+      nb_pensees, nb_pensees_mois, nb_comments_pensees, nb_comments_pensees_mois, nb_likes_pensees, nb_likes_pensees_mois
+    },
+    usagers
+  }
 }
 
+// ─── GET COMMANDES ─────────────────────────────────────────────
 async function actionGetCommandes() {
   const { data: articles, error } = await supabase
     .from('commandes_articles')
@@ -114,14 +172,14 @@ async function actionGetCommandes() {
 
   if (error) throw error
 
-  const userIds = [...new Set((articles || []).map(a => a.commandes?.user_id).filter(Boolean))]
+  const userIds = [...new Set((articles||[]).map(a => a.commandes?.user_id).filter(Boolean))]
   const { data: profils } = await supabase
     .from('profils')
     .select('id, prenom, nom, email, telephone, adresse, code_postal, ville, pays')
     .in('id', userIds.length > 0 ? userIds : ['none'])
 
   const profilMap = {}
-  ;(profils || []).forEach(p => { profilMap[p.id] = p })
+  ;(profils||[]).forEach(p => { profilMap[p.id] = p })
 
   const emailMap = {}
   for (const uid of userIds) {
@@ -129,7 +187,7 @@ async function actionGetCommandes() {
     if (data?.user?.email) emailMap[uid] = data.user.email
   }
 
-  const commandes = (articles || []).map(a => {
+  const commandes = (articles||[]).map(a => {
     const uid = a.commandes?.user_id
     const p = profilMap[uid] || {}
     return {
@@ -142,16 +200,17 @@ async function actionGetCommandes() {
       notif_envoyee_livraison: a.notif_envoyee_livraison,
       date_commande: a.commandes?.created_at,
       client: {
-        id: uid, prenom: p.prenom || '', nom: p.nom || '',
+        id: uid, prenom: p.prenom||'', nom: p.nom||'',
         email: p.email || emailMap[uid] || '',
-        telephone: p.telephone || '', adresse: p.adresse || '',
-        code_postal: p.code_postal || '', ville: p.ville || '', pays: p.pays || ''
+        telephone: p.telephone||'', adresse: p.adresse||'',
+        code_postal: p.code_postal||'', ville: p.ville||'', pays: p.pays||''
       }
     }
   })
   return { commandes }
 }
 
+// ─── UPDATE COMMANDE ───────────────────────────────────────────
 async function actionUpdateCommande(body) {
   const { commande_article_id, statut, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client } = body
 
@@ -209,6 +268,7 @@ async function actionUpdateCommande(body) {
   return { ok: true }
 }
 
+// ─── DELETE COMMENT ────────────────────────────────────────────
 async function actionDeleteComment(body) {
   const { commentaire_id, table } = body
   if (!['commentaires_coloriages', 'commentaires_pensees'].includes(table)) throw new Error('Table invalide')
@@ -227,7 +287,7 @@ export default async function handler(req, res) {
   try {
     if (action === 'stats') {
       if (req.method !== 'GET') return res.status(405).end()
-      return res.status(200).json(await actionStats(userId))
+      return res.status(200).json(await actionStats())
     }
     if (action === 'get-commandes') {
       if (req.method !== 'GET') return res.status(405).end()

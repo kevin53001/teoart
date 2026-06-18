@@ -181,15 +181,15 @@ export default function Admin() {
   const chargerCommentaires = useCallback(async () => {
     if (!userId) return
     const [{ data: cColo }, { data: cPensees }] = await Promise.all([
-      supabase.from('commentaires_coloriages').select('id, contenu, created_at, user_id, coloriage_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100),
-      supabase.from('commentaires_pensees').select('id, contenu, created_at, user_id, pensee_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100)
+      supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id, coloriage_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100),
+      supabase.from('commentaires_pensees').select('id, texte, created_at, user_id, pensee_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100)
     ])
     const tous = [
       ...(cColo || []).map(c => ({ ...c, table: 'commentaires_coloriages', ref: `coloriage #${c.coloriage_id}` })),
       ...(cPensees || []).map(c => ({ ...c, table: 'commentaires_pensees', ref: `pensée #${c.pensee_id}` }))
     ].sort((a, b) => {
-      const aFlag = contientMotInterdit(a.contenu)
-      const bFlag = contientMotInterdit(b.contenu)
+      const aFlag = contientMotInterdit(a.texte)
+      const bFlag = contientMotInterdit(b.texte)
       if (aFlag && !bFlag) return -1
       if (!aFlag && bFlag) return 1
       return new Date(b.created_at) - new Date(a.created_at)
@@ -282,7 +282,7 @@ export default function Admin() {
   if (!userId) return null
 
   const cmdEnAttente = commandes.filter(c => c.statut === 'en_attente')
-  const cmtSignales = commentaires.filter(c => contientMotInterdit(c.contenu))
+  const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte))
 
   return (
     <div style={s.shell}>
@@ -530,8 +530,8 @@ export default function Admin() {
                 </div>
               )}
               <div>
-                <div style={s.sectionTitle}>Tous les commentaires ({commentaires.filter(c => !contientMotInterdit(c.contenu)).length} normaux)</div>
-                {commentaires.filter(c => !contientMotInterdit(c.contenu)).map(c => (
+                <div style={s.sectionTitle}>Tous les commentaires ({commentaires.filter(c => !contientMotInterdit(c.texte)).length} normaux)</div>
+                {commentaires.filter(c => !contientMotInterdit(c.texte)).map(c => (
                   <CmtCard key={c.id} c={c} flagged={false} supprimerCommentaire={supprimerCommentaire} s={s} fmtDate={fmtDate} />
                 ))}
               </div>
@@ -700,7 +700,7 @@ function CmtCard({ c, flagged, supprimerCommentaire, s, fmtDate }) {
           </span>
         )}
       </div>
-      <div style={s.cmtText}>"{c.contenu}"</div>
+      <div style={s.cmtText}>"{c.texte}"</div>
       <div style={{ ...s.divider, margin:'8px 0' }} />
       <div style={s.actionsRow}>
         <button style={s.btnDanger} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
