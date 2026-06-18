@@ -1204,7 +1204,7 @@ export default function Panier() {
 
         {/* Contenu principal */}
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '32px 16px 60px' : '40px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 300}px` }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div style={{ maxWidth: etape === 4 ? '820px' : '600px', margin: '0 auto', transition: 'max-width 0.3s ease' }}>
 
             {/* Encart titre */}
             <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '16px 20px' : '20px 32px', textAlign: 'center', marginBottom: '20px', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
