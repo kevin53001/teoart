@@ -856,7 +856,7 @@ function EtapeConfirmation({ infos, isMobile, articlesAchetes = [], paymentInten
       setLiensCharges(true);
     };
     chargerLiens();
-  }, []);
+  }, [paymentIntentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTelecharger = async (article) => {
     if (telechargements[article.id]) return;
