@@ -198,11 +198,11 @@ function Catalogue() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/'); return; }
       setUserId(user.id);
-      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+      const { data: profil } = await supabase.from('profils').select('pseudo, created_at, dernier_vu_illustrations').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
       const { data: illus } = await supabase
         .from('illustrations')
-        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids')
+        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids, date_publication')
         .eq('statut', 'published').order('nom');
       const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
       const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
@@ -214,6 +214,27 @@ function Catalogue() {
       (colos || []).forEach(c => { coloMap[c.illustration_id] = true; });
       setColoriages(coloMap);
       setLoading(false);
+
+      // ── Notif nouvelles illustrations ─────────────────────────────────
+      const ref = profil?.dernier_vu_illustrations || profil?.created_at;
+      if (ref) {
+        const refDate = new Date(ref);
+        const nouvelles = (illus || []).filter(i => i.date_publication && new Date(i.date_publication) > refDate);
+        if (nouvelles.length > 0) {
+          await supabase.from('notifications')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('type', 'nouvelle_illustration')
+            .eq('lu', false);
+          await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'nouvelle_illustration',
+            contenu: { count: nouvelles.length },
+            lu: false,
+          });
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────
     };
     charger();
   }, [navigate]);
