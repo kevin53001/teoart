@@ -845,7 +845,7 @@ function EtapeConfirmation({ infos, isMobile }) {
         if (!user) return;
         const { data } = await supabase
           .from('commandes_articles')
-          .select('id, nom, type, lien_telechargement')
+          .select('id, nom, type, fichier_pdf')
           .eq('user_id', user.id)
           .in('type', ['illustration', 'livre_pdf', 'recueil'])
           .eq('commande_recente', true)
@@ -857,10 +857,20 @@ function EtapeConfirmation({ infos, isMobile }) {
     chargerLiens();
   }, []);
 
-  const handleTelecharger = (id, url) => {
-    if (telechargements[id]) return;
-    setTelechargements(prev => ({ ...prev, [id]: true }));
-    window.open(url, '_blank');
+  const handleTelecharger = async (article) => {
+    if (telechargements[article.id]) return;
+    setTelechargements(prev => ({ ...prev, [article.id]: true }));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const response = await fetch('/api/refresh-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: article.id, userId: user.id }),
+      });
+      const data = await response.json();
+      if (data.url) window.open(data.url, '_blank');
+    } catch (e) { console.error(e); }
   };
 
   const prenom = infos.prenom || '';
@@ -906,7 +916,7 @@ function EtapeConfirmation({ infos, isMobile }) {
                   <div key={article.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '10px', padding: '10px 14px' }}>
                     <p style={{ color: deja ? 'rgba(255,255,255,0.35)' : '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{article.nom}</p>
                     <button
-                      onClick={() => handleTelecharger(article.id, article.lien_telechargement)}
+                      onClick={() => handleTelecharger(article)}
                       disabled={deja}
                       style={{ background: deja ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '8px', padding: '7px 14px', color: deja ? 'rgba(255,255,255,0.3)' : '#fff', fontWeight: 'bold', fontSize: '12px', cursor: deja ? 'default' : 'pointer', flexShrink: 0, boxShadow: deja ? 'none' : '0 3px 10px rgba(255,62,181,0.35)', whiteSpace: 'nowrap', transition: 'all .2s' }}>
                       {deja ? '✓ Téléchargé' : 'Télécharger'}
@@ -915,8 +925,7 @@ function EtapeConfirmation({ infos, isMobile }) {
                 );
               })}
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '6px', textAlign: 'center', lineHeight: 1.7 }}>
-                Ces liens sont utilisables une seule fois depuis cette page.<br />
-                Retrouvez vos téléchargements dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
+                Retrouvez vos téléchargements à tout moment dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
               </p>
             </div>
           ) : (
