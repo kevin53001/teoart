@@ -413,6 +413,8 @@ function Cloche({ hidden = false }) {
     await supprimerNotif(notif.id);
     setOuvert(false);
 
+    const maintenant = new Date().toISOString();
+
     switch (notif.type) {
       case 'nouvelle_illustration':
         navigate('/catalogue', { state: { filtreNouveautes: true } });
@@ -429,9 +431,15 @@ function Cloche({ hidden = false }) {
         navigate('/mon-compte', { state: { onglet: 'collection' } });
         break;
       case 'nouvelle_pensee':
+        if (userId) {
+          await supabase.from('profils').update({ dernier_vu_pensees: maintenant }).eq('id', userId);
+        }
         navigate('/pensees');
         break;
       case 'nouvelle_presentation':
+        if (userId) {
+          await supabase.from('profils').update({ dernier_vu_presentation: maintenant }).eq('id', userId);
+        }
         navigate('/presentation');
         break;
       case 'nouveau_coloriage_partage':
