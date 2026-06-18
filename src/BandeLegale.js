@@ -21,7 +21,7 @@ Nom commercial : Kevin Teo'Art
 Numéro SIREN : 907886428
 Numéro SIRET : 90788642800016
 Adresse : 3 rue des Plantes, 78930 Guerville, France
-Adresse e-mail : kevin53001@gmail.com
+Adresse e-mail : kevinteoart@outlook.fr
 Site internet : https://kevinteoart.fr
 
 
@@ -55,7 +55,7 @@ L'éditeur du site met tout en œuvre pour assurer l'exactitude et la mise à jo
 
 CONTACT
 
-kevin53001@gmail.com`,
+kevinteoart@outlook.fr`,
   },
 
   confidentialite: {
@@ -131,7 +131,7 @@ VOS DROITS
 
 Conformément à la réglementation en vigueur, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité de vos données.
 
-Pour exercer ces droits : kevin53001@gmail.com
+Pour exercer ces droits : kevinteoart@outlook.fr
 
 En cas de réponse insatisfaisante, vous pouvez introduire une réclamation auprès de la CNIL : https://www.cnil.fr
 
@@ -300,7 +300,7 @@ UTILISATION COMMERCIALE
 
 Toute utilisation commerciale doit faire l'objet d'une autorisation écrite préalable.
 
-Pour toute demande : kevin53001@gmail.com
+Pour toute demande : kevinteoart@outlook.fr
 
 Merci de respecter le travail des artistes et de contribuer à faire vivre la création indépendante.`,
   },
@@ -313,7 +313,7 @@ Besoin d'aide concernant une commande, un téléchargement ou votre compte utili
 
 Vous pouvez me contacter à l'adresse suivante :
 
-kevin53001@gmail.com
+kevinteoart@outlook.fr
 
 Je m'efforce de répondre à chaque message dans les meilleurs délais.
 

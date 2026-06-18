@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       email: 'noreply@kevinteoart.fr',
     },
     to: [
-      { email: 'kevin53001@gmail.com', name: 'Kevin' }
+      { email: 'kevinteoart@outlook.fr', name: 'Kevin' }
     ],
     replyTo: {
       email: userEmail,
