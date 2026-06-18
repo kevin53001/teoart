@@ -121,7 +121,7 @@ function Inscription() {
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: 'https://kevinteoart.fr' }
+      options: { emailRedirectTo: 'https://kevinteoart.fr/selection' }
     });
 
     if (authError) {

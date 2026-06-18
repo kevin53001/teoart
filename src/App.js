@@ -18,6 +18,31 @@ import Panier from './Panier';
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+// Gardien pour la route /selection :
+// - non connecté → page de connexion
+// - connecté + selection_faite déjà true → accueil
+// - connecté + selection_faite false → page Selection
+function RouteSelection({ session }) {
+  const [etat, setEtat] = React.useState('chargement'); // 'chargement' | 'ok' | 'deja_fait'
+
+  React.useEffect(() => {
+    if (!session) return;
+    supabase
+      .from('profils')
+      .select('selection_faite')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data }) => {
+        setEtat(data?.selection_faite ? 'deja_fait' : 'ok');
+      });
+  }, [session]);
+
+  if (!session) return <Navigate to="/" />;
+  if (etat === 'chargement') return <div style={{ background: '#000', minHeight: '100vh' }} />;
+  if (etat === 'deja_fait') return <Navigate to="/accueil" />;
+  return <Selection />;
+}
+
 function App() {
   const [session, setSession] = React.useState(undefined);
   const [splashTermine, setSplashTermine] = React.useState(!isMobile);
@@ -58,7 +83,7 @@ function App() {
         <Routes>
           <Route path="/" element={!session ? <Connexion /> : <Navigate to="/accueil" />} />
           <Route path="/inscription" element={!session ? <Inscription /> : <Navigate to="/accueil" />} />
-          <Route path="/selection" element={session ? <Selection /> : <Navigate to="/" />} />
+          <Route path="/selection" element={<RouteSelection session={session} />} />
           <Route path="/catalogue" element={session ? <Catalogue /> : <Navigate to="/" />} />
           <Route path="/livres" element={session ? <Livres /> : <Navigate to="/" />} />
           <Route path="/livres/:id" element={session ? <Livres /> : <Navigate to="/" />} />
