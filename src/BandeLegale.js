@@ -169,7 +169,9 @@ Kevin Teo'Art se réserve le droit de modifier ses tarifs à tout moment. Les pr
 
 PROMOTIONS ET RÉDUCTIONS
 
-Des réductions peuvent s'appliquer selon la quantité d'illustrations achetées. Les conditions exactes sont affichées sur le site au moment de l'achat. Ces réductions s'appliquent uniquement aux illustrations numériques, sauf mention contraire.
+Des réductions automatiques peuvent s'appliquer à votre commande selon la quantité d'articles achetés (illustrations, livres, recueils) et selon les badges de fidélité obtenus via votre activité sur le site. Ces réductions sont calculées et affichées directement dans le panier.
+
+Le détail complet du fonctionnement — paliers, taux, conditions d'obtention des badges et règles de cumul — est disponible dans la section Présentation du site. →LIEN_PRESENTATION
 
 
 CRÉATION D'UN COMPTE UTILISATEUR
@@ -182,8 +184,9 @@ Kevin Teo'Art se réserve le droit de suspendre ou supprimer tout compte en cas 
 PAIEMENT
 
 Le paiement s'effectue via les moyens de paiement suivants :
-• Carte bancaire (Visa, Mastercard) via Stripe
-• PayPal
+• Carte bancaire (Visa, Mastercard, etc.) via Stripe
+• Apple Pay et Google Pay via Stripe
+• PayPal (disponible prochainement)
 
 La commande est définitive après validation du paiement. Une confirmation de commande est envoyée à l'adresse e-mail renseignée par l'utilisateur.
 
@@ -216,7 +219,7 @@ Pour les produits numériques :
 Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation ne s'applique pas aux contenus numériques dès lors que l'utilisateur a expressément consenti à l'exécution immédiate du contrat et renoncé à son droit de rétractation avant le téléchargement. Cette renonciation est recueillie explicitement lors de la validation de la commande (case à cocher obligatoire). Aucun remboursement ne pourra être accordé après téléchargement.
 
 Pour les livres et recueils reliés :
-Le client dispose d'un délai de 14 jours à compter de la réception pour exercer son droit de rétractation. Toute demande doit être adressée à Kevin Teo'Art via les coordonnées figurant sur le site. Après validation, un remboursement sera effectué conformément à la réglementation applicable.
+Le client dispose d'un délai de 14 jours à compter de la réception pour exercer son droit de rétractation. Toute demande doit être adressée à Kevin Teo'Art via les coordonnées figurant sur le site. Les frais de retour sont pris en charge par Amazon KDP ; le client devra simplement déposer le colis selon les instructions communiquées. Le remboursement sera effectué après confirmation du dépôt du colis retour, conformément à la réglementation applicable.
 
 
 UTILISATION DES ILLUSTRATIONS ET FICHIERS NUMÉRIQUES
@@ -496,7 +499,44 @@ export default function BandeLegale() {
                 wordBreak: 'break-word',
                 overflowWrap: 'break-word',
               }}>
-                {contenu.texte}
+                {contenu.texte.includes('→LIEN_PRESENTATION')
+                  ? contenu.texte.split('→LIEN_PRESENTATION').reduce((acc, part, i) => {
+                      if (i === 0) return [part];
+                      return [
+                        ...acc,
+                        <a
+                          key="lien-presentation"
+                          href="/presentation"
+                          onClick={() => setActif(null)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            verticalAlign: 'middle',
+                            textDecoration: 'none',
+                            marginLeft: '6px',
+                          }}
+                        >
+                          <span style={{ color: '#00D4D4', fontSize: '14px', fontFamily: 'var(--font-bouton)' }}>→</span>
+                          <img
+                            src="https://images.kevinteoart.fr/site/Logo.png"
+                            alt="Présentation"
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              border: '1px solid rgba(0,212,212,0.5)',
+                              boxShadow: '0 0 6px rgba(0,212,212,0.4)',
+                              objectFit: 'cover',
+                              cursor: 'pointer',
+                            }}
+                          />
+                        </a>,
+                        part,
+                      ];
+                    }, [])
+                  : contenu.texte
+                }
               </div>
             </>
           )}
