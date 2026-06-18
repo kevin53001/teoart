@@ -468,15 +468,35 @@ function Livres() {
       (colos || []).forEach(c => { colosMap[c.illustration_id] = true; });
       setColoriages(colosMap);
 
-      const { data: illusAuto } = await supabase.from('collection').select('illustration_id').eq('user_id', user.id).eq('j_ai_auto', true);
-      if (illusAuto && illusAuto.length > 0) {
-        const illuIds = illusAuto.map(i => i.illustration_id);
-        const { data: illusAvecRecueils } = await supabase.from('illustrations').select('recueils_ids, livres_ids').in('id', illuIds.slice(0, 100));
+      // Détection auto recueils/livres : un recueil ou livre est "j'ai" seulement si
+      // TOUTES ses illustrations sont cochées j_ai dans la collection de l'utilisateur.
+      const illusJai = new Set(
+        Object.entries(collIllusMap)
+          .filter(([, v]) => v.j_ai)
+          .map(([id]) => id)
+      );
+
+      if (illusJai.size > 0) {
         const recueilsAuto = new Set(); const livresAuto = new Set();
-        (illusAvecRecueils || []).forEach(i => {
-          (i.recueils_ids || []).forEach(rid => recueilsAuto.add(rid));
-          (i.livres_ids || []).forEach(lid => livresAuto.add(lid));
-        });
+
+        // Pour chaque recueil : toutes ses illustrations doivent être dans illusJai
+        for (const recueil of (r || [])) {
+          if (collMap[`recueil_${recueil.id}`]?.j_ai) continue; // déjà coché manuellement
+          const illusDuRecueil = (illus || []).filter(i => (i.recueils_ids || []).includes(recueil.id)).map(i => i.id);
+          if (illusDuRecueil.length > 0 && illusDuRecueil.every(id => illusJai.has(id))) {
+            recueilsAuto.add(recueil.id);
+          }
+        }
+
+        // Pour chaque livre : toutes ses illustrations doivent être dans illusJai
+        for (const livre of (l || [])) {
+          if (collMap[`livre_${livre.id}`]?.j_ai) continue; // déjà coché manuellement
+          const illusDuLivre = (illus || []).filter(i => (i.livres_ids || []).includes(livre.id)).map(i => i.id);
+          if (illusDuLivre.length > 0 && illusDuLivre.every(id => illusJai.has(id))) {
+            livresAuto.add(livre.id);
+          }
+        }
+
         recueilsAuto.forEach(rid => { if (!collMap[`recueil_${rid}`]) collMap[`recueil_${rid}`] = { j_ai: true, je_veux: false }; });
         livresAuto.forEach(lid => { if (!collMap[`livre_${lid}`]) collMap[`livre_${lid}`] = { j_ai: true, je_veux: false }; });
         setItemsAuto({ recueils: recueilsAuto, livres: livresAuto });
