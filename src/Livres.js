@@ -48,7 +48,7 @@ function cheminVersUrl(chemin) {
 
 
 // ─── ZoomSocial ──────────────────────────────────────────────────────────────
-function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jAiAuto = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle', isNew = false }) {
+function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false, jAiAchete = false, jeVeux = false, onToggleJAi, onToggleJeVeux, onPanier = null, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle', isNew = false }) {
   const cardRef = React.useRef(null);
   const wrapRef = React.useRef(null);
   const url = cheminVersUrl(item.visuel_presentation);
@@ -89,10 +89,10 @@ function VignetteVisuel({ item, taille = 150, onClick, badge = null, jAi = false
         {onToggleJAi && (
           <div onClick={e => { e.stopPropagation(); onToggleJAi(); }}
             style={{ position: 'absolute', top: '5px', left: '5px', borderRadius: '4px', padding: '2px 5px', fontSize: '9px', fontWeight: 'bold', zIndex: 20, cursor: 'pointer',
-              background: jAiAuto ? '#ff3eb5' : jAi ? '#00d4d4' : 'rgba(0,0,0,0.55)',
-              color: jAiAuto ? '#fff' : jAi ? '#000' : 'rgba(255,255,255,0.45)',
-              border: (jAi || jAiAuto) ? 'none' : '1px solid rgba(255,80,80,0.4)' }}>
-            {(jAi || jAiAuto) ? "✓ J'ai" : "✕ J'ai"}
+              background: jAiAchete ? '#ff3eb5' : jAi ? '#00d4d4' : 'rgba(0,0,0,0.55)',
+              color: jAiAchete ? '#fff' : jAi ? '#000' : 'rgba(255,255,255,0.45)',
+              border: (jAi || jAiAchete) ? 'none' : '1px solid rgba(255,80,80,0.4)' }}>
+            {(jAi || jAiAchete) ? "✓ J'ai" : "✕ J'ai"}
           </div>
         )}
         {onToggleJeVeux && (
@@ -465,9 +465,9 @@ function Livres() {
       setTousLesLivres(l || []);
       setTousLivres((l || []).filter(li => li.visuel_presentation));
 
-      const { data: coll } = await supabase.from('collection_livres').select('item_id, item_type, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
+      const { data: coll } = await supabase.from('collection_livres').select('item_id, item_type, j_ai, je_veux, j_ai_achete').eq('user_id', user.id);
       const collMap = {};
-      (coll || []).forEach(c => { collMap[`${c.item_type}_${c.item_id}`] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false }; });
+      (coll || []).forEach(c => { collMap[`${c.item_type}_${c.item_id}`] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_achete: c.j_ai_achete || false }; });
 
       const { data: collIllus } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
       const collIllusMap = {};
@@ -852,7 +852,7 @@ function Livres() {
                 {recueils.map(r => (
                   <VignetteVisuel key={r.id} item={r} taille={TAILLE_RECUEIL} isNew={refDateRecueil && r.created_at ? new Date(r.created_at) > refDateRecueil : false}
                     jAi={collection[`recueil_${r.id}`]?.j_ai || false}
-                    jAiAuto={collection[`recueil_${r.id}`]?.j_ai_auto || false}
+                    jAiAchete={collection[`recueil_${r.id}`]?.j_ai_achete || false}
                     jeVeux={collection[`recueil_${r.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(r.id, 'recueil')}
                     onToggleJeVeux={() => toggleJeVeux(r.id, 'recueil')}
@@ -876,7 +876,7 @@ function Livres() {
                 {tousLivres.map(l => (
                   <VignetteVisuel key={l.id} item={l} taille={TAILLE_LIVRE} isNew={refDateLivre && l.created_at ? new Date(l.created_at) > refDateLivre : false}
                     jAi={collection[`livre_${l.id}`]?.j_ai || false}
-                    jAiAuto={collection[`livre_${l.id}`]?.j_ai_auto || false}
+                    jAiAchete={collection[`livre_${l.id}`]?.j_ai_achete || false}
                     jeVeux={collection[`livre_${l.id}`]?.je_veux || false}
                     onToggleJAi={() => toggleJAi(l.id, 'livre')}
                     onToggleJeVeux={() => toggleJeVeux(l.id, 'livre')}

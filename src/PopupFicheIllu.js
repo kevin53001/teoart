@@ -243,7 +243,7 @@ export default function PopupFicheIllu({
   illu,
   illustrations = [],
   jAi = false,
-  jAiAuto = false,
+  jAiAchete = false,
   jeVeux = false,
   aColorié = false,
   onToggleJAi = () => {},
@@ -475,13 +475,7 @@ export default function PopupFicheIllu({
 
               {/* Boutons actions */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button onClick={onToggleJAi} style={{
-                  background: jAiAuto ? '#ff3eb5' : jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)',
-                  border: (jAi || jAiAuto) ? 'none' : '1px solid rgba(255,80,80,0.3)',
-                  borderRadius: '8px', padding: '6px 10px',
-                  color: jAiAuto ? '#fff' : jAi ? '#000' : 'rgba(255,255,255,0.5)',
-                  fontWeight: 'bold', fontSize: '11px', cursor: 'pointer'
-                }}>{(jAi || jAiAuto) ? "✓ J'ai" : "✕ J'ai"}</button>
+                <button onClick={onToggleJAi} style={{ background: jAiAchete ? '#ff3eb5' : jAi ? '#00d4d4' : 'rgba(255,255,255,0.07)', border: (jAi || jAiAchete) ? 'none' : '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 10px', color: jAiAchete ? '#fff' : jAi ? '#000' : 'rgba(255,255,255,0.5)', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}>{(jAi || jAiAchete) ? "✓ J'ai" : "✕ J'ai"}</button>
                 <button onClick={onToggleJeVeux} style={{ background: jeVeux ? 'rgba(255,77,125,0.2)' : 'rgba(255,255,255,0.07)', border: `1px solid ${jeVeux ? 'rgba(255,77,125,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '8px', padding: '6px 10px', color: '#fff', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <svg viewBox="0 0 24 24" width="11" height="11">{jeVeux ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" /> : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}</svg>
                   Je veux
