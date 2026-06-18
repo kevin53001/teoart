@@ -742,7 +742,7 @@ function FormulaireStripe({ montantCentimes, infos, onSucces, onRetour }) {
         redirect: 'if_required',
       });
       if (error) throw new Error(error.message);
-      if (paymentIntent?.status === 'succeeded') onSucces(paymentIntent.id);
+      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_action' || paymentIntent.status === 'processing')) { onSucces(paymentIntent.id); }
     } catch (e) {
       setErreur(e.message);
     }
