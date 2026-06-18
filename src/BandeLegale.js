@@ -20,7 +20,7 @@ Statut : Auto-entrepreneur
 Nom commercial : Kevin Teo'Art
 Numéro SIREN : 907886428
 Numéro SIRET : 90788642800016
-Adresse : 3 rue des Plantes, 78930 Guerville, France
+Adresse : Rue des Plantes, 78930 Guerville, France
 Adresse e-mail : kevinteoart@outlook.fr
 Site internet : https://kevinteoart.fr
 
