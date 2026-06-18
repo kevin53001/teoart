@@ -1051,6 +1051,29 @@ export default function Panier() {
     setTimeout(() => { encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
   };
 
+  // ── Gestion retour redirection Stripe (3D Secure) ─────────────────────────
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const piId = params.get('payment_intent');
+    const piClientSecret = params.get('payment_intent_client_secret');
+    if (!piId || !piClientSecret) return;
+
+    // Nettoyer l'URL sans recharger la page
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const gererRetourStripe = async () => {
+      try {
+        const stripe = await stripePromise;
+        const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
+        if (paymentIntent?.status === 'succeeded') {
+          await handleSuccesPaiement(paymentIntent.id);
+        }
+      } catch (e) { console.error('Erreur retour Stripe:', e); }
+    };
+    gererRetourStripe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
     window.addEventListener('resize', handleResize);
