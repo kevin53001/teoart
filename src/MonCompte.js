@@ -1447,10 +1447,29 @@ function SectionMesInfos({ userId }) {
   );
 }
 
+function LigneTypeArticle({ type }) {
+  const labels = {
+    illustration: { texte: 'Illustration', couleur: '#00d4d4' },
+    livre_pdf:    { texte: 'Livre — PDF',  couleur: '#ff3eb5' },
+    recueil:      { texte: 'Recueil — PDF', couleur: '#ff3eb5' },
+    relie:        { texte: 'Version reliée', couleur: '#ffd250' },
+  };
+  const l = labels[type] || { texte: type, couleur: 'rgba(255,255,255,0.4)' };
+  return (
+    <span style={{ color: l.couleur, fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>
+      {l.texte}
+    </span>
+  );
+}
+
 function SectionMesCommandes({ userId }) {
   const [articles, setArticles] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [telechargement, setTelechargement] = React.useState({});
+  // accordéon : quel commandeId est ouvert
+  const [commandeOuverte, setCommandeOuverte] = React.useState(null);
+  // cache { [commandeId]: { montant, receiptUrl, chargement } }
+  const [receipts, setReceipts] = React.useState({});
 
   React.useEffect(() => {
     supabase
@@ -1484,6 +1503,34 @@ function SectionMesCommandes({ userId }) {
     setTelechargement(p => ({ ...p, [key]: false }));
   };
 
+  const chargerReceipt = async (commandeId) => {
+    if (receipts[commandeId]) return; // déjà chargé
+    setReceipts(p => ({ ...p, [commandeId]: { chargement: true } }));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const response = await fetch('/api/get-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: commandeId, userId: user.id }),
+      });
+      const data = await response.json();
+      setReceipts(p => ({ ...p, [commandeId]: { montant: data.montant, receiptUrl: data.receiptUrl, chargement: false } }));
+    } catch (e) {
+      console.error(e);
+      setReceipts(p => ({ ...p, [commandeId]: { erreur: true, chargement: false } }));
+    }
+  };
+
+  const toggleCommande = (commandeId) => {
+    if (commandeOuverte === commandeId) {
+      setCommandeOuverte(null);
+    } else {
+      setCommandeOuverte(commandeId);
+      chargerReceipt(commandeId);
+    }
+  };
+
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (articles.length === 0) return (
     <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -1499,30 +1546,83 @@ function SectionMesCommandes({ userId }) {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {Object.entries(parCommande).map(([commandeId, items]) => (
-        <div key={commandeId} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
-            Commande du {new Date(items[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {items.map(item => (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                <p style={{ color: '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nom}</p>
-                {item.fichier_pdf ? (
-                  <button
-                    onClick={() => telecharger(item)}
-                    style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '7px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
-                    {telechargement[item.id] ? '...' : 'Télécharger'}
-                  </button>
-                ) : (
-                  <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', flexShrink: 0 }}>Version reliée — en cours de traitement</span>
-                )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {Object.entries(parCommande).map(([commandeId, items]) => {
+        const ouvert = commandeOuverte === commandeId;
+        const receipt = receipts[commandeId];
+        const date = new Date(items[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        const nbArticles = items.length;
+
+        return (
+          <div key={commandeId} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${ouvert ? 'rgba(0,212,212,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+
+            {/* ── Ligne commande ── */}
+            <div
+              onClick={() => toggleCommande(commandeId)}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', cursor: 'pointer', userSelect: 'none' }}
+            >
+              {/* Chevron */}
+              <span style={{ color: '#00d4d4', fontSize: '12px', transition: 'transform 0.2s', transform: ouvert ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>▶</span>
+
+              {/* Date */}
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', flex: 1 }}>
+                {date}
+              </span>
+
+              {/* Nb articles */}
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', flexShrink: 0 }}>
+                {nbArticles} article{nbArticles > 1 ? 's' : ''}
+              </span>
+
+              {/* Montant */}
+              {receipt && !receipt.chargement && receipt.montant && (
+                <span style={{ color: '#ffd250', fontSize: '13px', fontWeight: 'bold', flexShrink: 0 }}>
+                  {receipt.montant} €
+                </span>
+              )}
+
+              {/* Bouton Voir le reçu */}
+              {receipt && !receipt.chargement && receipt.receiptUrl && (
+                <a
+                  href={receipt.receiptUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  style={{ background: 'rgba(255,210,80,0.12)', border: '1px solid rgba(255,210,80,0.35)', borderRadius: '8px', padding: '5px 10px', color: '#ffd250', fontSize: '11px', textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap' }}
+                >
+                  Voir le reçu
+                </a>
+              )}
+              {receipt && receipt.chargement && (
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', flexShrink: 0 }}>...</span>
+              )}
+            </div>
+
+            {/* ── Déroulant articles ── */}
+            {ouvert && (
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {items.map(item => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <LigneTypeArticle type={item.type} />
+                    <p style={{ color: '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.nom}
+                    </p>
+                    {item.fichier_pdf ? (
+                      <button
+                        onClick={() => telecharger(item)}
+                        style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '6px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
+                        {telechargement[item.id] ? '...' : 'Télécharger'}
+                      </button>
+                    ) : (
+                      <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', flexShrink: 0 }}>En cours de traitement</span>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
