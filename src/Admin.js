@@ -47,10 +47,11 @@ const STATUT_COLOR = {
 
 const s = {
   shell: { display:'flex', height:'100vh', background:'#07070f', fontFamily:'sans-serif', fontSize:'13px', color:'#e0e0f0', overflow:'hidden' },
-  sidebar: { width:'172px', flexShrink:0, borderRight:'1px solid #00e5ff1a', background:'#05050d', display:'flex', flexDirection:'column' },
-  sidebarLogo: { padding:'18px 16px 14px', borderBottom:'1px solid #00e5ff1a' },
-  logoName: { fontSize:'14px', fontWeight:600, color:'#e8e8f8', letterSpacing:'0.01em' },
-  logoSub: { fontSize:'11px', color:'#00e5ff77', marginTop:'3px' },
+  sidebar: { width:'172px', flexShrink:0, borderRight:'1px solid #00e5ff22', background:'linear-gradient(180deg, #0a0a18 0%, #050508 100%)', display:'flex', flexDirection:'column' },
+  sidebarLogo: { padding:'14px 16px 12px', borderBottom:'1px solid #00e5ff1a' },
+  logoImg: { width:'36px', height:'36px', borderRadius:'50%', marginBottom:'6px', display:'block' },
+  logoName: { fontSize:'13px', fontWeight:600, color:'#e8e8f8', letterSpacing:'0.01em' },
+  logoSub: { fontSize:'10px', color:'#00e5ff77', marginTop:'2px' },
   navItem: (active) => ({
     display:'flex', alignItems:'center', gap:'9px', padding:'9px 16px', cursor:'pointer',
     fontSize:'13px', color: active ? '#00e5ff' : '#6a6a8a',
@@ -62,29 +63,30 @@ const s = {
   sidebarBottom: { marginTop:'auto', padding:'14px 16px', borderTop:'1px solid #00e5ff1a' },
   liveDot: { width:'6px', height:'6px', borderRadius:'50%', background:'#22c55e', display:'inline-block', marginRight:'6px', animation:'pulse 2s infinite' },
   main: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
-  topbar: { height:'46px', flexShrink:0, borderBottom:'1px solid #00e5ff1a', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', background:'#05050d' },
-  topbarTitle: { fontSize:'14px', fontWeight:500, color:'#e8e8f8' },
+  topbar: { height:'46px', flexShrink:0, borderBottom:'1px solid #00e5ff22', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', background:'linear-gradient(90deg, #05050d 0%, #001a22 100%)' },
+  topbarTitle: { fontSize:'14px', fontWeight:500, background:'linear-gradient(90deg, #e8e8f8 0%, #00e5ff 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' },
   topbarDate: { fontSize:'11px', color:'#44445a' },
   content: { flex:1, overflow:'auto', padding:'16px' },
 
   // Stats
   statGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'16px' },
-  statCard: (accent) => ({ background:'#0d0d1a', border:`1px solid ${accent}33`, borderRadius:'10px', padding:'12px 14px' }),
-  statLabel: { fontSize:'10px', color:'#6a6a8a', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.05em' },
-  statValue: (color) => ({ fontSize:'22px', fontWeight:500, color }),
-  statSub: { fontSize:'10px', color:'#44445a', marginTop:'3px' },
+  statCard: (accent) => ({ background:'#0d0d1a', border:`1px solid ${accent}44`, borderRadius:'10px', padding:'10px 12px' }),
+  statLabel: { fontSize:'10px', color:'#6a6a8a', marginBottom:'3px', textTransform:'uppercase', letterSpacing:'0.05em' },
+  statValue: (color) => ({ fontSize:'20px', fontWeight:500, color }),
+  statSub: { fontSize:'10px', color:'#44445a', marginTop:'2px' },
 
   // Grid 2 colonnes
   grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' },
   sectionTitle: { fontSize:'10px', fontWeight:500, color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'10px' },
 
-  // Commande card
+  // Commande card — plus visible
   cmdCard: (statut) => ({
-    background:'#0d0d1a', border:`1px solid ${STATUT_COLOR[statut]?.border || '#ffd70033'}`,
+    background: statut === 'en_attente' ? 'rgba(255,215,0,0.06)' : statut === 'expediee' ? 'rgba(0,229,255,0.05)' : 'rgba(34,197,94,0.05)',
+    border:`1px solid ${STATUT_COLOR[statut]?.border || '#ffd70044'}`,
     borderRadius:'10px', padding:'14px', marginBottom:'10px'
   }),
   cmdHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' },
-  cmdTitle: { fontSize:'13px', fontWeight:500, color:'#e8e8f8' },
+  cmdTitle: { fontSize:'13px', fontWeight:500, color:'#f0f0ff' },
   badge: (statut) => ({
     display:'inline-flex', alignItems:'center', gap:'4px', padding:'3px 9px',
     borderRadius:'20px', fontSize:'10px', fontWeight:500,
@@ -93,28 +95,28 @@ const s = {
   }),
   infoGrid: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', fontSize:'11px', marginBottom:'10px' },
   infoBlock: { },
-  infoLbl: { color:'#44445a', marginBottom:'2px', fontSize:'10px' },
-  infoVal: { color:'#b0b0d0' },
-  divider: { borderTop:'1px solid #ffffff0a', margin:'10px 0' },
+  infoLbl: { color:'#555570', marginBottom:'2px', fontSize:'10px' },
+  infoVal: { color:'#d0d0f0' },
+  divider: { borderTop:'1px solid #ffffff12', margin:'10px 0' },
   actionsRow: { display:'flex', gap:'6px', flexWrap:'wrap' },
 
   // Boutons
-  btnGold: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,215,0,0.12)', border:'1px solid #ffd70044', color:'#ffd700', fontFamily:'sans-serif' },
-  btnCyan: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(0,229,255,0.10)', border:'1px solid #00e5ff44', color:'#00e5ff', fontFamily:'sans-serif' },
-  btnGreen: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(34,197,94,0.10)', border:'1px solid #22c55e44', color:'#22c55e', fontFamily:'sans-serif' },
+  btnGold: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,215,0,0.14)', border:'1px solid #ffd70055', color:'#ffd700', fontFamily:'sans-serif' },
+  btnCyan: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(0,229,255,0.12)', border:'1px solid #00e5ff55', color:'#00e5ff', fontFamily:'sans-serif' },
+  btnGreen: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(34,197,94,0.12)', border:'1px solid #22c55e55', color:'#22c55e', fontFamily:'sans-serif' },
   btnGhost: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'transparent', border:'1px solid #ffffff1a', color:'#6a6a8a', fontFamily:'sans-serif' },
-  btnDanger: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,62,181,0.12)', border:'1px solid #ff3eb544', color:'#ff3eb5', fontFamily:'sans-serif' },
-  btnPink: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,62,181,0.12)', border:'1px solid #ff3eb544', color:'#ff3eb5', fontFamily:'sans-serif' },
+  btnDanger: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,62,181,0.14)', border:'1px solid #ff3eb555', color:'#ff3eb5', fontFamily:'sans-serif' },
+  btnPink: { fontSize:'11px', padding:'5px 11px', borderRadius:'6px', cursor:'pointer', background:'rgba(255,62,181,0.14)', border:'1px solid #ff3eb555', color:'#ff3eb5', fontFamily:'sans-serif' },
 
   // Formulaire suivi inline
   suiviForm: { background:'#0a0a18', border:'1px solid #00e5ff1a', borderRadius:'8px', padding:'12px', marginTop:'10px' },
   input: { width:'100%', background:'#12121f', border:'1px solid #ffffff1a', borderRadius:'6px', padding:'6px 10px', color:'#e0e0f0', fontSize:'12px', fontFamily:'sans-serif', outline:'none', marginBottom:'8px', boxSizing:'border-box' },
   inputRow: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' },
 
-  // Commentaires
+  // Commentaires — plus visibles
   cmtCard: (flagged) => ({
-    background: flagged ? 'rgba(255,62,181,0.04)' : '#0d0d1a',
-    border: flagged ? '1px solid #ff3eb544' : '1px solid #ffffff0f',
+    background: flagged ? 'rgba(255,62,181,0.08)' : 'rgba(255,255,255,0.03)',
+    border: flagged ? '1px solid #ff3eb566' : '1px solid #ffffff18',
     borderRadius:'10px', padding:'12px 14px', marginBottom:'8px'
   }),
   cmtHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px' },
@@ -300,6 +302,7 @@ export default function Admin() {
       {/* SIDEBAR */}
       <div style={s.sidebar}>
         <div style={s.sidebarLogo}>
+          <img src="https://images.kevinteoart.fr/site/Logo.png" alt="Logo" style={s.logoImg} />
           <div style={s.logoName}>Kevin Teo'Art</div>
           <div style={s.logoSub}>Administration</div>
         </div>
@@ -315,12 +318,21 @@ export default function Admin() {
           </div>
         ))}
         <div style={s.sidebarBottom}>
-          <div style={{ display:'flex', alignItems:'center', fontSize:'11px', color:'#22c55e' }}>
-            <span style={s.liveDot} />
-            Temps réel
+          <div style={{ fontSize:'10px', color:'#44445a', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Activité</div>
+          <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#22c55e', marginBottom:'6px' }}>
+            <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#22c55e', display:'inline-block', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite', flexShrink:0 }} />
+            Temps réel actif
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#f97316', marginBottom:'6px' }}>
+            <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#f97316', display:'inline-block', boxShadow:'0 0 6px #f97316', flexShrink:0 }} />
+            <span>Visiteurs aujourd'hui : <strong>{stats?.nb_inscrits_mois ?? '—'}</strong></span>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#ef4444', marginBottom:'12px' }}>
+            <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444', display:'inline-block', boxShadow:'0 0 6px #ef4444', flexShrink:0 }} />
+            Désinscriptions : <strong>0</strong>
           </div>
           <div
-            style={{ fontSize:'11px', color:'#44445a', marginTop:'10px', cursor:'pointer' }}
+            style={{ fontSize:'11px', color:'#44445a', cursor:'pointer' }}
             onClick={() => navigate('/accueil')}
           >
             ← Retour au site
@@ -346,8 +358,8 @@ export default function Admin() {
           {/* ======== DASHBOARD ======== */}
           {!loading && onglet === 'dashboard' && (
             <>
-              {/* Ligne 1 : Inscrits / Commandes / CA */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'10px' }}>
+              {/* Stats sur 2 lignes compactes */}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px', marginBottom:'8px' }}>
                 <div style={s.statCard('#00e5ff')}>
                   <div style={s.statLabel}>Inscrits</div>
                   <div style={s.statValue('#00e5ff')}>{stats?.nb_inscrits ?? '—'}</div>
@@ -380,10 +392,7 @@ export default function Admin() {
                     <span style={s.statSub}>M-2 : <span style={{ color:'#b0b0d0' }}>{stats ? fmtEur(stats.ca_m2) : '—'}</span></span>
                   </div>
                 </div>
-              </div>
 
-              {/* Ligne 2 : Coloriages + Pensées */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'16px' }}>
                 <div style={s.statCard('#ff3eb5')}>
                   <div style={s.statLabel}>Coloriages partagés</div>
                   <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
