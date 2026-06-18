@@ -1147,6 +1147,8 @@ function SectionMesInfos({ userId }) {
   const [contactEnvoye, setContactEnvoye] = React.useState(false);
   const [contactErreur, setContactErreur] = React.useState('');
   const [showContact, setShowContact] = React.useState(false);
+  const [showSupprimerCompte, setShowSupprimerCompte] = React.useState(false);
+  const [suppressionEnCours, setSuppressionEnCours] = React.useState(false);
 
   // POINT 5 : envoi du mail de réinitialisation
   const handleReset = async () => {
@@ -1378,6 +1380,56 @@ function SectionMesInfos({ userId }) {
                     ✏️ Recadrer
                   </button>
                 </>
+              )}
+
+              {/* ── Supprimer mon compte ── */}
+              <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+              <button
+                onClick={() => setShowSupprimerCompte(true)}
+                style={{ background: 'linear-gradient(135deg, rgba(255,60,60,0.15), rgba(180,20,20,0.08))', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 18px', color: '#ff6b6b', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,60,60,0.1)' }}>
+                Supprimer mon compte
+              </button>
+
+              {/* Popup confirmation suppression */}
+              {showSupprimerCompte && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                  <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '20px', padding: '32px 28px', maxWidth: '420px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <h3 style={{ color: '#ff6b6b', fontSize: '18px', fontWeight: 'bold', textAlign: 'center' }}>Supprimer mon compte</h3>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.8', textAlign: 'center' }}>
+                      Adieu collection, adieu badges, adieu commandes et téléchargements, adieu coloriages partagés. Ta vie sur kevinteoart.fr sera effacée à jamais. C'est sûr ?
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button
+                        onClick={() => setShowSupprimerCompte(false)}
+                        style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '12px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer' }}>
+                        Annuler
+                      </button>
+                      <button
+                        onClick={async () => {
+                          setSuppressionEnCours(true);
+                          try {
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) return;
+                            const response = await fetch('/api/delete-account', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ userId: user.id }),
+                            });
+                            const data = await response.json();
+                            if (data.ok) {
+                              await supabase.auth.signOut();
+                              window.location.href = '/connexion';
+                            }
+                          } catch (e) { console.error(e); }
+                          setSuppressionEnCours(false);
+                        }}
+                        disabled={suppressionEnCours}
+                        style={{ flex: 1, background: 'linear-gradient(135deg, rgba(255,60,60,0.3), rgba(180,20,20,0.2))', border: '1px solid rgba(255,80,80,0.5)', borderRadius: '10px', padding: '12px', color: '#ff6b6b', fontSize: '13px', fontWeight: 'bold', cursor: suppressionEnCours ? 'wait' : 'pointer' }}>
+                        {suppressionEnCours ? 'Suppression...' : 'Oui, tout supprimer'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -1881,9 +1933,14 @@ function MonCompte() {
                 {avatarUrl && (
                   <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
                 )}
-                <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  MON COMPTE — Ma Collection Kevin Teo'Art
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    MON COMPTE
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Ma Collection Kevin Teo'Art
+                  </p>
+                </div>
               </div>
 
               {/* ── Triple jauge globale (point 1 déjà appliqué dans UneBarre) ── */}
