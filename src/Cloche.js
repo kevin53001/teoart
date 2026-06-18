@@ -122,6 +122,16 @@ function SocialColo({ coloId, userId, userPseudo }) {
     } else {
       await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
       setLikes(prev => [...prev, { user_id: userId }]);
+      // Notif like pour le propriétaire du coloriage (pas pour soi-même)
+      const { data: colo } = await supabase.from('coloriages').select('user_id').eq('id', coloId).single();
+      if (colo && colo.user_id !== userId) {
+        await supabase.from('notifications').insert({
+          user_id: colo.user_id,
+          type: 'like_coloriage',
+          contenu: { coloriage_id: coloId },
+          lu: false,
+        });
+      }
     }
   };
 
@@ -132,6 +142,16 @@ function SocialColo({ coloId, userId, userPseudo }) {
       .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
       .select('id, texte, created_at, user_id').single();
     if (data) setComments(prev => [...prev, { ...data, pseudo: userPseudo }]);
+    // Notif commentaire pour le propriétaire du coloriage (pas pour soi-même)
+    const { data: colo } = await supabase.from('coloriages').select('user_id').eq('id', coloId).single();
+    if (colo && colo.user_id !== userId) {
+      await supabase.from('notifications').insert({
+        user_id: colo.user_id,
+        type: 'commentaire_coloriage',
+        contenu: { coloriage_id: coloId },
+        lu: false,
+      });
+    }
     setTexte(''); setEnvoi(false);
   };
 
@@ -315,8 +335,32 @@ function Cloche({ hidden = false }) {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data?.user) return;
       setUserId(data.user.id);
-      const { data: p } = await supabase.from('profils').select('pseudo').eq('id', data.user.id).single();
-      if (p) setUserPseudo(p.pseudo || '');
+      const { data: p } = await supabase.from('profils').select('pseudo, created_at, dernier_vu_coloriages_partages').eq('id', data.user.id).single();
+      if (p) {
+        setUserPseudo(p.pseudo || '');
+        // Détecter nouveaux coloriages partagés par la communauté
+        const refC = p.dernier_vu_coloriages_partages || p.created_at;
+        if (refC) {
+          const { data: nouveauxColos } = await supabase
+            .from('coloriages')
+            .select('id')
+            .not('image_url', 'is', null)
+            .neq('user_id', data.user.id)
+            .gt('created_at', refC);
+          if (nouveauxColos && nouveauxColos.length > 0) {
+            await supabase.from('notifications').delete()
+              .eq('user_id', data.user.id)
+              .eq('type', 'nouveau_coloriage_partage')
+              .eq('lu', false);
+            await supabase.from('notifications').insert({
+              user_id: data.user.id,
+              type: 'nouveau_coloriage_partage',
+              contenu: { count: nouveauxColos.length },
+              lu: false,
+            });
+          }
+        }
+      }
     });
   }, []);
 
@@ -365,30 +409,9 @@ function Cloche({ hidden = false }) {
     setNotifs([]);
   };
 
-  // Mapping type de notif → colonne dernier_vu dans profils
-  const DERNIER_VU_MAP = {
-    nouvelle_illustration:     'dernier_vu_illustrations',
-    nouveau_livre_pdf:         'dernier_vu_livres_pdf',
-    nouveau_livre_relie:       'dernier_vu_livres_relie',
-    nouveau_recueil_pdf:       'dernier_vu_recueils_pdf',
-    nouveau_recueil_relie:     'dernier_vu_recueils_relie',
-    nouvelle_pensee:           'dernier_vu_pensees',
-    nouvelle_presentation:     'dernier_vu_presentation',
-    nouveau_coloriage_partage: 'dernier_vu_coloriages_partages',
-    like_coloriage:            'dernier_vu_likes_coloriages',
-    commentaire_coloriage:     'dernier_vu_commentaires',
-    badge_obtenu:              'dernier_vu_badges',
-  };
-
   const handleClicNotif = async (notif) => {
     await supprimerNotif(notif.id);
     setOuvert(false);
-
-    // Mettre à jour dernier_vu dans profils
-    const colonne = DERNIER_VU_MAP[notif.type];
-    if (colonne && userId) {
-      await supabase.from('profils').update({ [colonne]: new Date().toISOString() }).eq('id', userId);
-    }
 
     switch (notif.type) {
       case 'nouvelle_illustration':
