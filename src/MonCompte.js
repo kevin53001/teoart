@@ -387,21 +387,32 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
         promo_badge_active: nouvellePromo,
       }).eq('id', userId);
 
-      // Insérer une notification dans la cloche pour chaque nouveau badge
-      const tousLesBadgesMap = Object.fromEntries([...BADGES_FAN, ...BADGES_COLO].map(b => [b.id, b]));
-      const notifsAInserer = nouveaux.map(badgeId => {
-        const badge = tousLesBadgesMap[badgeId];
-        const taux = TAUX_BADGE[badgeId] || 0;
-        return {
+      // Insérer une notification par catégorie (fan / coloriste) avec uniquement le badge le plus haut
+      const notifsAInserer = [];
+      if (meilleurNouveauFan) {
+        const taux = TAUX_BADGE[meilleurNouveauFan.id] || 0;
+        notifsAInserer.push({
           user_id: userId,
           type: 'badge_obtenu',
           contenu: {
-            niveau: badge.lignes.join(' '),
+            niveau: meilleurNouveauFan.lignes.join(' '),
             remise: taux > 0 ? Math.round(taux * 100) : null,
           },
           lu: false,
-        };
-      });
+        });
+      }
+      if (meilleurNouveauColo) {
+        const taux = TAUX_BADGE[meilleurNouveauColo.id] || 0;
+        notifsAInserer.push({
+          user_id: userId,
+          type: 'badge_obtenu',
+          contenu: {
+            niveau: meilleurNouveauColo.lignes.join(' '),
+            remise: taux > 0 ? Math.round(taux * 100) : null,
+          },
+          lu: false,
+        });
+      }
       if (notifsAInserer.length > 0) {
         await supabase.from('notifications').insert(notifsAInserer);
       }
