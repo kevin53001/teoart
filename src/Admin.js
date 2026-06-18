@@ -346,22 +346,69 @@ export default function Admin() {
           {/* ======== DASHBOARD ======== */}
           {!loading && onglet === 'dashboard' && (
             <>
-              <div style={s.statGrid}>
+              {/* Ligne 1 : Inscrits / Commandes / CA */}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'10px' }}>
                 <div style={s.statCard('#00e5ff')}>
                   <div style={s.statLabel}>Inscrits</div>
                   <div style={s.statValue('#00e5ff')}>{stats?.nb_inscrits ?? '—'}</div>
+                  <div style={{ marginTop:'8px', display:'flex', gap:'10px', flexWrap:'wrap' }}>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#00e5ff' }}>{stats?.nb_inscrits_mois ?? '—'}</span></span>
+                    <span style={s.statSub}>M-1 : <span style={{ color:'#b0b0d0' }}>{stats?.nb_inscrits_m1 ?? '—'}</span></span>
+                    <span style={s.statSub}>M-2 : <span style={{ color:'#b0b0d0' }}>{stats?.nb_inscrits_m2 ?? '—'}</span></span>
+                  </div>
                 </div>
                 <div style={s.statCard('#00e5ff')}>
                   <div style={s.statLabel}>Commandes</div>
-                  <div style={s.statValue('#00e5ff')}>{stats?.nb_commandes ?? '—'}</div>
-                </div>
-                <div style={s.statCard('#00e5ff')}>
-                  <div style={s.statLabel}>Coloriages partagés</div>
-                  <div style={s.statValue('#00e5ff')}>{stats?.nb_coloriages ?? '—'}</div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
+                    <div style={s.statValue('#00e5ff')}>{stats?.nb_commandes ?? '—'}</div>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#00e5ff' }}>{stats?.nb_commandes_mois ?? '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'6px', display:'flex', gap:'10px', flexWrap:'wrap' }}>
+                    <span style={s.statSub}>Panier moy. total : <span style={{ color:'#b0b0d0' }}>{stats ? fmtEur(stats.panier_moyen_total) : '—'}</span></span>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#00e5ff' }}>{stats ? fmtEur(stats.panier_moyen_mois) : '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'4px' }}>
+                    <span style={s.statSub}>Reliés : <span style={{ color:'#b0b0d0' }}>{stats?.nb_relies_total ?? '—'}</span> / mois : <span style={{ color:'#00e5ff' }}>{stats?.nb_relies_mois ?? '—'}</span></span>
+                  </div>
                 </div>
                 <div style={s.statCard('#ffd700')}>
                   <div style={s.statLabel}>CA total</div>
                   <div style={s.statValue('#ffd700')}>{stats ? fmtEur(stats.ca_total) : '—'}</div>
+                  <div style={{ marginTop:'8px', display:'flex', gap:'10px', flexWrap:'wrap' }}>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#ffd700' }}>{stats ? fmtEur(stats.ca_mois) : '—'}</span></span>
+                    <span style={s.statSub}>M-1 : <span style={{ color:'#b0b0d0' }}>{stats ? fmtEur(stats.ca_m1) : '—'}</span></span>
+                    <span style={s.statSub}>M-2 : <span style={{ color:'#b0b0d0' }}>{stats ? fmtEur(stats.ca_m2) : '—'}</span></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ligne 2 : Coloriages + Pensées */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', marginBottom:'16px' }}>
+                <div style={s.statCard('#ff3eb5')}>
+                  <div style={s.statLabel}>Coloriages partagés</div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
+                    <div style={s.statValue('#ff3eb5')}>{stats?.nb_coloriages ?? '—'}</div>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#ff3eb5' }}>{stats?.nb_coloriages_mois ?? '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'6px' }}>
+                    <span style={s.statSub}>Commentaires : <span style={{ color:'#b0b0d0' }}>{stats?.nb_comments_colo ?? '—'}</span> / mois : <span style={{ color:'#ff3eb5' }}>{stats?.nb_comments_colo_mois ?? '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'4px' }}>
+                    <span style={s.statSub}>Likes : <span style={{ color:'#b0b0d0' }}>{stats?.nb_likes_colo ?? '—'}</span> / mois : <span style={{ color:'#ff3eb5' }}>{stats?.nb_likes_colo_mois ?? '—'}</span></span>
+                  </div>
+                </div>
+                <div style={s.statCard('#a78bfa')}>
+                  <div style={s.statLabel}>Pensées publiées</div>
+                  <div style={{ display:'flex', alignItems:'baseline', gap:'10px' }}>
+                    <div style={s.statValue('#a78bfa')}>{stats?.nb_pensees ?? '—'}</div>
+                    <span style={s.statSub}>Ce mois : <span style={{ color:'#a78bfa' }}>{stats?.nb_pensees_mois ?? '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'6px' }}>
+                    <span style={s.statSub}>Commentaires : <span style={{ color:'#b0b0d0' }}>{stats?.nb_comments_pensees ?? '—'}</span> / mois : <span style={{ color:'#a78bfa' }}>{stats?.nb_comments_pensees_mois ?? '—'}</span></span>
+                  </div>
+                  <div style={{ marginTop:'4px' }}>
+                    <span style={s.statSub}>Likes : <span style={{ color:'#b0b0d0' }}>{stats?.nb_likes_pensees ?? '—'}</span> / mois : <span style={{ color:'#a78bfa' }}>{stats?.nb_likes_pensees_mois ?? '—'}</span></span>
+                  </div>
                 </div>
               </div>
 
