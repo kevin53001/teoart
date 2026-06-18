@@ -16,7 +16,7 @@ const SPEED = '80s';
 const IMG_W = 110;
 const IMG_H = 150;
 const GAP = 6;
-const STRIPE_PUBLIC_KEY = 'pk_live_REMPLACER_PAR_CLE_PUBLIQUE_PROD'; // TODO: remplacer par pk_live_...
+const STRIPE_PUBLIC_KEY = 'pk_live_51TjEyXG38aMcCAX1oGQ4dVo2vnnUHrLsFWvG05oyKD0YSp9CyJxPjNNU6geSVMJZy1r6GcujRSXQ6SeC7rRCcNVO00yQFnSeQj'; // TODO: remplacer par pk_live_...
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 
 const BARRES = [
