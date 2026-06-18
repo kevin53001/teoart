@@ -105,76 +105,8 @@ function IndicateurEtapes({ etape, isMobile }) {
 
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
-function EtapePanier({ onContinuer, isMobile }) {
+function EtapePanier({ onContinuer, isMobile, onOuvrirIllu }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
-  const [popupIllu, setPopupIllu] = React.useState(null);
-  const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
-  const [popupIlluChargement, setPopupIlluChargement] = React.useState(false);
-  const [userId, setUserIdLocal] = React.useState(null);
-  const [userPseudo, setUserPseudo] = React.useState('');
-  const [collection, setCollection] = React.useState({});
-  const [coloriages, setColoriages] = React.useState({});
-
-  React.useEffect(() => {
-    const chargerUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserIdLocal(user.id);
-      const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
-      if (profil?.pseudo) setUserPseudo(profil.pseudo);
-      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
-      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
-      if (coll) { const m = {}; coll.forEach(c => { m[c.illustration_id] = c; }); setCollection(m); }
-      if (colos) { const m = {}; colos.forEach(c => { m[c.illustration_id] = true; }); setColoriages(m); }
-    };
-    chargerUser();
-  }, []);
-
-  // Liste des illustrations du panier (pour navigation suivant/précédent dans la popup)
-  const illusIds = articles.filter(a => a.type === 'illustration').map(a => a.id);
-
-  const ouvrirPopupIllu = async (illuId) => {
-    setPopupIlluChargement(true);
-    try {
-      const { data } = await supabase.from('illustrations').select('*').eq('id', illuId).single();
-      if (data) {
-        setPopupIllu(data);
-        setPopupIlluIndex(illusIds.indexOf(illuId));
-      }
-    } catch {}
-    setPopupIlluChargement(false);
-  };
-
-  const handleToggleJAi = async (illuId) => {
-    if (!userId) return;
-    const nouveau = !(collection[illuId]?.j_ai || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false }, { onConflict: 'user_id,illustration_id' });
-  };
-
-  const handleToggleJeVeux = async (illuId) => {
-    if (!userId) return;
-    const nouveau = !(collection[illuId]?.je_veux || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false }, { onConflict: 'user_id,illustration_id' });
-  };
-
-  const popupSuivant = async () => {
-    if (illusIds.length <= 1) return;
-    const next = (popupIlluIndex + 1) % illusIds.length;
-    setPopupIlluIndex(next);
-    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[next]).single();
-    if (data) setPopupIllu(data);
-  };
-
-  const popupPrecedent = async () => {
-    if (illusIds.length <= 1) return;
-    const prev = (popupIlluIndex - 1 + illusIds.length) % illusIds.length;
-    setPopupIlluIndex(prev);
-    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[prev]).single();
-    if (data) setPopupIllu(data);
-  };
-
   // Chargement de la promo badge active depuis Supabase
   React.useEffect(() => {
     const chargerPromo = async () => {
@@ -274,31 +206,6 @@ function EtapePanier({ onContinuer, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* PopupFicheIllu */}
-      {popupIlluChargement && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>Chargement...</p>
-        </div>
-      )}
-      {popupIllu && (
-        <PopupFicheIllu
-          illu={popupIllu}
-          illustrations={articles.filter(a => a.type === 'illustration')}
-          jAi={collection[popupIllu.id]?.j_ai || false}
-          jeVeux={collection[popupIllu.id]?.je_veux || false}
-          aColorié={coloriages[popupIllu.id] || false}
-          onToggleJAi={() => handleToggleJAi(popupIllu.id)}
-          onToggleJeVeux={() => handleToggleJeVeux(popupIllu.id)}
-          onClose={() => setPopupIllu(null)}
-          onOpenSimilaire={(illu) => setPopupIllu(illu)}
-          onSuivant={popupSuivant}
-          onPrecedent={popupPrecedent}
-          userPseudo={userPseudo}
-          userId={userId}
-          onColoUploaded={() => setColoriages(prev => ({ ...prev, [popupIllu.id]: true }))}
-        />
-      )}
-
       {/* Encart TVA */}
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', lineHeight: 1.6 }}>
@@ -315,7 +222,7 @@ function EtapePanier({ onContinuer, isMobile }) {
             {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => ouvrirPopupIllu(a.id)} />)}
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => onOuvrirIllu(a.id)} />)}
           </div>
           {reductions.tauxIllus > 0 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
@@ -1066,6 +973,64 @@ export default function Panier() {
   const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [facturationDifferente, setFacturationDifferente] = React.useState(false);
+  const [popupIllu, setPopupIllu] = React.useState(null);
+  const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
+  const [popupIlluChargement, setPopupIlluChargement] = React.useState(false);
+  const [popupCollection, setPopupCollection] = React.useState({});
+  const [popupColoriages, setPopupColoriages] = React.useState({});
+  const { articles } = usePanier();
+  const illusIds = articles.filter(a => a.type === 'illustration').map(a => a.id);
+
+  React.useEffect(() => {
+    const chargerCollectionPopup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
+      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+      if (coll) { const m = {}; coll.forEach(c => { m[c.illustration_id] = c; }); setPopupCollection(m); }
+      if (colos) { const m = {}; colos.forEach(c => { m[c.illustration_id] = true; }); setPopupColoriages(m); }
+    };
+    chargerCollectionPopup();
+  }, []);
+
+  const ouvrirPopupIllu = async (illuId) => {
+    setPopupIlluChargement(true);
+    try {
+      const { data } = await supabase.from('illustrations').select('*').eq('id', illuId).single();
+      if (data) { setPopupIllu(data); setPopupIlluIndex(illusIds.indexOf(illuId)); }
+    } catch {}
+    setPopupIlluChargement(false);
+  };
+
+  const handleToggleJAiPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.j_ai || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: popupCollection[illuId]?.je_veux || false }, { onConflict: 'user_id,illustration_id' });
+  };
+
+  const handleToggleJeVeuxPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.je_veux || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: popupCollection[illuId]?.j_ai || false, j_ai_auto: popupCollection[illuId]?.j_ai_auto || false }, { onConflict: 'user_id,illustration_id' });
+  };
+
+  const popupSuivant = async () => {
+    if (illusIds.length <= 1) return;
+    const next = (popupIlluIndex + 1) % illusIds.length;
+    setPopupIlluIndex(next);
+    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[next]).single();
+    if (data) setPopupIllu(data);
+  };
+
+  const popupPrecedent = async () => {
+    if (illusIds.length <= 1) return;
+    const prev = (popupIlluIndex - 1 + illusIds.length) % illusIds.length;
+    setPopupIlluIndex(prev);
+    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[prev]).single();
+    if (data) setPopupIllu(data);
+  };
   const [retractation, setRetractation] = React.useState(false);
   const [cgvAcceptees, setCgvAcceptees] = React.useState(false);
   const encartRef = React.useRef(null);
@@ -1252,7 +1217,7 @@ export default function Panier() {
 
             {/* Tunnel */}
             <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
-              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
+              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} onOuvrirIllu={ouvrirPopupIllu} />}
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
@@ -1275,6 +1240,31 @@ export default function Panier() {
 
       <BandeLegale />
       <OngletsLateraux userId={userId} />
+
+      {/* PopupFicheIllu — rendu à la racine pour éviter le piège backdropFilter */}
+      {popupIlluChargement && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>Chargement...</p>
+        </div>
+      )}
+      {popupIllu && (
+        <PopupFicheIllu
+          illu={popupIllu}
+          illustrations={articles.filter(a => a.type === 'illustration')}
+          jAi={popupCollection[popupIllu.id]?.j_ai || false}
+          jeVeux={popupCollection[popupIllu.id]?.je_veux || false}
+          aColorié={popupColoriages[popupIllu.id] || false}
+          onToggleJAi={() => handleToggleJAiPopup(popupIllu.id)}
+          onToggleJeVeux={() => handleToggleJeVeuxPopup(popupIllu.id)}
+          onClose={() => setPopupIllu(null)}
+          onOpenSimilaire={(illu) => setPopupIllu(illu)}
+          onSuivant={popupSuivant}
+          onPrecedent={popupPrecedent}
+          userPseudo={userPseudo}
+          userId={userId}
+          onColoUploaded={() => setPopupColoriages(prev => ({ ...prev, [popupIllu.id]: true }))}
+        />
+      )}
     </div>
   );
 }
