@@ -966,15 +966,15 @@ function EtapeConfirmation({ infos, isMobile }) {
       {/* Boutons */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
         <button onClick={() => navigate('/accueil')}
-          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 24px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }}>
-          ← Accueil
+          style={{ background: 'linear-gradient(135deg, #ff3eb5, #cc2090)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,62,181,0.35)' }}>
+          Accueil
         </button>
         <button onClick={() => navigate('/mon-compte')}
           style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,212,212,0.35)' }}>
           Mon Compte
         </button>
         <button onClick={() => navigate('/catalogue')}
-          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 24px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }}>
+          style={{ background: 'linear-gradient(135deg, #ffd250, #c89a00)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,210,80,0.35)' }}>
           Continuer mes achats
         </button>
       </div>
@@ -1169,14 +1169,16 @@ export default function Panier() {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '32px 16px 60px' : '40px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 300}px` }}>
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-            {/* Titre */}
-            <h1 style={{ color: '#fff', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>
-              Mon Panier
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textAlign: 'center', marginBottom: '32px' }}>Paiement sécurisé · TVA non applicable (art. 293 B du CGI)</p>
+            {/* Encart titre */}
+            <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '16px 20px' : '20px 32px', backdropFilter: 'blur(10px)', textAlign: 'center', marginBottom: '20px', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
+              <h1 style={{ color: '#fff', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', marginBottom: '6px' }}>
+                Mon Panier
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>Paiement sécurisé · TVA non applicable (art. 293 B du CGI)</p>
+            </div>
 
             {/* Indicateur d'étapes */}
-            {etape < 5 && <IndicateurEtapes etape={etape} isMobile={isMobile} />}
+            {etape < 5 && <div style={{ marginTop: '20px' }}><IndicateurEtapes etape={etape} isMobile={isMobile} /></div>}
 
             {/* Tunnel */}
             <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
