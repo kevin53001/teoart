@@ -501,6 +501,8 @@ function Pensees() {
   const [popupOnglet, setPopupOnglet] = React.useState(null);
   const [illustrationsOnglet, setIllustrationsOnglet] = React.useState([]);
   const [pseudo, setPseudo] = React.useState('Visiteur');
+  const [collection, setCollection] = React.useState({});
+  const [coloriagesMap, setColoriagesMap] = React.useState({});
   const startX = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
   const { nbArticles } = usePanier();
@@ -544,6 +546,16 @@ function Pensees() {
         const { data: p } = await supabase.from('profils').select('pseudo, prenom, created_at, dernier_vu_pensees').eq('id', user.id).maybeSingle();
         profil = p;
         setPseudo(profil?.pseudo || profil?.prenom || 'Visiteur');
+
+        // Collection pour j_ai / je_veux dans les popups
+        const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
+        const collMap = {};
+        (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
+        setCollection(collMap);
+        const { data: colosData } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+        const colosMap = {};
+        (colosData || []).forEach(c => { colosMap[c.illustration_id] = true; });
+        setColoriagesMap(colosMap);
       }
       const { data, error } = await supabase
         .from('pensees')
@@ -612,6 +624,26 @@ function Pensees() {
     };
     charger();
   }, []);
+
+  const toggleJAi = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(collection[illuId]?.j_ai || false);
+    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: collection[illuId]?.j_ai_auto || false, j_ai_achete: collection[illuId]?.j_ai_achete || false, je_veux: collection[illuId]?.je_veux || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
+
+  const toggleJeVeux = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(collection[illuId]?.je_veux || false);
+    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false, j_ai_achete: collection[illuId]?.j_ai_achete || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
 
   const envoyerPensee = async () => {
     if (!titreForm.trim() || !texteForm.trim() || !userId) return;
@@ -1313,6 +1345,12 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
         <PopupFicheIllu
           illu={popupOnglet}
           illustrations={illustrationsOnglet}
+          jAi={collection[popupOnglet.id]?.j_ai || false}
+          jAiAchete={collection[popupOnglet.id]?.j_ai_achete || false}
+          jeVeux={collection[popupOnglet.id]?.je_veux || false}
+          aColorié={coloriagesMap[popupOnglet.id] || false}
+          onToggleJAi={() => toggleJAi(popupOnglet.id)}
+          onToggleJeVeux={() => toggleJeVeux(popupOnglet.id)}
           onClose={() => setPopupOnglet(null)}
           onOpenSimilaire={(illu) => setPopupOnglet(illu)}
           onSuivant={() => {

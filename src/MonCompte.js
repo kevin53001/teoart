@@ -1866,8 +1866,8 @@ function MonCompte() {
   const [popupIllu, setPopupIllu] = React.useState(null);
   const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
   const [popupIlluList, setPopupIlluList] = React.useState([]);
-  const [popupCollection] = React.useState({});
-  const [popupColoriages] = React.useState({});
+  const [popupCollection, setPopupCollection] = React.useState({});
+  const [popupColoriages, setPopupColoriages] = React.useState({});
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -1898,6 +1898,16 @@ function MonCompte() {
       const { count: colorieCount } = await supabase.from('coloriages').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
       const { count: jeVeuxCount } = await supabase.from('collection').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('je_veux', true);
       setStats({ totalIllus: total || 0, jAi: jAiCount || 0, colorie: colorieCount || 0, jeVeux: jeVeuxCount || 0 });
+
+      // Collection pour j_ai / je_veux dans les popups
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
+      const collMap = {};
+      (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
+      setPopupCollection(collMap);
+      const { data: colosData } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+      const colosMap = {};
+      (colosData || []).forEach(c => { colosMap[c.illustration_id] = true; });
+      setPopupColoriages(colosMap);
       setLoading(false);
     };
     charger();
@@ -1909,6 +1919,26 @@ function MonCompte() {
   const MARGIN_NAV = isMobile ? 2 : 12;
   const H_NAV = isMobile ? 80 : 120;
   const pctJai = stats.totalIllus > 0 ? (stats.jAi / stats.totalIllus) * 100 : 0;
+
+  const toggleJAiPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.j_ai || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: popupCollection[illuId]?.j_ai_auto || false, j_ai_achete: popupCollection[illuId]?.j_ai_achete || false, je_veux: popupCollection[illuId]?.je_veux || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
+
+  const toggleJeVeuxPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.je_veux || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
+    await supabase.from('collection').upsert(
+      { user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: popupCollection[illuId]?.j_ai || false, j_ai_auto: popupCollection[illuId]?.j_ai_auto || false, j_ai_achete: popupCollection[illuId]?.j_ai_achete || false },
+      { onConflict: 'user_id,illustration_id' }
+    );
+  };
   const pctColo = stats.jAi > 0 ? (stats.colorie / stats.jAi) * 100 : 0;
   const illusManquantes = stats.totalIllus - stats.jAi;
   const pctJeVeux = illusManquantes > 0 ? (stats.jeVeux / illusManquantes) * 100 : 0;
@@ -2131,10 +2161,11 @@ function MonCompte() {
           illu={popupIllu}
           illustrations={popupIlluList}
           jAi={popupCollection[popupIllu.id]?.j_ai || false}
+          jAiAchete={popupCollection[popupIllu.id]?.j_ai_achete || false}
           jeVeux={popupCollection[popupIllu.id]?.je_veux || false}
           aColorié={popupColoriages[popupIllu.id] || false}
-          onToggleJAi={() => {}}
-          onToggleJeVeux={() => {}}
+          onToggleJAi={() => toggleJAiPopup(popupIllu.id)}
+          onToggleJeVeux={() => toggleJeVeuxPopup(popupIllu.id)}
           onClose={() => setPopupIllu(null)}
           onOpenSimilaire={(illu) => setPopupIllu(illu)}
           onSuivant={() => {
