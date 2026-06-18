@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
 
-const ADMIN_USER_ID = process.env.REACT_APP_ADMIN_USER_ID
+const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
 
 // Liste de mots à signaler (FR + EN)
 const MOTS_INTERDITS = [
