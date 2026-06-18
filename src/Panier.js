@@ -828,9 +828,9 @@ function EtapePaiement({ onSucces, onRetour, isMobile, infos }) {
 }
 
 // ─── Étape 5 : Confirmation ───────────────────────────────────────────────────
-function EtapeConfirmation({ infos, isMobile }) {
+function EtapeConfirmation({ infos, isMobile, articlesAchetes = [] }) {
   const navigate = useNavigate();
-  const { articles } = usePanier();
+  const articles = articlesAchetes;
   const [liensTelechargement, setLiensTelechargement] = React.useState([]);
   const [liensCharges, setLiensCharges] = React.useState(false);
   const [telechargements, setTelechargements] = React.useState({});
@@ -1085,10 +1085,34 @@ export default function Panier() {
     charger();
   }, []);
 
+  const [articlesAchetes, setArticlesAchetes] = React.useState([]);
+
   const handleSuccesPaiement = async (paymentIntentId) => {
+    // ── Snapshot du panier AVANT de le vider ─────────────────────────────
+    const snapshotArticles = [...articles];
+    setArticlesAchetes(snapshotArticles);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // ── Appel confirm-payment → écrit dans commandes_articles ─────────
+        try {
+          await fetch('/api/confirm-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentIntentId,
+              userId: user.id,
+              articles: snapshotArticles.map(a => ({
+                id: a.id,
+                nom: a.nom,
+                type: a.type,
+                sousType: a.sousType || null,
+              })),
+            }),
+          });
+        } catch (e) { console.error('Erreur confirm-payment:', e); }
+
         // ── Vider la promo badge ──────────────────────────────────────────
         const { data: profil } = await supabase.from('profils').select('promo_badge_active').eq('id', user.id).single();
         if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
@@ -1097,12 +1121,11 @@ export default function Panier() {
 
         // ── Coche rose automatique après achat (j_ai_achete) ─────────────
         try {
-          const articlesAchetes = articles;
           const illuIdsACocher = new Set();
           const livresIdsACocher = new Set();
           const recueilsIdsACocher = new Set();
 
-          for (const article of articlesAchetes) {
+          for (const article of snapshotArticles) {
             if (article.type === 'illustration') {
               illuIdsACocher.add(article.id);
             } else if (article.type === 'livre_pdf') {
@@ -1348,7 +1371,7 @@ export default function Panier() {
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
-              {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} />}
+              {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} articlesAchetes={articlesAchetes} />}
             </div>
 
           </div>
