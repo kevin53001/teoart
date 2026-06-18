@@ -35,30 +35,35 @@ function texteNotif(n) {
   switch (n.type) {
     case 'nouvelle_illustration':
       return nb === 1
-        ? `Nouvelle illustration : "${c.derniere_nom || '...'}"`
-        : `${nb} nouvelles illustrations publiées`;
+        ? `Kevin a encore passé une nuit blanche`
+        : `${nb} illustrations ont envahi le catalogue`;
     case 'nouveau_livre_pdf':
-      return `"${c.nom || 'Livre'}" disponible en PDF`;
     case 'nouveau_livre_relie':
-      return `"${c.nom || 'Livre'}" disponible en version reliée`;
+      return nb === 1
+        ? `Un nouveau livre est sorti du four : ${c.nom || '...'}`
+        : `${nb} nouveaux livres sont sortis du four`;
+    case 'nouveau_recueil_pdf':
+    case 'nouveau_recueil_relie':
+      return nb === 1
+        ? `Un nouveau recueil est sorti du four : ${c.nom || '...'}`
+        : `${nb} nouveaux recueils sont sortis du four`;
     case 'like_coloriage':
-      return `${c.from_user || 'Quelqu\'un'} a aimé ton coloriage`;
     case 'commentaire_coloriage':
-      return `${c.from_user || 'Quelqu\'un'} a commenté ton coloriage${c.texte ? ` : "${c.texte}"` : ''}`;
+      return nb === 1
+        ? `Des gens ont craqué pour ton coloriage`
+        : `Tes coloriages font un carton dans la communauté`;
     case 'badge_obtenu':
-      return `Badge ${c.badge_type === 'fan' ? 'Fan' : 'Coloriste'} ${c.niveau} obtenu !${c.remise ? ` -${c.remise}% sur ta prochaine commande` : ''}`;
+      return `Badge ${c.niveau} dans la poche !${c.remise ? ` -${c.remise}% en cadeau` : ''}`;
     case 'nouvelle_pensee':
       return nb === 1
-        ? `Nouvelle pensée : "${c.derniere_titre || '...'}"`
-        : `${nb} nouvelles pensées publiées`;
+        ? `Nouvelle pensée dans la nature`
+        : `${nb} nouvelles pensées à découvrir`;
     case 'nouvelle_presentation':
-      return nb === 1
-        ? `Nouvelle présentation : "${c.derniere_titre || '...'}"`
-        : `${nb} nouvelles présentations`;
+      return `Kevin a retouché sa vitrine : ${c.derniere_titre || '...'}`;
     case 'nouveau_coloriage_partage':
       return nb === 1
-        ? `${c.pseudo_coloriste || 'Quelqu\'un'} a partagé un coloriage`
-        : `${nb} nouveaux coloriages partagés par la communauté`;
+        ? `Les crayons ont chauffé dans la communauté`
+        : `${nb} coloristes ont sorti leurs meilleures couleurs`;
     default:
       return 'Nouvelle notification';
   }
