@@ -8,6 +8,7 @@ import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
+import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -1933,7 +1934,7 @@ function MonCompte() {
       `}</style>
 
       <BoutonsFlottants />
-      <div style={{ position: 'fixed', top: '12px', right: '16px', zIndex: 100, cursor: 'pointer', fontSize: '22px' }}>🔔</div>
+      <Cloche />
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
