@@ -303,31 +303,39 @@ function Selection() {
         <img src={`${R2}/site/Logo.png`} alt="logo Kevin Teo'Art" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '4px solid #000', boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover' }} />
       </div>
 
-      {/* ZONE BARRES */}
+      {/* ZONE BARRES + ENCART */}
       <div style={{ position: 'relative', width: '100%' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-          {barres.map((barre, i) => (
-            <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
-              <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content' }}>
-                {[...barre.images, ...barre.images].map((img, j) => (
-                  <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', opacity: 0.5, display: 'block' }} />
-                ))}
+
+        {/* Barres défilantes en fond — répétées pour couvrir toute la hauteur */}
+        <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', pointerEvents: 'none', zIndex: 1 }}>
+          {Array.from({ length: 20 }).map((_, i) => {
+            const barre = barres[i % barres.length];
+            const opacite = Math.max(0.04, 0.50 - i * 0.025);
+            return (
+              <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
+                <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content' }}>
+                  {[...barre.images, ...barre.images].map((img, j) => (
+                    <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', opacity: opacite, display: 'block' }} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
+        {/* Overlay dégradé vertical noir */}
+        <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.85) 75%, #000 100%)', zIndex: 2, pointerEvents: 'none' }} />
+
+        {/* Encart en flux normal */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          position: 'relative', zIndex: 10,
           display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-          zIndex: 10,
           paddingTop: isMobile ? '16px' : '20px',
-          paddingBottom: '20px',
+          paddingBottom: isMobile ? '24px' : '32px',
           paddingLeft: '10px',
           paddingRight: '10px',
-          overflowY: 'auto',
         }}>
           {renderEncart()}
         </div>
