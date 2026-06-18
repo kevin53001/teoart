@@ -139,6 +139,8 @@ function Catalogue() {
 
   const [recherche, setRecherche] = React.useState('');
   const [filtreCollection, setFiltreCollection] = React.useState('tout');
+  const [filtreNouveautes, setFiltreNouveautes] = React.useState(false);
+  const [refDateNouveautes, setRefDateNouveautes] = React.useState(null);
   const [tri, setTri] = React.useState('az');
   const [vueCompacte, setVueCompacte] = React.useState(false);
   const [page, setPage] = React.useState(1);
@@ -182,7 +184,10 @@ function Catalogue() {
 
   // Pré-filtrer depuis la nav des autres pages
   React.useEffect(() => {
-    if (location.state?.categorie) {
+    if (location.state?.filtreNouveautes) {
+      setFiltreNouveautes(true);
+      setPage(1);
+    } else if (location.state?.categorie) {
       setCategorie(location.state.categorie);
       setSousCategorie(location.state.sousCategorie || '');
       setPage(1);
@@ -200,6 +205,8 @@ function Catalogue() {
       setUserId(user.id);
       const { data: profil } = await supabase.from('profils').select('pseudo, created_at, dernier_vu_illustrations').eq('id', user.id).single();
       setUserPseudo(profil?.pseudo || 'Anonyme');
+      const refD = profil?.dernier_vu_illustrations || profil?.created_at;
+      if (refD) setRefDateNouveautes(new Date(refD));
       const { data: illus } = await supabase
         .from('illustrations')
         .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids, date_publication')
@@ -341,6 +348,9 @@ function Catalogue() {
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
     if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
     if (filtreCollection === 'colorie' && !coloriages[i.id]) return false;
+    if (filtreNouveautes && refDateNouveautes) {
+      if (!i.date_publication || new Date(i.date_publication) <= refDateNouveautes) return false;
+    }
     return true;
   });
 
@@ -606,6 +616,13 @@ function Catalogue() {
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
                   <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px', fontWeight: 'bold' }}>⭐ {sousCategorie}</span>
                   <button onClick={() => { setSousCategorie(''); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                </div>
+              )}
+              {/* Indicateur filtre Nouveautés actif */}
+              {filtreNouveautes && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
+                  <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
                 </div>
               )}
             </div>
