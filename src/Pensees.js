@@ -538,9 +538,11 @@ function Pensees() {
   React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      let profil = null;
       if (user) {
         setUserId(user.id);
-        const { data: profil } = await supabase.from('profils').select('pseudo, prenom').eq('id', user.id).maybeSingle();
+        const { data: p } = await supabase.from('profils').select('pseudo, prenom, created_at, dernier_vu_pensees').eq('id', user.id).maybeSingle();
+        profil = p;
         setPseudo(profil?.pseudo || profil?.prenom || 'Visiteur');
       }
       const { data, error } = await supabase
@@ -576,6 +578,32 @@ function Pensees() {
         const vuesMap = {};
         (vuesData || []).forEach(v => { vuesMap[v.pensee_id] = true; });
         setVues(vuesMap);
+
+        // ── Notifs nouvelles pensées ──────────────────────────────────────
+        // Référence = dernière fois que l'utilisateur a cliqué sur la notif,
+        // ou à défaut sa date d'inscription
+        const ref = profil?.dernier_vu_pensees || profil?.created_at;
+        if (ref) {
+          const refDate = new Date(ref);
+          // Uniquement les pensées de Kevin (source = 'kevin') publiées après la référence
+          const nouvelles = raw.filter(p => p.source === 'kevin' && new Date(p.created_at) > refDate);
+          if (nouvelles.length > 0) {
+            // Supprimer l'ancienne notif non lue du même type si elle existe (on la remplace)
+            await supabase.from('notifications')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('type', 'nouvelle_pensee')
+              .eq('lu', false);
+            // Insérer la notif groupée avec le total cumulé
+            await supabase.from('notifications').insert({
+              user_id: user.id,
+              type: 'nouvelle_pensee',
+              contenu: { count: nouvelles.length },
+              lu: false,
+            });
+          }
+        }
+        // ─────────────────────────────────────────────────────────────────
       }
       setLoading(false);
       // Charger illustrations pour similaires dans PopupFicheIllu

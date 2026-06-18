@@ -365,9 +365,30 @@ function Cloche({ hidden = false }) {
     setNotifs([]);
   };
 
+  // Mapping type de notif → colonne dernier_vu dans profils
+  const DERNIER_VU_MAP = {
+    nouvelle_illustration:     'dernier_vu_illustrations',
+    nouveau_livre_pdf:         'dernier_vu_livres_pdf',
+    nouveau_livre_relie:       'dernier_vu_livres_relie',
+    nouveau_recueil_pdf:       'dernier_vu_recueils_pdf',
+    nouveau_recueil_relie:     'dernier_vu_recueils_relie',
+    nouvelle_pensee:           'dernier_vu_pensees',
+    nouvelle_presentation:     'dernier_vu_presentation',
+    nouveau_coloriage_partage: 'dernier_vu_coloriages_partages',
+    like_coloriage:            'dernier_vu_likes_coloriages',
+    commentaire_coloriage:     'dernier_vu_commentaires',
+    badge_obtenu:              'dernier_vu_badges',
+  };
+
   const handleClicNotif = async (notif) => {
     await supprimerNotif(notif.id);
     setOuvert(false);
+
+    // Mettre à jour dernier_vu dans profils
+    const colonne = DERNIER_VU_MAP[notif.type];
+    if (colonne && userId) {
+      await supabase.from('profils').update({ [colonne]: new Date().toISOString() }).eq('id', userId);
+    }
 
     switch (notif.type) {
       case 'nouvelle_illustration':
