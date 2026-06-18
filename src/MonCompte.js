@@ -1501,11 +1501,13 @@ function SectionMesCommandes({ userId }) {
   const [commandeOuverte, setCommandeOuverte] = React.useState(null);
   // cache { [commandeId]: { montant, receiptUrl, chargement } }
   const [receipts, setReceipts] = React.useState({});
+  // accordéon reliés : quel article relié est déplié
+  const [relieOuvert, setRelieOuvert] = React.useState(null);
 
   React.useEffect(() => {
     supabase
       .from('commandes_articles')
-      .select('id, user_id, commande_id, nom, type, fichier_pdf, created_at')
+      .select('id, user_id, commande_id, nom, type, fichier_pdf, created_at, statut, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .then(({ data }) => { setArticles(data || []); setLoading(false); });
@@ -1632,23 +1634,100 @@ function SectionMesCommandes({ userId }) {
             {/* ── Déroulant articles ── */}
             {ouvert && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {items.map(item => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <LigneTypeArticle type={item.type} />
-                    <p style={{ color: '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.nom}
-                    </p>
-                    {item.fichier_pdf ? (
-                      <button
-                        onClick={() => telecharger(item)}
-                        style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '6px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
-                        {telechargement[item.id] ? '...' : 'Télécharger'}
-                      </button>
-                    ) : (
-                      <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', flexShrink: 0 }}>En cours de traitement</span>
-                    )}
-                  </div>
-                ))}
+                {items.map(item => {
+                  const isRelie = item.type === 'relie';
+                  const relieOpen = relieOuvert === item.id;
+                  const statut = item.statut || 'en_attente';
+                  const statutLabel = { en_attente: 'En cours de traitement', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours';
+                  const statutColor = { en_attente: 'rgba(255,210,80,0.7)', expediee: '#00d4d4', livree: '#22c55e' }[statut];
+
+                  return (
+                    <div key={item.id}>
+                      {/* Ligne principale de l'article */}
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', cursor: isRelie ? 'pointer' : 'default', padding: '4px 0' }}
+                        onClick={isRelie ? () => setRelieOuvert(relieOpen ? null : item.id) : undefined}
+                      >
+                        {isRelie && (
+                          <span style={{ color: '#ffd250', fontSize: '10px', transition: 'transform 0.2s', transform: relieOpen ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>▶</span>
+                        )}
+                        <LigneTypeArticle type={item.type} />
+                        <p style={{ color: '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.nom}
+                        </p>
+                        {isRelie ? (
+                          <span style={{ color: statutColor, fontSize: '11px', flexShrink: 0, fontWeight: 'bold' }}>{statutLabel}</span>
+                        ) : item.fichier_pdf ? (
+                          <button
+                            onClick={() => telecharger(item)}
+                            style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.35)', borderRadius: '8px', padding: '6px 12px', color: '#00d4d4', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
+                            {telechargement[item.id] ? '...' : 'Télécharger'}
+                          </button>
+                        ) : (
+                          <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '11px', flexShrink: 0 }}>En cours de traitement</span>
+                        )}
+                      </div>
+
+                      {/* Déroulant statut livraison pour les reliés */}
+                      {isRelie && relieOpen && (
+                        <div style={{ marginLeft: '20px', marginTop: '8px', marginBottom: '8px', background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '10px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          
+                          {/* Statut avec indicateur visuel */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: statutColor, flexShrink: 0, boxShadow: `0 0 5px ${statutColor}` }} />
+                            <span style={{ color: statutColor, fontSize: '12px', fontWeight: 'bold' }}>{statutLabel}</span>
+                          </div>
+
+                          {/* Livreur */}
+                          {item.livreur && (
+                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Transporteur :</span>
+                              <span style={{ color: '#fff' }}>{item.livreur}</span>
+                            </div>
+                          )}
+
+                          {/* Numéro de suivi ou lien */}
+                          {item.lien_suivi ? (
+                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', alignItems: 'center' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Suivi :</span>
+                              <a href={item.lien_suivi} target="_blank" rel="noopener noreferrer"
+                                style={{ color: '#00d4d4', textDecoration: 'none', wordBreak: 'break-all' }}>
+                                {item.numero_suivi || 'Suivre ma commande →'}
+                              </a>
+                            </div>
+                          ) : item.numero_suivi ? (
+                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>N° suivi :</span>
+                              <span style={{ color: '#fff' }}>{item.numero_suivi}</span>
+                            </div>
+                          ) : null}
+
+                          {/* Date livraison estimée */}
+                          {item.date_livraison_estimee && (
+                            <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
+                              <span style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Livraison estimée :</span>
+                              <span style={{ color: '#ffd250' }}>{item.date_livraison_estimee}</span>
+                            </div>
+                          )}
+
+                          {/* Note du vendeur */}
+                          {item.note_client && (
+                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', marginTop: '2px' }}>
+                              {item.note_client}
+                            </div>
+                          )}
+
+                          {/* Message si rien encore */}
+                          {statut === 'en_attente' && !item.livreur && !item.lien_suivi && !item.date_livraison_estimee && (
+                            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: 0 }}>
+                              Votre commande est en cours de traitement. Vous serez notifié(e) dès l'expédition.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
