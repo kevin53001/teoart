@@ -344,7 +344,7 @@ function Catalogue() {
     }
     if (annees.length > 0 && !annees.includes(i.annee)) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
-    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai) return false;
+    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto) return false;
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
     if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
     if (filtreCollection === 'colorie' && !coloriages[i.id]) return false;
@@ -438,6 +438,7 @@ function Catalogue() {
         @keyframes fadeImg { from { opacity: 0; } to { opacity: 1; } }
         .card-img-fade { animation: fadeImg 0.6s ease; }
         .badge-jai-actif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #00d4d4; color: #000; }
+        .badge-jai-auto { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #ff3eb5; color: #fff; }
         .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
         .badge-panier { position: absolute; bottom: 8px; right: 8px; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 3px 10px rgba(255,62,181,0.65); }
         .badge-panier:hover { transform: scale(1.12); }
@@ -676,6 +677,7 @@ function Catalogue() {
                     urlPresentation={getVisuelPresentation(illu.visuels)}
                     visuelsOrdonnes={getVisuelsOrdonnes(illu.visuels)}
                     jAi={collection[illu.id]?.j_ai || false}
+                    jAiAuto={collection[illu.id]?.j_ai_auto || false}
                     jeVeux={collection[illu.id]?.je_veux || false}
                     aColorié={coloriages[illu.id] || false}
                     taille={TAILLE_VIGNETTE}
@@ -724,6 +726,7 @@ function Catalogue() {
         <PopupFicheIllu
           illu={popup} illustrations={illustrations}
           jAi={collection[popup.id]?.j_ai || false}
+          jAiAuto={collection[popup.id]?.j_ai_auto || false}
           jeVeux={collection[popup.id]?.je_veux || false}
           aColorié={coloriages[popup.id] || false}
           onToggleJAi={(e) => handleToggleJAi(popup.id, e)}
@@ -781,7 +784,7 @@ function Catalogue() {
   );
 }
 
-function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
+function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jAiAuto = false, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
   const wrapRef = React.useRef(null);
   const cardRef = React.useRef(null);
   const [visuelIndex, setVisuelIndex] = React.useState(0);
@@ -825,7 +828,11 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jeVeux, aColori
         {urlActuelle
           ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade" style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />}
-        <div className={jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>{jAi ? "✓ J'ai" : "✕ J'ai"}</div>
+        <div
+          className={jAiAuto ? 'badge-jai-auto' : jAi ? 'badge-jai-actif' : 'badge-jai-inactif'}
+          onClick={onToggleJAi}>
+          {jAiAuto ? "✓ J'ai" : jAi ? "✓ J'ai" : "✕ J'ai"}
+        </div>
         <div onClick={onToggleJeVeux} style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>

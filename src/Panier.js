@@ -1089,10 +1089,137 @@ export default function Panier() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // ── Vider la promo badge ──────────────────────────────────────────
         const { data: profil } = await supabase.from('profils').select('promo_badge_active').eq('id', user.id).single();
         if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
           await supabase.from('profils').update({ promo_badge_active: {} }).eq('id', user.id);
         }
+
+        // ── Coche rose automatique après achat ───────────────────────────
+        try {
+          const articlesAchetes = articles; // snapshot du panier au moment du paiement
+
+          // Collecter tous les ids illustration à cocher en rose
+          const illuIdsACocher = new Set();
+
+          // Collecter les livres/recueils à cocher en rose
+          const livresIdsACocher = new Set();
+          const recueilsIdsACocher = new Set();
+
+          for (const article of articlesAchetes) {
+            if (article.type === 'illustration') {
+              illuIdsACocher.add(article.id);
+            } else if (article.type === 'livre_pdf') {
+              livresIdsACocher.add(article.id);
+              // Toutes les illustrations de ce livre
+              const { data: illusLivre } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [article.id]);
+              (illusLivre || []).forEach(i => illuIdsACocher.add(i.id));
+            } else if (article.type === 'recueil') {
+              recueilsIdsACocher.add(article.id);
+              // Toutes les illustrations de ce recueil
+              const { data: illusRecueil } = await supabase.from('illustrations').select('id, livres_ids').eq('statut', 'published').contains('recueils_ids', [article.id]);
+              (illusRecueil || []).forEach(i => {
+                illuIdsACocher.add(i.id);
+                // Tous les livres de ce recueil qui contiennent ces illustrations
+              });
+              // Tous les livres du recueil
+              const { data: livresRecueil } = await supabase.from('livres').select('id').contains('recueils_ids', [article.id]);
+              (livresRecueil || []).forEach(l => livresIdsACocher.add(l.id));
+            }
+          }
+
+          // Écrire j_ai_auto = true sur toutes les illustrations concernées
+          if (illuIdsACocher.size > 0) {
+            const illuIdsArr = Array.from(illuIdsACocher);
+            // Lire l'état actuel pour ne pas écraser je_veux / j_ai
+            const { data: collActuelle } = await supabase.from('collection').select('illustration_id, j_ai, je_veux').eq('user_id', user.id).in('illustration_id', illuIdsArr);
+            const collMap = {};
+            (collActuelle || []).forEach(c => { collMap[c.illustration_id] = c; });
+            const upsertIllus = illuIdsArr.map(id => ({
+              user_id: user.id,
+              illustration_id: id,
+              j_ai_auto: true,
+              j_ai: collMap[id]?.j_ai || false,
+              je_veux: collMap[id]?.je_veux || false,
+            }));
+            await supabase.from('collection').upsert(upsertIllus, { onConflict: 'user_id,illustration_id' });
+          }
+
+          // Écrire j_ai_auto = true sur les livres concernés
+          if (livresIdsACocher.size > 0) {
+            const livresIdsArr = Array.from(livresIdsACocher);
+            const { data: collLivresActuelle } = await supabase.from('collection_livres').select('item_id, j_ai, je_veux').eq('user_id', user.id).eq('item_type', 'livre').in('item_id', livresIdsArr);
+            const collLivresMap = {};
+            (collLivresActuelle || []).forEach(c => { collLivresMap[c.item_id] = c; });
+            const upsertLivres = livresIdsArr.map(id => ({
+              user_id: user.id,
+              item_id: id,
+              item_type: 'livre',
+              j_ai_auto: true,
+              j_ai: collLivresMap[id]?.j_ai || false,
+              je_veux: collLivresMap[id]?.je_veux || false,
+            }));
+            await supabase.from('collection_livres').upsert(upsertLivres, { onConflict: 'user_id,item_id,item_type' });
+          }
+
+          // Écrire j_ai_auto = true sur les recueils concernés
+          if (recueilsIdsACocher.size > 0) {
+            const recueilsIdsArr = Array.from(recueilsIdsACocher);
+            const { data: collRecueilsActuelle } = await supabase.from('collection_livres').select('item_id, j_ai, je_veux').eq('user_id', user.id).eq('item_type', 'recueil').in('item_id', recueilsIdsArr);
+            const collRecueilsMap = {};
+            (collRecueilsActuelle || []).forEach(c => { collRecueilsMap[c.item_id] = c; });
+            const upsertRecueils = recueilsIdsArr.map(id => ({
+              user_id: user.id,
+              item_id: id,
+              item_type: 'recueil',
+              j_ai_auto: true,
+              j_ai: collRecueilsMap[id]?.j_ai || false,
+              je_veux: collRecueilsMap[id]?.je_veux || false,
+            }));
+            await supabase.from('collection_livres').upsert(upsertRecueils, { onConflict: 'user_id,item_id,item_type' });
+          }
+
+          // ── Vérification complétion : illustrations achetées → livre/recueil complet ? ──
+          // Pour chaque illustration cochée en rose, vérifier si son livre/recueil est maintenant complet
+          if (illuIdsACocher.size > 0) {
+            // Récupérer toutes les illustrations cochées (j_ai OU j_ai_auto) pour ce user
+            const { data: toutesIllusCochees } = await supabase.from('collection').select('illustration_id').eq('user_id', user.id).or('j_ai.eq.true,j_ai_auto.eq.true');
+            const illusCocheesSet = new Set((toutesIllusCochees || []).map(c => c.illustration_id));
+
+            // Trouver quels livres/recueils contiennent ces illustrations
+            const illuIdsArr = Array.from(illuIdsACocher);
+            const { data: illusMeta } = await supabase.from('illustrations').select('id, livres_ids, recueils_ids').in('id', illuIdsArr);
+
+            const livresAVerifier = new Set();
+            const recueilsAVerifier = new Set();
+            (illusMeta || []).forEach(i => {
+              (i.livres_ids || []).forEach(lid => { if (!livresIdsACocher.has(lid)) livresAVerifier.add(lid); });
+              (i.recueils_ids || []).forEach(rid => { if (!recueilsIdsACocher.has(rid)) recueilsAVerifier.add(rid); });
+            });
+
+            // Vérifier chaque livre candidat
+            for (const livreId of livresAVerifier) {
+              const { data: illusDuLivre } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [livreId]);
+              const ids = (illusDuLivre || []).map(i => i.id);
+              if (ids.length > 0 && ids.every(id => illusCocheesSet.has(id))) {
+                // Livre complet → cocher en rose
+                const { data: collLivre } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', user.id).eq('item_id', livreId).eq('item_type', 'livre').maybeSingle();
+                await supabase.from('collection_livres').upsert({ user_id: user.id, item_id: livreId, item_type: 'livre', j_ai_auto: true, j_ai: collLivre?.j_ai || false, je_veux: collLivre?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
+                livresIdsACocher.add(livreId);
+              }
+            }
+
+            // Vérifier chaque recueil candidat
+            for (const recueilId of recueilsAVerifier) {
+              const { data: illusDuRecueil } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [recueilId]);
+              const ids = (illusDuRecueil || []).map(i => i.id);
+              if (ids.length > 0 && ids.every(id => illusCocheesSet.has(id))) {
+                const { data: collRecueil } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', user.id).eq('item_id', recueilId).eq('item_type', 'recueil').maybeSingle();
+                await supabase.from('collection_livres').upsert({ user_id: user.id, item_id: recueilId, item_type: 'recueil', j_ai_auto: true, j_ai: collRecueil?.j_ai || false, je_veux: collRecueil?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
+              }
+            }
+          }
+        } catch (e) { console.error('Erreur coche auto achat:', e); }
       }
     } catch {}
     viderPanier();
