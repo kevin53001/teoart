@@ -104,7 +104,7 @@ function IndicateurEtapes({ etape, isMobile }) {
 
 
 // ─── Étape 1 : Panier ────────────────────────────────────────────────────────
-function EtapePanier({ onContinuer, isMobile }) {
+function EtapePanier({ onContinuer, onAperçuConfirmation, isMobile }) {
   const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
   const [popupPanier, setPopupPanier] = React.useState(null);
 
@@ -338,6 +338,13 @@ function EtapePanier({ onContinuer, isMobile }) {
       <button onClick={onContinuer} style={{ width: '100%', background: 'linear-gradient(135deg, #ff3eb5, #cc2090)', border: 'none', borderRadius: '12px', padding: '16px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 20px rgba(255,62,181,0.3)' }}>
         Continuer →
       </button>
+
+      {/* Bouton temporaire — prévisualisation confirmation (à supprimer avant prod) */}
+      {onAperçuConfirmation && (
+        <button onClick={onAperçuConfirmation} style={{ width: '100%', background: 'transparent', border: '1px dashed rgba(255,210,80,0.4)', borderRadius: '12px', padding: '10px', color: 'rgba(255,210,80,0.6)', fontSize: '12px', cursor: 'pointer' }}>
+          Aperçu confirmation (dev)
+        </button>
+      )}
     </div>
   );
 }
@@ -553,27 +560,55 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Récapitulatif final</h2>
 
-      {/* Articles */}
+      {/* Articles — même ordre et regroupement que l'étape 1 */}
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Articles</p>
-        {articles.map(article => {
-          const { brut, final, promo } = prixAffiche(article);
-          return (
-            <div key={`${article.type}-${article.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ color: '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>{article.nom}</p>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '1px' }}>
-                  {labelType(article.type)}
-                  {article.type === 'relie' && article.pays ? ` · ${article.pays}` : ''}
-                </p>
+        {(() => {
+          // Même regroupement que l'étape 1
+          const illus          = articles.filter(a => a.type === 'illustration');
+          const reliesLivres   = articles.filter(a => a.type === 'relie' && a.sousType === 'livre');
+          const reliesRecueils = articles.filter(a => a.type === 'relie' && a.sousType === 'recueil');
+          const reliesLegacy   = articles.filter(a => a.type === 'relie' && !a.sousType);
+          const livresPdf      = articles.filter(a => a.type === 'livre_pdf');
+          const recueilsPdf    = articles.filter(a => a.type === 'recueil');
+
+          // Construire la liste ordonnée : illus, puis livres (relié + pdf associé, puis pdf seuls), puis recueils, puis legacy
+          const lignes = [];
+          illus.forEach(a => lignes.push(a));
+          reliesLivres.forEach(relie => {
+            lignes.push(relie);
+            const pdf = livresPdf.find(l => l.id === relie.id);
+            if (pdf) lignes.push(pdf);
+          });
+          livresPdf.filter(l => !idsReliesLivres.has(l.id)).forEach(a => lignes.push(a));
+          reliesRecueils.forEach(relie => {
+            lignes.push(relie);
+            const pdf = recueilsPdf.find(r => r.id === relie.id);
+            if (pdf) lignes.push(pdf);
+          });
+          recueilsPdf.filter(r => !idsReliesRecueils.has(r.id)).forEach(a => lignes.push(a));
+          reliesLegacy.forEach(a => lignes.push(a));
+
+          return lignes.map(article => {
+            const { brut, final, promo } = prixAffiche(article);
+            const estPdfAssocie = (article.type === 'livre_pdf' && idsReliesLivres.has(article.id)) || (article.type === 'recueil' && idsReliesRecueils.has(article.id));
+            return (
+              <div key={`${article.type}-${article.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginLeft: estPdfAssocie ? '16px' : '0', borderLeft: estPdfAssocie ? '2px solid rgba(255,62,181,0.2)' : 'none', paddingLeft: estPdfAssocie ? '10px' : '0' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ color: estPdfAssocie ? 'rgba(255,255,255,0.75)' : '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>{article.nom}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '1px' }}>
+                    {labelType(article.type)}
+                    {article.type === 'relie' && article.pays ? ` · ${article.pays}` : ''}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                  {promo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', textDecoration: 'line-through' }}>{brut.toFixed(2)} €</span>}
+                  <span style={{ color: promo ? '#ff3eb5' : 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: promo ? 'bold' : 'normal' }}>{final.toFixed(2)} €</span>
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
-                {promo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', textDecoration: 'line-through' }}>{brut.toFixed(2)} €</span>}
-                <span style={{ color: promo ? '#ff3eb5' : 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: promo ? 'bold' : 'normal' }}>{final.toFixed(2)} €</span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
 
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
 
@@ -1145,7 +1180,7 @@ export default function Panier() {
 
             {/* Tunnel */}
             <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
-              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
+              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} onAperçuConfirmation={() => allerEtape(5)} isMobile={isMobile} />}
               {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
               {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
