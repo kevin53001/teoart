@@ -342,12 +342,41 @@ function EtapePanier({ onContinuer, isMobile }) {
   );
 }
 
+// ─── Champ formulaire (hors composant pour éviter le bug de focus) ────────────
+function ChampInput({ label, obligatoire, type = 'text', value, onChange, placeholder, autoComplete }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <label style={{ color: obligatoire ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)', fontSize: '12px', fontWeight: obligatoire ? '600' : 'normal' }}>
+          {label}
+        </label>
+        {obligatoire && (
+          <span style={{ color: '#ff3eb5', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}>
+            * <span style={{ fontSize: '10px' }}>champ obligatoire</span>
+          </span>
+        )}
+      </div>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        style={{
+          background: 'rgba(255,255,255,0.06)',
+          border: `1px solid ${(value || '').trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`,
+          borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none',
+          transition: 'border-color .2s', width: '100%', boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── Étape 2 : Coordonnées ────────────────────────────────────────────────────
-function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
+function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFacturation, setInfosFacturation, facturationDifferente, setFacturationDifferente }) {
   const { articles } = usePanier();
   const aRelie = articles.some(a => a.type === 'relie');
-  const [facturationDifferente, setFacturationDifferente] = React.useState(false);
-  const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [chargement, setChargement] = React.useState(false);
   const [sauvegarde, setSauvegarde] = React.useState(false);
 
@@ -401,34 +430,19 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
     setTimeout(() => { setSauvegarde(false); setChargement(false); onContinuer(); }, 600);
   };
 
-  const InputStyle = (val) => ({
-    background: 'rgba(255,255,255,0.06)',
-    border: `1px solid ${(val || '').trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`,
-    borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none',
-    transition: 'border-color .2s', width: '100%', boxSizing: 'border-box',
-  });
-
-  const Champ = ({ label, obligatoire, type = 'text', champ, source, setSource, placeholder, autoComplete }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-      <label style={{ color: obligatoire ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)', fontSize: '12px', fontWeight: obligatoire ? '600' : 'normal' }}>
-        {label}{obligatoire && <span style={{ color: '#ff3eb5', marginLeft: '3px' }}>*</span>}
-      </label>
-      <input type={type} value={source[champ] || ''} onChange={e => setSource(champ)(e.target.value)}
-        placeholder={placeholder} autoComplete={autoComplete}
-        style={InputStyle(source[champ])} />
-    </div>
-  );
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
       <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Vos coordonnées</h2>
 
       {/* Email */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: '600' }}>Adresse email<span style={{ color: '#ff3eb5', marginLeft: '3px' }}>*</span></label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: '600' }}>Adresse email</label>
+          <span style={{ color: '#ff3eb5', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}>* <span style={{ fontSize: '10px' }}>champ obligatoire</span></span>
+        </div>
         <input type="email" value={infos.email || ''} onChange={e => setChamp('email')(e.target.value)}
           placeholder="votre@email.com" autoComplete="email"
-          style={InputStyle(infos.email)} />
+          style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${(infos.email || '').trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none', transition: 'border-color .2s', width: '100%', boxSizing: 'border-box' }} />
         <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>Votre confirmation de commande sera envoyée à cette adresse.</p>
       </div>
 
@@ -436,8 +450,8 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
       <div>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Identité</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <Champ label="Prénom" obligatoire champ="prenom" source={infos} setSource={setChamp} placeholder="Votre prénom" autoComplete="given-name" />
-          <Champ label="Nom" obligatoire champ="nom" source={infos} setSource={setChamp} placeholder="Votre nom" autoComplete="family-name" />
+          <ChampInput label="Prénom" obligatoire value={infos.prenom || ''} onChange={setChamp('prenom')} placeholder="Votre prénom" autoComplete="given-name" />
+          <ChampInput label="Nom" obligatoire value={infos.nom || ''} onChange={setChamp('nom')} placeholder="Votre nom" autoComplete="family-name" />
         </div>
       </div>
 
@@ -447,14 +461,14 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
           {aRelie ? 'Adresse de livraison' : 'Adresse'}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <Champ label="Adresse" obligatoire champ="adresse" source={infos} setSource={setChamp} placeholder="Numéro et nom de rue" autoComplete="address-line1" />
-          <Champ label="Complément d'adresse" champ="complement" source={infos} setSource={setChamp} placeholder="Appartement, bâtiment, étage..." autoComplete="address-line2" />
+          <ChampInput label="Adresse" obligatoire value={infos.adresse || ''} onChange={setChamp('adresse')} placeholder="Numéro et nom de rue" autoComplete="address-line1" />
+          <ChampInput label="Complément d'adresse" value={infos.complement || ''} onChange={setChamp('complement')} placeholder="Appartement, bâtiment, étage..." autoComplete="address-line2" />
           <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
-            <Champ label="Code postal" obligatoire champ="code_postal" source={infos} setSource={setChamp} placeholder="75001" autoComplete="postal-code" />
-            <Champ label="Ville" obligatoire champ="ville" source={infos} setSource={setChamp} placeholder="Paris" autoComplete="address-level2" />
+            <ChampInput label="Code postal" obligatoire value={infos.code_postal || ''} onChange={setChamp('code_postal')} placeholder="75001" autoComplete="postal-code" />
+            <ChampInput label="Ville" obligatoire value={infos.ville || ''} onChange={setChamp('ville')} placeholder="Paris" autoComplete="address-level2" />
           </div>
-          <Champ label="État / Province" champ="etat" source={infos} setSource={setChamp} placeholder="Facultatif" autoComplete="address-level1" />
-          <Champ label="Pays" obligatoire champ="pays" source={infos} setSource={setChamp} placeholder="France" autoComplete="country-name" />
+          <ChampInput label="État / Province" value={infos.etat || ''} onChange={setChamp('etat')} placeholder="Facultatif" autoComplete="address-level1" />
+          <ChampInput label="Pays" obligatoire value={infos.pays || ''} onChange={setChamp('pays')} placeholder="France" autoComplete="country-name" />
         </div>
       </div>
 
@@ -473,16 +487,16 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
         <div style={{ borderLeft: '2px solid rgba(0,212,212,0.2)', paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Adresse de facturation</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <Champ label="Prénom" obligatoire champ="prenom" source={infosFacturation} setSource={setChampFact} placeholder="Prénom" autoComplete="billing given-name" />
-            <Champ label="Nom" obligatoire champ="nom" source={infosFacturation} setSource={setChampFact} placeholder="Nom" autoComplete="billing family-name" />
+            <ChampInput label="Prénom" obligatoire value={infosFacturation.prenom || ''} onChange={setChampFact('prenom')} placeholder="Prénom" autoComplete="billing given-name" />
+            <ChampInput label="Nom" obligatoire value={infosFacturation.nom || ''} onChange={setChampFact('nom')} placeholder="Nom" autoComplete="billing family-name" />
           </div>
-          <Champ label="Adresse" obligatoire champ="adresse" source={infosFacturation} setSource={setChampFact} placeholder="Numéro et nom de rue" autoComplete="billing address-line1" />
-          <Champ label="Complément" champ="complement" source={infosFacturation} setSource={setChampFact} placeholder="Appartement, bâtiment..." autoComplete="billing address-line2" />
+          <ChampInput label="Adresse" obligatoire value={infosFacturation.adresse || ''} onChange={setChampFact('adresse')} placeholder="Numéro et nom de rue" autoComplete="billing address-line1" />
+          <ChampInput label="Complément" value={infosFacturation.complement || ''} onChange={setChampFact('complement')} placeholder="Appartement, bâtiment..." autoComplete="billing address-line2" />
           <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
-            <Champ label="Code postal" obligatoire champ="code_postal" source={infosFacturation} setSource={setChampFact} placeholder="75001" autoComplete="billing postal-code" />
-            <Champ label="Ville" obligatoire champ="ville" source={infosFacturation} setSource={setChampFact} placeholder="Paris" autoComplete="billing address-level2" />
+            <ChampInput label="Code postal" obligatoire value={infosFacturation.code_postal || ''} onChange={setChampFact('code_postal')} placeholder="75001" autoComplete="billing postal-code" />
+            <ChampInput label="Ville" obligatoire value={infosFacturation.ville || ''} onChange={setChampFact('ville')} placeholder="Paris" autoComplete="billing address-level2" />
           </div>
-          <Champ label="Pays" obligatoire champ="pays" source={infosFacturation} setSource={setChampFact} placeholder="France" autoComplete="billing country-name" />
+          <ChampInput label="Pays" obligatoire value={infosFacturation.pays || ''} onChange={setChampFact('pays')} placeholder="France" autoComplete="billing country-name" />
         </div>
       )}
 
@@ -510,7 +524,7 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos }) {
 }
 
 // ─── Étape 3 : Récapitulatif final ───────────────────────────────────────────
-function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setRetractation, cgvAcceptees, setCgvAcceptees }) {
+function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, retractation, setRetractation, cgvAcceptees, setCgvAcceptees }) {
   const { articles, reductions } = usePanier();
   const aPdf = articles.some(a => a.type !== 'relie');
   const aRelie = articles.some(a => a.type === 'relie');
@@ -608,7 +622,12 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
 
       {/* Coordonnées */}
       <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Vos coordonnées</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Vos coordonnées</p>
+          {!infosFacturation || !infosFacturation.prenom ? (
+            <span style={{ color: 'rgba(0,212,212,0.6)', fontSize: '10px', fontStyle: 'italic' }}>Coordonnées de facturation identiques</span>
+          ) : null}
+        </div>
         <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{[infos.prenom, infos.nom].filter(Boolean).join(' ')}</p>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{infos.email}</p>
         {infos.adresse && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: 1.6 }}>
@@ -617,6 +636,19 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, retractation, setR
           {infos.pays}
         </p>}
       </div>
+
+      {/* Coordonnées facturation si différentes */}
+      {infosFacturation && infosFacturation.prenom && (
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Vos coordonnées de facturation</p>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{[infosFacturation.prenom, infosFacturation.nom].filter(Boolean).join(' ')}</p>
+          {infosFacturation.adresse && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: 1.6 }}>
+            {infosFacturation.adresse}{infosFacturation.complement ? `, ${infosFacturation.complement}` : ''}<br />
+            {[infosFacturation.code_postal, infosFacturation.ville].filter(Boolean).join(' ')}<br />
+            {infosFacturation.pays}
+          </p>}
+        </div>
+      )}
 
       {/* Reliés dans la commande */}
       {aRelie && (
@@ -898,6 +930,10 @@ function EtapeConfirmation({ infos, isMobile }) {
 
       {/* Boutons */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button onClick={() => navigate('/accueil')}
+          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px 24px', color: 'rgba(255,255,255,0.7)', fontSize: '14px', cursor: 'pointer' }}>
+          ← Accueil
+        </button>
         <button onClick={() => navigate('/mon-compte')}
           style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,212,212,0.35)' }}>
           Mon Compte
@@ -923,6 +959,8 @@ export default function Panier() {
   const [userId, setUserId] = React.useState(null);
   const [etape, setEtape] = React.useState(1);
   const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
+  const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
+  const [facturationDifferente, setFacturationDifferente] = React.useState(false);
   const [retractation, setRetractation] = React.useState(false);
   const [cgvAcceptees, setCgvAcceptees] = React.useState(false);
   const encartRef = React.useRef(null);
@@ -1108,8 +1146,8 @@ export default function Panier() {
             {/* Tunnel */}
             <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
               {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} />}
-              {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} />}
-              {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
+              {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
+              {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
               {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
               {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} />}
             </div>
