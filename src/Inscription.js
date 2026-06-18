@@ -254,20 +254,19 @@ function Inscription() {
       </div>
 
       {/* ZONE BARRES + ENCARTS */}
-      <div style={{ position: 'relative', width: '100%', marginBottom: '-6px' }}>
+      <div style={{ position: 'relative', width: '100%' }}>
 
-        {/* Barres défilantes en fond — répétées pour couvrir toute la hauteur */}
-        <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', pointerEvents: 'none', zIndex: 1 }}>
-          {Array.from({ length: 20 }).map((_, i) => {
-            const barre = barres[i % barres.length];
-            const opacite = Math.max(0.04, 0.50 - i * 0.025);
+        {/* 6 barres défilantes en fond, opacité décroissante vers le noir */}
+        <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', pointerEvents: 'none', zIndex: 1 }}>
+          {barres.map((barre, i) => {
+            const opacites = [0.50, 0.35, 0.22, 0.13, 0.06, 0.02];
             return (
-              <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px', flexShrink: 0 }}>
+              <div key={i} style={{ width: '92%', maxWidth: BANNER_MAX, overflow: 'hidden', position: 'relative', borderRadius: '6px' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', right: 0, top: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #000 20%, transparent)', zIndex: 2, pointerEvents: 'none' }} />
                 <div className={barre.direction === 'left' ? 'barre-left' : 'barre-right'} style={{ display: 'flex', gap: `${GAP}px`, width: 'max-content' }}>
                   {[...barre.images, ...barre.images].map((img, j) => (
-                    <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', opacity: opacite, display: 'block' }} />
+                    <img key={j} src={`${R2}/bg/${img}`} alt="" style={{ width: `${IMG_W}px`, height: `${IMG_H}px`, objectFit: 'cover', borderRadius: '5px', opacity: opacites[i], display: 'block' }} />
                   ))}
                 </div>
               </div>
@@ -275,11 +274,8 @@ function Inscription() {
           })}
         </div>
 
-        {/* Overlay dégradé vertical noir */}
-        <div aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.85) 75%, #000 100%)', zIndex: 2, pointerEvents: 'none' }} />
-
         {/* ENCARTS en flux normal */}
-        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', padding: '16px 20px 0' }}>
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', padding: '16px 20px 32px' }}>
 
           {success ? (
             <div className="encart-inscription" style={{ ...encartStyle, textAlign: 'center', marginTop: '20px' }}>
