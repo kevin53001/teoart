@@ -1870,9 +1870,9 @@ function SectionMesColoriages({ userId, userPseudo }) {
 
   return (
     <>
-      {/* Popup zoom — zIndex 9999 pour passer devant tout */}
-      {coloZoom && (
-        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      {/* Popup zoom — portal pour passer devant tout (menu zIndex 99999) */}
+      {coloZoom && ReactDOM.createPortal(
+        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
             <img src={coloZoom.image_url} alt="" style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px 10px 0 0', display: 'block' }} />
             <div style={{ background: 'rgba(20,20,20,0.98)', border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1882,12 +1882,13 @@ function SectionMesColoriages({ userId, userPseudo }) {
             </div>
           </div>
           <button onClick={() => setColoZoom(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>✕</button>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Popup confirmation suppression — zIndex 10000 pour passer au-dessus du zoom */}
-      {confirmation && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      {/* Popup confirmation suppression — au-dessus du zoom */}
+      {confirmation && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 100001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#111', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '380px', textAlign: 'center' }}>
             <p style={{ fontSize: '28px', marginBottom: '12px' }}>🗑</p>
             <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '8px' }}>Supprimer ce coloriage ?</p>
@@ -1897,7 +1898,8 @@ function SectionMesColoriages({ userId, userPseudo }) {
               <button onClick={() => supprimerColoriage(confirmation)} disabled={suppression} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px', opacity: suppression ? 0.6 : 1 }}>{suppression ? 'Suppression...' : 'Oui, supprimer'}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Grille vignettes */}
