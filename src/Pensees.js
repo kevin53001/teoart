@@ -233,14 +233,14 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
           // Échelle plus généreuse : entre 0.60 et 1.00
-          const scale = 0.60 + frontFactor * 0.40;
+          // Courbe exponentielle : la centrale est vraiment dominante, les voisines très petites
+          const scale = 0.38 + Math.pow(frontFactor, 3) * 0.62;
           const rotateY = sin * -30;
-          // Légère élévation des fiches au premier plan
           const lift = frontFactor > 0.90 ? -22 : 0;
 
           const zIndex = frontFactor * 10000;
-          // Opacité plus généreuse : entre 0.35 et 1.0
-          const opacity = 0.35 + frontFactor * 0.65;
+          // Opacité aussi sur courbe exponentielle
+          const opacity = 0.25 + Math.pow(frontFactor, 2) * 0.75;
           const couleur = couleurPensee(pensee);
           const lue = !!vues[pensee.id];
 
