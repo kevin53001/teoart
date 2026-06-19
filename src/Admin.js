@@ -712,22 +712,18 @@ function CmtCard({ c, flagged, supprimerCommentaire, s, fmtDate }) {
   const prenom = c.profils?.prenom || 'Anonyme'
   const nom = c.profils?.nom || ''
   return (
-    <div style={s.cmtCard(flagged)}>
-      <div style={s.cmtHeader}>
-        <span style={s.cmtUser}>{prenom} {nom} — {c.ref} — {fmtDate(c.created_at)}</span>
-        {flagged && (
-          <span style={s.flagTag}>
-            <i className="ti ti-alert-triangle" style={{ fontSize:'12px' }} aria-hidden="true" />
-            Mot signalé
-          </span>
-        )}
-      </div>
-      <div style={s.cmtText}>"{c.texte}"</div>
-      <div style={{ ...s.divider, margin:'8px 0' }} />
-      <div style={s.actionsRow}>
-        <button style={s.btnDanger} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
-        {flagged && <button style={s.btnGhost} onClick={() => {}}>Ignorer</button>}
-      </div>
+    <div style={{ ...s.cmtCard(flagged), display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 14px' }}>
+      <span style={{ ...s.cmtUser, whiteSpace: 'nowrap', flexShrink: 0 }}>{prenom} {nom}</span>
+      <span style={{ color: '#44445a', fontSize: '10px', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.ref}</span>
+      <span style={{ color: '#44445a', fontSize: '10px', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtDate(c.created_at)}</span>
+      <span style={{ ...s.cmtText, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>"{c.texte}"</span>
+      {flagged && (
+        <span style={{ ...s.flagTag, flexShrink: 0 }}>
+          <i className="ti ti-alert-triangle" style={{ fontSize: '12px' }} aria-hidden="true" />
+          Signalé
+        </span>
+      )}
+      <button style={{ ...s.btnDanger, flexShrink: 0, marginLeft: 'auto' }} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
     </div>
   )
 }
