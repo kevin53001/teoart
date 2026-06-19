@@ -238,7 +238,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
           // Légère élévation des fiches au premier plan
           const lift = frontFactor > 0.90 ? -22 : 0;
 
-          const zIndex = Math.round(1000 + frontFactor * 7000 - Math.abs(sin) * 900 + (i / 100));
+          const zIndex = frontFactor * 10000;
           // Opacité plus généreuse : entre 0.35 et 1.0
           const opacity = 0.35 + frontFactor * 0.65;
           const couleur = couleurPensee(pensee);
@@ -253,7 +253,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                   '--accent': couleur,
                   transform: `translate(${x}px, ${y + 96}px) scale(${scale}, ${scale * 0.55})`,
                   opacity: frontFactor > 0.72 ? 0.12 : 0.03,
-                  zIndex: Math.max(1, zIndex - 1200),
+                  zIndex: Math.max(0.0001, zIndex - 1),
                 }}
               />
               {/* Fiche */}
