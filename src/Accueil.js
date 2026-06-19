@@ -1048,10 +1048,14 @@ function Accueil() {
 
               return (
                 <div ref={guideRef} style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s', position: 'relative' }}>
-                  <div onClick={() => setGuideOuvert(o => !o)} style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.36), rgba(0,212,212,0.16))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.4)' }}>
+                  <div onClick={() => setGuideOuvert(o => !o)} style={{ background: guideOuvert ? 'linear-gradient(135deg, rgba(0,212,212,0.36), rgba(0,212,212,0.16))' : 'linear-gradient(135deg, rgba(0,212,212,0.55), rgba(0,212,212,0.28))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.5)', transition: 'background 0.3s' }}>
                     <p style={{ color: '#00d4d4', fontSize: isMobile ? '14px' : '16px', fontWeight: 'bold', letterSpacing: '0.5px' }}>Comment fonctionne le site ?</p>
-                    <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                      {!guideOuvert && <span style={{ color: '#ff3eb5', fontSize: '11px', fontStyle: 'italic', whiteSpace: 'nowrap' }}>Toucher pour ouvrir</span>}
+                      <span style={{ color: '#00d4d4', fontSize: '18px', display: 'inline-block', transition: 'transform 0.3s', transform: guideOuvert ? 'rotate(180deg)' : 'none', animation: guideOuvert ? 'none' : 'guideBounce 1.8s ease-in-out infinite' }}>▾</span>
+                    </div>
                   </div>
+                  <style>{`@keyframes guideBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }`}</style>
                   {guideOuvert && (
                     <div
                       onTouchStart={isMobile ? handleTouchStart : undefined}
