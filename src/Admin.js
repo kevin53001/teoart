@@ -593,10 +593,15 @@ export default function Admin() {
                       { col:'email', label:'Email' },
                       { col:'inscrit_le', label:'Inscrit le' },
                       { col:'nb_commandes', label:'Commandes' },
-                      { col:'ca_genere', label:'CA généré' },
+                      { col:'ca_genere', label:'CA total' },
+                      { col:'ca_mois', label:'CA mois' },
                       { col:'nb_coloriages', label:'Coloriages' },
-                      { col:'nb_commentaires', label:'Commentaires' },
-                      { col:'nb_likes', label:'Likes' },
+                      { col:'nb_commentaires', label:'Coms colo' },
+                      { col:'nb_likes', label:'Likes colo' },
+                      { col:'nb_pensees', label:'Pensées' },
+                      { col:'nb_comments_pensees', label:'Coms pensées' },
+                      { col:'nb_likes_pensees', label:'Likes pensées' },
+                      { col:'nb_signales', label:'⚠️ Signalés' },
                     ].map(({ col, label }) => (
                       <th key={col} style={s.th} onClick={() => trier(col)}>
                         {label} {sortCol === col ? (sortDir === 'desc' ? '↓' : '↑') : ''}
@@ -615,9 +620,14 @@ export default function Admin() {
                       <td style={s.td}>{fmtDate(u.inscrit_le)}</td>
                       <td style={{ ...s.td, color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</td>
                       <td style={{ ...s.td, color:'#ffd700' }}>{fmtEur(u.ca_genere)}</td>
+                      <td style={{ ...s.td, color: u.ca_mois > 0 ? '#22c55e' : '#44445a' }}>{fmtEur(u.ca_mois)}</td>
                       <td style={s.td}>{u.nb_coloriages}</td>
                       <td style={s.td}>{u.nb_commentaires}</td>
                       <td style={s.td}>{u.nb_likes}</td>
+                      <td style={s.td}>{u.nb_pensees}</td>
+                      <td style={s.td}>{u.nb_comments_pensees}</td>
+                      <td style={s.td}>{u.nb_likes_pensees}</td>
+                      <td style={{ ...s.td, color: u.nb_signales > 0 ? '#ef4444' : '#44445a', fontWeight: u.nb_signales > 0 ? 600 : 400 }}>{u.nb_signales || '—'}</td>
                     </tr>
                   ))}
                 </tbody>

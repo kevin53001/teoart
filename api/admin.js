@@ -79,11 +79,11 @@ async function actionStats() {
     supabase.from('profils').select('id, prenom, nom, email, created_at'),
     supabase.from('commandes_articles').select('user_id, prix, created_at'),
     supabase.from('coloriages').select('user_id, created_at'),
-    supabase.from('commentaires_coloriages').select('user_id, created_at'),
-    supabase.from('commentaires_pensees').select('user_id, created_at'),
+    supabase.from('commentaires_coloriages').select('user_id, created_at, texte'),
+    supabase.from('commentaires_pensees').select('user_id, created_at, texte'),
     supabase.from('likes_coloriages').select('user_id, created_at'),
     supabase.from('likes_pensees').select('user_id, created_at'),
-    supabase.from('pensees').select('id, created_at').eq('source', 'kevin'),
+    supabase.from('pensees').select('id, user_id, created_at').neq('source', 'kevin'),
     supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie')
   ])
 
@@ -139,13 +139,39 @@ async function actionStats() {
   const likesParUser = {}
   ;[...(likesColoRaw||[]), ...(likesPenseesRaw||[])].forEach(l => { likesParUser[l.user_id] = (likesParUser[l.user_id]||0) + 1 })
 
+  const penseesParUser = {}
+  ;(penseesRaw||[]).forEach(p => { penseesParUser[p.user_id] = (penseesParUser[p.user_id]||0) + 1 })
+  const commentsPenseesParUser = {}
+  ;(commentsPenseesRaw||[]).forEach(c => { commentsPenseesParUser[c.user_id] = (commentsPenseesParUser[c.user_id]||0) + 1 })
+  const likesPenseesParUser = {}
+  ;(likesPenseesRaw||[]).forEach(l => { likesPenseesParUser[l.user_id] = (likesPenseesParUser[l.user_id]||0) + 1 })
+
+  // Commentaires signalés par user (mots interdits)
+  const MOTS = ['connard','connasse','salope','pute','putain','enculé','enculée','fdp','fils de pute','batard','bâtard','merde','emmerdeur','cul','couille','branleur','abruti','crétin','idiot','imbécile','débile','nul','taré','dégueulasse','ordure','pourriture','déchet','raclure','salopard','fumier','bouffon','con','conne','ntm','nique','niquer','ta gueule','pd','pédé','gouine','mongol','attardé','négro','nègre','youpin','bougnoule','bicot','feuj','raton','haine','haïr','tuer','mort','crève','suicide','fuck','fucking','fucker','motherfucker','bitch','asshole','bastard','dickhead','dick','cock','pussy','cunt','whore','slut','moron','retard','stupid','dumbass','loser','shit','bullshit','kill yourself','kys','hate','faggot','fag','nigger','nigga','chink','die','kill','murder']
+  const contientMot = t => t && MOTS.some(m => t.toLowerCase().includes(m))
+  const signaledParUser = {}
+  ;[...(commentsColoRaw||[]).map(c=>({...c,texte:c.texte})), ...(commentsPenseesRaw||[])].forEach(c => {
+    if (contientMot(c.texte)) signaledParUser[c.user_id] = (signaledParUser[c.user_id]||0) + 1
+  })
+
+  // CA ce mois par user
+  const caMoisParUser = {}
+  mois(commandesRaw).forEach(c => {
+    caMoisParUser[c.user_id] = (caMoisParUser[c.user_id]||0) + (c.prix||0)
+  })
+
   const usagers = (profils||[]).map(u => ({
     id: u.id, prenom: u.prenom, nom: u.nom, email: u.email, inscrit_le: u.created_at,
-    nb_commandes:    commandesParUser[u.id]?.nb    || 0,
-    ca_genere:       commandesParUser[u.id]?.total || 0,
-    nb_coloriages:   coloriagesParUser[u.id]   || 0,
-    nb_commentaires: commentairesParUser[u.id] || 0,
-    nb_likes:        likesParUser[u.id]        || 0
+    nb_commandes:          commandesParUser[u.id]?.nb    || 0,
+    ca_genere:             commandesParUser[u.id]?.total || 0,
+    ca_mois:               caMoisParUser[u.id]           || 0,
+    nb_coloriages:         coloriagesParUser[u.id]        || 0,
+    nb_commentaires:       commentairesParUser[u.id]      || 0,
+    nb_likes:              likesParUser[u.id]             || 0,
+    nb_pensees:            penseesParUser[u.id]           || 0,
+    nb_comments_pensees:   commentsPenseesParUser[u.id]   || 0,
+    nb_likes_pensees:      likesPenseesParUser[u.id]      || 0,
+    nb_signales:           signaledParUser[u.id]          || 0,
   }))
 
   return {
