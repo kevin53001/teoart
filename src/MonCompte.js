@@ -1348,11 +1348,12 @@ function SectionMesInfos({ userId }) {
                   📲 Installer l'application
                 </button>
               ) : (
-                <button
-                  onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
-                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
-                  📲 Installer l'application
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.6 }}>
+                    📲 Pour installer l'appli :<br/>
+                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Dans le menu de ton navigateur → "Ajouter à l'écran d'accueil"</span>
+                  </p>
+                </div>
               )}
               {/* ── Formulaire de contact ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
@@ -1634,15 +1635,21 @@ function SectionMesCommandes({ userId }) {
             {/* ── Déroulant articles ── */}
             {ouvert && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {items.map(item => {
+                {items.map((item, itemIdx) => {
                   const isRelie = item.type === 'relie';
                   const relieOpen = relieOuvert === item.id;
                   const statut = item.statut || 'en_attente';
                   const statutLabel = { en_attente: 'En cours de traitement', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours';
                   const statutColor = { en_attente: 'rgba(255,210,80,0.7)', expediee: '#00d4d4', livree: '#22c55e' }[statut];
+                  const LIGNE_COULEURS = [
+                    { bg: 'rgba(0,212,212,0.07)', border: 'rgba(0,212,212,0.18)' },
+                    { bg: 'rgba(255,210,80,0.07)', border: 'rgba(255,210,80,0.18)' },
+                    { bg: 'rgba(255,62,181,0.07)', border: 'rgba(255,62,181,0.18)' },
+                  ];
+                  const lc = LIGNE_COULEURS[itemIdx % 3];
 
                   return (
-                    <div key={item.id}>
+                    <div key={item.id} style={{ background: lc.bg, border: `1px solid ${lc.border}`, borderRadius: '8px', padding: '4px 8px' }}>
                       {/* Ligne principale de l'article */}
                       <div
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', cursor: isRelie ? 'pointer' : 'default', padding: '4px 0' }}
@@ -1706,7 +1713,7 @@ function SectionMesCommandes({ userId }) {
                           {item.date_livraison_estimee && (
                             <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
                               <span style={{ color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Livraison estimée :</span>
-                              <span style={{ color: '#ffd250' }}>{item.date_livraison_estimee}</span>
+                              <span style={{ color: '#ffd250' }}>{(() => { const d = new Date(item.date_livraison_estimee); return isNaN(d) ? item.date_livraison_estimee : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); })()}</span>
                             </div>
                           )}
 
@@ -1823,6 +1830,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
   const [colos, setColos] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [coloZoom, setColoZoom] = React.useState(null);
+  const [coloZoomIndex, setColoZoomIndex] = React.useState(0);
   const [confirmation, setConfirmation] = React.useState(null);
   const [suppression, setSuppression] = React.useState(false);
 
@@ -1842,8 +1850,9 @@ function SectionMesColoriages({ userId, userPseudo }) {
     setLoading(false);
   };
 
-  const ouvrirZoom = async (colo) => {
+  const ouvrirZoom = async (colo, index) => {
     setColoZoom(colo);
+    setColoZoomIndex(index);
     await supabase.from('commentaires_coloriages').update({ vu: true }).eq('coloriage_id', colo.id).neq('user_id', userId);
     setColos(prev => prev.map(c => c.id === colo.id ? { ...c, hasNotif: false } : c));
   };
@@ -1874,8 +1883,24 @@ function SectionMesColoriages({ userId, userPseudo }) {
       {coloZoom && ReactDOM.createPortal(
         <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
           {/* Image grande centrée */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }} onClick={e => e.stopPropagation()}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            {/* Flèche gauche */}
+            {colos.length > 1 && (
+              <button
+                onClick={e => { e.stopPropagation(); const prev = (coloZoomIndex - 1 + colos.length) % colos.length; setColoZoom(colos[prev]); setColoZoomIndex(prev); }}
+                style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, flexShrink: 0 }}>
+                ‹
+              </button>
+            )}
             <img src={coloZoom.image_url} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />
+            {/* Flèche droite */}
+            {colos.length > 1 && (
+              <button
+                onClick={e => { e.stopPropagation(); const next = (coloZoomIndex + 1) % colos.length; setColoZoom(colos[next]); setColoZoomIndex(next); }}
+                style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, flexShrink: 0 }}>
+                ›
+              </button>
+            )}
           </div>
           {/* Bloc social + bouton supprimer */}
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
@@ -1905,8 +1930,8 @@ function SectionMesColoriages({ userId, userPseudo }) {
 
       {/* Grille vignettes */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-        {colos.map(colo => (
-          <div key={colo.id} onClick={() => ouvrirZoom(colo)} style={{ position: 'relative', width: '120px', cursor: 'pointer', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a' }}>
+        {colos.map((colo, coloIdx) => (
+          <div key={colo.id} onClick={() => ouvrirZoom(colo, coloIdx)} style={{ position: 'relative', width: '120px', cursor: 'pointer', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a' }}>
             <img src={colo.image_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
             {colo.hasNotif && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px' }}>🔔</div>}
             <div style={{ padding: '4px 6px', background: 'rgba(0,0,0,0.85)' }}>
@@ -2220,18 +2245,20 @@ function MonCompte() {
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-              {/* ── POINT 6 : Titre centré, une seule ligne blanche ── */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
-                {avatarUrl && (
-                  <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    MON COMPTE
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Ma Collection Kevin Teo'Art
-                  </p>
+              {/* ── POINT 6 : Titre centré dans un encart largeur fit-content ── */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '14px 24px' }}>
+                  {avatarUrl && (
+                    <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      MON COMPTE
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      Ma Collection Kevin Teo'Art
+                    </p>
+                  </div>
                 </div>
               </div>
 
