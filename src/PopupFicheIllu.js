@@ -94,13 +94,22 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
   }, [coloId]);
 
   const toggleLike = async () => {
-    if (!coloId || !userId) return;
-    if (jaLike) { await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId); setLikes(prev => prev.filter(l => l.user_id !== userId)); }
-    else { await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId }); setLikes(prev => [...prev, { user_id: userId }]); }
+    console.log('[ZoomSocial] toggleLike — coloId:', coloId, 'userId:', userId);
+    if (!coloId || !userId) { console.warn('[ZoomSocial] toggleLike bloqué — coloId ou userId null'); return; }
+    if (jaLike) {
+      const { error } = await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
+      console.log('[ZoomSocial] unlike error:', error);
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      const { error } = await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
+      console.log('[ZoomSocial] like insert error:', error);
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
   };
 
   const envoyerCommentaire = async () => {
-    if (!texte.trim() || !coloId || !userId) return;
+    console.log('[ZoomSocial] envoyerCommentaire — coloId:', coloId, 'userId:', userId, 'texte:', texte);
+    if (!texte.trim() || !coloId || !userId) { console.warn('[ZoomSocial] envoyerCommentaire bloqué — champ manquant'); return; }
     setEnvoi(true);
     const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
     if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
