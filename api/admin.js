@@ -166,13 +166,13 @@ async function actionStats() {
 async function actionGetCommandes() {
   const { data: articles, error } = await supabase
     .from('commandes_articles')
-    .select('*, commandes(user_id, created_at, montant_total)')
+    .select('*')
     .eq('type', 'relie')
     .order('created_at', { ascending: false })
 
   if (error) throw error
 
-  const userIds = [...new Set((articles||[]).map(a => a.commandes?.user_id).filter(Boolean))]
+  const userIds = [...new Set((articles||[]).map(a => a.user_id).filter(Boolean))]
   const { data: profils } = await supabase
     .from('profils')
     .select('id, prenom, nom, email, telephone, adresse, code_postal, ville, pays')
@@ -188,7 +188,7 @@ async function actionGetCommandes() {
   }
 
   const commandes = (articles||[]).map(a => {
-    const uid = a.commandes?.user_id
+    const uid = a.user_id
     const p = profilMap[uid] || {}
     return {
       id: a.id, commande_id: a.commande_id, nom_article: a.nom,
@@ -198,7 +198,7 @@ async function actionGetCommandes() {
       note_client: a.note_client,
       notif_envoyee_expedition: a.notif_envoyee_expedition,
       notif_envoyee_livraison: a.notif_envoyee_livraison,
-      date_commande: a.commandes?.created_at,
+      date_commande: a.created_at,
       client: {
         id: uid, prenom: p.prenom||'', nom: p.nom||'',
         email: p.email || emailMap[uid] || '',
