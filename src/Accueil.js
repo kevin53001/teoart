@@ -43,14 +43,6 @@ function cheminVersUrl(chemin) {
   return `${R2}/${relatif.split('/').map(s => encodeURIComponent(s)).join('/')}`;
 }
 
-function extraireColoriste(chemin) {
-  if (!chemin) return null;
-  const nomFichier = decodeURIComponent(chemin.split('\\').pop().split('/').pop());
-  const match = nomFichier.match(/\s*-\s*C\d*\s*-\s*(.+)\.\w+$/i);
-  if (match) return match[1].trim();
-  return null;
-}
-
 function getVisuelB(visuels) {
   if (!visuels) return null;
   if (visuels['B']) return cheminVersUrl(visuels['B']);
@@ -58,32 +50,6 @@ function getVisuelB(visuels) {
   const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
   if (cle) return cheminVersUrl(visuels[cle]);
   return null;
-}
-
-
-
-function getVisuelsC(visuels) {
-  if (!visuels) return [];
-  return Object.entries(visuels)
-    .filter(([k, v]) => {
-      // La clé peut être "C", "C1", "Cx", "C2"... ou le nom du fichier peut contenir "- C -"
-      if (/^[Cc]\d*$/.test(k)) return true;
-      // Ou tester le nom de fichier dans la valeur (chemin complet)
-      if (!v) return false;
-      const nomFichier = String(v).split('\\').pop().split('/').pop();
-      return /\s*-\s*[Cc]\d*\s*[-.]/.test(nomFichier);
-    })
-    .map(([, v]) => cheminVersUrl(v))
-    .filter(Boolean);
-}
-
-function melangerTableau(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 function moisCibleComingSoon() {
