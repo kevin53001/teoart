@@ -195,6 +195,7 @@ async function actionGetCommandes() {
       statut: a.statut || 'en_attente',
       livreur: a.livreur, numero_suivi: a.numero_suivi,
       lien_suivi: a.lien_suivi, date_livraison_estimee: a.date_livraison_estimee,
+      date_commande_amazon: a.date_commande_amazon,
       note_client: a.note_client,
       notif_envoyee_expedition: a.notif_envoyee_expedition,
       notif_envoyee_livraison: a.notif_envoyee_livraison,
@@ -212,31 +213,35 @@ async function actionGetCommandes() {
 
 // ─── UPDATE COMMANDE ───────────────────────────────────────────
 async function actionUpdateCommande(body) {
-  const { commande_article_id, statut, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client } = body
+  const { commande_article_id, statut, livreur, numero_suivi, lien_suivi, date_livraison_estimee, date_commande_amazon, note_client } = body
 
   const { data: article, error: artErr } = await supabase
     .from('commandes_articles')
-    .select('*, commandes(user_id)')
+    .select('*')
     .eq('id', commande_article_id)
     .single()
 
   if (artErr || !article) throw new Error('Article introuvable')
 
-  const clientUserId = article.commandes?.user_id
+  const clientUserId = article.user_id
   if (!clientUserId) throw new Error('user_id client introuvable')
 
   const { data: profil } = await supabase.from('profils').select('prenom, nom, email').eq('id', clientUserId).single()
   const { data: authData } = await supabase.auth.admin.getUserById(clientUserId)
   const emailClient = profil?.email || authData?.user?.email
 
-  const updateData = { statut }
+  const updateData = {}
+  if (statut !== undefined) {
+    updateData.statut = statut
+    if (statut === 'expediee') updateData.notif_envoyee_expedition = true
+    if (statut === 'livree') updateData.notif_envoyee_livraison = true
+  }
   if (livreur !== undefined) updateData.livreur = livreur
   if (numero_suivi !== undefined) updateData.numero_suivi = numero_suivi
   if (lien_suivi !== undefined) updateData.lien_suivi = lien_suivi
   if (date_livraison_estimee !== undefined) updateData.date_livraison_estimee = date_livraison_estimee
+  if (date_commande_amazon !== undefined) updateData.date_commande_amazon = date_commande_amazon
   if (note_client !== undefined) updateData.note_client = note_client
-  if (statut === 'expediee') updateData.notif_envoyee_expedition = true
-  if (statut === 'livree') updateData.notif_envoyee_livraison = true
 
   const { error: updateErr } = await supabase.from('commandes_articles').update(updateData).eq('id', commande_article_id)
   if (updateErr) throw updateErr
@@ -244,24 +249,22 @@ async function actionUpdateCommande(body) {
   const prenom = profil?.prenom || ''
   const nom = profil?.nom || ''
   const titre = article.nom || 'votre livre'
+  const statutFinal = statut || article.statut
 
-  await supabase.from('notifications').insert({
-    user_id: clientUserId,
-    type: statut === 'expediee' ? 'commande_expediee' : statut === 'livree' ? 'commande_livree' : 'commande_maj',
-    contenu: { titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client },
-    lu: false
-  })
-
-  if (emailClient) {
+  // Notifier le client seulement si changement de statut significatif
+  if (statut && statut !== 'en_attente' && statut !== 'archivee' && emailClient) {
+    await supabase.from('notifications').insert({
+      user_id: clientUserId,
+      type: statut === 'expediee' ? 'commande_expediee' : statut === 'livree' ? 'commande_livree' : 'commande_maj',
+      contenu: { titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client },
+      lu: false
+    })
     if (statut === 'expediee') {
       await envoyerEmailBrevo(emailClient, `Votre commande "${titre}" est en route !`,
-        emailExpedition({ prenom, nom, titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client }))
+        emailExpedition({ prenom, nom, titre, livreur: livreur || article.livreur, numero_suivi: numero_suivi || article.numero_suivi, lien_suivi: lien_suivi || article.lien_suivi, date_livraison_estimee: date_livraison_estimee || article.date_livraison_estimee, note_client: note_client || article.note_client }))
     } else if (statut === 'livree') {
       await envoyerEmailBrevo(emailClient, `Votre commande "${titre}" a été livrée !`,
-        emailLivraison({ prenom, nom, titre, note_client }))
-    } else {
-      await envoyerEmailBrevo(emailClient, `Mise à jour de votre commande "${titre}"`,
-        emailExpedition({ prenom, nom, titre, livreur, numero_suivi, lien_suivi, date_livraison_estimee, note_client }))
+        emailLivraison({ prenom, nom, titre, note_client: note_client || article.note_client }))
     }
   }
 

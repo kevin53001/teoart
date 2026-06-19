@@ -36,14 +36,20 @@ function contientMotInterdit(texte) {
 const STATUT_LABEL = {
   en_attente: 'En attente',
   expediee: 'Expédiée',
-  livree: 'Livrée'
+  livree: 'Livrée',
+  archivee: 'Archivée'
 }
 
 const STATUT_COLOR = {
-  en_attente: { bg: 'rgba(255,215,0,0.12)', border: '#ffd70044', color: '#ffd700' },
-  expediee: { bg: 'rgba(0,229,255,0.10)', border: '#00e5ff44', color: '#00e5ff' },
-  livree: { bg: 'rgba(34,197,94,0.10)', border: '#22c55e44', color: '#22c55e' }
+  en_attente: { bg: 'rgba(239,68,68,0.12)', border: '#ef444444', color: '#ef4444' },
+  expediee:   { bg: 'rgba(255,215,0,0.12)',  border: '#ffd70044', color: '#ffd700' },
+  livree:     { bg: 'rgba(34,197,94,0.10)',  border: '#22c55e44', color: '#22c55e' },
+  archivee:   { bg: 'rgba(100,100,130,0.10)', border: '#64648244', color: '#646482' }
 }
+
+const NATURE_LITIGE = ['Retard', 'Produit endommagé', 'Non reçu', 'Rétractation', 'Autre']
+const TRAITEMENT_LITIGE = ['En cours', 'Retour', 'Remboursement', 'Remplacement', 'Annulation']
+const STATUT_LITIGE_COLOR = { ouvert: '#ef4444', resolu: '#ffd700', cloture: '#646482' }
 
 const s = {
   shell: { display:'flex', height:'100vh', background:'#07070f', fontFamily:'sans-serif', fontSize:'13px', color:'#e0e0f0', overflow:'hidden' },
@@ -79,12 +85,16 @@ const s = {
   grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' },
   sectionTitle: { fontSize:'10px', fontWeight:500, color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'10px' },
 
-  // Commande card — plus visible
+  // Commande card
   cmdCard: (statut) => ({
-    background: statut === 'en_attente' ? 'rgba(255,215,0,0.06)' : statut === 'expediee' ? 'rgba(0,229,255,0.05)' : 'rgba(34,197,94,0.05)',
-    border:`1px solid ${STATUT_COLOR[statut]?.border || '#ffd70044'}`,
+    background: statut === 'archivee' ? 'rgba(100,100,130,0.05)' : statut === 'en_attente' ? 'rgba(239,68,68,0.06)' : statut === 'expediee' ? 'rgba(255,215,0,0.06)' : 'rgba(34,197,94,0.05)',
+    border:`1px solid ${STATUT_COLOR[statut]?.border || '#ef444444'}`,
     borderRadius:'10px', padding:'14px', marginBottom:'10px'
   }),
+  // Litige
+  litigeForm: { background:'#0a0a18', border:'1px solid #ef444433', borderRadius:'8px', padding:'12px', marginTop:'10px' },
+  radioRow: { display:'flex', gap:'8px', flexWrap:'wrap', marginBottom:'8px' },
+  radioBtn: (active, color) => ({ fontSize:'11px', padding:'4px 10px', borderRadius:'6px', cursor:'pointer', fontFamily:'sans-serif', background: active ? `${color}22` : 'transparent', border:`1px solid ${active ? color : '#ffffff1a'}`, color: active ? color : '#6a6a8a', transition:'all 0.15s' }),
   cmdHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' },
   cmdTitle: { fontSize:'13px', fontWeight:500, color:'#f0f0ff' },
   badge: (statut) => ({
@@ -143,6 +153,9 @@ export default function Admin() {
   const [sortDir, setSortDir] = useState('desc')
   const [suiviOpen, setSuiviOpen] = useState(null)
   const [suiviData, setSuiviData] = useState({})
+  const [litigeOpen, setLitigeOpen] = useState(null)
+  const [litigeData, setLitigeData] = useState({})
+  const [litigesExistants, setLitigesExistants] = useState({})
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const intervalRef = useRef(null)
@@ -178,6 +191,11 @@ export default function Admin() {
     const res = await fetch(`/api/admin?action=get-commandes&userId=${userId}`)
     const data = await res.json()
     if (data.commandes) setCommandes(data.commandes)
+    // Charger les litiges existants
+    const { data: litiges } = await supabase.from('litiges').select('*')
+    const lMap = {}
+    ;(litiges || []).forEach(l => { lMap[l.commande_article_id] = l })
+    setLitigesExistants(lMap)
   }, [userId])
 
   const chargerCommentaires = useCallback(async () => {
@@ -221,40 +239,50 @@ export default function Admin() {
     return () => clearInterval(intervalRef.current)
   }, [userId, chargerTout])
 
-  // Actions commandes
-  const majStatut = async (id, statut) => {
+  // Valider commande (statut + suivi en un seul appel)
+  const validerCommande = async (id) => {
     const suivi = suiviData[id] || {}
     const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, statut, ...suivi })
+      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, ...suivi })
     })
     const data = await res.json()
     if (data.ok) {
-      showToast(`Statut mis à jour — client notifié`)
+      showToast(`Commande mise à jour${suivi.statut && suivi.statut !== 'en_attente' ? ' — client notifié' : ''}`)
       setSuiviOpen(null)
+      setSuiviData(prev => { const n = {...prev}; delete n[id]; return n })
       chargerCommandes()
     } else {
       showToast('Erreur lors de la mise à jour', 'error')
     }
   }
 
-  const validerSuivi = async (id) => {
-    const suivi = suiviData[id] || {}
-    const cmd = commandes.find(c => c.id === id)
+  // Archiver une commande livrée
+  const archiverCommande = async (id) => {
     const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, statut: cmd.statut, ...suivi })
+      body: JSON.stringify({ action: 'update-commande', userId, commande_article_id: id, statut: 'archivee' })
     })
     const data = await res.json()
-    if (data.ok) {
-      showToast('Infos de suivi enregistrées — client notifié')
-      setSuiviOpen(null)
-      chargerCommandes()
+    if (data.ok) { showToast('Commande archivée'); chargerCommandes() }
+    else showToast('Erreur', 'error')
+  }
+
+  // Sauvegarder un litige
+  const sauvegarderLitige = async (cmdId) => {
+    const ld = litigeData[cmdId] || {}
+    if (!ld.nature) { showToast('Sélectionne une nature de litige', 'error'); return }
+    const existant = litigesExistants[cmdId]
+    if (existant) {
+      await supabase.from('litiges').update({ ...ld }).eq('id', existant.id)
     } else {
-      showToast('Erreur', 'error')
+      await supabase.from('litiges').insert({ commande_article_id: cmdId, ...ld })
     }
+    showToast('Litige enregistré')
+    setLitigeOpen(null)
+    chargerCommandes()
   }
 
   // Suppression commentaire
@@ -292,7 +320,9 @@ export default function Admin() {
 
   if (!userId) return null
 
+  const cmdActives = commandes.filter(c => c.statut !== 'archivee')
   const cmdEnAttente = commandes.filter(c => c.statut === 'en_attente')
+  const cmdArchivees = commandes.filter(c => c.statut === 'archivee')
   const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte))
 
   return (
@@ -444,7 +474,12 @@ export default function Admin() {
                       key={cmd.id} cmd={cmd}
                       suiviOpen={suiviOpen} setSuiviOpen={setSuiviOpen}
                       suiviData={suiviData} setSuiviData={setSuiviData}
-                      majStatut={majStatut} validerSuivi={validerSuivi}
+                      litigeOpen={litigeOpen} setLitigeOpen={setLitigeOpen}
+                      litigeData={litigeData} setLitigeData={setLitigeData}
+                      litigeExistant={litigesExistants[cmd.id]}
+                      validerCommande={validerCommande}
+                      archiverCommande={archiverCommande}
+                      sauvegarderLitige={sauvegarderLitige}
                       s={s} fmtDate={fmtDate}
                     />
                   ))}
@@ -475,8 +510,9 @@ export default function Admin() {
           {/* ======== COMMANDES ======== */}
           {!loading && onglet === 'commandes' && (
             <>
+              {/* Commandes actives */}
               {['en_attente', 'expediee', 'livree'].map(statut => {
-                const liste = commandes.filter(c => c.statut === statut)
+                const liste = cmdActives.filter(c => c.statut === statut)
                 if (liste.length === 0) return null
                 return (
                   <div key={statut} style={{ marginBottom:'24px' }}>
@@ -486,14 +522,63 @@ export default function Admin() {
                         key={cmd.id} cmd={cmd}
                         suiviOpen={suiviOpen} setSuiviOpen={setSuiviOpen}
                         suiviData={suiviData} setSuiviData={setSuiviData}
-                        majStatut={majStatut} validerSuivi={validerSuivi}
+                        litigeOpen={litigeOpen} setLitigeOpen={setLitigeOpen}
+                        litigeData={litigeData} setLitigeData={setLitigeData}
+                        litigeExistant={litigesExistants[cmd.id]}
+                        validerCommande={validerCommande}
+                        archiverCommande={archiverCommande}
+                        sauvegarderLitige={sauvegarderLitige}
                         s={s} fmtDate={fmtDate} full
                       />
                     ))}
                   </div>
                 )
               })}
-              {commandes.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucune commande reliée</div>}
+              {cmdActives.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucune commande en cours</div>}
+
+              {/* Archives */}
+              {cmdArchivees.length > 0 && (() => {
+                // Grouper par année puis mois
+                const groupes = {}
+                cmdArchivees.forEach(cmd => {
+                  const d = new Date(cmd.date_commande || cmd.created_at || Date.now())
+                  const annee = d.getFullYear()
+                  const mois = d.toLocaleDateString('fr-FR', { month: 'long' })
+                  const key = `${annee}-${String(d.getMonth()).padStart(2,'0')}`
+                  if (!groupes[annee]) groupes[annee] = {}
+                  if (!groupes[annee][mois]) groupes[annee][mois] = { key, cmds: [] }
+                  groupes[annee][mois].cmds.push(cmd)
+                })
+                return (
+                  <div style={{ marginTop:'32px', borderTop:'1px solid #ffffff0a', paddingTop:'20px' }}>
+                    <div style={{ ...s.sectionTitle, color:'#646482', marginBottom:'16px' }}>📦 Archives ({cmdArchivees.length})</div>
+                    {Object.entries(groupes).sort(([a],[b]) => b-a).map(([annee, moisMap]) => (
+                      <div key={annee} style={{ marginBottom:'16px' }}>
+                        <div style={{ fontSize:'12px', color:'#646482', fontWeight:600, marginBottom:'8px' }}>{annee}</div>
+                        {Object.entries(moisMap).sort(([,a],[,b]) => b.key.localeCompare(a.key)).map(([mois, { cmds }]) => (
+                          <div key={mois} style={{ marginBottom:'10px', marginLeft:'10px' }}>
+                            <div style={{ fontSize:'10px', color:'#44445a', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'6px' }}>{mois} ({cmds.length})</div>
+                            {cmds.map(cmd => (
+                              <CmdCard
+                                key={cmd.id} cmd={cmd}
+                                suiviOpen={suiviOpen} setSuiviOpen={setSuiviOpen}
+                                suiviData={suiviData} setSuiviData={setSuiviData}
+                                litigeOpen={litigeOpen} setLitigeOpen={setLitigeOpen}
+                                litigeData={litigeData} setLitigeData={setLitigeData}
+                                litigeExistant={litigesExistants[cmd.id]}
+                                validerCommande={validerCommande}
+                                archiverCommande={archiverCommande}
+                                sauvegarderLitige={sauvegarderLitige}
+                                s={s} fmtDate={fmtDate} full archive
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </>
           )}
 
@@ -579,127 +664,161 @@ export default function Admin() {
 }
 
 // ---- Composant CmdCard ----
-function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, majStatut, validerSuivi, s, fmtDate, full }) {
+function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litigeOpen, setLitigeOpen, litigeData, setLitigeData, litigeExistant, validerCommande, archiverCommande, sauvegarderLitige, s, fmtDate, full, archive }) {
   const isOpen = suiviOpen === cmd.id
+  const isLitigeOpen = litigeOpen === cmd.id
   const sd = suiviData[cmd.id] || {}
+  const ld = litigeData[cmd.id] || (litigeExistant ? { ...litigeExistant } : {})
 
-  const updateSuivi = (field, val) => {
-    setSuiviData(prev => ({ ...prev, [cmd.id]: { ...prev[cmd.id], [field]: val } }))
-  }
+  const updateSuivi = (field, val) => setSuiviData(prev => ({ ...prev, [cmd.id]: { ...prev[cmd.id], [field]: val } }))
+  const updateLitige = (field, val) => setLitigeData(prev => ({ ...prev, [cmd.id]: { ...(prev[cmd.id] || {}), [field]: val } }))
+
+  const statutActuel = sd.statut || cmd.statut
 
   return (
-    <div style={s.cmdCard(cmd.statut)}>
+    <div style={{ ...s.cmdCard(cmd.statut), opacity: archive ? 0.7 : 1 }}>
+      {/* Header */}
       <div style={s.cmdHeader}>
-        <span style={s.cmdTitle}>{cmd.nom_article}</span>
-        <span style={s.badge(cmd.statut)}>{STATUT_LABEL[cmd.statut]}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          <span style={s.cmdTitle}>{cmd.nom_article}</span>
+          {litigeExistant && litigeExistant.statut_litige === 'ouvert' && (
+            <span style={{ fontSize:'10px', color:'#ef4444', background:'rgba(239,68,68,0.12)', border:'1px solid #ef444433', borderRadius:'20px', padding:'2px 7px' }}>⚠️ Litige ouvert</span>
+          )}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+          <span style={s.badge(cmd.statut)}>{STATUT_LABEL[cmd.statut]}</span>
+          {!archive && (
+            <button style={s.btnGhost} onClick={() => { setSuiviOpen(isOpen ? null : cmd.id); setLitigeOpen(null) }}>
+              {isOpen ? 'Fermer' : 'Modifier'}
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Infos client */}
       <div style={s.infoGrid}>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Nom</div>
-          <div style={s.infoVal}>{cmd.client.prenom} {cmd.client.nom}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Email</div>
-          <div style={{ ...s.infoVal, color:'#00e5ff88', fontSize:'10px' }}>{cmd.client.email}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Téléphone</div>
-          <div style={s.infoVal}>{cmd.client.telephone || '—'}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Adresse</div>
-          <div style={s.infoVal}>{cmd.client.adresse || '—'}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Code postal / Ville</div>
-          <div style={s.infoVal}>{cmd.client.code_postal} {cmd.client.ville}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Pays</div>
-          <div style={s.infoVal}>{cmd.client.pays}</div>
-        </div>
-        <div style={s.infoBlock}>
-          <div style={s.infoLbl}>Commandé le</div>
-          <div style={s.infoVal}>{fmtDate(cmd.date_commande)}</div>
-        </div>
-        {cmd.livreur && (
-          <div style={s.infoBlock}>
-            <div style={s.infoLbl}>Livreur</div>
-            <div style={s.infoVal}>{cmd.livreur}</div>
-          </div>
-        )}
-        {cmd.date_livraison_estimee && (
-          <div style={s.infoBlock}>
-            <div style={s.infoLbl}>Livraison est.</div>
-            <div style={s.infoVal}>{cmd.date_livraison_estimee}</div>
-          </div>
-        )}
+        <div style={s.infoBlock}><div style={s.infoLbl}>Nom</div><div style={s.infoVal}>{cmd.client.prenom} {cmd.client.nom}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Email</div><div style={{ ...s.infoVal, color:'#00e5ff88', fontSize:'10px' }}>{cmd.client.email}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Téléphone</div><div style={s.infoVal}>{cmd.client.telephone || '—'}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Adresse</div><div style={s.infoVal}>{cmd.client.adresse || '—'}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Code postal / Ville</div><div style={s.infoVal}>{cmd.client.code_postal} {cmd.client.ville}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Pays</div><div style={s.infoVal}>{cmd.client.pays}</div></div>
+        <div style={s.infoBlock}><div style={s.infoLbl}>Commandé le</div><div style={s.infoVal}>{fmtDate(cmd.date_commande)}</div></div>
+        {cmd.date_commande_amazon && <div style={s.infoBlock}><div style={s.infoLbl}>Commandé Amazon</div><div style={s.infoVal}>{cmd.date_commande_amazon}</div></div>}
+        {cmd.date_livraison_estimee && <div style={s.infoBlock}><div style={s.infoLbl}>Livraison est.</div><div style={{ ...s.infoVal, color:'#ffd700' }}>{cmd.date_livraison_estimee}</div></div>}
+        {cmd.livreur && <div style={s.infoBlock}><div style={s.infoLbl}>Livreur</div><div style={s.infoVal}>{cmd.livreur}</div></div>}
+        {cmd.lien_suivi && <div style={s.infoBlock}><div style={s.infoLbl}>Suivi</div><div style={s.infoVal}><a href={cmd.lien_suivi} target="_blank" rel="noreferrer" style={{ color:'#00e5ff' }}>{cmd.numero_suivi || 'Lien →'}</a></div></div>}
       </div>
 
-      {cmd.lien_suivi && (
-        <div style={{ fontSize:'11px', marginBottom:'8px' }}>
-          <span style={{ color:'#44445a' }}>Suivi : </span>
-          <a href={cmd.lien_suivi} target="_blank" rel="noreferrer" style={{ color:'#00e5ff' }}>{cmd.numero_suivi || cmd.lien_suivi}</a>
-        </div>
-      )}
-      {cmd.numero_suivi && !cmd.lien_suivi && (
-        <div style={{ fontSize:'11px', marginBottom:'8px' }}>
-          <span style={{ color:'#44445a' }}>N° suivi : </span>
-          <span style={{ color:'#c0c0e0' }}>{cmd.numero_suivi}</span>
+      {/* Bouton litige (hors archive) */}
+      {!archive && (
+        <div style={{ marginTop:'4px' }}>
+          <button style={{ ...s.btnDanger, fontSize:'10px' }} onClick={() => { setLitigeOpen(isLitigeOpen ? null : cmd.id); setSuiviOpen(null) }}>
+            {isLitigeOpen ? 'Fermer litige' : litigeExistant ? '⚠️ Voir/modifier litige' : '⚠️ Signaler un litige'}
+          </button>
+          {cmd.statut === 'livree' && (
+            <button style={{ ...s.btnGhost, fontSize:'10px', marginLeft:'6px' }} onClick={() => archiverCommande(cmd.id)}>
+              📦 Archiver
+            </button>
+          )}
         </div>
       )}
 
-      <div style={s.divider} />
-      <div style={s.actionsRow}>
-        {cmd.statut === 'en_attente' && (
-          <button style={s.btnGold} onClick={() => majStatut(cmd.id, 'expediee')}>
-            Expédiée + notifier client
-          </button>
-        )}
-        {cmd.statut === 'expediee' && (
-          <button style={s.btnGreen} onClick={() => majStatut(cmd.id, 'livree')}>
-            Livrée + notifier client
-          </button>
-        )}
-        <button style={s.btnCyan} onClick={() => setSuiviOpen(isOpen ? null : cmd.id)}>
-          {isOpen ? 'Fermer' : (cmd.livreur ? 'Modifier suivi' : 'Ajouter suivi')}
-        </button>
-      </div>
-
+      {/* Formulaire modification */}
       {isOpen && (
         <div style={s.suiviForm}>
-          <div style={{ fontSize:'11px', color:'#6a6a8a', marginBottom:'8px' }}>Infos de suivi — validées, elles notifient le client automatiquement</div>
-          <input
-            style={s.input} placeholder="Transporteur (ex: Colissimo, Mondial Relay...)"
-            value={sd.livreur || cmd.livreur || ''}
-            onChange={e => updateSuivi('livreur', e.target.value)}
-          />
+          {/* Ligne 1 : dates Amazon */}
           <div style={s.inputRow}>
-            <input
-              style={s.input} placeholder="Numéro de suivi"
-              value={sd.numero_suivi || cmd.numero_suivi || ''}
-              onChange={e => updateSuivi('numero_suivi', e.target.value)}
-            />
-            <input
-              style={s.input} placeholder="Lien de suivi (URL)"
-              value={sd.lien_suivi || cmd.lien_suivi || ''}
-              onChange={e => updateSuivi('lien_suivi', e.target.value)}
-            />
+            <div>
+              <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date commande Amazon</div>
+              <input style={s.input} placeholder="ex: 19/06/2026" value={sd.date_commande_amazon ?? cmd.date_commande_amazon ?? ''} onChange={e => updateSuivi('date_commande_amazon', e.target.value)} />
+            </div>
+            <div>
+              <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date livraison estimée</div>
+              <input style={s.input} placeholder="ex: 22-25 juin" value={sd.date_livraison_estimee ?? cmd.date_livraison_estimee ?? ''} onChange={e => updateSuivi('date_livraison_estimee', e.target.value)} />
+            </div>
           </div>
-          <input
-            style={s.input} placeholder="Date de livraison estimée (ex: 20–25 juin)"
-            value={sd.date_livraison_estimee || cmd.date_livraison_estimee || ''}
-            onChange={e => updateSuivi('date_livraison_estimee', e.target.value)}
-          />
-          <input
-            style={s.input} placeholder="Note optionnelle pour le client"
-            value={sd.note_client || cmd.note_client || ''}
-            onChange={e => updateSuivi('note_client', e.target.value)}
-          />
+
+          {/* Statut radio */}
+          <div style={{ ...s.infoLbl, marginBottom:'6px' }}>Statut</div>
+          <div style={s.radioRow}>
+            {[
+              { val:'en_attente', label:'🔴 En attente' },
+              { val:'expediee',   label:'🟡 Expédiée' },
+              { val:'livree',     label:'🟢 Livrée' },
+            ].map(({ val, label }) => (
+              <button key={val} style={s.radioBtn(statutActuel === val, STATUT_COLOR[val]?.color || '#fff')}
+                onClick={() => updateSuivi('statut', val)}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Infos transporteur */}
+          <input style={s.input} placeholder="Transporteur (ex: Colissimo, Mondial Relay...)" value={sd.livreur ?? cmd.livreur ?? ''} onChange={e => updateSuivi('livreur', e.target.value)} />
+          <div style={s.inputRow}>
+            <input style={s.input} placeholder="Numéro de suivi" value={sd.numero_suivi ?? cmd.numero_suivi ?? ''} onChange={e => updateSuivi('numero_suivi', e.target.value)} />
+            <input style={s.input} placeholder="Lien de suivi (URL)" value={sd.lien_suivi ?? cmd.lien_suivi ?? ''} onChange={e => updateSuivi('lien_suivi', e.target.value)} />
+          </div>
+          <input style={s.input} placeholder="Note optionnelle pour le client" value={sd.note_client ?? cmd.note_client ?? ''} onChange={e => updateSuivi('note_client', e.target.value)} />
+
           <div style={{ display:'flex', gap:'8px', marginTop:'4px' }}>
-            <button style={s.btnCyan} onClick={() => validerSuivi(cmd.id)}>Valider + notifier client</button>
+            <button style={s.btnCyan} onClick={() => validerCommande(cmd.id)}>Valider</button>
             <button style={s.btnGhost} onClick={() => setSuiviOpen(null)}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {/* Formulaire litige */}
+      {isLitigeOpen && (
+        <div style={s.litigeForm}>
+          <div style={{ fontSize:'11px', color:'#ef4444', fontWeight:600, marginBottom:'10px' }}>⚠️ Gestion du litige</div>
+
+          <div style={s.inputRow}>
+            <div>
+              <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date d'ouverture</div>
+              <input style={s.input} type="date" value={ld.date_ouverture || new Date().toISOString().split('T')[0]} onChange={e => updateLitige('date_ouverture', e.target.value)} />
+            </div>
+            <div>
+              <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date de résolution</div>
+              <input style={s.input} type="date" value={ld.date_resolution || ''} onChange={e => updateLitige('date_resolution', e.target.value)} />
+            </div>
+          </div>
+
+          <div style={{ ...s.infoLbl, marginBottom:'6px' }}>Nature du litige</div>
+          <div style={s.radioRow}>
+            {NATURE_LITIGE.map(n => (
+              <button key={n} style={s.radioBtn(ld.nature === n, '#ef4444')} onClick={() => updateLitige('nature', n)}>{n}</button>
+            ))}
+          </div>
+          {ld.nature === 'Autre' && (
+            <input style={s.input} placeholder="Préciser..." value={ld.detail_nature || ''} onChange={e => updateLitige('detail_nature', e.target.value)} />
+          )}
+
+          <div style={{ ...s.infoLbl, margin:'8px 0 6px' }}>Traitement</div>
+          <div style={s.radioRow}>
+            {TRAITEMENT_LITIGE.map(t => (
+              <button key={t} style={s.radioBtn(ld.traitement === t, '#ffd700')} onClick={() => updateLitige('traitement', t)}>{t}</button>
+            ))}
+          </div>
+
+          <div style={{ ...s.infoLbl, margin:'8px 0 4px' }}>Statut du litige</div>
+          <div style={s.radioRow}>
+            {[{val:'ouvert',label:'Ouvert'},{val:'resolu',label:'Résolu'},{val:'cloture',label:'Clôturé'}].map(({ val, label }) => (
+              <button key={val} style={s.radioBtn(ld.statut_litige === val, STATUT_LITIGE_COLOR[val])} onClick={() => updateLitige('statut_litige', val)}>{label}</button>
+            ))}
+          </div>
+
+          <textarea
+            style={{ ...s.input, resize:'vertical', minHeight:'60px', marginTop:'8px' }}
+            placeholder="Notes de suivi du litige..."
+            value={ld.notes || ''}
+            onChange={e => updateLitige('notes', e.target.value)}
+          />
+
+          <div style={{ display:'flex', gap:'8px', marginTop:'4px' }}>
+            <button style={s.btnDanger} onClick={() => sauvegarderLitige(cmd.id)}>Enregistrer le litige</button>
+            <button style={s.btnGhost} onClick={() => setLitigeOpen(null)}>Annuler</button>
           </div>
         </div>
       )}
