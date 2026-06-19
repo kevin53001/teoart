@@ -7,7 +7,7 @@ import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
-import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
+import { usePWAInstallable } from './BannerePWA';
 import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
