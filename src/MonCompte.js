@@ -1349,7 +1349,7 @@ function SectionMesInfos({ userId }) {
                 </button>
               ) : (
                 <button
-                  onClick={() => { reactiverBannerePWA(); alert("L'installation sera proposée à ta prochaine visite sur le site."); }}
+                  onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
                   style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
                   📲 Installer l'application
                 </button>
@@ -1580,14 +1580,20 @@ function SectionMesCommandes({ userId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {Object.entries(parCommande).map(([commandeId, items]) => {
+      {Object.entries(parCommande).map(([commandeId, items], cmdIdx) => {
         const ouvert = commandeOuverte === commandeId;
         const receipt = receipts[commandeId];
         const date = new Date(items[0].created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
         const nbArticles = items.length;
+        const CMD_COULEURS = [
+          { bg: 'rgba(0,212,212,0.10)', border: 'rgba(0,212,212,0.45)' },
+          { bg: 'rgba(255,210,80,0.10)', border: 'rgba(255,210,80,0.45)' },
+          { bg: 'rgba(255,62,181,0.10)', border: 'rgba(255,62,181,0.45)' },
+        ];
+        const cc = CMD_COULEURS[cmdIdx % 3];
 
         return (
-          <div key={commandeId} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${ouvert ? 'rgba(0,212,212,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+          <div key={commandeId} style={{ background: cc.bg, border: `1px solid ${cc.border}`, borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
 
             {/* ── Ligne commande ── */}
             <div
@@ -1634,21 +1640,15 @@ function SectionMesCommandes({ userId }) {
             {/* ── Déroulant articles ── */}
             {ouvert && (
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {items.map((item, itemIdx) => {
+                {items.map((item) => {
                   const isRelie = item.type === 'relie';
                   const relieOpen = relieOuvert === item.id;
                   const statut = item.statut || 'en_attente';
                   const statutLabel = { en_attente: 'En cours de traitement', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours';
                   const statutColor = { en_attente: 'rgba(255,210,80,0.7)', expediee: '#00d4d4', livree: '#22c55e' }[statut];
-                  const LIGNE_COULEURS = [
-                    { bg: 'rgba(0,212,212,0.15)', border: 'rgba(0,212,212,0.45)' },
-                    { bg: 'rgba(255,210,80,0.12)', border: 'rgba(255,210,80,0.40)' },
-                    { bg: 'rgba(255,62,181,0.12)', border: 'rgba(255,62,181,0.40)' },
-                  ];
-                  const lc = LIGNE_COULEURS[itemIdx % 3];
 
                   return (
-                    <div key={item.id} style={{ background: lc.bg, border: `1px solid ${lc.border}`, borderRadius: '8px', padding: '4px 8px' }}>
+                    <div key={item.id} style={{ borderRadius: '6px', padding: '4px 8px' }}>
                       {/* Ligne principale de l'article */}
                       <div
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', cursor: isRelie ? 'pointer' : 'default', padding: '4px 0' }}
