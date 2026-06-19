@@ -888,75 +888,111 @@ function Accueil() {
             {/* ── Guide du site — encart déroulant tunnel ── */}
             {!loading && (() => {
               const PARTS_COULEURS = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
-              const PARTS_LABELS = ['Le Catalogue', 'Guide visuel 1', 'Guide visuel 2', 'Le reste du site'];
               const couleur = PARTS_COULEURS[guidePart];
               const T = 72;
 
+              // Swipe mobile
+              const touchStartX = React.useRef(null);
+              const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+              const handleTouchEnd = (e) => {
+                if (touchStartX.current === null) return;
+                const diff = touchStartX.current - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) {
+                  if (diff > 0 && guidePart < 3) setGuidePart(p => p + 1);
+                  if (diff < 0 && guidePart > 0) setGuidePart(p => p - 1);
+                }
+                touchStartX.current = null;
+              };
+
+              const renderItem = (item, i, arr, avecSousmenu) => {
+                const isLast = i === arr.length - 1;
+                if (isMobile) {
+                  return (
+                    <div key={i} style={{ marginBottom: isLast ? 0 : '20px', paddingBottom: isLast ? 0 : '20px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                      <p style={{ color: item.couleur, fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '8px' }}>{item.titre}</p>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                        <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ width: '52px', height: '52px', borderRadius: '12px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: item.lien ? 'pointer' : 'default' }}>
+                          <img src={item.pastille} alt="" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
+                        </div>
+                      </div>
+                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: '1.6', textAlign: 'center' }}>{item.texte}</p>
+                      {avecSousmenu && item.sousmenu && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                          {item.sousmenu.map((sub, si) => {
+                            const titreParts = sub.titre.replace(' — ', '\n').replace(' - ', '\n').split('\n');
+                            return (
+                              <div key={si} style={{ background: `${sub.couleur}10`, border: `1px solid ${sub.couleur}25`, borderRadius: '8px', padding: '8px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                <p style={{ color: sub.couleur, fontSize: '10px', fontWeight: 'bold', textAlign: 'center', lineHeight: 1.3 }}>
+                                  {titreParts.map((t, ti) => <span key={ti}>{t}{ti < titreParts.length - 1 && <br/>}</span>)}
+                                </p>
+                                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '9px', lineHeight: '1.4', textAlign: 'center' }}>{sub.texte}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} style={{ marginBottom: isLast ? 0 : '24px', paddingBottom: isLast ? 0 : '24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                      <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }} onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }} onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}>
+                        <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
+                      </div>
+                    </div>
+                    {avecSousmenu && item.sousmenu && (
+                      <div style={{ marginTop: '14px', marginLeft: `${T + 16}px`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {item.sousmenu.map((sub, si) => (
+                          <div key={si} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                            <div style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '8px', background: `${sub.couleur}18`, border: `1px solid ${sub.couleur}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontSize: '12px', color: sub.couleur, fontWeight: 'bold' }}>{sub.emoji}</span>
+                            </div>
+                            <div>
+                              <p style={{ color: sub.couleur, fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{sub.titre}</p>
+                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.6' }}>{sub.texte}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              const ITEMS_P1 = [
+                { pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue', titre: 'Le Catalogue', couleur: '#00d4d4', texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.", sousmenu: [{ emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." }, { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." }, { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." }] },
+                { pastille: `${R2}/site/pastille_livres.png`, lien: '/livres', titre: 'Les Livres & Recueils — Version PDF et relié (quand il existe)', couleur: '#ffd250', texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup." },
+              ];
+              const ITEMS_P4 = [
+                { pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation', titre: 'La Présentation', couleur: '#00d4d4', texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue." },
+                { pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees', titre: 'Les Pensées', couleur: '#00d4d4', texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication)." },
+                { pastille: `${R2}/site/pastille_panier.png`, lien: null, titre: 'Le Panier & les Achats', couleur: '#ffd250', texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 et d'autres encore qui viendront se cumuler automatiquement..." },
+                { pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte', titre: 'Mon Compte', couleur: '#ff3eb5', texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées." },
+              ];
+
               const partieContenu = [
                 <div key="p1" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '14px 18px' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: '1.8' }}>
+                  <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: isMobile ? '10px 12px' : '14px 18px' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.8' }}>
                       <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
                       Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
                     </p>
                   </div>
-                  {[
-                    { pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue', titre: 'Le Catalogue', couleur: '#00d4d4', texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.", sousmenu: [{ emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." }, { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." }, { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." }] },
-                    { pastille: `${R2}/site/pastille_livres.png`, lien: '/livres', titre: 'Les Livres & Recueils — Version PDF et relié (quand il existe)', couleur: '#ffd250', texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup." },
-                  ].map((item, i, arr) => (
-                    <div key={i} style={{ marginBottom: i < arr.length - 1 ? '24px' : 0, paddingBottom: i < arr.length - 1 ? '24px' : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                        <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }} onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }} onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}>
-                          <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
-                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
-                        </div>
-                      </div>
-                      {item.sousmenu && (
-                        <div style={{ marginTop: '14px', marginLeft: `${T + 16}px`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                          {item.sousmenu.map((sub, si) => (
-                            <div key={si} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                              <div style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '8px', background: `${sub.couleur}18`, border: `1px solid ${sub.couleur}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <span style={{ fontSize: '12px', color: sub.couleur, fontWeight: 'bold' }}>{sub.emoji}</span>
-                              </div>
-                              <div>
-                                <p style={{ color: sub.couleur, fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{sub.titre}</p>
-                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.6' }}>{sub.texte}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {ITEMS_P1.map((item, i, arr) => renderItem(item, i, arr, true))}
                 </div>,
                 <div key="p2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={isMobile ? { width: '100%', borderRadius: '8px', cursor: 'zoom-in' } : { height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
                 </div>,
                 <div key="p3" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={isMobile ? { width: '100%', borderRadius: '8px', cursor: 'zoom-in' } : { height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
                 </div>,
                 <div key="p4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  {[
-                    { pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation', titre: 'La Présentation', couleur: '#00d4d4', texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue." },
-                    { pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees', titre: 'Les Pensées', couleur: '#00d4d4', texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication)." },
-                    { pastille: `${R2}/site/pastille_panier.png`, lien: null, titre: 'Le Panier & les Achats', couleur: '#ffd250', texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 et d'autres encore qui viendront se cumuler automatiquement..." },
-                    { pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte', titre: 'Mon Compte', couleur: '#ff3eb5', texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées." },
-                  ].map((item, i, arr) => (
-                    <div key={i} style={{ marginBottom: i < arr.length - 1 ? '24px' : 0, paddingBottom: i < arr.length - 1 ? '24px' : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                        <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }} onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }} onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}>
-                          <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
-                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  {ITEMS_P4.map((item, i, arr) => renderItem(item, i, arr, false))}
                 </div>,
               ];
 
@@ -967,13 +1003,14 @@ function Accueil() {
                     <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
                   </div>
                   {guideOuvert && (
-                    <div style={{ padding: isMobile ? '20px 40px' : '28px 60px', position: 'relative', minHeight: '540px', display: 'flex', flexDirection: 'column' }}>
-                      {/* Flèche gauche */}
-                      {guidePart > 0 && (
+                    <div
+                      onTouchStart={isMobile ? handleTouchStart : undefined}
+                      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+                      style={{ padding: isMobile ? '16px 12px' : '28px 60px', position: 'relative', minHeight: isMobile ? 'auto' : '540px', display: 'flex', flexDirection: 'column' }}>
+                      {!isMobile && guidePart > 0 && (
                         <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
                       )}
-                      {/* Flèche droite */}
-                      {guidePart < 3 && (
+                      {!isMobile && guidePart < 3 && (
                         <button onClick={() => setGuidePart(p => p + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>▶</button>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
@@ -981,7 +1018,6 @@ function Accueil() {
                           <div key={i} onClick={() => setGuidePart(i)} style={{ width: guidePart === i ? '24px' : '8px', height: '8px', borderRadius: '4px', background: guidePart === i ? c : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
                         ))}
                       </div>
-                      <p style={{ color: couleur, fontSize: '11px', textAlign: 'center', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8 }}>{PARTS_LABELS[guidePart]} — {guidePart + 1} / 4</p>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: guidePart === 1 || guidePart === 2 ? 'center' : 'flex-start' }}>
                         {partieContenu[guidePart]}
                       </div>
