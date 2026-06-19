@@ -28,6 +28,7 @@ function cheminVersUrl(chemin) {
 function Selection() {
   const navigate = useNavigate();
   const [etape, setEtape] = React.useState(0);
+  const encartRef = React.useRef(null);
   const [recueils, setRecueils] = React.useState([]);
   const [livres, setLivres] = React.useState([]);
   const [recueilsCoches, setRecueilsCoches] = React.useState([]);
@@ -60,7 +61,7 @@ function Selection() {
 
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const retourRecueils = () => { setLivresCoches([]); setEtape(1); };
+  const retourRecueils = () => { setLivresCoches([]); setEtape(1); setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); };
 
   const livresFiltres = livres.filter(l => {
     if (!l.recueils_ids || l.recueils_ids.length === 0) return true;
@@ -200,7 +201,7 @@ function Selection() {
           Promis, c'est rapide. Probablement plus rapide que de retrouver un feutre tombé sous le canapé.<br />
           Et surtout, tu n'auras jamais à refaire cette étape.
         </p>
-        <button onClick={() => setEtape(1)} style={{ marginTop: '20px', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px 40px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+        <button onClick={() => { setEtape(1); setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }} style={{ marginTop: '20px', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px 40px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
           C'est parti ! →
         </button>
       </div>
@@ -228,7 +229,7 @@ function Selection() {
                 </div>
               ))}
             </div>
-            <button onClick={() => setEtape(2)} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+            <button onClick={() => { setEtape(2); setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }} style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '12px 40px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
               Valider →
             </button>
           </>
@@ -325,7 +326,7 @@ function Selection() {
         </div>
 
         {/* Encart en flux normal */}
-        <div style={{
+        <div ref={encartRef} style={{
           position: 'relative', zIndex: 10,
           display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
           paddingTop: isMobile ? '16px' : '20px',

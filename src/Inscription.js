@@ -73,9 +73,12 @@ function Inscription() {
   const [ville, setVille] = useState('');
   const [telephone, setTelephone] = useState('');
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const encartRef = useRef(null);
 
   const strength = getPasswordStrength(password);
   const strengthLabel = ['', 'Faible', 'Moyen', 'Bon', 'Fort'][strength];
@@ -105,6 +108,7 @@ function Inscription() {
     if (!email || !password) { setError('Merci de remplir tous les champs.'); return; }
     if (strength < 2) { setError('Mot de passe trop faible. Ajoute des majuscules et des chiffres.'); return; }
     setEtape(2);
+    setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const validerEtape2 = () => {
@@ -112,6 +116,7 @@ function Inscription() {
     if (!prenom || !nom || !pseudo) { setError('Merci de remplir les champs obligatoires.'); return; }
     if (!photoCroppee) { setError('Une photo de profil est obligatoire.'); return; }
     setEtape(3);
+    setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const handleInscription = async () => {
@@ -294,12 +299,37 @@ function Inscription() {
 
               {/* ÉTAPE 1 */}
               {etape === 1 && (
-                <div className="encart-inscription" style={encartStyle}>
+                <div ref={encartRef} className="encart-inscription" style={encartStyle}>
                   <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>① Identifiants</p>
                   <label style={labelStyle}>Email *</label>
                   <input type="email" placeholder="ton@email.com" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
                   <label style={labelStyle}>Mot de passe *</label>
-                  <input type="password" placeholder="Minimum 8 caractères" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputStyle, marginBottom: '8px' }} />
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Minimum 8 caractères"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      style={{ ...inputStyle, marginBottom: 0, paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: showPassword ? '#00d4d4' : 'rgba(255,255,255,0.35)', padding: 0, display: 'flex', alignItems: 'center' }}
+                    >
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {password.length > 0 && (
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
@@ -321,7 +351,7 @@ function Inscription() {
 
               {/* ÉTAPE 2 */}
               {etape === 2 && (
-                <div className="encart-inscription" style={encartStyle}>
+                <div ref={encartRef} className="encart-inscription" style={encartStyle}>
                   <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>② Identité</p>
                   <div style={{ display: 'flex', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
@@ -378,7 +408,7 @@ function Inscription() {
 
               {/* ÉTAPE 3 */}
               {etape === 3 && (
-                <div className="encart-inscription" style={encartStyle}>
+                <div ref={encartRef} className="encart-inscription" style={encartStyle}>
                   <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', marginBottom: '4px', textAlign: 'center', borderBottom: '1px solid rgba(0,212,212,0.2)', paddingBottom: '12px' }}>③ Adresse de livraison</p>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px', textAlign: 'center' }}>Optionnel maintenant — obligatoire uniquement lors d'une commande.</p>
                   <label style={labelStyle}>Pays</label>
