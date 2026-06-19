@@ -961,13 +961,21 @@ function Accueil() {
               ];
 
               return (
-                <div style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s' }}>
-                  <div onClick={() => setGuideOuvert(o => !o)} style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.18), rgba(0,212,212,0.08))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.2)' }}>
+                <div style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s', position: 'relative' }}>
+                  <div onClick={() => setGuideOuvert(o => !o)} style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.36), rgba(0,212,212,0.16))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.4)' }}>
                     <p style={{ color: '#00d4d4', fontSize: isMobile ? '14px' : '16px', fontWeight: 'bold', letterSpacing: '0.5px' }}>Comment fonctionne le site ?</p>
                     <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
                   </div>
                   {guideOuvert && (
-                    <div style={{ padding: isMobile ? '20px 16px' : '28px 32px' }}>
+                    <div style={{ padding: isMobile ? '20px 40px' : '28px 60px', position: 'relative' }}>
+                      {/* Flèche gauche */}
+                      {guidePart > 0 && (
+                        <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: `${couleur}22`, border: `2px solid ${couleur}`, borderRadius: '50%', width: '36px', height: '36px', color: couleur, fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}40`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
+                      )}
+                      {/* Flèche droite */}
+                      {guidePart < 3 && (
+                        <button onClick={() => setGuidePart(p => p + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: `${couleur}22`, border: `2px solid ${couleur}`, borderRadius: '50%', width: '36px', height: '36px', color: couleur, fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}40`, transition: 'all 0.2s', zIndex: 2 }}>▶</button>
+                      )}
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
                         {PARTS_COULEURS.map((c, i) => (
                           <div key={i} onClick={() => setGuidePart(i)} style={{ width: guidePart === i ? '24px' : '8px', height: '8px', borderRadius: '4px', background: guidePart === i ? c : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
@@ -975,10 +983,6 @@ function Accueil() {
                       </div>
                       <p style={{ color: couleur, fontSize: '11px', textAlign: 'center', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8 }}>{PARTS_LABELS[guidePart]} — {guidePart + 1} / 4</p>
                       {partieContenu[guidePart]}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
-                        <button onClick={() => setGuidePart(p => Math.max(0, p - 1))} disabled={guidePart === 0} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `2px solid ${couleur}`, background: `${couleur}18`, color: couleur, fontSize: '14px', fontWeight: 'bold', cursor: guidePart === 0 ? 'default' : 'pointer', opacity: guidePart === 0 ? 0.3 : 1, transition: 'all 0.2s', boxShadow: guidePart === 0 ? 'none' : `0 0 12px ${couleur}40` }}>‹ Précédent</button>
-                        <button onClick={() => setGuidePart(p => Math.min(3, p + 1))} disabled={guidePart === 3} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `2px solid ${couleur}`, background: `${couleur}18`, color: couleur, fontSize: '14px', fontWeight: 'bold', cursor: guidePart === 3 ? 'default' : 'pointer', opacity: guidePart === 3 ? 0.3 : 1, transition: 'all 0.2s', boxShadow: guidePart === 3 ? 'none' : `0 0 12px ${couleur}40` }}>Suivant ›</button>
-                      </div>
                     </div>
                   )}
                   {zoomGuide && ReactDOM.createPortal(
