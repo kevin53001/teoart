@@ -735,7 +735,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
             </div>
             <div>
               <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date livraison estimée</div>
-              <input style={s.input} placeholder="ex: 22-25 juin" value={sd.date_livraison_estimee ?? cmd.date_livraison_estimee ?? ''} onChange={e => updateSuivi('date_livraison_estimee', e.target.value)} />
+              <input style={s.input} type="date" value={sd.date_livraison_estimee ?? cmd.date_livraison_estimee ?? ''} onChange={e => updateSuivi('date_livraison_estimee', e.target.value)} />
             </div>
           </div>
 
