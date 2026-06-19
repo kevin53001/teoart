@@ -176,7 +176,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
     await ouvrirZoomSocial(next);
   };
 
-
+  const img = images[idx];
   const prevImg = prevIdx !== null ? images[prevIdx] : null;
   const coloriste = img ? extraireColoriste(img.url) : null;
   const nomColoriste = img?.nom?.startsWith('🎨') ? img.nom.replace('🎨 ', '') : coloriste;
