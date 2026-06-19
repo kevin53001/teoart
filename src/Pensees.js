@@ -263,7 +263,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                 className="fiche-reflet"
                 style={{
                   '--accent': couleur,
-                  transform: `translate(${x}px, ${y + 96}px) scale(${scale}, ${scale * 0.55})`,
+                  transform: `translate(${x}px, ${y + 96}px) translateZ(${frontFactor * 299}px) scale(${scale}, ${scale * 0.55})`,
                   opacity: frontFactor > 0.72 ? 0.12 : 0.03,
                   zIndex: isDevant ? 8999 : Math.max(1, i),
                 }}
@@ -278,7 +278,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                 style={{
                   '--accent': couleur,
                   '--author-color': couleur,
-                  transform: `translate(${x}px, ${y + lift}px) scale(${scale}) rotateY(${rotateY}deg)`,
+                  transform: `translate(${x}px, ${y + lift}px) translateZ(${frontFactor * 300}px) scale(${scale}) rotateY(${rotateY}deg)`,
                   zIndex,
                   opacity,
                   pointerEvents: 'auto',
