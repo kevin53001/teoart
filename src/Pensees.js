@@ -131,15 +131,21 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
   const [rotation, setRotation] = React.useState(0);
   const rotationRef = React.useRef(0);
   const speedRef = React.useRef(0);
+  const snapTargetRef = React.useRef(null); // null = pas de snap en cours
   const rafRef = React.useRef(null);
   const zoneRef = React.useRef(null);
   const touchLastXRef = React.useRef(null);
   const touchMovedRef = React.useRef(false);
+  const touchVelocityRef = React.useRef(0);
+  const touchLastTimeRef = React.useRef(null);
 
   const visibles = pensees;
   const count = visibles.length || 1;
   const arc = calculArc(count);
   const canLoop = arc >= 360;
+
+  // Angle entre deux fiches consécutives
+  const angleStep = count <= 1 ? 0 : arc / Math.max(count - 1, 1);
 
   // Limites pour mode non-loop
   const ficheMarge = count < 8 ? 110 : count < 20 ? 90 : count < 40 ? 70 : 50;
@@ -150,17 +156,58 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
     return Math.max(-limit, Math.min(limit, value));
   }, [canLoop, limit]);
 
+  // Calcule la rotation cible pour que la fiche la plus proche du centre soit exactement au centre
+  const calculerSnapTarget = React.useCallback(() => {
+    if (count <= 1) return 0;
+    // angle de chaque fiche au centre = localAngle + rotation, on cherche celle dont angle ≈ 0
+    let meilleurDelta = Infinity;
+    let meilleurTarget = rotationRef.current;
+    for (let i = 0; i < count; i++) {
+      const localAngle = -arc / 2 + angleStep * i;
+      // la fiche i est au centre quand localAngle + rotation = 0 (mod 360 si loop)
+      let targetRotation = -localAngle;
+      if (canLoop) {
+        // ramener dans la plage la plus proche de la rotation actuelle
+        let diff = ((targetRotation - rotationRef.current) % 360 + 540) % 360 - 180;
+        targetRotation = rotationRef.current + diff;
+      } else {
+        targetRotation = clampRotation(targetRotation);
+      }
+      const delta = Math.abs(targetRotation - rotationRef.current);
+      if (delta < meilleurDelta) {
+        meilleurDelta = delta;
+        meilleurTarget = targetRotation;
+      }
+    }
+    return meilleurTarget;
+  }, [count, arc, angleStep, canLoop, clampRotation]);
+
   React.useEffect(() => {
     const animate = () => {
-      let next = rotationRef.current + speedRef.current;
-      if (!canLoop) {
-        const clamped = clampRotation(next);
-        if (clamped !== next) {
-          next = clamped;
-          speedRef.current *= 0.10;
+      if (snapTargetRef.current !== null) {
+        // Mode snap : interpolation douce vers la cible
+        const diff = snapTargetRef.current - rotationRef.current;
+        if (Math.abs(diff) < 0.05) {
+          rotationRef.current = snapTargetRef.current;
+          snapTargetRef.current = null;
+          speedRef.current = 0;
+        } else {
+          rotationRef.current += diff * 0.12;
         }
+      } else {
+        // Mode libre
+        let next = rotationRef.current + speedRef.current;
+        if (!canLoop) {
+          const clamped = clampRotation(next);
+          if (clamped !== next) {
+            next = clamped;
+            speedRef.current *= 0.10;
+          }
+        }
+        rotationRef.current = next;
+        // Friction légère en permanence (desktop : la souris pilote directement speedRef)
+        speedRef.current *= 0.92;
       }
-      rotationRef.current = next;
       setRotation(rotationRef.current);
       rafRef.current = requestAnimationFrame(animate);
     };
@@ -168,7 +215,9 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
     return () => cancelAnimationFrame(rafRef.current);
   }, [canLoop, clampRotation]);
 
+  // Desktop : souris pilote la vitesse, mouseLeave déclenche le snap
   const handleMouseMove = (e) => {
+    snapTargetRef.current = null; // annule le snap si on remet la main
     const rect = zoneRef.current?.getBoundingClientRect();
     if (!rect) return;
     const center = rect.left + rect.width / 2;
@@ -177,38 +226,59 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
     speedRef.current = Math.max(-1.2, Math.min(1.2, deadZone)) * -0.6;
   };
 
-  const handleMouseLeave = () => { speedRef.current = 0; };
+  const handleMouseLeave = () => {
+    speedRef.current = 0;
+    snapTargetRef.current = calculerSnapTarget();
+  };
 
+  // Mobile : drag direct + snap au relâchement
   const handleTouchStart = (e) => {
     if (!isMobile) return;
+    snapTargetRef.current = null;
     touchLastXRef.current = e.touches[0].clientX;
+    touchLastTimeRef.current = Date.now();
     touchMovedRef.current = false;
+    touchVelocityRef.current = 0;
     speedRef.current = 0;
   };
   const handleTouchMove = (e) => {
     if (!isMobile || touchLastXRef.current === null) return;
     const currentX = e.touches[0].clientX;
+    const now = Date.now();
     const deltaX = currentX - touchLastXRef.current;
+    const deltaT = Math.max(1, now - touchLastTimeRef.current);
     if (Math.abs(deltaX) > 1) {
       touchMovedRef.current = true;
       e.preventDefault();
       const next = clampRotation(rotationRef.current + deltaX * 0.30);
       rotationRef.current = next;
       setRotation(next);
+      // Calcul vélocité pour inertie courte
+      touchVelocityRef.current = (deltaX / deltaT) * 16; // ~16ms par frame
     }
     touchLastXRef.current = currentX;
+    touchLastTimeRef.current = now;
   };
   const handleTouchEnd = () => {
     if (!isMobile) return;
     touchLastXRef.current = null;
-    speedRef.current = 0;
+    // Appliquer une courte inertie avant le snap
+    const vel = touchVelocityRef.current * 0.30;
+    const projected = clampRotation(rotationRef.current + vel);
+    rotationRef.current = projected;
+    touchVelocityRef.current = 0;
+    // Snap vers la fiche la plus proche
+    snapTargetRef.current = calculerSnapTarget();
     setTimeout(() => { touchMovedRef.current = false; }, 80);
   };
 
-  // Dimensions améliorées
+  // Dimensions
   const radiusX = isMobile ? 230 : 480;
   const radiusY = isMobile ? 70 : 130;
   const smallCountSpread = count < 14 ? (isMobile ? 24 : 38) : 0;
+
+  // Espace garanti autour de la fiche centrale (en px projetés sur l'axe X)
+  const CENTER_GAP = isMobile ? 52 : 90;
 
   return (
     <div
@@ -223,23 +293,36 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
     >
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
-          const localAngle = count === 1 ? 0 : -arc / 2 + (arc / Math.max(count - 1, 1)) * i;
+          const localAngle = count === 1 ? 0 : -arc / 2 + angleStep * i;
           const angle = localAngle + rotation;
           const rad = (angle * Math.PI) / 180;
           const sin = Math.sin(rad);
           const cos = Math.cos(rad);
 
-          const x = sin * radiusX + (count < 14 ? (i - (count - 1) / 2) * smallCountSpread : 0);
+          // Position de base sur la roue
+          let x = sin * radiusX + (count < 14 ? (i - (count - 1) / 2) * smallCountSpread : 0);
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
-          // Échelle plus généreuse : entre 0.60 et 1.00
+
+          // Repousser les voisines de la fiche centrale :
+          // La fiche centrale est celle dont sin ≈ 0 et cos ≈ 1.
+          // On calcule l'écart en X entre cette fiche et le centre (x=0).
+          // Si une fiche non-centrale est trop proche du centre, on la repousse.
+          const isCentrale = frontFactor > 0.92; // cos > 0.84, soit angle < ~33°
+          if (!isCentrale && count > 1) {
+            const signX = x >= 0 ? 1 : -1; // côté gauche ou droit
+            // Facteur de proximité au centre : 1 si tout près, 0 si loin
+            const proximiteCentre = Math.max(0, 1 - Math.abs(x) / (CENTER_GAP * 2.5));
+            if (proximiteCentre > 0) {
+              const push = signX * proximiteCentre * CENTER_GAP;
+              x += push;
+            }
+          }
+
           const scale = 0.60 + frontFactor * 0.40;
           const rotateY = sin * -30;
-          // Légère élévation des fiches au premier plan
           const lift = frontFactor > 0.90 ? -22 : 0;
-
           const zIndex = Math.round(1000 + frontFactor * 7000 - Math.abs(sin) * 900 + (i / 100));
-          // Opacité plus généreuse : entre 0.35 et 1.0
           const opacity = 0.35 + frontFactor * 0.65;
           const couleur = couleurPensee(pensee);
           const lue = !!vues[pensee.id];
