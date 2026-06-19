@@ -222,7 +222,17 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
       onTouchCancel={handleTouchEnd}
     >
       <div className="donut-stage">
-        {visibles.map((pensee, i) => {
+        {(() => {
+          // Trouver la fiche la plus au premier plan
+          const frontFactors = visibles.map((_, i) => {
+            const localAngle = count === 1 ? 0 : -arc / 2 + (arc / Math.max(count - 1, 1)) * i;
+            const angle = localAngle + rotation;
+            const rad = (angle * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            return (cos + 1) / 2;
+          });
+          const maxFrontFactor = Math.max(...frontFactors);
+          return visibles.map((pensee, i) => {
           const localAngle = count === 1 ? 0 : -arc / 2 + (arc / Math.max(count - 1, 1)) * i;
           const angle = localAngle + rotation;
           const rad = (angle * Math.PI) / 180;
@@ -238,7 +248,9 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
           const rotateY = sin * -30;
           const lift = frontFactor > 0.90 ? -22 : 0;
 
-          const zIndex = frontFactor * 10000;
+          // La fiche la plus au premier plan reçoit un zIndex massivement supérieur
+          const isDevant = frontFactor === maxFrontFactor;
+          const zIndex = isDevant ? 9000 : i + 1;
           // Opacité aussi sur courbe exponentielle
           const opacity = 0.25 + Math.pow(frontFactor, 2) * 0.75;
           const couleur = couleurPensee(pensee);
@@ -253,7 +265,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                   '--accent': couleur,
                   transform: `translate(${x}px, ${y + 96}px) scale(${scale}, ${scale * 0.55})`,
                   opacity: frontFactor > 0.72 ? 0.12 : 0.03,
-                  zIndex: Math.max(0.0001, zIndex - 1),
+                  zIndex: isDevant ? 8999 : Math.max(1, i),
                 }}
               />
               {/* Fiche */}
