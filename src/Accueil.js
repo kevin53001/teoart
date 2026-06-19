@@ -606,39 +606,19 @@ function Accueil() {
       const { data: nvx } = await supabase.from('illustrations').select('id, nom, visuels').eq('statut', 'coming_soon');
       setNouveautes((nvx || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom })).filter(i => i.url));
 
-      // Derniers coloriages partagés
-      const semaines = [1, 2, 3, 4, 6, 8];
+      // Derniers coloriages partagés — 50 derniers, circulaire
+      const { data: colosRaw } = await supabase
+        .from('coloriages')
+        .select('id, image_url, illustration_id, user_id')
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
       let colosData = [];
-      for (const s of semaines) {
-        const depuis = new Date(Date.now() - s * 7 * 24 * 3600 * 1000).toISOString();
-        const { data } = await supabase.from('coloriages').select('id, image_url, illustration_id, user_id').not('image_url', 'is', null).gte('created_at', depuis).order('created_at', { ascending: false }).limit(12);
-        if (data && data.length > 0) {
-          // Récupérer les pseudos
-          const uids = [...new Set(data.map(c => c.user_id))];
-          const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
-          const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
-          colosData = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloriste: pm[c.user_id] || null, coloId: c.id, pseudo: pm[c.user_id] || null }));
-          break;
-        }
-      }
-      // Compléter avec visuels C aléatoires si moins de 20 coloriages
-      if (colosData.length < 20) {
-        const manquants = 20 - colosData.length;
-        const { data: illusAvecC } = await supabase
-          .from('illustrations')
-          .select('id, nom, visuels')
-          .eq('statut', 'published')
-          .limit(200);
-        const visuelsC = [];
-        (illusAvecC || []).forEach(illu => {
-          const urls = getVisuelsC(illu.visuels);
-          urls.forEach(url => {
-            const coloriste = extraireColoriste(url);
-            visuelsC.push({ url, nom: illu.nom, coloriste });
-          });
-        });
-        const complements = melangerTableau(visuelsC).slice(0, manquants);
-        colosData = [...colosData, ...complements];
+      if (colosRaw && colosRaw.length > 0) {
+        const uids = [...new Set(colosRaw.map(c => c.user_id))];
+        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+        colosData = colosRaw.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloriste: pm[c.user_id] || null, coloId: c.id, pseudo: pm[c.user_id] || null }));
       }
       // Filtrer les images cassées avant affichage
       const testerUrl = (url) => new Promise(resolve => {
