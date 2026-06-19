@@ -126,7 +126,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
       });
     }, 4000);
     return () => { clearInterval(t); clearTimeout(timerRef.current); };
-  }, [images.length]);
+  }, [images.length, id]);
 
   const ouvrirZoomSocial = async (index) => {
     setZoomIdx(index);
