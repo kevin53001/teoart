@@ -45,7 +45,7 @@ const ONGLETS = [
 ];
 
 // ─── Panneau d'un onglet ──────────────────────────────────────────────────────
-function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrirFiche }) {
+function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, onClose, onOuvrirFiche }) {
   const [images, setImages] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [prevIdx, setPrevIdx] = React.useState(null);
@@ -326,7 +326,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
       )}
       {/* ── Zoom social coloriages ── */}
       {zoomSocialOuvert && id === 'coloriages' && images[zoomIdx] && ReactDOM.createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div ref={zoomSocialRef} style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           {/* Bouton fermer */}
           <button onClick={() => setZoomSocialOuvert(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
 
@@ -381,9 +381,10 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 function OngletsLateraux({ userId, onOuvrirFiche }) {
-  const [ouvert, setOuvert] = React.useState(null); // id de l'onglet ouvert
+  const [ouvert, setOuvert] = React.useState(null);
   const panneauRef = React.useRef(null);
   const languettesRef = React.useRef(null);
+  const zoomSocialRef = React.useRef(null);
 
   // Fermer au clic en dehors
   React.useEffect(() => {
@@ -391,7 +392,8 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
     const handler = (e) => {
       const dansPanneau = panneauRef.current && panneauRef.current.contains(e.target);
       const dansLanguettes = languettesRef.current && languettesRef.current.contains(e.target);
-      if (!dansPanneau && !dansLanguettes) {
+      const dansZoomSocial = zoomSocialRef.current && zoomSocialRef.current.contains(e.target);
+      if (!dansPanneau && !dansLanguettes && !dansZoomSocial) {
         setOuvert(null);
       }
     };
@@ -504,6 +506,7 @@ function OngletsLateraux({ userId, onOuvrirFiche }) {
               pastille={o.pastille}
               label={o.label}
               userId={userId}
+              zoomSocialRef={zoomSocialRef}
               onClose={() => setOuvert(null)}
               onOuvrirFiche={(illu) => { onOuvrirFiche && onOuvrirFiche(illu); setOuvert(null); }}
             />
