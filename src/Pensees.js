@@ -277,8 +277,25 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
   const radiusY = isMobile ? 70 : 130;
   const smallCountSpread = count < 14 ? (isMobile ? 24 : 38) : 0;
 
-  // Espace garanti autour de la fiche centrale (en px projetés sur l'axe X)
-  const CENTER_GAP = isMobile ? 52 : 90;
+  // Angle de répulsion angulaire autour de la centrale (degrés)
+  // Les voisines immédiates sont repoussées de cet angle supplémentaire
+  const PUSH_DEG = isMobile ? 18 : 22;
+
+  // Fonction de push angulaire : reçoit l'angle brut d'une fiche (centré sur 0°)
+  // et retourne un offset angulaire supplémentaire pour l'écarter du centre
+  const angularPush = (angleBrut) => {
+    // Normaliser entre -180 et 180
+    let a = ((angleBrut % 360) + 540) % 360 - 180;
+    if (Math.abs(a) > 90) return 0; // fiches derrière : pas de push
+    // Intensité : max quand a≈0, décroît progressivement jusqu'à 0 vers ±90°
+    const intensity = Math.max(0, 1 - (Math.abs(a) / 45));
+    const smoothIntensity = intensity * intensity; // courbe douce
+    // Direction : positif si à droite (a>0), négatif si à gauche (a<0)
+    const sign = a >= 0 ? 1 : -1;
+    // La fiche centrale (a≈0) ne se pousse pas elle-même : son push net est 0
+    // car les deux côtés s'annulent. Les voisines reçoivent le push dans leur direction.
+    return sign * smoothIntensity * PUSH_DEG;
+  };
 
   return (
     <div
@@ -294,30 +311,17 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
           const localAngle = count === 1 ? 0 : -arc / 2 + angleStep * i;
-          const angle = localAngle + rotation;
+          const angleBrut = localAngle + rotation;
+          // Appliquer le push angulaire pour écarter les voisines de la centrale
+          const angle = angleBrut + angularPush(angleBrut);
           const rad = (angle * Math.PI) / 180;
           const sin = Math.sin(rad);
           const cos = Math.cos(rad);
 
-          // Position de base sur la roue
+          // Position sur la roue
           let x = sin * radiusX + (count < 14 ? (i - (count - 1) / 2) * smallCountSpread : 0);
           const y = -cos * radiusY;
           const frontFactor = (cos + 1) / 2;
-
-          // Repousser les voisines de la fiche centrale :
-          // La fiche centrale est celle dont sin ≈ 0 et cos ≈ 1.
-          // On calcule l'écart en X entre cette fiche et le centre (x=0).
-          // Si une fiche non-centrale est trop proche du centre, on la repousse.
-          const isCentrale = frontFactor > 0.92; // cos > 0.84, soit angle < ~33°
-          if (!isCentrale && count > 1) {
-            const signX = x >= 0 ? 1 : -1; // côté gauche ou droit
-            // Facteur de proximité au centre : 1 si tout près, 0 si loin
-            const proximiteCentre = Math.max(0, 1 - Math.abs(x) / (CENTER_GAP * 2.5));
-            if (proximiteCentre > 0) {
-              const push = signX * proximiteCentre * CENTER_GAP;
-              x += push;
-            }
-          }
 
           const scale = 0.60 + frontFactor * 0.40;
           const rotateY = sin * -30;
