@@ -933,10 +933,10 @@ function Accueil() {
                   ))}
                 </div>,
                 <div key="p2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ maxHeight: '460px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
                 </div>,
                 <div key="p3" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ maxHeight: '460px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
                 </div>,
                 <div key="p4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {[
