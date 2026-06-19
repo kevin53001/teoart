@@ -7,7 +7,7 @@ import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
-import { usePWAInstallable } from './BannerePWA';
+import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -1348,12 +1348,11 @@ function SectionMesInfos({ userId }) {
                   📲 Installer l'application
                 </button>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.6 }}>
-                    📲 Pour installer l'appli :<br/>
-                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Dans le menu de ton navigateur → "Ajouter à l'écran d'accueil"</span>
-                  </p>
-                </div>
+                <button
+                  onClick={() => { reactiverBannerePWA(); alert("L'installation sera proposée à ta prochaine visite sur le site."); }}
+                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
+                  📲 Installer l'application
+                </button>
               )}
               {/* ── Formulaire de contact ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
@@ -1642,9 +1641,9 @@ function SectionMesCommandes({ userId }) {
                   const statutLabel = { en_attente: 'En cours de traitement', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours';
                   const statutColor = { en_attente: 'rgba(255,210,80,0.7)', expediee: '#00d4d4', livree: '#22c55e' }[statut];
                   const LIGNE_COULEURS = [
-                    { bg: 'rgba(0,212,212,0.07)', border: 'rgba(0,212,212,0.18)' },
-                    { bg: 'rgba(255,210,80,0.07)', border: 'rgba(255,210,80,0.18)' },
-                    { bg: 'rgba(255,62,181,0.07)', border: 'rgba(255,62,181,0.18)' },
+                    { bg: 'rgba(0,212,212,0.15)', border: 'rgba(0,212,212,0.45)' },
+                    { bg: 'rgba(255,210,80,0.12)', border: 'rgba(255,210,80,0.40)' },
+                    { bg: 'rgba(255,62,181,0.12)', border: 'rgba(255,62,181,0.40)' },
                   ];
                   const lc = LIGNE_COULEURS[itemIdx % 3];
 
@@ -2251,11 +2250,11 @@ function MonCompte() {
                   {avatarUrl && (
                     <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
                   )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center' }}>
+                    <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                       MON COMPTE
                     </p>
-                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap' }}>
                       Ma Collection Kevin Teo'Art
                     </p>
                   </div>
