@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
@@ -518,6 +519,9 @@ function Accueil() {
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
+  const [guideOuvert, setGuideOuvert] = React.useState(false);
+  const [guidePart, setGuidePart] = React.useState(0);
+  const [zoomGuide, setZoomGuide] = React.useState(null);
   const moisPatreon = getMoisPatreonDisponibles();
   const { nbArticles } = usePanier();
 
@@ -883,9 +887,6 @@ function Accueil() {
 
             {/* ── Guide du site — encart déroulant tunnel ── */}
             {!loading && (() => {
-              const [guideOuvert, setGuideOuvert] = React.useState(false);
-              const [guidePart, setGuidePart] = React.useState(0);
-              const [zoomGuide, setZoomGuide] = React.useState(null);
               const PARTS_COULEURS = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
               const PARTS_LABELS = ['Le Catalogue', 'Guide visuel 1', 'Guide visuel 2', 'Le reste du site'];
               const couleur = PARTS_COULEURS[guidePart];
