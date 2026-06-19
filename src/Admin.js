@@ -30,7 +30,15 @@ const MOTS_INTERDITS = [
 function contientMotInterdit(texte) {
   if (!texte) return false
   const t = texte.toLowerCase()
-  return MOTS_INTERDITS.some(mot => t.includes(mot.toLowerCase()))
+  return MOTS_INTERDITS.some(mot => {
+    const m = mot.toLowerCase()
+    // Expressions avec espace : includes simple
+    if (m.includes(' ')) return t.includes(m)
+    // Mots seuls : mot entier uniquement (évite "hell" dans "hello", "con" dans "économie"...)
+    try {
+      return new RegExp('\\b' + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(t)
+    } catch (e) { return t.includes(m) }
+  })
 }
 
 const STATUT_LABEL = {
@@ -159,6 +167,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const intervalRef = useRef(null)
+  const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
 
   // Vérif auth admin
   useEffect(() => {
@@ -323,7 +332,7 @@ export default function Admin() {
   const cmdActives = commandes.filter(c => c.statut !== 'archivee')
   const cmdEnAttente = commandes.filter(c => c.statut === 'en_attente')
   const cmdArchivees = commandes.filter(c => c.statut === 'archivee')
-  const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte))
+  const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte) && !ignores.has(c.id))
 
   return (
     <div style={s.shell}>
@@ -495,7 +504,7 @@ export default function Admin() {
                   <div style={s.sectionTitle}>Commentaires signalés ({cmtSignales.length})</div>
                   {cmtSignales.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucun commentaire signalé</div>}
                   {cmtSignales.slice(0, 3).map(c => (
-                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} s={s} fmtDate={fmtDate} />
+                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} />
                   ))}
                   {cmtSignales.length > 3 && (
                     <div style={{ fontSize:'11px', color:'#ff3eb5', cursor:'pointer', marginTop:'6px' }} onClick={() => setOnglet('moderation')}>
@@ -642,7 +651,7 @@ export default function Admin() {
                 <div style={{ marginBottom:'20px' }}>
                   <div style={s.sectionTitle}>Signalés ({cmtSignales.length})</div>
                   {cmtSignales.map(c => (
-                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} s={s} fmtDate={fmtDate} />
+                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} />
                   ))}
                 </div>
               )}
@@ -837,7 +846,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
 }
 
 // ---- Composant CmtCard ----
-function CmtCard({ c, flagged, supprimerCommentaire, s, fmtDate }) {
+function CmtCard({ c, flagged, supprimerCommentaire, ignorer, s, fmtDate }) {
   const prenom = c.profils?.prenom || 'Anonyme'
   const nom = c.profils?.nom || ''
   return (
@@ -852,7 +861,10 @@ function CmtCard({ c, flagged, supprimerCommentaire, s, fmtDate }) {
           Signalé
         </span>
       )}
-      <button style={{ ...s.btnDanger, flexShrink: 0, marginLeft: 'auto' }} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
+      {flagged && ignorer && (
+        <button style={{ ...s.btnGreen, flexShrink: 0 }} onClick={() => ignorer(c.id)}>Valider</button>
+      )}
+      <button style={{ ...s.btnDanger, flexShrink: 0 }} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
     </div>
   )
 }
