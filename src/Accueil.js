@@ -891,7 +891,7 @@ function Accueil() {
             {!loading && (() => {
               // Desktop : 4 parties / Mobile : 6 parties
               const PARTS_COULEURS_DESKTOP = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
-              const PARTS_COULEURS_MOBILE  = ['#00d4d4', '#00d4d4', '#ffd250', '#ffd250', '#ff3eb5', '#00d4d4'];
+              const PARTS_COULEURS_MOBILE  = ['#00d4d4', '#00d4d4', '#ffd250', '#ffd250', '#ff3eb5', '#00d4d4', '#ffd250'];
               const PARTS_COULEURS = isMobile ? PARTS_COULEURS_MOBILE : PARTS_COULEURS_DESKTOP;
               const nbParts = PARTS_COULEURS.length;
               const couleur = PARTS_COULEURS[guidePart];
@@ -1018,9 +1018,13 @@ function Accueil() {
                 <div key="mp5" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
                   <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ width: '100%', borderRadius: '8px', cursor: 'zoom-in' }} />
                 </div>,
-                // Mobile P6 — Présentation, Pensées, Panier, Mon Compte (espacement réduit)
+                // Mobile P6 — Présentation, Pensées (espacement réduit)
                 <div key="mp6" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {ITEMS_P4.map((item, i, arr) => renderItem(item, i, arr, false, 8))}
+                  {ITEMS_P4.slice(0, 2).map((item, i, arr) => renderItem(item, i, arr, false, 8))}
+                </div>,
+                // Mobile P7 — Panier, Mon Compte (espacement réduit)
+                <div key="mp7" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {ITEMS_P4.slice(2).map((item, i, arr) => renderItem(item, i, arr, false, 8))}
                 </div>,
               ] : [
                 // Desktop P1 — 1ère connexion + Catalogue + Livres
@@ -1053,17 +1057,20 @@ function Accueil() {
                       onTouchStart={isMobile ? handleTouchStart : undefined}
                       onTouchEnd={isMobile ? handleTouchEnd : undefined}
                       style={{ padding: isMobile ? '16px 12px' : '28px 60px', position: 'relative', minHeight: isMobile ? 'auto' : '540px', display: 'flex', flexDirection: 'column' }}>
-                      {/* Indicateurs swipe mobile */}
+                      {/* Flèches navigation mobile — discrètes et cliquables */}
                       {isMobile && (
-                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
-                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart > 0 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
+                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+                          <div onClick={() => { if (guidePart > 0) { setGuidePart(p => p - 1); setTimeout(() => guideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } }}
+                            style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart > 0 ? 0.6 : 0, transition: 'opacity 0.3s', cursor: guidePart > 0 ? 'pointer' : 'default', pointerEvents: 'auto', height: '100%' }}>
                             <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>‹</span>
                           </div>
-                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart < nbParts - 1 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
+                          <div onClick={() => { if (guidePart < nbParts - 1) { setGuidePart(p => p + 1); setTimeout(() => guideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } }}
+                            style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart < nbParts - 1 ? 0.6 : 0, transition: 'opacity 0.3s', cursor: guidePart < nbParts - 1 ? 'pointer' : 'default', pointerEvents: 'auto', height: '100%' }}>
                             <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>›</span>
                           </div>
                         </div>
                       )}
+                      {!isMobile && guidePart > 0 && (
                         <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
                       )}
                       {!isMobile && guidePart < nbParts - 1 && (
@@ -1074,7 +1081,7 @@ function Accueil() {
                           <div key={i} onClick={() => setGuidePart(i)} style={{ width: guidePart === i ? '24px' : '8px', height: '8px', borderRadius: '4px', background: guidePart === i ? c : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
                         ))}
                       </div>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: guidePart === 1 || guidePart === 2 ? 'center' : 'flex-start' }}>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: (isMobile ? (guidePart === 3 || guidePart === 4) : (guidePart === 1 || guidePart === 2)) ? 'center' : 'flex-start' }}>
                         {partieContenu[guidePart]}
                       </div>
                     </div>
