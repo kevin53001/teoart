@@ -522,6 +522,7 @@ function Accueil() {
   const [guideOuvert, setGuideOuvert] = React.useState(false);
   const [guidePart, setGuidePart] = React.useState(0);
   const [zoomGuide, setZoomGuide] = React.useState(null);
+  const touchStartXGuide = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
   const { nbArticles } = usePanier();
 
@@ -892,15 +893,15 @@ function Accueil() {
               const T = 72;
 
               // Swipe mobile
-              const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+              const handleTouchStart = (e) => { touchStartXGuide.current = e.touches[0].clientX; };
               const handleTouchEnd = (e) => {
-                if (touchStartX.current === null) return;
-                const diff = touchStartX.current - e.changedTouches[0].clientX;
+                if (touchStartXGuide.current === null) return;
+                const diff = touchStartXGuide.current - e.changedTouches[0].clientX;
                 if (Math.abs(diff) > 50) {
                   if (diff > 0 && guidePart < 3) setGuidePart(p => p + 1);
                   if (diff < 0 && guidePart > 0) setGuidePart(p => p - 1);
                 }
-                touchStartX.current = null;
+                touchStartXGuide.current = null;
               };
 
               const renderItem = (item, i, arr, avecSousmenu) => {
