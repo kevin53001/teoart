@@ -523,6 +523,7 @@ function Accueil() {
   const [guidePart, setGuidePart] = React.useState(0);
   const [zoomGuide, setZoomGuide] = React.useState(null);
   const touchStartXGuide = React.useRef(null);
+  const guideRef = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
   const { nbArticles } = usePanier();
 
@@ -898,8 +899,14 @@ function Accueil() {
                 if (touchStartXGuide.current === null) return;
                 const diff = touchStartXGuide.current - e.changedTouches[0].clientX;
                 if (Math.abs(diff) > 50) {
-                  if (diff > 0 && guidePart < 3) setGuidePart(p => p + 1);
-                  if (diff < 0 && guidePart > 0) setGuidePart(p => p - 1);
+                  if (diff > 0 && guidePart < 3) {
+                    setGuidePart(p => p + 1);
+                    setTimeout(() => guideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  }
+                  if (diff < 0 && guidePart > 0) {
+                    setGuidePart(p => p - 1);
+                    setTimeout(() => guideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  }
                 }
                 touchStartXGuide.current = null;
               };
@@ -997,7 +1004,7 @@ function Accueil() {
               ];
 
               return (
-                <div style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s', position: 'relative' }}>
+                <div ref={guideRef} style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s', position: 'relative' }}>
                   <div onClick={() => setGuideOuvert(o => !o)} style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.36), rgba(0,212,212,0.16))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.4)' }}>
                     <p style={{ color: '#00d4d4', fontSize: isMobile ? '14px' : '16px', fontWeight: 'bold', letterSpacing: '0.5px' }}>Comment fonctionne le site ?</p>
                     <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
@@ -1007,7 +1014,17 @@ function Accueil() {
                       onTouchStart={isMobile ? handleTouchStart : undefined}
                       onTouchEnd={isMobile ? handleTouchEnd : undefined}
                       style={{ padding: isMobile ? '16px 12px' : '28px 60px', position: 'relative', minHeight: isMobile ? 'auto' : '540px', display: 'flex', flexDirection: 'column' }}>
-                      {!isMobile && guidePart > 0 && (
+                      {/* Indicateurs swipe mobile */}
+                      {isMobile && (
+                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, pointerEvents: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1 }}>
+                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart > 0 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
+                            <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>‹</span>
+                          </div>
+                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart < 3 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
+                            <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>›</span>
+                          </div>
+                        </div>
+                      )}
                         <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
                       )}
                       {!isMobile && guidePart < 3 && (
