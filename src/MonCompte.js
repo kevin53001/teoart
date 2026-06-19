@@ -1870,18 +1870,19 @@ function SectionMesColoriages({ userId, userPseudo }) {
 
   return (
     <>
-      {/* Popup zoom — portal pour passer devant tout (menu zIndex 99999) */}
+      {/* Popup zoom — portal + zIndex 100000 pour passer devant tout */}
       {coloZoom && ReactDOM.createPortal(
-        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column' }}>
-            <img src={coloZoom.image_url} alt="" style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px 10px 0 0', display: 'block' }} />
-            <div style={{ background: 'rgba(20,20,20,0.98)', border: '1px solid rgba(255,255,255,0.08)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', marginBottom: '2px' }}>{coloZoom.illu?.nom}</p>
-              <ZoomSocialMonCompte coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
-              <button onClick={() => setConfirmation(coloZoom)} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '4px' }}>🗑 Supprimer ce coloriage</button>
-            </div>
+        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
+          {/* Image grande centrée */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }} onClick={e => e.stopPropagation()}>
+            <img src={coloZoom.image_url} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />
           </div>
-          <button onClick={() => setColoZoom(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer' }}>✕</button>
+          {/* Bloc social + bouton supprimer */}
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
+            <ZoomSocialMonCompte coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
+            <button onClick={() => setConfirmation(coloZoom)} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer', marginTop: '8px' }}>🗑 Supprimer ce coloriage</button>
+          </div>
+          <button onClick={() => setColoZoom(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 2 }}>✕</button>
         </div>,
         document.body
       )}
