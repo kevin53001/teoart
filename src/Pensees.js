@@ -298,7 +298,9 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
               </div>
             </React.Fragment>
           );
-        })}
+        })
+        })()
+      }
       </div>
     </div>
   );
