@@ -889,7 +889,11 @@ function Accueil() {
 
             {/* ── Guide du site — encart déroulant tunnel ── */}
             {!loading && (() => {
-              const PARTS_COULEURS = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
+              // Desktop : 4 parties / Mobile : 6 parties
+              const PARTS_COULEURS_DESKTOP = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
+              const PARTS_COULEURS_MOBILE  = ['#00d4d4', '#00d4d4', '#ffd250', '#ffd250', '#ff3eb5', '#00d4d4'];
+              const PARTS_COULEURS = isMobile ? PARTS_COULEURS_MOBILE : PARTS_COULEURS_DESKTOP;
+              const nbParts = PARTS_COULEURS.length;
               const couleur = PARTS_COULEURS[guidePart];
               const T = 72;
 
@@ -899,7 +903,7 @@ function Accueil() {
                 if (touchStartXGuide.current === null) return;
                 const diff = touchStartXGuide.current - e.changedTouches[0].clientX;
                 if (Math.abs(diff) > 50) {
-                  if (diff > 0 && guidePart < 3) {
+                  if (diff > 0 && guidePart < nbParts - 1) {
                     setGuidePart(p => p + 1);
                     setTimeout(() => guideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
                   }
@@ -911,11 +915,11 @@ function Accueil() {
                 touchStartXGuide.current = null;
               };
 
-              const renderItem = (item, i, arr, avecSousmenu) => {
+              const renderItem = (item, i, arr, avecSousmenu, espacementMobile = 20) => {
                 const isLast = i === arr.length - 1;
                 if (isMobile) {
                   return (
-                    <div key={i} style={{ marginBottom: isLast ? 0 : '20px', paddingBottom: isLast ? 0 : '20px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                    <div key={i} style={{ marginBottom: isLast ? 0 : `${espacementMobile}px`, paddingBottom: isLast ? 0 : `${espacementMobile}px`, borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
                       <p style={{ color: item.couleur, fontSize: '14px', fontWeight: 'bold', textAlign: 'center', marginBottom: '8px' }}>{item.titre}</p>
                       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                         <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ width: '52px', height: '52px', borderRadius: '12px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: item.lien ? 'pointer' : 'default' }}>
@@ -971,10 +975,10 @@ function Accueil() {
                 );
               };
 
-              const ITEMS_P1 = [
-                { pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue', titre: 'Le Catalogue', couleur: '#00d4d4', texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.", sousmenu: [{ emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." }, { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." }, { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." }] },
-                { pastille: `${R2}/site/pastille_livres.png`, lien: '/livres', titre: 'Les Livres & Recueils — Version PDF et relié (quand il existe)', couleur: '#ffd250', texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup." },
-              ];
+              // Données des parties
+              const ITEM_CATALOGUE = { pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue', titre: 'Le Catalogue', couleur: '#00d4d4', texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.", sousmenu: [{ emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." }, { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." }, { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." }] };
+              const ITEM_LIVRES = { pastille: `${R2}/site/pastille_livres.png`, lien: '/livres', titre: 'Les Livres & Recueils — Version PDF et relié (quand il existe)', couleur: '#ffd250', texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup." };
+              const ITEMS_P1_DESKTOP = [ITEM_CATALOGUE, ITEM_LIVRES];
               const ITEMS_P4 = [
                 { pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation', titre: 'La Présentation', couleur: '#00d4d4', texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue." },
                 { pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees', titre: 'Les Pensées', couleur: '#00d4d4', texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication)." },
@@ -982,22 +986,57 @@ function Accueil() {
                 { pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte', titre: 'Mon Compte', couleur: '#ff3eb5', texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées." },
               ];
 
-              const partieContenu = [
+              // Bloc 1ère connexion (commun)
+              const blocPremiereConnexion = (
+                <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: isMobile ? '10px 12px' : '14px 18px' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.8' }}>
+                    <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
+                    Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
+                  </p>
+                </div>
+              );
+
+              // Contenu selon desktop (4 parties) ou mobile (6 parties)
+              const partieContenu = isMobile ? [
+                // Mobile P1 — 1ère connexion
+                <div key="mp1" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {blocPremiereConnexion}
+                </div>,
+                // Mobile P2 — Le Catalogue
+                <div key="mp2" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {renderItem(ITEM_CATALOGUE, 0, [ITEM_CATALOGUE], true)}
+                </div>,
+                // Mobile P3 — Les Livres & Recueils (image Guide_1)
+                <div key="mp3" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {renderItem(ITEM_LIVRES, 0, [ITEM_LIVRES], false)}
+                </div>,
+                // Mobile P4 — Image Guide_1
+                <div key="mp4" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ width: '100%', borderRadius: '8px', cursor: 'zoom-in' }} />
+                </div>,
+                // Mobile P5 — Image Guide_2
+                <div key="mp5" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ width: '100%', borderRadius: '8px', cursor: 'zoom-in' }} />
+                </div>,
+                // Mobile P6 — Présentation, Pensées, Panier, Mon Compte (espacement réduit)
+                <div key="mp6" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {ITEMS_P4.map((item, i, arr) => renderItem(item, i, arr, false, 8))}
+                </div>,
+              ] : [
+                // Desktop P1 — 1ère connexion + Catalogue + Livres
                 <div key="p1" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: isMobile ? '10px 12px' : '14px 18px' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '12px' : '13px', lineHeight: '1.8' }}>
-                      <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
-                      Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
-                    </p>
-                  </div>
-                  {ITEMS_P1.map((item, i, arr) => renderItem(item, i, arr, true))}
+                  {blocPremiereConnexion}
+                  {ITEMS_P1_DESKTOP.map((item, i, arr) => renderItem(item, i, arr, true))}
                 </div>,
+                // Desktop P2 — Image Guide_1
                 <div key="p2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={isMobile ? { width: '100%', borderRadius: '8px', cursor: 'zoom-in' } : { height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
                 </div>,
+                // Desktop P3 — Image Guide_2
                 <div key="p3" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={isMobile ? { width: '100%', borderRadius: '8px', cursor: 'zoom-in' } : { height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ height: '460px', width: '460px', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
                 </div>,
+                // Desktop P4 — Présentation, Pensées, Panier, Mon Compte
                 <div key="p4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {ITEMS_P4.map((item, i, arr) => renderItem(item, i, arr, false))}
                 </div>,
@@ -1020,14 +1059,14 @@ function Accueil() {
                           <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart > 0 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
                             <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>‹</span>
                           </div>
-                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart < 3 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
+                          <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: guidePart < nbParts - 1 ? 0.6 : 0, transition: 'opacity 0.3s' }}>
                             <span style={{ color: couleur, fontSize: '22px', lineHeight: 1 }}>›</span>
                           </div>
                         </div>
                       )}
                         <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
                       )}
-                      {!isMobile && guidePart < 3 && (
+                      {!isMobile && guidePart < nbParts - 1 && (
                         <button onClick={() => setGuidePart(p => p + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>▶</button>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
