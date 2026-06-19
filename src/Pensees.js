@@ -794,7 +794,7 @@ function Pensees() {
         .donut-stage {
           position: absolute;
           left: 50%;
-          top: 58%;
+          top: 68%;
           width: 1040px;
           height: 460px;
           transform: translate(-50%, -50%);
@@ -1022,7 +1022,7 @@ function Pensees() {
           .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
           .fiche-encadre { padding: 6px 7px; }
           .fiche-edge { height: 70%; top: -70%; }
-          .fiche-title { font-size: clamp(7px, 2.2vw, 10px); -webkit-line-clamp: unset; max-height: none; overflow: visible; }
+          .fiche-title { font-size: clamp(7px, 2.2vw, 10px); -webkit-line-clamp: unset; max-height: none; overflow: visible; word-break: break-word; overflow-wrap: break-word; }
           .fiche-author { font-size: 8.5px; margin-top: 7px; }
           .fiche-reflet { width: 78px; height: 110px; margin-left: -39px; margin-top: 72px; }
           .fiche-led { width: 7px; height: 7px; top: 8px; }
