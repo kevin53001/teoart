@@ -892,7 +892,6 @@ function Accueil() {
               const T = 72;
 
               // Swipe mobile
-              const touchStartX = React.useRef(null);
               const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
               const handleTouchEnd = (e) => {
                 if (touchStartX.current === null) return;
