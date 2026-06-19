@@ -1202,7 +1202,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
       {popup && (
         <div
           onClick={() => setPopup(null)}
-          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '22px' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '22px' }}
         >
           <div onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
             <button onClick={() => setPopup(null)} style={{ position: 'absolute', top: '-18px', right: '-18px', width: '38px', height: '38px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.82)', color: '#fff', fontSize: '20px', cursor: 'pointer', zIndex: 5 }}>×</button>
@@ -1236,7 +1236,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 520,
+            zIndex: 100001,
             background: 'rgba(0,0,0,0.86)',
             backdropFilter: 'blur(8px)',
             display: 'flex',
