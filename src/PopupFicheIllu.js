@@ -95,13 +95,15 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
 
   const toggleLike = async () => {
     console.log('[ZoomSocial] toggleLike — coloId:', coloId, 'userId:', userId);
-    if (!coloId || !userId) { console.warn('[ZoomSocial] toggleLike bloqué — coloId ou userId null'); return; }
+    if (!coloId || !userId) { console.warn('[ZoomSocial] toggleLike bloqué'); return; }
     if (jaLike) {
       const { error } = await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
       console.log('[ZoomSocial] unlike error:', error);
       setLikes(prev => prev.filter(l => l.user_id !== userId));
     } else {
-      const { error } = await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
+      const payload = { coloriage_id: coloId, user_id: userId };
+      console.log('[ZoomSocial] INSERT payload:', JSON.stringify(payload));
+      const { error } = await supabase.from('likes_coloriages').insert(payload);
       console.log('[ZoomSocial] like insert error:', error);
       setLikes(prev => [...prev, { user_id: userId }]);
     }
@@ -109,9 +111,12 @@ function ZoomSocial({ coloriage, userId, userPseudo }) {
 
   const envoyerCommentaire = async () => {
     console.log('[ZoomSocial] envoyerCommentaire — coloId:', coloId, 'userId:', userId, 'texte:', texte);
-    if (!texte.trim() || !coloId || !userId) { console.warn('[ZoomSocial] envoyerCommentaire bloqué — champ manquant'); return; }
+    if (!texte.trim() || !coloId || !userId) { console.warn('[ZoomSocial] envoyerCommentaire bloqué'); return; }
     setEnvoi(true);
-    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
+    const payload = { coloriage_id: coloId, user_id: userId, texte: texte.trim() };
+    console.log('[ZoomSocial] INSERT commentaire payload:', JSON.stringify(payload));
+    const { data, error } = await supabase.from('commentaires_coloriages').insert(payload).select('id, texte, created_at, user_id').single();
+    console.log('[ZoomSocial] commentaire insert error:', error);
     if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
     setTexte(''); setEnvoi(false);
   };
