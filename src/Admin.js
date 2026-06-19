@@ -183,13 +183,22 @@ export default function Admin() {
   const chargerCommentaires = useCallback(async () => {
     if (!userId) return
     const [{ data: cColo }, { data: cPensees }] = await Promise.all([
-      supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id, coloriage_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100),
-      supabase.from('commentaires_pensees').select('id, texte, created_at, user_id, pensee_id, profils(prenom, nom)').order('created_at', { ascending: false }).limit(100)
+      supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id, coloriage_id').order('created_at', { ascending: false }).limit(100),
+      supabase.from('commentaires_pensees').select('id, texte, created_at, user_id, pensee_id').order('created_at', { ascending: false }).limit(100)
     ])
     const tous = [
       ...(cColo || []).map(c => ({ ...c, table: 'commentaires_coloriages', ref: `coloriage #${c.coloriage_id}` })),
       ...(cPensees || []).map(c => ({ ...c, table: 'commentaires_pensees', ref: `pensée #${c.pensee_id}` }))
-    ].sort((a, b) => {
+    ]
+    // Récupérer les profils séparément
+    const userIds = [...new Set(tous.map(c => c.user_id).filter(Boolean))]
+    if (userIds.length > 0) {
+      const { data: profils } = await supabase.from('profils').select('id, prenom, nom').in('id', userIds)
+      const profilsMap = {}
+      ;(profils || []).forEach(p => { profilsMap[p.id] = p })
+      tous.forEach(c => { c.profils = profilsMap[c.user_id] || null })
+    }
+    tous.sort((a, b) => {
       const aFlag = contientMotInterdit(a.texte)
       const bFlag = contientMotInterdit(b.texte)
       if (aFlag && !bFlag) return -1
