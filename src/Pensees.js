@@ -157,17 +157,21 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
   }, [canLoop, limit]);
 
   // Calcule la rotation cible pour que la fiche la plus proche du centre soit exactement au centre
+  // On doit tenir compte du gap : la cible est atteinte quand localAngle + targetRotation + offset(0) = 0
+  // Soit quand localAngle + targetRotation est dans la zone de transition → on vise norm = 0
   const calculerSnapTarget = React.useCallback(() => {
     if (count <= 1) return 0;
-    // angle de chaque fiche au centre = localAngle + rotation, on cherche celle dont angle ≈ 0
     let meilleurDelta = Infinity;
     let meilleurTarget = rotationRef.current;
     for (let i = 0; i < count; i++) {
       const localAngle = -arc / 2 + angleStep * i;
-      // la fiche i est au centre quand localAngle + rotation = 0 (mod 360 si loop)
+      // La fiche i est au centre quand localAngle + rotation = 0 (norm = 0)
+      // Avec le gap, l'angle ajusté vaut localAngle + offset(0) + rotation
+      // On veut angle ajusté = 0 → rotation = -localAngle - offset(à la cible)
+      // Mais offset dépend de rotation... On simplifie : on cherche rotation tel que norm = 0,
+      // ce qui signifie rotation = -localAngle
       let targetRotation = -localAngle;
       if (canLoop) {
-        // ramener dans la plage la plus proche de la rotation actuelle
         let diff = ((targetRotation - rotationRef.current) % 360 + 540) % 360 - 180;
         targetRotation = rotationRef.current + diff;
       } else {
@@ -277,24 +281,30 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
   const radiusY = isMobile ? 70 : 130;
   const smallCountSpread = count < 14 ? (isMobile ? 24 : 38) : 0;
 
-  // Angle de répulsion angulaire autour de la centrale (degrés)
-  // Les voisines immédiates sont repoussées de cet angle supplémentaire
-  const PUSH_DEG = isMobile ? 18 : 22;
+  // Angle supplémentaire de chaque côté de la fiche centrale
+  const EXTRA_GAP = isMobile ? 14 : 18; // degrés
 
-  // Fonction de push angulaire : reçoit l'angle brut d'une fiche (centré sur 0°)
-  // et retourne un offset angulaire supplémentaire pour l'écarter du centre
-  const angularPush = (angleBrut) => {
+  // Pour chaque fiche, calcule son angle ajusté en tenant compte du gap central.
+  // On utilise l'angle courant (localAngle + rotation) pour savoir si la fiche
+  // est à gauche ou à droite du centre, et on lui ajoute le décalage correspondant.
+  // La transition est lissée sur une zone de ±(angleStep/2) autour de 0°
+  // pour éviter les sauts brusques quand une fiche passe au centre.
+  const getAngleAjuste = (localAngle) => {
+    const angleCourant = localAngle + rotation;
     // Normaliser entre -180 et 180
-    let a = ((angleBrut % 360) + 540) % 360 - 180;
-    if (Math.abs(a) > 90) return 0; // fiches derrière : pas de push
-    // Intensité : max quand a≈0, décroît progressivement jusqu'à 0 vers ±90°
-    const intensity = Math.max(0, 1 - (Math.abs(a) / 45));
-    const smoothIntensity = intensity * intensity; // courbe douce
-    // Direction : positif si à droite (a>0), négatif si à gauche (a<0)
-    const sign = a >= 0 ? 1 : -1;
-    // La fiche centrale (a≈0) ne se pousse pas elle-même : son push net est 0
-    // car les deux côtés s'annulent. Les voisines reçoivent le push dans leur direction.
-    return sign * smoothIntensity * PUSH_DEG;
+    const norm = ((angleCourant % 360) + 540) % 360 - 180;
+    // Zone de transition douce autour de 0° : ±transitionZone degrés
+    const transitionZone = angleStep > 0 ? Math.min(angleStep * 0.8, 20) : 15;
+    let offset;
+    if (norm > transitionZone) {
+      offset = EXTRA_GAP; // à droite du centre → décaler encore plus à droite
+    } else if (norm < -transitionZone) {
+      offset = -EXTRA_GAP; // à gauche → encore plus à gauche
+    } else {
+      // Zone de transition : interpolation linéaire douce
+      offset = (norm / transitionZone) * EXTRA_GAP;
+    }
+    return localAngle + offset;
   };
 
   return (
@@ -311,9 +321,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
       <div className="donut-stage">
         {visibles.map((pensee, i) => {
           const localAngle = count === 1 ? 0 : -arc / 2 + angleStep * i;
-          const angleBrut = localAngle + rotation;
-          // Appliquer le push angulaire pour écarter les voisines de la centrale
-          const angle = angleBrut + angularPush(angleBrut);
+          const angle = getAngleAjuste(localAngle);
           const rad = (angle * Math.PI) / 180;
           const sin = Math.sin(rad);
           const cos = Math.cos(rad);
