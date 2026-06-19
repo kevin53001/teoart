@@ -52,6 +52,12 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
   const [loading, setLoading] = React.useState(true);
   const [popupZoom, setPopupZoom] = React.useState(null);
   const timerRef = React.useRef(null);
+  // Zoom social coloriages
+  const [zoomSocialOuvert, setZoomSocialOuvert] = React.useState(false);
+  const [zoomIdx, setZoomIdx] = React.useState(0);
+  const [likes, setLikes] = React.useState({});
+  const [commentaires, setCommentaires] = React.useState({});
+  const [nouveauCommentaire, setNouveauCommentaire] = React.useState('');
 
   React.useEffect(() => {
     const charger = async () => {
@@ -67,35 +73,21 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
         setImages((data || []).map(i => ({ url: getVisuelB(i.visuels), nom: i.nom })).filter(i => i.url));
 
       } else if (id === 'coloriages') {
-        const semaines = [1, 2, 3, 4, 6, 8];
-        let colos = [];
-        for (const s of semaines) {
-          const depuis = new Date(Date.now() - s * 7 * 24 * 3600 * 1000).toISOString();
-          const { data } = await supabase
-            .from('coloriages')
-            .select('id, image_url, user_id, illustration_id')
-            .not('image_url', 'is', null)
-            .gte('created_at', depuis)
-            .order('created_at', { ascending: false })
-            .limit(10);
-          if (data && data.length > 0) {
-            const uids = [...new Set(data.map(c => c.user_id))];
-            const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
-            const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
-            colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id, illuId: c.illustration_id }));
-            // Filtrer les images cassées
-            const testerUrl = (url) => new Promise(resolve => {
-              const img = new Image();
-              img.onload = () => resolve(true);
-              img.onerror = () => resolve(false);
-              img.src = url;
-            });
-            const resultats = await Promise.allSettled(colos.map(c => testerUrl(c.url)));
-            colos = colos.filter((_, i) => resultats[i].value === true);
-            break;
-          }
+        const { data } = await supabase
+          .from('coloriages')
+          .select('id, image_url, user_id, illustration_id, created_at')
+          .not('image_url', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (data && data.length > 0) {
+          const uids = [...new Set(data.map(c => c.user_id))];
+          const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+          const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+          const colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id, illuId: c.illustration_id, userId: c.user_id }));
+          const testerUrl = (url) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve(true); img.onerror = () => resolve(false); img.src = url; });
+          const resultats = await Promise.allSettled(colos.map(c => testerUrl(c.url)));
+          setImages(colos.filter((_, i) => resultats[i].value === true));
         }
-        setImages(colos);
 
       } else if (id === 'bestsellers') {
         const { data } = await supabase
@@ -121,8 +113,9 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
     charger();
   }, [id]);
 
-  // Auto-défilement avec crossfade
+  // Auto-défilement avec crossfade (pas pour coloriages : navigation manuelle)
   React.useEffect(() => {
+    if (id === 'coloriages') return;
     if (images.length <= 1) return;
     const t = setInterval(() => {
       setIdx(prev => {
@@ -135,7 +128,55 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
     return () => { clearInterval(t); clearTimeout(timerRef.current); };
   }, [images.length]);
 
-  const img = images[idx];
+  const ouvrirZoomSocial = async (index) => {
+    setZoomIdx(index);
+    setZoomSocialOuvert(true);
+    const colo = images[index];
+    if (!colo) return;
+    // Charger likes
+    const { data: likesData } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', colo.coloId);
+    setLikes(prev => ({ ...prev, [colo.coloId]: likesData || [] }));
+    // Charger commentaires
+    const { data: commData } = await supabase.from('commentaires_coloriages').select('id, contenu, user_id, created_at').eq('coloriage_id', colo.coloId).order('created_at', { ascending: true });
+    const uids = [...new Set((commData || []).map(c => c.user_id))];
+    const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+    const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
+    setCommentaires(prev => ({ ...prev, [colo.coloId]: (commData || []).map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })) }));
+  };
+
+  const toggleLike = async () => {
+    if (!userId) return;
+    const colo = images[zoomIdx];
+    if (!colo) return;
+    const coloId = colo.coloId;
+    const dejaLike = (likes[coloId] || []).some(l => l.user_id === userId);
+    if (dejaLike) {
+      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
+      setLikes(prev => ({ ...prev, [coloId]: (prev[coloId] || []).filter(l => l.user_id !== userId) }));
+    } else {
+      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
+      setLikes(prev => ({ ...prev, [coloId]: [...(prev[coloId] || []), { user_id: userId }] }));
+    }
+  };
+
+  const envoyerCommentaire = async () => {
+    if (!userId || !nouveauCommentaire.trim()) return;
+    const colo = images[zoomIdx];
+    if (!colo) return;
+    const coloId = colo.coloId;
+    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, contenu: nouveauCommentaire.trim() }).select().single();
+    if (data) {
+      setCommentaires(prev => ({ ...prev, [coloId]: [...(prev[coloId] || []), { ...data, pseudo: 'Moi' }] }));
+      setNouveauCommentaire('');
+    }
+  };
+
+  const naviguerZoom = async (direction) => {
+    const next = (zoomIdx + direction + images.length) % images.length;
+    await ouvrirZoomSocial(next);
+  };
+
+
   const prevImg = prevIdx !== null ? images[prevIdx] : null;
   const coloriste = img ? extraireColoriste(img.url) : null;
   const nomColoriste = img?.nom?.startsWith('🎨') ? img.nom.replace('🎨 ', '') : coloriste;
@@ -213,6 +254,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
               src={img.url}
               alt={img.nom}
               onClick={async () => {
+                if (id === 'coloriages') { await ouvrirZoomSocial(idx); return; }
                 if (id === 'patreon') { setPopupZoom(idx); return; }
                 if (!img.illuId) return;
                 if (img.illu) {
@@ -234,6 +276,15 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
               }}
             />
             <div style={{ width: '100%', height: '180px' }} />
+            {/* Flèches navigation pour coloriages */}
+            {id === 'coloriages' && images.length > 1 && (
+              <>
+                <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}
+                  style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '28px', height: '28px', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>‹</button>
+                <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}
+                  style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '28px', height: '28px', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>›</button>
+              </>
+            )}
             {nomColoriste && (
               <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '9px', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(4px)' }}>
                 {nomColoriste}
@@ -270,6 +321,57 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, onClose, onOuvrir
               style={{ position: 'absolute', right: '64px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
           )}
           <p style={{ position: 'absolute', bottom: '16px', left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>{images[popupZoom]?.nom} — {popupZoom + 1} / {images.length}</p>
+        </div>,
+        document.body
+      )}
+      {/* ── Zoom social coloriages ── */}
+      {zoomSocialOuvert && id === 'coloriages' && images[zoomIdx] && ReactDOM.createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          {/* Bouton fermer */}
+          <button onClick={() => setZoomSocialOuvert(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+
+          {/* Image + flèches */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', maxHeight: '60vh' }}>
+            <button onClick={() => naviguerZoom(-1)} style={{ position: 'absolute', left: 0, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>‹</button>
+            <img src={images[zoomIdx].url} alt="" style={{ maxWidth: '80vw', maxHeight: '60vh', objectFit: 'contain', borderRadius: '8px' }} />
+            <button onClick={() => naviguerZoom(1)} style={{ position: 'absolute', right: 0, background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>›</button>
+          </div>
+
+          {/* Pseudo coloriste + compteur */}
+          <p style={{ color: '#00d4d4', fontSize: '13px', marginTop: '12px', fontWeight: 'bold' }}>{images[zoomIdx].nom}</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '2px' }}>{zoomIdx + 1} / {images.length}</p>
+
+          {/* Likes */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+            <button onClick={toggleLike} style={{ background: 'none', border: 'none', cursor: userId ? 'pointer' : 'default', fontSize: '22px', lineHeight: 1 }}>
+              {(likes[images[zoomIdx].coloId] || []).some(l => l.user_id === userId) ? '❤️' : '🤍'}
+            </button>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{(likes[images[zoomIdx].coloId] || []).length} like{(likes[images[zoomIdx].coloId] || []).length !== 1 ? 's' : ''}</span>
+          </div>
+
+          {/* Commentaires */}
+          <div style={{ width: '100%', maxWidth: '480px', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '20vh', overflowY: 'auto' }}>
+            {(commentaires[images[zoomIdx].coloId] || []).map(c => (
+              <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '6px 10px' }}>
+                <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>{c.pseudo} </span>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>{c.contenu}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Saisie commentaire */}
+          {userId && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', width: '100%', maxWidth: '480px' }}>
+              <input
+                value={nouveauCommentaire}
+                onChange={e => setNouveauCommentaire(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && envoyerCommentaire()}
+                placeholder="Ajouter un commentaire…"
+                style={{ flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '12px', outline: 'none' }}
+              />
+              <button onClick={envoyerCommentaire} style={{ background: 'rgba(0,212,212,0.2)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '8px 14px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer' }}>→</button>
+            </div>
+          )}
         </div>,
         document.body
       )}
