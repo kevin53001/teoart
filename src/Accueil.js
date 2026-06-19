@@ -932,11 +932,11 @@ function Accueil() {
                     </div>
                   ))}
                 </div>,
-                <div key="p2" style={{ display: 'flex', justifyContent: 'center' }}>
-                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ maxWidth: '100%', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
+                <div key="p2" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ maxHeight: '460px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
                 </div>,
-                <div key="p3" style={{ display: 'flex', justifyContent: 'center' }}>
-                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ maxWidth: '100%', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
+                <div key="p3" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ maxHeight: '460px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
                 </div>,
                 <div key="p4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {[
@@ -967,14 +967,14 @@ function Accueil() {
                     <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
                   </div>
                   {guideOuvert && (
-                    <div style={{ padding: isMobile ? '20px 40px' : '28px 60px', position: 'relative' }}>
+                    <div style={{ padding: isMobile ? '20px 40px' : '28px 60px', position: 'relative', minHeight: '540px', display: 'flex', flexDirection: 'column' }}>
                       {/* Flèche gauche */}
                       {guidePart > 0 && (
-                        <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: `${couleur}22`, border: `2px solid ${couleur}`, borderRadius: '50%', width: '36px', height: '36px', color: couleur, fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}40`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
+                        <button onClick={() => setGuidePart(p => p - 1)} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>◀</button>
                       )}
                       {/* Flèche droite */}
                       {guidePart < 3 && (
-                        <button onClick={() => setGuidePart(p => p + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: `${couleur}22`, border: `2px solid ${couleur}`, borderRadius: '50%', width: '36px', height: '36px', color: couleur, fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}40`, transition: 'all 0.2s', zIndex: 2 }}>▶</button>
+                        <button onClick={() => setGuidePart(p => p + 1)} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: couleur, border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: '#000', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 12px ${couleur}80`, transition: 'all 0.2s', zIndex: 2 }}>▶</button>
                       )}
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
                         {PARTS_COULEURS.map((c, i) => (
@@ -982,7 +982,9 @@ function Accueil() {
                         ))}
                       </div>
                       <p style={{ color: couleur, fontSize: '11px', textAlign: 'center', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8 }}>{PARTS_LABELS[guidePart]} — {guidePart + 1} / 4</p>
-                      {partieContenu[guidePart]}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: guidePart === 1 || guidePart === 2 ? 'center' : 'flex-start' }}>
+                        {partieContenu[guidePart]}
+                      </div>
                     </div>
                   )}
                   {zoomGuide && ReactDOM.createPortal(
