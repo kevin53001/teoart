@@ -7,7 +7,7 @@ import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
-import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
+import { usePWAInstallable } from './BannerePWA';
 import Cloche from './Cloche';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -1348,11 +1348,11 @@ function SectionMesInfos({ userId }) {
                   📲 Installer l'application
                 </button>
               ) : (
-                <button
-                  onClick={() => { reactiverBannerePWA(); window.location.reload(); }}
-                  style={{ background: 'linear-gradient(135deg, rgba(255,62,181,0.18), rgba(255,62,181,0.08))', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(255,62,181,0.15)' }}>
-                  📲 Installer l'application
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.6, background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    📲 Pour installer l'appli,<br/>ouvre le menu de ton navigateur<br/>→ <span style={{ color: 'rgba(255,255,255,0.7)' }}>"Ajouter à l'écran d'accueil"</span>
+                  </p>
+                </div>
               )}
               {/* ── Formulaire de contact ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
@@ -1580,6 +1580,15 @@ function SectionMesCommandes({ userId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+      {/* ── Encart info iOS ── */}
+      <div style={{ background: 'rgba(255,210,80,0.07)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '12px', padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+        <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: 1.3 }}>📱</span>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', lineHeight: 1.7, margin: 0 }}>
+          <span style={{ color: '#ffd250', fontWeight: 'bold' }}>Sur iPhone</span>, les téléchargements s'ouvrent dans Safari. Pour sauvegarder ton PDF : appuie sur <strong style={{ color: 'rgba(255,255,255,0.85)' }}>Télécharger</strong>, puis sur l'icône de partage <strong style={{ color: 'rgba(255,255,255,0.85)' }}>⎙</strong> en bas de l'écran → <strong style={{ color: 'rgba(255,255,255,0.85)' }}>"Enregistrer dans Fichiers"</strong>.
+        </p>
+      </div>
+
       {Object.entries(parCommande).map(([commandeId, items], cmdIdx) => {
         const ouvert = commandeOuverte === commandeId;
         const receipt = receipts[commandeId];
