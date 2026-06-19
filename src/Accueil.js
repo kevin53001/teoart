@@ -881,6 +881,116 @@ function Accueil() {
               </div>
             )}
 
+            {/* ── Guide du site — encart déroulant tunnel ── */}
+            {!loading && (() => {
+              const [guideOuvert, setGuideOuvert] = React.useState(false);
+              const [guidePart, setGuidePart] = React.useState(0);
+              const [zoomGuide, setZoomGuide] = React.useState(null);
+              const PARTS_COULEURS = ['#00d4d4', '#ffd250', '#ff3eb5', '#00d4d4'];
+              const PARTS_LABELS = ['Le Catalogue', 'Guide visuel 1', 'Guide visuel 2', 'Le reste du site'];
+              const couleur = PARTS_COULEURS[guidePart];
+              const T = 72;
+
+              const partieContenu = [
+                <div key="p1" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '14px 18px' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: '1.8' }}>
+                      <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
+                      Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
+                    </p>
+                  </div>
+                  {[
+                    { pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue', titre: 'Le Catalogue', couleur: '#00d4d4', texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.", sousmenu: [{ emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." }, { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." }, { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." }] },
+                    { pastille: `${R2}/site/pastille_livres.png`, lien: '/livres', titre: 'Les Livres & Recueils', couleur: '#ffd250', texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup." },
+                  ].map((item, i, arr) => (
+                    <div key={i} style={{ marginBottom: i < arr.length - 1 ? '24px' : 0, paddingBottom: i < arr.length - 1 ? '24px' : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                        <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }} onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }} onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}>
+                          <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
+                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
+                        </div>
+                      </div>
+                      {item.sousmenu && (
+                        <div style={{ marginTop: '14px', marginLeft: `${T + 16}px`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {item.sousmenu.map((sub, si) => (
+                            <div key={si} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                              <div style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '8px', background: `${sub.couleur}18`, border: `1px solid ${sub.couleur}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <span style={{ fontSize: '12px', color: sub.couleur, fontWeight: 'bold' }}>{sub.emoji}</span>
+                              </div>
+                              <div>
+                                <p style={{ color: sub.couleur, fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{sub.titre}</p>
+                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.6' }}>{sub.texte}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>,
+                <div key="p2" style={{ display: 'flex', justifyContent: 'center' }}>
+                  <img src={`${R2}/site/Guide_1.png`} alt="Guide 1" onClick={() => setZoomGuide(`${R2}/site/Guide_1.png`)} style={{ maxWidth: '100%', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,210,80,0.15)' }} />
+                </div>,
+                <div key="p3" style={{ display: 'flex', justifyContent: 'center' }}>
+                  <img src={`${R2}/site/Guide_2.png`} alt="Guide 2" onClick={() => setZoomGuide(`${R2}/site/Guide_2.png`)} style={{ maxWidth: '100%', borderRadius: '12px', cursor: 'zoom-in', boxShadow: '0 0 30px rgba(255,62,181,0.15)' }} />
+                </div>,
+                <div key="p4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {[
+                    { pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation', titre: 'La Présentation', couleur: '#00d4d4', texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue." },
+                    { pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees', titre: 'Les Pensées', couleur: '#00d4d4', texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication)." },
+                    { pastille: `${R2}/site/pastille_panier.png`, lien: null, titre: 'Le Panier & les Achats', couleur: '#ffd250', texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 !" },
+                    { pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte', titre: 'Mon Compte', couleur: '#ff3eb5', texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées." },
+                  ].map((item, i, arr) => (
+                    <div key={i} style={{ marginBottom: i < arr.length - 1 ? '24px' : 0, paddingBottom: i < arr.length - 1 ? '24px' : 0, borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                        <div onClick={item.lien ? () => navigate(item.lien) : undefined} style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }} onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }} onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}>
+                          <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
+                          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>,
+              ];
+
+              return (
+                <div style={{ background: 'rgba(0,0,0,0.6)', border: `1px solid ${couleur}40`, borderRadius: '16px', overflow: 'hidden', transition: 'border-color 0.3s' }}>
+                  <div onClick={() => setGuideOuvert(o => !o)} style={{ background: 'linear-gradient(135deg, rgba(0,212,212,0.18), rgba(0,212,212,0.08))', borderBottom: guideOuvert ? `1px solid ${couleur}40` : 'none', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', boxShadow: 'inset 0 1px 0 rgba(0,212,212,0.2)' }}>
+                    <p style={{ color: '#00d4d4', fontSize: isMobile ? '14px' : '16px', fontWeight: 'bold', letterSpacing: '0.5px' }}>Comment fonctionne le site ?</p>
+                    <span style={{ color: '#00d4d4', fontSize: '18px', transition: 'transform 0.3s', display: 'inline-block', transform: guideOuvert ? 'rotate(180deg)' : 'none' }}>▾</span>
+                  </div>
+                  {guideOuvert && (
+                    <div style={{ padding: isMobile ? '20px 16px' : '28px 32px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
+                        {PARTS_COULEURS.map((c, i) => (
+                          <div key={i} onClick={() => setGuidePart(i)} style={{ width: guidePart === i ? '24px' : '8px', height: '8px', borderRadius: '4px', background: guidePart === i ? c : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s' }} />
+                        ))}
+                      </div>
+                      <p style={{ color: couleur, fontSize: '11px', textAlign: 'center', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.8 }}>{PARTS_LABELS[guidePart]} — {guidePart + 1} / 4</p>
+                      {partieContenu[guidePart]}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
+                        <button onClick={() => setGuidePart(p => Math.max(0, p - 1))} disabled={guidePart === 0} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `2px solid ${couleur}`, background: `${couleur}18`, color: couleur, fontSize: '14px', fontWeight: 'bold', cursor: guidePart === 0 ? 'default' : 'pointer', opacity: guidePart === 0 ? 0.3 : 1, transition: 'all 0.2s', boxShadow: guidePart === 0 ? 'none' : `0 0 12px ${couleur}40` }}>‹ Précédent</button>
+                        <button onClick={() => setGuidePart(p => Math.min(3, p + 1))} disabled={guidePart === 3} style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `2px solid ${couleur}`, background: `${couleur}18`, color: couleur, fontSize: '14px', fontWeight: 'bold', cursor: guidePart === 3 ? 'default' : 'pointer', opacity: guidePart === 3 ? 0.3 : 1, transition: 'all 0.2s', boxShadow: guidePart === 3 ? 'none' : `0 0 12px ${couleur}40` }}>Suivant ›</button>
+                      </div>
+                    </div>
+                  )}
+                  {zoomGuide && ReactDOM.createPortal(
+                    <div onClick={() => setZoomGuide(null)} style={{ position: 'fixed', inset: 0, zIndex: 100000, background: 'rgba(0,0,0,0.97)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', cursor: 'zoom-out' }}>
+                      <img src={zoomGuide} alt="" onClick={e => e.stopPropagation()} style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '12px' }} />
+                      <button onClick={() => setZoomGuide(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              );
+            })()}
+
             {/* ── 4 encarts défilants — 2x2 sur mobile ── */}
             {!loading && (
               <div style={{
@@ -917,93 +1027,6 @@ function Accueil() {
               </div>
             )}
 
-            {/* ── Guide du site ── */}
-            <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: isMobile ? '24px 20px' : '36px 40px', backdropFilter: 'blur(10px)' }}>
-              <p style={{ color: '#fff', fontSize: isMobile ? '17px' : '20px', fontWeight: 'bold', marginBottom: '24px', textAlign: 'center', letterSpacing: '0.5px' }}>
-                🗺️ Comment fonctionne le site ?
-              </p>
-              {/* Texte sélection initiale */}
-              <div style={{ background: 'rgba(0,212,212,0.06)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '12px', padding: '14px 18px', marginBottom: '28px' }}>
-                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', lineHeight: '1.8' }}>
-                  <span style={{ color: '#00d4d4', fontWeight: 'bold' }}>💡 Ta première connexion — </span>
-                  Lors de ta première connexion, tu as sélectionné les recueils et livres que tu possèdes déjà. Toutes les illustrations présentes dans ces livres et recueils ont été automatiquement cochées dans ta collection (badge J'ai). Tu pourras avoir l'impression que certains livres sont cochés alors que tu ne les as pas, c'est que ces livres sont présents dans un des recueils que tu as sélectionné. Bref, c'est maintenant à toi de jouer pour compléter ta collection…
-                </p>
-              </div>
-
-              {[
-                {
-                  pastille: `${R2}/site/pastille_categories.png`, lien: '/catalogue',
-                  titre: 'Le Catalogue', couleur: '#00d4d4',
-                  texte: "C'est le cœur du site : toutes mes illustrations à colorier sont là, classées par catégorie et par année. Tu peux filtrer, rechercher, trier. Chaque vignette est cliquable pour ouvrir la fiche complète.",
-                  sousmenu: [
-                    { emoji: '✓', couleur: '#00d4d4', titre: "La Collection — J'ai", texte: "Coche \"J'ai\" sur une illustration pour l'ajouter à ta collection personnelle. Tu peux suivre ta progression avec la jauge en haut de cette page." },
-                    { emoji: '♡', couleur: '#ff4d7d', titre: 'La Collection — Je veux', texte: "Tu craques pour une illustration mais tu ne l'as pas encore ? Coche \"Je veux\" pour la mettre en liste de souhaits." },
-                    { emoji: '🎨', couleur: '#ffd250', titre: "J'ai colorié", texte: "Tu as colorié une de mes illustrations ? Partage-la depuis la fiche illustration ! Les coloriages partagés apparaissent dans la fiche et dans les \"Derniers coloriages\" ci-dessus." },
-                  ],
-                },
-                {
-                  pastille: `${R2}/site/pastille_livres.png`, lien: '/livres',
-                  titre: 'Les Livres & Recueils', couleur: '#ffd250',
-                  texte: "Mes illustrations sont regroupées en livres thématiques et en recueils annuels. Tu peux cocher \"J'ai\" directement sur un livre ou un recueil pour cocher toutes ses illustrations d'un coup.",
-                },
-                {
-                  pastille: `${R2}/site/pastille_logomini.png`, lien: '/presentation',
-                  titre: 'La Présentation', couleur: '#00d4d4',
-                  texte: "C'est ici que je me présente ! Qui je suis, pourquoi je dessine, d'où vient Kevin Teo'Art. Un coin plus personnel pour mieux me connaître avant de plonger dans le catalogue.",
-                },
-                {
-                  pastille: `${R2}/site/pastille_pensees.png`, lien: '/pensees',
-                  titre: 'Les Pensées', couleur: '#00d4d4',
-                  texte: "Une section un peu à part : des textes que j'écris, présentés dans une roue interactive. Tu peux liker, commenter, et même soumettre tes propres pensées (elles seront validées avant publication).",
-                },
-                {
-                  pastille: `${R2}/site/pastille_panier.png`, lien: null,
-                  titre: 'Le Panier & les Achats', couleur: '#ffd250',
-                  texte: "Tu peux ajouter des illustrations à ton panier et les télécharger en PDF haute résolution. Des réductions s'appliquent automatiquement : -15% dès 3 illustrations, -25% dès 6, -35% dès 10 !",
-                },
-                {
-                  pastille: `${R2}/site/pastille_mon_compte.png`, lien: '/mon-compte',
-                  titre: 'Mon Compte', couleur: '#ff3eb5',
-                  texte: "Ton espace personnel : consulte ta collection complète, tes favoris, tes coloriages partagés, tes informations et tes commandes. Tu peux aussi y mettre à jour ta photo de profil et tes coordonnées.",
-                },
-              ].map((item, i, arr) => {
-                const T = 72;
-                const isLast = i === arr.length - 1;
-                return (
-                  <div key={i} style={{ marginBottom: isLast ? 0 : '24px', paddingBottom: isLast ? 0 : '24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                      <div
-                        onClick={item.lien ? () => navigate(item.lien) : undefined}
-                        style={{ flexShrink: 0, width: `${T}px`, height: `${T}px`, borderRadius: '14px', background: `${item.couleur}15`, border: `1px solid ${item.couleur}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: item.lien ? 'pointer' : 'default', transition: 'transform .2s, filter .2s' }}
-                        onMouseEnter={e => { if (item.lien) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.filter = 'brightness(1.2)'; } }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.filter = ''; }}
-                      >
-                        <img src={item.pastille} alt="" style={{ width: `${T - 8}px`, height: `${T - 8}px`, objectFit: 'contain', display: 'block' }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ color: item.couleur, fontSize: '15px', fontWeight: 'bold', marginBottom: '5px' }}>{item.titre}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.7' }}>{item.texte}</p>
-                      </div>
-                    </div>
-                    {item.sousmenu && (
-                      <div style={{ marginTop: '14px', marginLeft: `${T + 16}px`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {item.sousmenu.map((sub, si) => (
-                          <div key={si} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                            <div style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '8px', background: `${sub.couleur}18`, border: `1px solid ${sub.couleur}35`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontSize: '12px', color: sub.couleur, fontWeight: 'bold' }}>{sub.emoji}</span>
-                            </div>
-                            <div>
-                              <p style={{ color: sub.couleur, fontSize: '12px', fontWeight: 'bold', marginBottom: '2px' }}>{sub.titre}</p>
-                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', lineHeight: '1.6' }}>{sub.texte}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
           </div>
         </div>
