@@ -137,7 +137,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, on
     const { data: likesData } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', colo.coloId);
     setLikes(prev => ({ ...prev, [colo.coloId]: likesData || [] }));
     // Charger commentaires
-    const { data: commData } = await supabase.from('commentaires_coloriages').select('id, contenu, user_id, created_at').eq('coloriage_id', colo.coloId).order('created_at', { ascending: true });
+    const { data: commData } = await supabase.from('commentaires_coloriages').select('id, texte, user_id, created_at').eq('coloriage_id', colo.coloId).order('created_at', { ascending: true });
     const uids = [...new Set((commData || []).map(c => c.user_id))];
     const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
     const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
@@ -164,7 +164,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, on
     const colo = images[zoomIdx];
     if (!colo) return;
     const coloId = colo.coloId;
-    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, contenu: nouveauCommentaire.trim() }).select().single();
+    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: nouveauCommentaire.trim(), vu: true }).select('id, texte, created_at, user_id').single();
     if (data) {
       setCommentaires(prev => ({ ...prev, [coloId]: [...(prev[coloId] || []), { ...data, pseudo: 'Moi' }] }));
       setNouveauCommentaire('');
@@ -354,7 +354,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, on
             {(commentaires[images[zoomIdx].coloId] || []).map(c => (
               <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '6px 10px' }}>
                 <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>{c.pseudo} </span>
-                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>{c.contenu}</span>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px' }}>{c.texte}</span>
               </div>
             ))}
           </div>
