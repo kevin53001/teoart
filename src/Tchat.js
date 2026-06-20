@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
-const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c';
 
 // ── Modération — synchronisée avec Admin.js ──────────────────────────────────
 const MOTS_INTERDITS = [
