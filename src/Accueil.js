@@ -349,7 +349,7 @@ function ZoomSocialAccueil({ coloId, pseudo, userId, userPseudo }) {
       setLikes(l || []);
       if (commentsRaw && commentsRaw.length > 0) {
         const uids = [...new Set(commentsRaw.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
         const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
         setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
       } else setCommentaires([]);
@@ -589,7 +589,7 @@ function Accueil() {
       let colosData = [];
       if (colosRaw && colosRaw.length > 0) {
         const uids = [...new Set(colosRaw.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
         const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
         colosData = colosRaw.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloriste: pm[c.user_id] || null, coloId: c.id, pseudo: pm[c.user_id] || null }));
       }

@@ -1767,7 +1767,7 @@ function ZoomSocialMonCompte({ coloriage, userId, userPseudo }) {
       setLikes(l || []);
       if (commentsRaw && commentsRaw.length > 0) {
         const userIds = [...new Set(commentsRaw.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
+        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', userIds);
         const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
         setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
       } else setCommentaires([]);

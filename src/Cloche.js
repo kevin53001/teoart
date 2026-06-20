@@ -107,7 +107,7 @@ function SocialColo({ coloId, userId, userPseudo }) {
       setLikes(l || []);
       if (cr && cr.length > 0) {
         const uids = [...new Set(cr.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
         const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
         setComments(cr.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
       } else setComments([]);
@@ -231,7 +231,7 @@ function PopupColoriages({ userId, userPseudo, onClose }) {
 
       // Récupérer les pseudos
       const uids = [...new Set(data.map(c => c.user_id))];
-      const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+      const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
       const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
 
       // Filtrer les images cassées

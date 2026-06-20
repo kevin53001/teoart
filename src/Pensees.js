@@ -352,8 +352,8 @@ function PenseeSocial({ pensee, userId, pseudo }) {
         const uids = [...new Set(commentsRaw.map(c => c.user_id).filter(Boolean))];
         let profilsMap = {};
         if (uids.length > 0) {
-          const { data: profils } = await supabase.from('profils').select('id, pseudo, prenom').in('id', uids);
-          (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo || p.prenom || 'Anonyme'; });
+          const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
+          (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo || 'Anonyme'; });
         }
         setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
       } else {
