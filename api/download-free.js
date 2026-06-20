@@ -26,11 +26,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Vérifier que l'item est bien gratuit (prix = 0)
-    const table = itemType === 'livre' ? 'livres' : itemType === 'recueil' ? 'recueils' : 'illustrations';
-    const { data: item } = await supabase.from(table).select('prix').eq('id', itemId).single();
-    if (!item || parseFloat(item.prix || 0) !== 0) {
-      return res.status(403).json({ error: 'Cet item n\'est pas gratuit' });
+    // Vérifier que l'item est bien gratuit (prix = 0) — sauf cadeau anniversaire,
+    // qui n'est pas un article du catalogue mais un PDF offert hors catalogue
+    if (itemType !== 'cadeau') {
+      const table = itemType === 'livre' ? 'livres' : itemType === 'recueil' ? 'recueils' : 'illustrations';
+      const { data: item } = await supabase.from(table).select('prix').eq('id', itemId).single();
+      if (!item || parseFloat(item.prix || 0) !== 0) {
+        return res.status(403).json({ error: 'Cet item n\'est pas gratuit' });
+      }
     }
 
     // Générer URL signée R2 (valable 60 secondes)
