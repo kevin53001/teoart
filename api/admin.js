@@ -76,7 +76,10 @@ async function actionStats() {
     { data: penseesRaw },
     { data: reliesRaw },
     { data: collectionIllusRaw },
-    { data: collectionLivresRaw }
+    { data: collectionLivresRaw },
+    { data: livresRaw },
+    { data: recueilsRaw },
+    { data: illustrationsRaw }
   ] = await Promise.all([
     supabase.from('profils').select('id, prenom, nom, email, created_at'),
     supabase.from('commandes_articles').select('user_id, prix, created_at'),
@@ -87,8 +90,11 @@ async function actionStats() {
     supabase.from('likes_pensees').select('user_id, created_at'),
     supabase.from('pensees').select('id, user_id, created_at').neq('source', 'kevin'),
     supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie'),
-    supabase.from('collection').select('user_id, j_ai').eq('j_ai', true),
-    supabase.from('collection_livres').select('user_id, j_ai').eq('j_ai', true)
+    supabase.from('collection').select('user_id, illustration_id, j_ai').eq('j_ai', true),
+    supabase.from('collection_livres').select('user_id, item_id, item_type, j_ai'),
+    supabase.from('livres').select('id').eq('statut', 'published'),
+    supabase.from('recueils').select('id').eq('statut', 'published'),
+    supabase.from('illustrations').select('id, livres_ids, recueils_ids').eq('statut', 'published')
   ])
 
   // Inscrits
@@ -154,9 +160,56 @@ async function actionStats() {
   const nbIllusParUser = {}
   ;(collectionIllusRaw||[]).forEach(c => { nbIllusParUser[c.user_id] = (nbIllusParUser[c.user_id]||0) + 1 })
 
-  // Collection : livres + recueils possédés additionnés (j_ai = true)
+  // Collection : livres + recueils possédés (manuel via collection_livres OU détecté auto si toutes les illus sont j_ai=true)
+  // Reproduit la logique de Livres.js : un livre/recueil sans ligne explicite dans collection_livres
+  // est considéré "j'ai" si toutes ses illustrations sont cochées j_ai=true.
+  const illusParUserSet = {} // { user_id: Set(illustration_id) }
+  ;(collectionIllusRaw||[]).forEach(c => {
+    if (!illusParUserSet[c.user_id]) illusParUserSet[c.user_id] = new Set()
+    illusParUserSet[c.user_id].add(c.illustration_id)
+  })
+
+  const collectionLivresParUser = {} // { user_id: { 'livre_<id>': j_ai bool, 'recueil_<id>': j_ai bool } }
+  ;(collectionLivresRaw||[]).forEach(c => {
+    if (!collectionLivresParUser[c.user_id]) collectionLivresParUser[c.user_id] = {}
+    collectionLivresParUser[c.user_id][`${c.item_type}_${c.item_id}`] = c.j_ai
+  })
+
+  const illusDuLivre = {}   // { livre_id: [illustration_id, ...] }
+  const illusDuRecueil = {} // { recueil_id: [illustration_id, ...] }
+  ;(illustrationsRaw||[]).forEach(i => {
+    ;(i.livres_ids||[]).forEach(lid => { if (!illusDuLivre[lid]) illusDuLivre[lid] = []; illusDuLivre[lid].push(i.id) })
+    ;(i.recueils_ids||[]).forEach(rid => { if (!illusDuRecueil[rid]) illusDuRecueil[rid] = []; illusDuRecueil[rid].push(i.id) })
+  })
+
   const nbLivresRecueilsParUser = {}
-  ;(collectionLivresRaw||[]).forEach(c => { nbLivresRecueilsParUser[c.user_id] = (nbLivresRecueilsParUser[c.user_id]||0) + 1 })
+  ;(profils||[]).forEach(u => {
+    const explicite = collectionLivresParUser[u.id] || {}
+    const illusUser = illusParUserSet[u.id] || new Set()
+    let total = 0
+
+    ;(livresRaw||[]).forEach(l => {
+      const key = `livre_${l.id}`
+      if (key in explicite) {
+        if (explicite[key]) total++
+        return
+      }
+      const illus = illusDuLivre[l.id] || []
+      if (illus.length > 0 && illus.every(id => illusUser.has(id))) total++
+    })
+
+    ;(recueilsRaw||[]).forEach(r => {
+      const key = `recueil_${r.id}`
+      if (key in explicite) {
+        if (explicite[key]) total++
+        return
+      }
+      const illus = illusDuRecueil[r.id] || []
+      if (illus.length > 0 && illus.every(id => illusUser.has(id))) total++
+    })
+
+    nbLivresRecueilsParUser[u.id] = total
+  })
 
   // Commentaires signalés par user (mots interdits)
   const MOTS = ['connard','connasse','salope','pute','putain','enculé','enculée','fdp','fils de pute','batard','bâtard','merde','emmerdeur','cul','couille','branleur','abruti','crétin','idiot','imbécile','débile','nul','taré','dégueulasse','ordure','pourriture','déchet','raclure','salopard','fumier','bouffon','con','conne','ntm','nique','niquer','ta gueule','pd','pédé','gouine','mongol','attardé','négro','nègre','youpin','bougnoule','bicot','feuj','raton','haine','haïr','tuer','mort','crève','suicide','fuck','fucking','fucker','motherfucker','bitch','asshole','bastard','dickhead','dick','cock','pussy','cunt','whore','slut','moron','retard','stupid','dumbass','loser','shit','bullshit','kill yourself','kys','hate','faggot','fag','nigger','nigga','chink','die','kill','murder']
