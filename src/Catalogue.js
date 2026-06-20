@@ -1,15 +1,23 @@
 import React from 'react';
-import OngletsLateraux from './OngletsLateraux';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
-import BoutonsFlottants from './BoutonsFlottants';
-import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
-import PopupFicheIllu from './PopupFicheIllu';
+import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import BandeLegale from './BandeLegale';
+import OngletsLateraux from './OngletsLateraux';
+import PopupFicheIllu from './PopupFicheIllu';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const R2 = 'https://images.kevinteoart.fr';
-const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
+const BANNER_MAX = '1200px';
+const SPEED = '80s';
+const IMG_W = 110;
+const IMG_H = 150;
+const GAP = 6;
+const STRIPE_PUBLIC_KEY = 'pk_live_51TjEyXG38aMcCAX1oGQ4dVo2vnnUHrLsFWvG05oyKD0YSp9CyJxPjNNU6geSVMJZy1r6GcujRSXQ6SeC7rRCcNVO00yQFnSeQj'; // TODO: remplacer par pk_live_...
+const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 
 const BARRES = [
   { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.40 },
@@ -20,80 +28,133 @@ const BARRES = [
   { direction: 'right', images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.05 },
 ];
 
-const BANNER_MAX = '1200px';
-const IMG_W = 110;
-const IMG_H = 150;
-const GAP = 6;
-const SPEED = '80s';
-
 const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
-
-// Helpers utilisés par IlluCard (cheminVersUrl, getVisuelsOrdonnes, getVisuelPresentation)
-function cheminVersUrl(chemin) {
-  if (!chemin) return null;
-  const relatif = chemin.replace(BASE_LOCAL, '').replaceAll('\\', '/');
-  return `${R2}/${relatif.split('/').map(segment => encodeURIComponent(segment)).join('/')}`;
-}
-function getVisuelsOrdonnes(visuels) {
-  if (!visuels) return [];
-  const result = []; const valeursAjoutees = new Set();
-  Object.entries(visuels).forEach(([k, v]) => { if (k.toUpperCase() === 'A') return; if ((k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation')) && v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); } });
-  ['B', 'b'].forEach(k => { if (visuels[k] && !valeursAjoutees.has(visuels[k])) { result.push(visuels[k]); valeursAjoutees.add(visuels[k]); } });
-  Object.entries(visuels).forEach(([k, v]) => { if (k.toUpperCase() === 'A') return; if (/^C\d*$/i.test(k) && v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); } });
-  Object.entries(visuels).forEach(([k, v]) => { if (k.toUpperCase() === 'A') return; if (v && !valeursAjoutees.has(v)) { result.push(v); valeursAjoutees.add(v); } });
-  return result;
-}
-function getVisuelPresentation(visuels) {
-  if (!visuels) return null;
-  const cle = Object.keys(visuels).find(k => k.toLowerCase().includes('présentation') || k.toLowerCase().includes('presentation'));
-  if (cle) return cheminVersUrl(visuels[cle]);
-  if (visuels['B']) return cheminVersUrl(visuels['B']);
-  if (visuels['b']) return cheminVersUrl(visuels['b']);
-  return null;
-}
-const ANNEES = [2021, 2022, 2023, 2024, 2025, 2026];
-
 const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-
-// Mois Patreon 2026 disponibles jusqu'au mois courant inclus
 function getMoisPatreonDisponibles() {
   const maintenant = new Date();
-  const moisCourant = maintenant.getMonth(); // 0-indexed
+  const moisCourant = maintenant.getMonth();
   const anneeCourante = maintenant.getFullYear();
   if (anneeCourante < 2026) return [];
   if (anneeCourante > 2026) return MOIS_FR.map(m => `Patreon - ${m} 2026`);
   return MOIS_FR.slice(0, moisCourant + 1).map(m => `Patreon - ${m} 2026`);
 }
 
-// Bandeau promo
-const PALIERS_PROMO = [
-  { texte: '✦ Dès 3 illustrations : -15%', mention: '(hors livres et recueils)', couleur: '#00d4d4', glow: 'glowPromo0' },
-  { texte: '✦ Dès 6 illustrations : -25%', mention: '(hors livres et recueils)', couleur: 'rgba(255,210,80,0.95)', glow: 'glowPromo1' },
-  { texte: '✦ Dès 10 illustrations : -35%', mention: '(hors livres et recueils)', couleur: '#ff3eb5', glow: 'glowPromo2' },
-  { texte: '✦ Dès 2 livres PDF : -15% sur tes livres ✦', mention: null, couleur: '#b47fff', glow: 'glowPromo3' },
-  { texte: '✦ Dès 2 recueils : -20% sur tes recueils ✦', mention: null, couleur: '#00ffcc', glow: 'glowPromo4' },
-];
+// ─── Texte CGV (synchronisé avec BandeLegale.js) ─────────────────────────────
+const TEXTE_CGV = `Dernière mise à jour : Juin 2026
 
-function BandeauPromo() {
-  const items = [...PALIERS_PROMO, ...PALIERS_PROMO, ...PALIERS_PROMO];
-  return (
-    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '8px 0 0', position: 'relative', zIndex: 40, overflow: 'hidden' }}>
-      <div style={{ maxWidth: '860px', width: '92%', background: 'rgba(0,0,0,0.75)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', overflow: 'hidden', backdropFilter: 'blur(8px)', position: 'relative' }}>
-        <div style={{ display: 'flex', animation: 'scrollPromo 30s linear infinite', width: 'max-content', alignItems: 'center', height: '36px' }}>
-          {items.map((p, i) => (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap', padding: '0 40px', animation: `${p.glow} 2.5s ease-in-out infinite`, animationDelay: `${(i % 5) * 0.3}s` }}>
-              <span style={{ color: p.couleur, fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.5px' }}>{p.texte}</span>
-              {p.mention && (
-                <span style={{ color: p.couleur, fontSize: '9px', fontWeight: 'normal', opacity: 0.75 }}>{p.mention}</span>
-              )}
-              {!p.mention && ''}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+
+OBJET
+
+Les présentes Conditions Générales de Vente régissent les ventes réalisées sur le site KevinTeoArt.fr. Toute commande passée sur le site implique l'acceptation pleine et entière des présentes conditions.
+
+
+PRODUITS PROPOSÉS
+
+• Illustrations numériques à colorier
+• Livres numériques
+• Recueils numériques
+• Livres reliés imprimés à la demande
+• Recueils reliés imprimés à la demande
+
+
+PRIX
+
+Les prix sont indiqués en euros (€), toutes taxes comprises. Pour les produits numériques, le prix affiché correspond au montant total à payer. Pour les livres et recueils reliés, les frais de livraison sont inclus dans le prix affiché.
+
+Kevin Teo'Art se réserve le droit de modifier ses tarifs à tout moment. Les produits sont facturés au tarif en vigueur au moment de la validation de la commande.
+
+
+PROMOTIONS ET RÉDUCTIONS
+
+Des réductions automatiques peuvent s'appliquer à votre commande selon la quantité d'articles achetés (illustrations, livres, recueils) et selon les badges de fidélité obtenus via votre activité sur le site. Ces réductions sont calculées et affichées directement dans le panier.
+
+Le détail complet du fonctionnement — paliers, taux, conditions d'obtention des badges et règles de cumul — est disponible dans la section Présentation du site.
+
+
+CRÉATION D'UN COMPTE UTILISATEUR
+
+Certaines fonctionnalités du site nécessitent la création d'un compte utilisateur. L'utilisateur s'engage à fournir des informations exactes et à jour lors de son inscription. L'utilisateur est responsable de la confidentialité de ses identifiants.
+
+Kevin Teo'Art se réserve le droit de suspendre ou supprimer tout compte en cas d'utilisation frauduleuse ou contraire aux présentes conditions.
+
+
+PAIEMENT
+
+Le paiement s'effectue via les moyens de paiement suivants :
+• Carte bancaire (Visa, Mastercard, etc.) via Stripe
+• Apple Pay et Google Pay via Stripe
+• PayPal (disponible prochainement)
+
+La commande est définitive après validation du paiement. Une confirmation de commande est envoyée à l'adresse e-mail renseignée par l'utilisateur.
+
+
+LIVRAISON DES PRODUITS NUMÉRIQUES
+
+Les produits numériques sont disponibles immédiatement après validation du paiement. Les liens de téléchargement sont accessibles depuis le compte utilisateur. L'utilisateur est responsable de la conservation des fichiers téléchargés.
+
+
+LIVRES ET RECUEILS RELIÉS
+
+Les livres et recueils reliés sont imprimés à la demande par Amazon KDP. Kevin Teo'Art prend en charge l'ensemble de la commande de A à Z : passation de la commande auprès d'Amazon, suivi de fabrication, transmission des informations de livraison et service après-vente. Kevin Teo'Art est l'interlocuteur unique du client pour toute la durée de la commande.
+
+Les commandes sont actuellement limitées aux pays européens desservis par Amazon KDP, à l'exclusion de la Suisse, de Monaco et d'Andorre.
+
+
+DÉLAIS DE FABRICATION ET LIVRAISON
+
+Les délais indiqués sont donnés à titre indicatif et peuvent varier selon les contraintes de fabrication, de transport ou les périodes de forte activité. Kevin Teo'Art ne peut être tenu responsable de retards imputables au transporteur ou au prestataire d'impression.
+
+
+COLIS PERDU, ENDOMMAGÉ OU NON CONFORME
+
+En cas de problème à réception, le client doit contacter Kevin Teo'Art dans les meilleurs délais. Des justificatifs (photographies) pourront être demandés. Après étude du dossier, Kevin Teo'Art pourra procéder au remboursement, à la réimpression ou proposer toute autre solution adaptée.
+
+
+DROIT DE RÉTRACTATION
+
+Pour les produits numériques :
+Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation ne s'applique pas aux contenus numériques dès lors que l'utilisateur a expressément consenti à l'exécution immédiate du contrat et renoncé à son droit de rétractation avant le téléchargement. Cette renonciation est recueillie explicitement lors de la validation de la commande (case à cocher obligatoire). Aucun remboursement ne pourra être accordé après téléchargement.
+
+Pour les livres et recueils reliés :
+Le client dispose d'un délai de 14 jours à compter de la réception pour exercer son droit de rétractation. Toute demande doit être adressée à Kevin Teo'Art via les coordonnées figurant sur le site. Les frais de retour sont pris en charge par Amazon KDP ; le client devra simplement déposer le colis selon les instructions communiquées. Le remboursement sera effectué après confirmation du dépôt du colis retour, conformément à la réglementation applicable.
+
+
+UTILISATION DES ILLUSTRATIONS ET FICHIERS NUMÉRIQUES
+
+Les illustrations, livres et recueils numériques sont destinés exclusivement à un usage personnel. Sont notamment interdits : la revente des fichiers, le partage avec des tiers, la diffusion publique, l'utilisation commerciale et la redistribution même partielle.
+
+Toute utilisation commerciale nécessite une autorisation écrite préalable de Kevin Teo'Art.
+
+
+CONTENUS PUBLIÉS PAR LES UTILISATEURS
+
+En publiant un contenu (coloriage, commentaire...), l'utilisateur autorise Kevin Teo'Art à l'afficher et le diffuser dans le cadre du fonctionnement du site. L'utilisateur conserve la propriété de ses créations.
+
+
+MODÉRATION
+
+Kevin Teo'Art se réserve le droit de supprimer sans préavis tout contenu illégal, injurieux, diffamatoire, discriminatoire, haineux, publicitaire, trompeur ou contraire à l'esprit du site.
+
+
+PROPRIÉTÉ INTELLECTUELLE
+
+L'ensemble des contenus du site est protégé par le droit d'auteur. Toute reproduction ou exploitation sans autorisation écrite préalable est interdite.
+
+
+RESPONSABILITÉ
+
+Kevin Teo'Art ne pourra être tenu responsable en cas d'interruption temporaire du service, de dysfonctionnement indépendant de sa volonté, d'incident technique lié à un prestataire tiers ou de force majeure.
+
+
+MÉDIATION
+
+En cas de litige non résolu à l'amiable, le client peut recourir gratuitement à la plateforme européenne de règlement en ligne des litiges :
+https://ec.europa.eu/consumers/odr
+
+
+DROIT APPLICABLE
+
+Les présentes CGV sont soumises au droit français. Tout litige relève des juridictions françaises compétentes.`;
 
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
@@ -118,45 +179,1050 @@ function LogoPremium({ onClick, isMobile, L }) {
     <div ref={wrapRef} style={{ perspective: '600px', flexShrink: 0, zIndex: 10 }}>
       <img ref={ref} src={`${R2}/site/Logo.png`} alt="logo"
         onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClick}
-        style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', cursor: 'pointer', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', willChange: 'transform' }} />
+        style={{ width: `${L}px`, height: `${L}px`, borderRadius: '50%', border: `${isMobile ? 3 : 4}px solid #000`, boxShadow: '0 0 0 3px #00d4d4', objectFit: 'cover', cursor: 'pointer', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', willChange: 'transform', position: 'relative' }} />
     </div>
   );
 }
 
-function Catalogue() {
+// ─── Indicateur d'étapes ─────────────────────────────────────────────────────
+function IndicateurEtapes({ etape, isMobile }) {
+  const etapes = ['Panier', 'Infos', 'Récap', 'Paiement', 'Confirmation'];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '4px' : '8px', marginBottom: '32px' }}>
+      {etapes.map((nom, i) => {
+        const num = i + 1;
+        const actif = num === etape;
+        const fait = num < etape;
+        return (
+          <React.Fragment key={i}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <div style={{
+                width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '50%',
+                background: fait ? '#00d4d4' : actif ? '#ff3eb5' : 'rgba(255,255,255,0.08)',
+                border: `2px solid ${fait ? '#00d4d4' : actif ? '#ff3eb5' : 'rgba(255,255,255,0.15)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: fait || actif ? '#000' : 'rgba(255,255,255,0.3)',
+                fontSize: isMobile ? '11px' : '13px', fontWeight: 'bold',
+                transition: 'all .3s',
+              }}>
+                {fait ? '✓' : num}
+              </div>
+              {!isMobile && <span style={{ fontSize: '10px', color: actif ? '#ff3eb5' : fait ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontWeight: actif ? 'bold' : 'normal' }}>{nom}</span>}
+            </div>
+            {i < etapes.length - 1 && (
+              <div style={{ width: isMobile ? '16px' : '32px', height: '2px', background: fait ? '#00d4d4' : 'rgba(255,255,255,0.1)', transition: 'background .3s', marginBottom: isMobile ? '0' : '18px' }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+
+
+// ─── Étape 1 : Panier ────────────────────────────────────────────────────────
+function EtapePanier({ onContinuer, isMobile, onOuvrirIllu }) {
+  const { articles, reductions, supprimerArticle, setPromoBadge } = usePanier();
+  // Chargement de la promo badge active depuis Supabase
+  React.useEffect(() => {
+    const chargerPromo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profil } = await supabase.from('profils')
+        .select('promo_badge_active')
+        .eq('id', user.id).single();
+      if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
+        setPromoBadge(profil.promo_badge_active);
+      }
+    };
+    chargerPromo();
+  }, [setPromoBadge]);
+
+  const labelType = (type) => {
+    if (type === 'illustration') return { label: 'Illustration', couleur: '#ff3eb5' };
+    if (type === 'livre_pdf') return { label: 'Livre — Version PDF', couleur: '#00d4d4' };
+    if (type === 'recueil') return { label: 'Recueil — Version PDF', couleur: '#00d4d4' };
+    if (type === 'relie') return { label: 'Version Reliée', couleur: '#ffd250' };
+    return { label: type, couleur: '#fff' };
+  };
+
+  if (articles.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛒</div>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '16px', marginBottom: '8px' }}>Votre panier est vide</p>
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>Parcourez le catalogue pour ajouter des illustrations !</p>
+      </div>
+    );
+  }
+
+  // ── Helpers affichage article ──
+  const ArticleLigne = ({ article, decale = false, prixOverride = null, tauxPromo = null, onClickMiniature = null }) => {
+    const { label, couleur } = labelType(article.type);
+    const prixBrut = article.type === 'relie' ? (article.prixRelie || 0) : (article.prix || 0);
+    const prixFinal = prixOverride !== null ? prixOverride : prixBrut;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: decale ? 'rgba(255,62,181,0.04)' : 'rgba(255,255,255,0.05)', border: `1px solid ${decale ? 'rgba(255,62,181,0.15)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '12px', padding: '10px 12px', marginLeft: decale ? '20px' : '0' }}>
+        {article.image && (
+          <img src={article.image} alt={article.nom}
+            onClick={onClickMiniature || undefined}
+            style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px', flexShrink: 0, cursor: onClickMiniature ? 'pointer' : 'default', transition: onClickMiniature ? 'opacity .2s' : 'none' }}
+            onMouseEnter={e => { if (onClickMiniature) e.currentTarget.style.opacity = '0.75'; }}
+            onMouseLeave={e => { if (onClickMiniature) e.currentTarget.style.opacity = '1'; }}
+          />
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ color: decale ? 'rgba(255,255,255,0.75)' : '#fff', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{article.nom}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+            <span style={{ background: `${couleur}22`, border: `1px solid ${couleur}44`, borderRadius: '10px', padding: '1px 7px', color: couleur, fontSize: '10px' }}>{label}</span>
+            {article.type === 'relie' && article.pays && <span style={{ color: 'rgba(255,210,80,0.6)', fontSize: '10px' }}>📦 {article.pays} · {article.delai}</span>}
+            {tauxPromo && <span style={{ background: 'rgba(255,62,181,0.15)', border: '1px solid rgba(255,62,181,0.3)', borderRadius: '10px', padding: '1px 6px', color: '#ff3eb5', fontSize: '10px', fontWeight: 'bold' }}>−{Math.round(tauxPromo * 100)}% relié</span>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          {tauxPromo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', textDecoration: 'line-through' }}>{prixBrut.toFixed(2)} €</span>}
+          <span style={{ color: tauxPromo ? '#ff3eb5' : '#fff', fontSize: '14px', fontWeight: 'bold' }}>{prixFinal.toFixed(2)} €</span>
+          <button onClick={() => supprimerArticle(article.type, article.id)}
+            style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '3px 7px', color: 'rgba(255,100,100,0.6)', fontSize: '13px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Regroupements ──
+  const illus            = articles.filter(a => a.type === 'illustration');
+  const reliesLivres     = articles.filter(a => a.type === 'relie' && a.sousType === 'livre');
+  const reliesRecueils   = articles.filter(a => a.type === 'relie' && a.sousType === 'recueil');
+  const reliesLegacy     = articles.filter(a => a.type === 'relie' && !a.sousType);
+  const livresPdf        = articles.filter(a => a.type === 'livre_pdf');
+  const recueilsPdf      = articles.filter(a => a.type === 'recueil');
+  const { idsReliesLivres, idsReliesRecueils } = reductions;
+
+  const lignesLivres = [];
+  reliesLivres.forEach(relie => {
+    lignesLivres.push({ article: relie, decale: false, tauxPromo: null });
+    const pdfAssoc = livresPdf.find(l => l.id === relie.id);
+    if (pdfAssoc) lignesLivres.push({ article: pdfAssoc, decale: true, prixOverride: pdfAssoc.prix * 0.25, tauxPromo: 0.75 });
+  });
+  livresPdf.filter(l => !idsReliesLivres.has(l.id)).forEach(l => lignesLivres.push({ article: l, decale: false, tauxPromo: null }));
+
+  const lignesRecueils = [];
+  reliesRecueils.forEach(relie => {
+    lignesRecueils.push({ article: relie, decale: false, tauxPromo: null });
+    const pdfAssoc = recueilsPdf.find(r => r.id === relie.id);
+    if (pdfAssoc) lignesRecueils.push({ article: pdfAssoc, decale: true, prixOverride: pdfAssoc.prix * 0.25, tauxPromo: 0.75 });
+  });
+  recueilsPdf.filter(r => !idsReliesRecueils.has(r.id)).forEach(r => lignesRecueils.push({ article: r, decale: false, tauxPromo: null }));
+
+  const totalLivresAffiche       = reductions.totalLivres + reductions.totalReliesLivres;
+  const totalLivresBrutAffiche   = reductions.totalLivresBrut + reductions.totalReliesLivresBrut;
+  const totalRecueilsAffiche     = reductions.totalRecueils + reductions.totalReliesRecueils;
+  const totalRecueilsBrutAffiche = reductions.totalRecueilsBrut + reductions.totalReliesRecueilsBrut;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Encart TVA */}
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', lineHeight: 1.6 }}>
+          TVA non applicable — article 293 B du Code général des impôts.<br />
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Paiement sécurisé par Stripe · CB, Apple Pay, Google Pay, PayPal</span>
+        </p>
+      </div>
+
+      {/* ── Illustrations ── */}
+      {illus.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Illustrations</h3>
+            {reductions.tauxIllus > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxIllus * 100)}% appliqué</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {illus.map(a => <ArticleLigne key={`${a.type}-${a.id}`} article={a} onClickMiniature={() => onOuvrirIllu(a.id)} />)}
+          </div>
+          {reductions.tauxIllus > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{reductions.totalIllusBrut.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{reductions.totalIllus.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationIllus && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationIllus}</p></div>}
+          {reductions.messageIllus && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageIllus}</p></div>}
+        </div>
+      )}
+
+      {/* ── Livres ── */}
+      {lignesLivres.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Livres</h3>
+            {reductions.tauxLivres > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxLivres * 100)}% appliqué</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {lignesLivres.map((l, i) => <ArticleLigne key={`livres-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+          </div>
+          {totalLivresBrutAffiche !== totalLivresAffiche && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{totalLivresBrutAffiche.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{totalLivresAffiche.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationLivres && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationLivres}</p></div>}
+          {reductions.messageLivres && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageLivres}</p></div>}
+        </div>
+      )}
+
+      {/* ── Recueils ── */}
+      {lignesRecueils.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>Recueils</h3>
+            {reductions.tauxRecueils > 0 && <span style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: '2px 10px', color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxRecueils * 100)}% appliqué</span>}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {lignesRecueils.map((l, i) => <ArticleLigne key={`recueils-${i}`} article={l.article} decale={l.decale} prixOverride={l.prixOverride} tauxPromo={l.tauxPromo} />)}
+          </div>
+          {totalRecueilsBrutAffiche !== totalRecueilsAffiche && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{totalRecueilsBrutAffiche.toFixed(2)} €</span>
+              <span style={{ color: '#00d4d4', fontSize: '13px', fontWeight: 'bold' }}>{totalRecueilsAffiche.toFixed(2)} €</span>
+            </div>
+          )}
+          {reductions.explicationRecueils && <div style={{ background: 'rgba(0,212,212,0.07)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: '#00d4d4', fontSize: '11px' }}>✨ {reductions.explicationRecueils}</p></div>}
+          {reductions.messageRecueils && <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '8px' }}><p style={{ color: 'rgba(255,210,80,0.85)', fontSize: '11px' }}>💡 {reductions.messageRecueils}</p></div>}
+        </div>
+      )}
+
+      {/* ── Reliés legacy ── */}
+      {reliesLegacy.length > 0 && (
+        <div>
+          <h3 style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Versions Reliées</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {reliesLegacy.map(a => <ArticleLigne key={`relie-${a.id}`} article={a} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Sous-total si badge */}
+      {reductions.tauxBadgeTotal > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>Sous-total après réductions</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{reductions.totalApresPaliers.toFixed(2)} €</span>
+        </div>
+      )}
+
+      {/* Bloc badge */}
+      {reductions.explicationBadge && (
+        <div style={{ background: 'linear-gradient(135deg, rgba(255,210,80,0.08), rgba(255,62,181,0.06))', border: '1px solid rgba(255,210,80,0.35)', borderRadius: '12px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'rgba(255,210,80,0.95)', fontSize: '12px', fontWeight: 'bold' }}>Réduction badge</span>
+            <span style={{ color: '#ff3eb5', fontSize: '14px', fontWeight: 'bold' }}>−{Math.round(reductions.tauxBadgeTotal * 100)}%</span>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', lineHeight: 1.5 }}>{reductions.explicationBadge.texte}</p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '2px' }}>
+            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', textDecoration: 'line-through' }}>{reductions.totalApresPaliers.toFixed(2)} €</span>
+            <span style={{ color: '#ff3eb5', fontSize: '13px', fontWeight: 'bold' }}>−{reductions.remiseBadge.toFixed(2)} €</span>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', fontStyle: 'italic' }}>Valable une seule fois — sera consommée à la validation du paiement.</p>
+        </div>
+      )}
+
+      {/* Total */}
+      <div style={{ background: 'rgba(255,62,181,0.08)', border: '1px solid rgba(255,62,181,0.25)', borderRadius: '14px', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>Total</span>
+        <span style={{ color: '#ff3eb5', fontSize: '24px', fontWeight: 'bold' }}>{reductions.totalGeneral.toFixed(2)} €</span>
+      </div>
+
+      <button onClick={onContinuer} style={{ width: '100%', background: 'linear-gradient(135deg, #ff3eb5, #cc2090)', border: 'none', borderRadius: '12px', padding: '16px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 20px rgba(255,62,181,0.3)' }}>
+        Continuer →
+      </button>
+
+
+    </div>
+  );
+}
+
+// ─── Champ formulaire (hors composant pour éviter le bug de focus) ────────────
+function ChampInput({ label, obligatoire, type = 'text', value, onChange, placeholder, autoComplete }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <label style={{ color: obligatoire ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)', fontSize: '12px', fontWeight: obligatoire ? '600' : 'normal' }}>
+          {label}
+        </label>
+        {obligatoire && (
+          <span style={{ color: '#ff3eb5', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}>
+            * <span style={{ fontSize: '10px' }}>champ obligatoire</span>
+          </span>
+        )}
+      </div>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        style={{
+          background: 'rgba(255,255,255,0.06)',
+          border: `1px solid ${(value || '').trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`,
+          borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none',
+          transition: 'border-color .2s', width: '100%', boxSizing: 'border-box',
+        }}
+      />
+    </div>
+  );
+}
+
+// ─── Étape 2 : Coordonnées ────────────────────────────────────────────────────
+function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFacturation, setInfosFacturation, facturationDifferente, setFacturationDifferente }) {
+  const { articles } = usePanier();
+  const aRelie = articles.some(a => a.type === 'relie');
+  const [chargement, setChargement] = React.useState(false);
+  const [sauvegarde, setSauvegarde] = React.useState(false);
+
+  // Pré-remplissage depuis Supabase
+  React.useEffect(() => {
+    const charger = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profil } = await supabase.from('profils')
+        .select('email, prenom, nom, adresse, complement, code_postal, ville, etat, pays')
+        .eq('id', user.id).single();
+      if (!profil) return;
+      setInfos(prev => ({
+        ...prev,
+        email:       prev.email || user.email || '',
+        prenom:      prev.prenom || profil.prenom || '',
+        nom:         prev.nom || profil.nom || '',
+        adresse:     prev.adresse || profil.adresse || '',
+        complement:  prev.complement || profil.complement || '',
+        code_postal: prev.code_postal || profil.code_postal || '',
+        ville:       prev.ville || profil.ville || '',
+        etat:        prev.etat || profil.etat || '',
+        pays:        prev.pays || profil.pays || '',
+      }));
+    };
+    charger();
+  }, []); // eslint-disable-line
+
+  const champObligatoires = ['email', 'prenom', 'nom', 'adresse', 'code_postal', 'ville', 'pays'];
+  const peutContinuer = champObligatoires.every(c => (infos[c] || '').trim() !== '') &&
+    (!facturationDifferente || ['prenom', 'nom', 'adresse', 'code_postal', 'ville', 'pays'].every(c => (infosFacturation[c] || '').trim() !== ''));
+
+  const setChamp = (champ) => (val) => setInfos(prev => ({ ...prev, [champ]: val }));
+  const setChampFact = (champ) => (val) => setInfosFacturation(prev => ({ ...prev, [champ]: val }));
+
+  const valider = async () => {
+    if (!peutContinuer) return;
+    setChargement(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profils').update({
+          prenom: infos.prenom, nom: infos.nom,
+          adresse: infos.adresse, complement: infos.complement || null,
+          code_postal: infos.code_postal, ville: infos.ville,
+          etat: infos.etat || null, pays: infos.pays,
+        }).eq('id', user.id);
+      }
+    } catch {}
+    setSauvegarde(true);
+    setTimeout(() => { setSauvegarde(false); setChargement(false); onContinuer(); }, 600);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+      <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Vos coordonnées</h2>
+
+      {/* Email */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: '600' }}>Adresse email</label>
+          <span style={{ color: '#ff3eb5', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '2px' }}>* <span style={{ fontSize: '10px' }}>champ obligatoire</span></span>
+        </div>
+        <input type="email" value={infos.email || ''} onChange={e => setChamp('email')(e.target.value)}
+          placeholder="votre@email.com" autoComplete="email"
+          style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${(infos.email || '').trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '10px', padding: '11px 14px', color: '#fff', fontSize: '14px', outline: 'none', transition: 'border-color .2s', width: '100%', boxSizing: 'border-box' }} />
+        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>Votre confirmation de commande sera envoyée à cette adresse.</p>
+      </div>
+
+      {/* Identité */}
+      <div>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Identité</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <ChampInput label="Prénom" obligatoire value={infos.prenom || ''} onChange={setChamp('prenom')} placeholder="Votre prénom" autoComplete="given-name" />
+          <ChampInput label="Nom" obligatoire value={infos.nom || ''} onChange={setChamp('nom')} placeholder="Votre nom" autoComplete="family-name" />
+        </div>
+      </div>
+
+      {/* Adresse de livraison */}
+      <div>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
+          {aRelie ? 'Adresse de livraison' : 'Adresse'}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <ChampInput label="Adresse" obligatoire value={infos.adresse || ''} onChange={setChamp('adresse')} placeholder="Numéro et nom de rue" autoComplete="address-line1" />
+          <ChampInput label="Complément d'adresse" value={infos.complement || ''} onChange={setChamp('complement')} placeholder="Appartement, bâtiment, étage..." autoComplete="address-line2" />
+          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
+            <ChampInput label="Code postal" obligatoire value={infos.code_postal || ''} onChange={setChamp('code_postal')} placeholder="75001" autoComplete="postal-code" />
+            <ChampInput label="Ville" obligatoire value={infos.ville || ''} onChange={setChamp('ville')} placeholder="Paris" autoComplete="address-level2" />
+          </div>
+          <ChampInput label="État / Province" value={infos.etat || ''} onChange={setChamp('etat')} placeholder="Facultatif" autoComplete="address-level1" />
+          <ChampInput label="Pays" obligatoire value={infos.pays || ''} onChange={setChamp('pays')} placeholder="France" autoComplete="country-name" />
+        </div>
+      </div>
+
+      {/* Adresse facturation */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', cursor: 'pointer' }}
+        onClick={() => setFacturationDifferente(v => !v)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: `2px solid ${facturationDifferente ? '#00d4d4' : 'rgba(255,255,255,0.3)'}`, background: facturationDifferente ? '#00d4d4' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .2s', boxShadow: facturationDifferente ? '0 0 8px rgba(0,212,212,0.4)' : 'none' }}>
+            {facturationDifferente && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '13px' }}>Mon adresse de facturation est différente</p>
+        </div>
+      </div>
+
+      {facturationDifferente && (
+        <div style={{ borderLeft: '2px solid rgba(0,212,212,0.2)', paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Adresse de facturation</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <ChampInput label="Prénom" obligatoire value={infosFacturation.prenom || ''} onChange={setChampFact('prenom')} placeholder="Prénom" autoComplete="billing given-name" />
+            <ChampInput label="Nom" obligatoire value={infosFacturation.nom || ''} onChange={setChampFact('nom')} placeholder="Nom" autoComplete="billing family-name" />
+          </div>
+          <ChampInput label="Adresse" obligatoire value={infosFacturation.adresse || ''} onChange={setChampFact('adresse')} placeholder="Numéro et nom de rue" autoComplete="billing address-line1" />
+          <ChampInput label="Complément" value={infosFacturation.complement || ''} onChange={setChampFact('complement')} placeholder="Appartement, bâtiment..." autoComplete="billing address-line2" />
+          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
+            <ChampInput label="Code postal" obligatoire value={infosFacturation.code_postal || ''} onChange={setChampFact('code_postal')} placeholder="75001" autoComplete="billing postal-code" />
+            <ChampInput label="Ville" obligatoire value={infosFacturation.ville || ''} onChange={setChampFact('ville')} placeholder="Paris" autoComplete="billing address-level2" />
+          </div>
+          <ChampInput label="Pays" obligatoire value={infosFacturation.pays || ''} onChange={setChampFact('pays')} placeholder="France" autoComplete="billing country-name" />
+        </div>
+      )}
+
+      {/* Note reliés */}
+      {aRelie && (
+        <div style={{ background: 'rgba(255,210,80,0.06)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '12px', padding: '14px' }}>
+          <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '12px', marginBottom: '4px', fontWeight: 'bold' }}>Version(s) reliée(s) dans votre commande</p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', lineHeight: 1.6 }}>Le pays de livraison a été renseigné lors de l'ajout au panier. Vous pouvez le vérifier au récapitulatif.</p>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+        <button onClick={onRetour} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '14px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+          ← Retour
+        </button>
+        <button onClick={valider} disabled={!peutContinuer || chargement}
+          style={{ flex: 2, background: peutContinuer && !chargement ? 'linear-gradient(135deg, #ff3eb5, #cc2090)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '12px', padding: '14px', color: peutContinuer && !chargement ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '14px', cursor: peutContinuer && !chargement ? 'pointer' : 'default', boxShadow: peutContinuer && !chargement ? '0 4px 20px rgba(255,62,181,0.3)' : 'none', transition: 'all .2s' }}>
+          {sauvegarde ? '✓ Enregistré' : chargement ? 'Enregistrement...' : 'Continuer →'}
+        </button>
+      </div>
+      {!peutContinuer && <p style={{ color: 'rgba(255,100,100,0.6)', fontSize: '11px', textAlign: 'center', marginTop: '-8px' }}>Veuillez remplir tous les champs obligatoires (marqués d'un *).</p>}
+    </div>
+  );
+}
+
+// ─── Étape 3 : Récapitulatif final ───────────────────────────────────────────
+function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, retractation, setRetractation, cgvAcceptees, setCgvAcceptees }) {
+  const { articles, reductions } = usePanier();
+  const aPdf = articles.some(a => a.type !== 'relie');
+  const aRelie = articles.some(a => a.type === 'relie');
+  const peutContinuer = cgvAcceptees && (!aPdf || retractation);
+  const [popupCgv, setPopupCgv] = React.useState(false);
+
+  const labelType = (type) => {
+    if (type === 'illustration') return 'Illustration';
+    if (type === 'livre_pdf') return 'Livre — Version PDF';
+    if (type === 'recueil') return 'Recueil — Version PDF';
+    if (type === 'relie') return 'Version Reliée';
+    return type;
+  };
+
+  // Calcul prix final par article (pour affichage cohérent avec le total)
+  const { idsReliesLivres, idsReliesRecueils } = reductions;
+
+  const prixAffiche = (article) => {
+    const brut = article.type === 'relie' ? (article.prixRelie || 0) : (article.prix || 0);
+    // PDF avec relié correspondant → −75%
+    if (article.type === 'livre_pdf' && idsReliesLivres.has(article.id)) return { brut, final: brut * 0.25, promo: true };
+    if (article.type === 'recueil' && idsReliesRecueils.has(article.id)) return { brut, final: brut * 0.25, promo: true };
+    return { brut, final: brut, promo: false };
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      {/* Popup CGV */}
+      {popupCgv && (
+        <div
+          onClick={() => setPopupCgv(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: 'rgba(8,8,8,0.98)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            {/* Titre sticky */}
+            <div style={{ position: 'sticky', top: 0, background: 'linear-gradient(135deg, rgba(0,212,212,0.35) 0%, rgba(10,10,10,0.98) 60%, rgba(0,212,212,0.15) 100%)', borderBottom: '1px solid rgba(0,212,212,0.3)', padding: '14px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} />
+              <span style={{ fontFamily: 'var(--font-titre)', fontSize: isMobile ? '16px' : '20px', color: '#00D4D4', textShadow: '0 0 12px rgba(0,212,212,0.5)' }}>
+                Conditions Générales de Vente
+              </span>
+              <button onClick={() => setPopupCgv(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
+            </div>
+            {/* Texte scrollable */}
+            <div style={{ overflowY: 'auto', padding: '20px 24px 28px', color: 'rgba(255,255,255,0.82)', fontFamily: 'var(--font-texte)', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {TEXTE_CGV}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Récapitulatif final</h2>
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Articles</p>
+        {(() => {
+          // Même regroupement que l'étape 1
+          const illus          = articles.filter(a => a.type === 'illustration');
+          const reliesLivres   = articles.filter(a => a.type === 'relie' && a.sousType === 'livre');
+          const reliesRecueils = articles.filter(a => a.type === 'relie' && a.sousType === 'recueil');
+          const reliesLegacy   = articles.filter(a => a.type === 'relie' && !a.sousType);
+          const livresPdf      = articles.filter(a => a.type === 'livre_pdf');
+          const recueilsPdf    = articles.filter(a => a.type === 'recueil');
+
+          // Construire la liste ordonnée : illus, puis livres (relié + pdf associé, puis pdf seuls), puis recueils, puis legacy
+          const lignes = [];
+          illus.forEach(a => lignes.push(a));
+          reliesLivres.forEach(relie => {
+            lignes.push(relie);
+            const pdf = livresPdf.find(l => l.id === relie.id);
+            if (pdf) lignes.push(pdf);
+          });
+          livresPdf.filter(l => !idsReliesLivres.has(l.id)).forEach(a => lignes.push(a));
+          reliesRecueils.forEach(relie => {
+            lignes.push(relie);
+            const pdf = recueilsPdf.find(r => r.id === relie.id);
+            if (pdf) lignes.push(pdf);
+          });
+          recueilsPdf.filter(r => !idsReliesRecueils.has(r.id)).forEach(a => lignes.push(a));
+          reliesLegacy.forEach(a => lignes.push(a));
+
+          return lignes.map(article => {
+            const { brut, final, promo } = prixAffiche(article);
+            const estPdfAssocie = (article.type === 'livre_pdf' && idsReliesLivres.has(article.id)) || (article.type === 'recueil' && idsReliesRecueils.has(article.id));
+            return (
+              <div key={`${article.type}-${article.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginLeft: estPdfAssocie ? '16px' : '0', borderLeft: estPdfAssocie ? '2px solid rgba(255,62,181,0.2)' : 'none', paddingLeft: estPdfAssocie ? '10px' : '0' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ color: estPdfAssocie ? 'rgba(255,255,255,0.75)' : '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>{article.nom}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginTop: '1px' }}>
+                    {labelType(article.type)}
+                    {article.type === 'relie' && article.pays ? ` · ${article.pays}` : ''}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                  {promo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', textDecoration: 'line-through' }}>{brut.toFixed(2)} €</span>}
+                  <span style={{ color: promo ? '#ff3eb5' : 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: promo ? 'bold' : 'normal' }}>{final.toFixed(2)} €</span>
+                </div>
+              </div>
+            );
+          });
+        })()}
+
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+
+        {/* Réductions paliers */}
+        {(reductions.tauxIllus > 0 || reductions.tauxLivres > 0 || reductions.tauxRecueils > 0) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            {reductions.tauxIllus > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction illustrations (−{Math.round(reductions.tauxIllus * 100)}%)</span>
+                <span style={{ color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{(reductions.totalIllusBrut - reductions.totalIllus).toFixed(2)} €</span>
+              </div>
+            )}
+            {reductions.tauxLivres > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction livres PDF + reliés (−{Math.round(reductions.tauxLivres * 100)}%)</span>
+                <span style={{ color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{(reductions.totalLivresBrut + reductions.totalReliesLivresBrut - reductions.totalLivres - reductions.totalReliesLivres).toFixed(2)} €</span>
+              </div>
+            )}
+            {reductions.tauxRecueils > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'rgba(0,212,212,0.8)', fontSize: '12px' }}>Réduction recueils PDF + reliés (−{Math.round(reductions.tauxRecueils * 100)}%)</span>
+                <span style={{ color: '#00d4d4', fontSize: '12px', fontWeight: 'bold' }}>−{(reductions.totalRecueilsBrut + reductions.totalReliesRecueilsBrut - reductions.totalRecueils - reductions.totalReliesRecueils).toFixed(2)} €</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Badge */}
+        {reductions.tauxBadgeTotal > 0 && reductions.explicationBadge && (
+          <>
+            <div style={{ height: '1px', background: 'rgba(255,210,80,0.15)' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+              <span style={{ color: 'rgba(255,210,80,0.85)', fontSize: '12px', flex: 1 }}>{reductions.explicationBadge.detail} (−{Math.round(reductions.tauxBadgeTotal * 100)}%)</span>
+              <span style={{ color: '#ff3eb5', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>−{reductions.remiseBadge.toFixed(2)} €</span>
+            </div>
+          </>
+        )}
+
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Total</span>
+          <span style={{ color: '#ff3eb5', fontSize: '22px', fontWeight: 'bold' }}>{reductions.totalGeneral.toFixed(2)} €</span>
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px', textAlign: 'right' }}>TVA non applicable · art. 293 B du CGI</p>
+      </div>
+
+      {/* Coordonnées */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' }}>Vos coordonnées</p>
+          {!infosFacturation || !infosFacturation.prenom ? (
+            <span style={{ color: 'rgba(0,212,212,0.6)', fontSize: '10px', fontStyle: 'italic' }}>Coordonnées de facturation identiques</span>
+          ) : null}
+        </div>
+        <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{[infos.prenom, infos.nom].filter(Boolean).join(' ')}</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{infos.email}</p>
+        {infos.adresse && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: 1.6 }}>
+          {infos.adresse}{infos.complement ? `, ${infos.complement}` : ''}<br />
+          {[infos.code_postal, infos.ville].filter(Boolean).join(' ')}{infos.etat ? `, ${infos.etat}` : ''}<br />
+          {infos.pays}
+        </p>}
+      </div>
+
+      {/* Coordonnées facturation si différentes */}
+      {infosFacturation && infosFacturation.prenom && (
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(0,212,212,0.15)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Vos coordonnées de facturation</p>
+          <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{[infosFacturation.prenom, infosFacturation.nom].filter(Boolean).join(' ')}</p>
+          {infosFacturation.adresse && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: 1.6 }}>
+            {infosFacturation.adresse}{infosFacturation.complement ? `, ${infosFacturation.complement}` : ''}<br />
+            {[infosFacturation.code_postal, infosFacturation.ville].filter(Boolean).join(' ')}<br />
+            {infosFacturation.pays}
+          </p>}
+        </div>
+      )}
+
+      {/* Reliés dans la commande */}
+      {aRelie && (
+        <div style={{ background: 'rgba(255,210,80,0.05)', border: '1px solid rgba(255,210,80,0.2)', borderRadius: '12px', padding: '14px' }}>
+          <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '12px', fontWeight: 'bold', marginBottom: '6px' }}>Version(s) reliée(s)</p>
+          {articles.filter(a => a.type === 'relie').map(a => (
+            <p key={a.id} style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: 1.7 }}>
+              {a.nom} · <span style={{ color: 'rgba(255,210,80,0.7)' }}>{a.pays}</span> · {a.delai} · {(a.prixRelie || 0).toFixed(2)} € (frais de port inclus)
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Case CGV */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${cgvAcceptees ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer', transition: 'border-color .2s' }}
+        onClick={() => setCgvAcceptees(v => !v)}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: `2px solid ${cgvAcceptees ? '#00d4d4' : 'rgba(255,255,255,0.3)'}`, background: cgvAcceptees ? '#00d4d4' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', transition: 'all .2s', boxShadow: cgvAcceptees ? '0 0 8px rgba(0,212,212,0.4)' : 'none' }}>
+            {cgvAcceptees && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: '1.6' }}>
+            J'ai lu et j'accepte les{' '}
+            <span
+              onClick={e => { e.stopPropagation(); setPopupCgv(true); }}
+              style={{ color: '#00d4d4', textDecoration: 'underline', cursor: 'pointer', fontWeight: '600' }}
+            >
+              Conditions Générales de Vente
+            </span>.{' '}
+            <strong style={{ color: '#00d4d4' }}>Obligatoire pour finaliser la commande.</strong>
+          </p>
+        </div>
+      </div>
+
+      {/* Case rétractation — uniquement si produits numériques */}
+      {aPdf && (
+        <div style={{ background: 'rgba(0,212,212,0.04)', border: `1px solid ${retractation ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.12)'}`, borderRadius: '12px', padding: '14px', cursor: 'pointer', transition: 'border-color .2s' }}
+          onClick={() => setRetractation(v => !v)}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: `2px solid ${retractation ? '#00d4d4' : 'rgba(255,255,255,0.3)'}`, background: retractation ? '#00d4d4' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', transition: 'all .2s', boxShadow: retractation ? '0 0 8px rgba(0,212,212,0.4)' : 'none' }}>
+              {retractation && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: '1.6' }}>
+              Je reconnais que mon droit de rétractation de 14 jours ne s'applique pas aux fichiers numériques (illustrations, livres et recueils en PDF) dès lors que le téléchargement a été initié, conformément à l'article L221-28 du Code de la consommation. Cette renonciation ne concerne pas les versions reliées, pour lesquelles le droit de rétractation légal reste pleinement applicable.{' '}
+              <strong style={{ color: '#00d4d4' }}>Obligatoire pour finaliser la commande.</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button onClick={onRetour} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '14px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+          ← Retour
+        </button>
+        <button onClick={onContinuer} disabled={!peutContinuer}
+          style={{ flex: 2, background: peutContinuer ? 'linear-gradient(135deg, #ff3eb5, #cc2090)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '12px', padding: '14px', color: peutContinuer ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '14px', cursor: peutContinuer ? 'pointer' : 'default', boxShadow: peutContinuer ? '0 4px 20px rgba(255,62,181,0.3)' : 'none', transition: 'all .2s' }}>
+          Procéder au paiement →
+        </button>
+      </div>
+      {!peutContinuer && <p style={{ color: 'rgba(255,100,100,0.6)', fontSize: '11px', textAlign: 'center', marginTop: '-8px' }}>Veuillez cocher les cases obligatoires ci-dessus.</p>}
+    </div>
+  );
+}
+
+// ─── Formulaire Stripe ────────────────────────────────────────────────────────
+function FormulaireStripe({ montantCentimes, infos, onSucces, onRetour }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [chargement, setChargement] = React.useState(false);
+  const [erreur, setErreur] = React.useState(null);
+
+  const handlePayer = async () => {
+    if (!stripe || !elements) return;
+    setChargement(true);
+    setErreur(null);
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + '/panier',
+          payment_method_data: {
+            billing_details: { email: infos.email, name: [infos.prenom, infos.nom].filter(Boolean).join(' ') || undefined },
+          },
+        },
+        redirect: 'if_required',
+      });
+      if (error) throw new Error(error.message);
+      if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_action' || paymentIntent.status === 'processing')) { onSucces(paymentIntent.id); }
+    } catch (e) {
+      setErreur(e.message);
+    }
+    setChargement(false);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Paiement sécurisé</h2>
+
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Choisissez votre moyen de paiement</p>
+        <PaymentElement options={{
+          layout: 'tabs',
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay', 'paypal'],
+          defaultValues: { billingDetails: { email: infos.email, name: [infos.prenom, infos.nom].filter(Boolean).join(' ') || '' } },
+        }} />
+        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '10px', marginTop: '12px' }}>Paiement sécurisé par Stripe · CB, Apple Pay, Google Pay acceptés</p>
+      </div>
+
+      {erreur && (
+        <div style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '12px' }}>
+          <p style={{ color: '#ff6b6b', fontSize: '13px' }}>⚠️ {erreur}</p>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button onClick={onRetour} disabled={chargement} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '14px', color: 'rgba(255,255,255,0.6)', fontSize: '14px', cursor: 'pointer' }}>
+          ← Retour
+        </button>
+        <button onClick={handlePayer} disabled={!stripe || chargement}
+          style={{ flex: 2, background: stripe && !chargement ? 'linear-gradient(135deg, #ff3eb5, #cc2090)' : 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '12px', padding: '14px', color: stripe && !chargement ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '14px', cursor: stripe && !chargement ? 'pointer' : 'default', boxShadow: stripe && !chargement ? '0 4px 20px rgba(255,62,181,0.3)' : 'none', transition: 'all .2s' }}>
+          {chargement ? 'Traitement en cours...' : `Payer ${(montantCentimes / 100).toFixed(2)} €`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Étape 4 : Paiement ──────────────────────────────────────────────────────
+function EtapePaiement({ onSucces, onRetour, isMobile, infos }) {
+  const { reductions } = usePanier();
+  const montantCentimes = Math.round(reductions.totalGeneral * 100);
+  const [clientSecret, setClientSecret] = React.useState(null);
+  const [erreurInit, setErreurInit] = React.useState(null);
+
+  React.useEffect(() => {
+    const init = async () => {
+      try {
+        const resp = await fetch('/api/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ montant: montantCentimes, email: infos.email }),
+        });
+        const { clientSecret: cs, error } = await resp.json();
+        if (error) throw new Error(error);
+        setClientSecret(cs);
+      } catch (e) {
+        setErreurInit(e.message);
+      }
+    };
+    init();
+  }, [montantCentimes, infos.email]);
+
+  if (erreurInit) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+      <p style={{ color: '#ff6b6b', fontSize: '14px', marginBottom: '16px' }}>Erreur lors de l'initialisation du paiement : {erreurInit}</p>
+      <button onClick={onRetour} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px 20px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>← Retour</button>
+    </div>
+  );
+
+  if (!clientSecret) return (
+    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>Initialisation du paiement...</p>
+    </div>
+  );
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night', variables: { colorPrimary: '#ff3eb5', colorBackground: '#111', colorText: '#ffffff', colorDanger: '#ff4d4d', borderRadius: '8px' } } }}>
+      <FormulaireStripe montantCentimes={montantCentimes} infos={infos} onSucces={onSucces} onRetour={onRetour} />
+    </Elements>
+  );
+}
+
+// ─── Étape 5 : Confirmation ───────────────────────────────────────────────────
+function EtapeConfirmation({ infos, isMobile, articlesAchetes = [], paymentIntentId = null }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [illustrations, setIllustrations] = React.useState([]);
-  const [collection, setCollection] = React.useState({});
-  const [coloriages, setColoriages] = React.useState({});
-  const [loading, setLoading] = React.useState(true);
-  const [categorie, setCategorie] = React.useState('Tout');
-  const [sousCategorie, setSousCategorie] = React.useState(''); // POINT 10/11
-  const [annees, setAnnees] = React.useState([]);
+  const articles = articlesAchetes;
+  const [liensTelechargement, setLiensTelechargement] = React.useState([]);
+  const [liensCharges, setLiensCharges] = React.useState(false);
+  const [telechargements, setTelechargements] = React.useState({});
+
+  const aRelie = articles.some(a => a.type === 'relie');
+  const articlesPdf = articles.filter(a => a.type === 'illustration' || a.type === 'livre_pdf' || a.type === 'recueil');
+
+  React.useEffect(() => {
+    const chargerLiens = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        let query = supabase
+          .from('commandes_articles')
+          .select('id, nom, type, fichier_pdf')
+          .eq('user_id', user.id)
+          .in('type', ['illustration', 'livre_pdf', 'recueil']);
+        if (paymentIntentId) query = query.eq('commande_id', paymentIntentId);
+        else query = query.eq('commande_recente', true);
+        const { data } = await query.order('created_at', { ascending: false });
+        setLiensTelechargement(data || []);
+      } catch {}
+      setLiensCharges(true);
+    };
+    chargerLiens();
+  }, [paymentIntentId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTelecharger = async (article) => {
+    if (telechargements[article.id]) return;
+    setTelechargements(prev => ({ ...prev, [article.id]: true }));
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const response = await fetch('/api/refresh-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: article.id, userId: user.id }),
+      });
+      const data = await response.json();
+      if (data.url) window.open(data.url, '_blank');
+    } catch (e) { console.error(e); }
+  };
+
+  const prenom = infos.prenom || '';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '28px', padding: '40px 20px' }}>
+
+      {/* Icône succès */}
+      <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(0,212,212,0.12)', border: '3px solid #00d4d4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}>✓</div>
+
+      {/* Message de remerciement */}
+      <div style={{ textAlign: 'center', maxWidth: '440px' }}>
+        <h2 style={{ color: '#00d4d4', fontSize: isMobile ? '20px' : '24px', fontWeight: 'bold', marginBottom: '16px' }}>
+          Merci {prenom} !
+        </h2>
+        <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.18)', borderRadius: '16px', padding: '20px 24px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', lineHeight: '1.95' }}>
+            Ta commande vient d'arriver dans mon atelier.<br />
+            Un ou plusieurs coloriages viennent de trouver un nouveau foyer, et commencent déjà à s'imaginer entre tes mains, prêts à rencontrer tes couleurs.<br />
+            <br />
+            Merci pour ta confiance et ton soutien. Chaque commande me permet de continuer à créer de nouveaux univers et de nouvelles histoires à colorier.<br />
+            J'espère qu'ils t'accompagneront dans de beaux moments de création.<br />
+            <br />
+            À très vite.<br />
+            <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '13px', fontStyle: 'italic' }}>Kevin Teo'Art</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Liens de téléchargement PDF */}
+      {articlesPdf.length > 0 && (
+        <div style={{ width: '100%', maxWidth: '460px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Vos téléchargements</p>
+          {!liensCharges ? (
+            <div style={{ textAlign: 'center', padding: '24px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>Préparation de vos fichiers...</p>
+            </div>
+          ) : liensTelechargement.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {liensTelechargement.map(article => {
+                const deja = telechargements[article.id];
+                return (
+                  <div key={article.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '10px', padding: '10px 14px' }}>
+                    <p style={{ color: deja ? 'rgba(255,255,255,0.35)' : '#fff', fontSize: '13px', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{article.nom}</p>
+                    <button
+                      onClick={() => handleTelecharger(article)}
+                      disabled={deja}
+                      style={{ background: deja ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #ff3eb5, #c9007a)', border: 'none', borderRadius: '8px', padding: '7px 14px', color: deja ? 'rgba(255,255,255,0.3)' : '#fff', fontWeight: 'bold', fontSize: '12px', cursor: deja ? 'default' : 'pointer', flexShrink: 0, boxShadow: deja ? 'none' : '0 3px 10px rgba(255,62,181,0.35)', whiteSpace: 'nowrap', transition: 'all .2s' }}>
+                      {deja ? '✓ Téléchargé' : 'Télécharger'}
+                    </button>
+                  </div>
+                );
+              })}
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', marginTop: '6px', textAlign: 'center', lineHeight: 1.7 }}>
+                Retrouvez vos téléchargements à tout moment dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
+              </p>
+            </div>
+          ) : (
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', textAlign: 'center', lineHeight: 1.7 }}>
+              Vos liens de téléchargement sont disponibles dans <strong style={{ color: '#00d4d4' }}>Mon Compte → Mes Commandes</strong>.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Message livres reliés */}
+      {aRelie && (
+        <div style={{ width: '100%', maxWidth: '460px', background: 'rgba(255,210,80,0.07)', border: '1px solid rgba(255,210,80,0.25)', borderRadius: '14px', padding: '18px' }}>
+          <p style={{ color: 'rgba(255,210,80,0.95)', fontSize: '13px', fontWeight: 'bold', marginBottom: '8px' }}>Version(s) reliée(s) — en cours de traitement</p>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', lineHeight: '1.8' }}>
+            Ta commande reliée a bien été reçue et est en cours de traitement.<br />
+            Tu seras notifié à chaque étape : validation, expédition et livraison estimée.<br />
+            Pour toute question ou problème, contacte-moi directement à{' '}
+            <strong style={{ color: 'rgba(255,210,80,0.8)' }}>kevinteoart@outlook.fr</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* Boutons */}
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button onClick={() => navigate('/accueil')}
+          style={{ background: 'linear-gradient(135deg, #ff3eb5, #cc2090)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#fff', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,62,181,0.35)' }}>
+          Accueil
+        </button>
+        <button onClick={() => navigate('/mon-compte')}
+          style={{ background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,212,212,0.35)' }}>
+          Mon Compte
+        </button>
+        <button onClick={() => navigate('/catalogue')}
+          style={{ background: 'linear-gradient(135deg, #ffd250, #c89a00)', border: 'none', borderRadius: '12px', padding: '12px 24px', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 14px rgba(255,210,80,0.35)' }}>
+          Continuer mes achats
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── Page principale Panier ───────────────────────────────────────────────────
+export default function Panier() {
+  const navigate = useNavigate();
+  const { nbArticles, viderPanier } = usePanier();
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
-
-  const [recherche, setRecherche] = React.useState('');
-  const [filtreCollection, setFiltreCollection] = React.useState('tout');
-  const [filtreNouveautes, setFiltreNouveautes] = React.useState(false);
-  const [refDateNouveautes, setRefDateNouveautes] = React.useState(null);
-  const [tri, setTri] = React.useState('az');
-  const [vueCompacte, setVueCompacte] = React.useState(false);
-  const [page, setPage] = React.useState(1);
-  const [popup, setPopup] = React.useState(null);
-  const [popupIndex, setPopupIndex] = React.useState(null);
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
-  const [confirmation, setConfirmation] = React.useState(null);
-  const [popupColo, setPopupColo] = React.useState(null);
-  const [confirmJaiCat, setConfirmJaiCat] = React.useState(null);
-  const [dlGratuits, setDlGratuits] = React.useState({}); // { [illu.id]: 'idle'|'loading'|'done' } // illu à ajouter après confirmation
-  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
-  const PAR_PAGE = 40;
+  const [etape, setEtape] = React.useState(1);
+  const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
+  const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
+  const [facturationDifferente, setFacturationDifferente] = React.useState(false);
+  const [popupIllu, setPopupIllu] = React.useState(null);
+  const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
+  const [popupIlluChargement, setPopupIlluChargement] = React.useState(false);
+  const [popupCollection, setPopupCollection] = React.useState({});
+  const [popupColoriages, setPopupColoriages] = React.useState({});
+  const { articles } = usePanier();
+  const illusIds = articles.filter(a => a.type === 'illustration').map(a => a.id);
 
+  React.useEffect(() => {
+    const chargerCollectionPopup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto').eq('user_id', user.id);
+      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
+      if (coll) { const m = {}; coll.forEach(c => { m[c.illustration_id] = c; }); setPopupCollection(m); }
+      if (colos) { const m = {}; colos.forEach(c => { m[c.illustration_id] = true; }); setPopupColoriages(m); }
+    };
+    chargerCollectionPopup();
+  }, []);
+
+  const ouvrirPopupIllu = async (illuId) => {
+    setPopupIlluChargement(true);
+    try {
+      const { data } = await supabase.from('illustrations').select('*').eq('id', illuId).single();
+      if (data) { setPopupIllu(data); setPopupIlluIndex(illusIds.indexOf(illuId)); }
+    } catch {}
+    setPopupIlluChargement(false);
+  };
+
+  const handleToggleJAiPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.j_ai || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: popupCollection[illuId]?.je_veux || false }, { onConflict: 'user_id,illustration_id' });
+  };
+
+  const handleToggleJeVeuxPopup = async (illuId) => {
+    if (!userId) return;
+    const nouveau = !(popupCollection[illuId]?.je_veux || false);
+    setPopupCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
+    await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: popupCollection[illuId]?.j_ai || false, j_ai_auto: popupCollection[illuId]?.j_ai_auto || false }, { onConflict: 'user_id,illustration_id' });
+  };
+
+  const popupSuivant = async () => {
+    if (illusIds.length <= 1) return;
+    const next = (popupIlluIndex + 1) % illusIds.length;
+    setPopupIlluIndex(next);
+    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[next]).single();
+    if (data) setPopupIllu(data);
+  };
+
+  const popupPrecedent = async () => {
+    if (illusIds.length <= 1) return;
+    const prev = (popupIlluIndex - 1 + illusIds.length) % illusIds.length;
+    setPopupIlluIndex(prev);
+    const { data } = await supabase.from('illustrations').select('*').eq('id', illusIds[prev]).single();
+    if (data) setPopupIllu(data);
+  };
+  const [retractation, setRetractation] = React.useState(false);
+  const [cgvAcceptees, setCgvAcceptees] = React.useState(false);
+  const encartRef = React.useRef(null);
   const moisPatreon = getMoisPatreonDisponibles();
-  const { nbArticles, ajouterIllustration, estDansPanier, supprimerArticle } = usePanier();
+
+  const allerEtape = (n) => {
+    setEtape(n);
+    setTimeout(() => { encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  };
+
+  // ── Gestion retour redirection Stripe (3D Secure) ─────────────────────────
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const piId = params.get('payment_intent');
+    const piClientSecret = params.get('payment_intent_client_secret');
+    if (!piId || !piClientSecret) return;
+
+    // Nettoyer l'URL sans recharger la page
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const gererRetourStripe = async () => {
+      try {
+        const stripe = await stripePromise;
+        const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
+        if (paymentIntent?.status === 'succeeded') {
+          await handleSuccesPaiement(paymentIntent.id);
+        }
+      } catch (e) { console.error('Erreur retour Stripe:', e); }
+    };
+    gererRetourStripe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
@@ -165,208 +1231,187 @@ function Catalogue() {
   }, []);
 
   React.useEffect(() => {
-    const blockContext = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
-    const blockDrag = (e) => { if (e.target.tagName === 'IMG') e.preventDefault(); };
-    document.addEventListener('contextmenu', blockContext);
-    document.addEventListener('dragstart', blockDrag);
-    return () => {
-      document.removeEventListener('contextmenu', blockContext);
-      document.removeEventListener('dragstart', blockDrag);
-    };
-  }, []);
-
-  // Fermer dropdowns au clic extérieur
-  React.useEffect(() => {
-    const handler = () => { setShowCategories(false); setShowPatreonMenu(false); };
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, []);
-
-  // Pré-filtrer depuis la nav des autres pages
-  React.useEffect(() => {
-    if (location.state?.filtreNouveautes) {
-      setFiltreNouveautes(true);
-      setPage(1);
-    } else if (location.state?.categorie) {
-      setCategorie(location.state.categorie);
-      setSousCategorie(location.state.sousCategorie || '');
-      setPage(1);
-    } else if (location.state?.sousCategorie) {
-      setSousCategorie(location.state.sousCategorie);
-      setCategorie('Tout');
-      setPage(1);
-    }
-  }, [location.state]);
-
-  React.useEffect(() => {
     const charger = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate('/'); return; }
-      setUserId(user.id);
-      const { data: profil } = await supabase.from('profils').select('pseudo, created_at, dernier_vu_illustrations').eq('id', user.id).single();
-      setUserPseudo(profil?.pseudo || 'Anonyme');
-      const refD = profil?.dernier_vu_illustrations || profil?.created_at;
-      if (refD) setRefDateNouveautes(new Date(refD));
-      const { data: illus } = await supabase
-        .from('illustrations')
-        .select('id, nom, annee, categorie, sous_categorie, sous_categorie_patreon, sous_categorie_kawaii, visuels, prix, fichier_pdf, description, tags, livres_ids, recueils_ids, date_publication')
-        .eq('statut', 'published').order('nom');
-      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
-      const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', user.id);
-      setIllustrations(illus || []);
-      const collMap = {};
-      (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
-      setCollection(collMap);
-      const coloMap = {};
-      (colos || []).forEach(c => { coloMap[c.illustration_id] = true; });
-      setColoriages(coloMap);
-      setLoading(false);
-
-      // ── Notif nouvelles illustrations ─────────────────────────────────
-      const ref = profil?.dernier_vu_illustrations || profil?.created_at;
-      if (ref) {
-        const refDate = new Date(ref);
-        const nouvelles = (illus || []).filter(i => i.date_publication && new Date(i.date_publication) > refDate);
-        if (nouvelles.length > 0) {
-          await supabase.from('notifications')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('type', 'nouvelle_illustration')
-            .eq('lu', false);
-          await supabase.from('notifications').insert({
-            user_id: user.id,
-            type: 'nouvelle_illustration',
-            contenu: { count: nouvelles.length },
-            lu: false,
-          });
+      if (user) {
+        setUserId(user.id);
+        const { data: profil } = await supabase.from('profils').select('pseudo, email, prenom, nom, adresse, complement, code_postal, ville, etat, pays').eq('id', user.id).single();
+        if (profil) {
+          if (profil.pseudo) setUserPseudo(profil.pseudo);
+          setInfos(prev => ({
+            ...prev,
+            email:       profil.email || user.email || '',
+            prenom:      profil.prenom || profil.pseudo || '',
+            nom:         profil.nom || '',
+            adresse:     profil.adresse || '',
+            complement:  profil.complement || '',
+            code_postal: profil.code_postal || '',
+            ville:       profil.ville || '',
+            etat:        profil.etat || '',
+            pays:        profil.pays || '',
+          }));
+        } else if (user.email) {
+          setInfos(prev => ({ ...prev, email: user.email }));
         }
       }
-      // ─────────────────────────────────────────────────────────────────
     };
     charger();
-  }, [navigate]);
+  }, []);
 
-  const handleDlGratuitCat = async (illu) => {
-    if (dlGratuits[illu.id] && dlGratuits[illu.id] !== 'idle') return;
-    if (!illu.fichier_pdf) return;
-    setDlGratuits(prev => ({ ...prev, [illu.id]: 'loading' }));
+  const [articlesAchetes, setArticlesAchetes] = React.useState([]);
+  const [dernierPaymentIntentId, setDernierPaymentIntentId] = React.useState(null);
+
+  const handleSuccesPaiement = async (paymentIntentId) => {
+    // ── Snapshot du panier AVANT de le vider ─────────────────────────────
+    const snapshotArticles = [...articles];
+    setArticlesAchetes(snapshotArticles);
+    setDernierPaymentIntentId(paymentIntentId);
+
     try {
-      const resp = await fetch('/api/download-free', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, itemId: illu.id, itemType: 'illustration', fichierPdf: illu.fichier_pdf }),
-      });
-      const { url, error } = await resp.json();
-      if (error) throw new Error(error);
-      const a = document.createElement('a');
-      a.href = url; a.download = `${illu.nom}.pdf`; a.click();
-      setDlGratuits(prev => ({ ...prev, [illu.id]: 'done' }));
-      setTimeout(() => setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })), 3000);
-    } catch { setDlGratuits(prev => ({ ...prev, [illu.id]: 'idle' })); }
-  };
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // ── Appel confirm-payment → écrit dans commandes_articles ─────────
+        try {
+          await fetch('/api/confirm-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentIntentId,
+              userId: user.id,
+              articles: snapshotArticles.map(a => ({
+                id: a.id,
+                nom: a.nom,
+                type: a.type,
+                sousType: a.sousType || null,
+              })),
+            }),
+          });
+        } catch (e) { console.error('Erreur confirm-payment:', e); }
 
-  const handleToggleJAi = (illuId, e) => {
-    e && e.stopPropagation();
-    const estCoche = collection[illuId]?.j_ai || false;
-    const estAuto = collection[illuId]?.j_ai_auto || false;
-    if (estCoche && estAuto) { setConfirmation({ illuId }); return; }
-    toggleJAi(illuId);
-  };
-
-  const toggleJAi = async (illuId) => {
-    const nouveau = !(collection[illuId]?.j_ai || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], j_ai: nouveau } }));
-    await supabase.from('collection').upsert(
-      { user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: false, je_veux: collection[illuId]?.je_veux || false },
-      { onConflict: 'user_id,illustration_id' }
-    );
-    const illu = illustrations.find(i => i.id === illuId);
-    if (illu) {
-      const tousItems = [
-        ...(illu.livres_ids || []).map(id => ({ id, type: 'livre' })),
-        ...(illu.recueils_ids || []).map(id => ({ id, type: 'recueil' })),
-      ];
-      for (const { id: itemId, type } of tousItems) {
-        const champ = type === 'livre' ? 'livres_ids' : 'recueils_ids';
-        const { data: illusItem } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains(champ, [itemId]);
-        const illuIds = (illusItem || []).map(i => i.id);
-        if (illuIds.length === 0) continue;
-        const { data: cochees } = await supabase.from('collection').select('illustration_id').eq('user_id', userId).eq('j_ai', true).in('illustration_id', illuIds);
-        const nbCoches = (cochees || []).length;
-        const { data: existant } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', userId).eq('item_id', itemId).eq('item_type', type).maybeSingle();
-        if (nouveau && nbCoches === illuIds.length && !existant?.j_ai) {
-          await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: true, je_veux: existant?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
-        } else if (!nouveau && existant?.j_ai) {
-          await supabase.from('collection_livres').upsert({ user_id: userId, item_id: itemId, item_type: type, j_ai: false, je_veux: existant?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
+        // ── Vider la promo badge ──────────────────────────────────────────
+        const { data: profil } = await supabase.from('profils').select('promo_badge_active').eq('id', user.id).single();
+        if (profil?.promo_badge_active && Object.keys(profil.promo_badge_active).length > 0) {
+          await supabase.from('profils').update({ promo_badge_active: {} }).eq('id', user.id);
         }
+
+        // ── Coche rose automatique après achat (j_ai_achete) ─────────────
+        try {
+          const illuIdsACocher = new Set();
+          const livresIdsACocher = new Set();
+          const recueilsIdsACocher = new Set();
+
+          for (const article of snapshotArticles) {
+            if (article.type === 'illustration') {
+              illuIdsACocher.add(article.id);
+            } else if (article.type === 'livre_pdf') {
+              livresIdsACocher.add(article.id);
+              const { data: illusLivre } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [article.id]);
+              (illusLivre || []).forEach(i => illuIdsACocher.add(i.id));
+            } else if (article.type === 'recueil') {
+              recueilsIdsACocher.add(article.id);
+              const { data: illusRecueil } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [article.id]);
+              (illusRecueil || []).forEach(i => illuIdsACocher.add(i.id));
+              const { data: livresRecueil } = await supabase.from('livres').select('id').contains('recueils_ids', [article.id]);
+              (livresRecueil || []).forEach(l => livresIdsACocher.add(l.id));
+            }
+          }
+
+          // Écrire j_ai_achete sur les illustrations (sans toucher j_ai, j_ai_auto, je_veux)
+          if (illuIdsACocher.size > 0) {
+            const illuIdsArr = Array.from(illuIdsACocher);
+            const { data: collActuelle } = await supabase.from('collection').select('illustration_id, j_ai, j_ai_auto, je_veux').eq('user_id', user.id).in('illustration_id', illuIdsArr);
+            const collMap = {};
+            (collActuelle || []).forEach(c => { collMap[c.illustration_id] = c; });
+            await supabase.from('collection').upsert(
+              illuIdsArr.map(id => ({
+                user_id: user.id,
+                illustration_id: id,
+                j_ai_achete: true,
+                j_ai: collMap[id]?.j_ai || false,
+                j_ai_auto: collMap[id]?.j_ai_auto || false,
+                je_veux: collMap[id]?.je_veux || false,
+              })),
+              { onConflict: 'user_id,illustration_id' }
+            );
+          }
+
+          // Écrire j_ai_achete sur les livres (sans toucher j_ai, je_veux)
+          if (livresIdsACocher.size > 0) {
+            const livresIdsArr = Array.from(livresIdsACocher);
+            const { data: collLivresActuelle } = await supabase.from('collection_livres').select('item_id, j_ai, je_veux').eq('user_id', user.id).eq('item_type', 'livre').in('item_id', livresIdsArr);
+            const collLivresMap = {};
+            (collLivresActuelle || []).forEach(c => { collLivresMap[c.item_id] = c; });
+            await supabase.from('collection_livres').upsert(
+              livresIdsArr.map(id => ({
+                user_id: user.id,
+                item_id: id,
+                item_type: 'livre',
+                j_ai_achete: true,
+                j_ai: collLivresMap[id]?.j_ai || false,
+                je_veux: collLivresMap[id]?.je_veux || false,
+              })),
+              { onConflict: 'user_id,item_id,item_type' }
+            );
+          }
+
+          // Écrire j_ai_achete sur les recueils (sans toucher j_ai, je_veux)
+          if (recueilsIdsACocher.size > 0) {
+            const recueilsIdsArr = Array.from(recueilsIdsACocher);
+            const { data: collRecueilsActuelle } = await supabase.from('collection_livres').select('item_id, j_ai, je_veux').eq('user_id', user.id).eq('item_type', 'recueil').in('item_id', recueilsIdsArr);
+            const collRecueilsMap = {};
+            (collRecueilsActuelle || []).forEach(c => { collRecueilsMap[c.item_id] = c; });
+            await supabase.from('collection_livres').upsert(
+              recueilsIdsArr.map(id => ({
+                user_id: user.id,
+                item_id: id,
+                item_type: 'recueil',
+                j_ai_achete: true,
+                j_ai: collRecueilsMap[id]?.j_ai || false,
+                je_veux: collRecueilsMap[id]?.je_veux || false,
+              })),
+              { onConflict: 'user_id,item_id,item_type' }
+            );
+          }
+
+          // ── Vérification complétion : illustrations achetées → livre/recueil complet ? ──
+          if (illuIdsACocher.size > 0) {
+            // Toutes les illustrations cochées (j_ai OU j_ai_auto OU j_ai_achete) pour ce user
+            const { data: toutesIllusCochees } = await supabase.from('collection').select('illustration_id').eq('user_id', user.id).or('j_ai.eq.true,j_ai_auto.eq.true,j_ai_achete.eq.true');
+            const illusCocheesSet = new Set((toutesIllusCochees || []).map(c => c.illustration_id));
+
+            // Quels livres/recueils ces illustrations concernent-elles ?
+            const { data: illusMeta } = await supabase.from('illustrations').select('id, livres_ids, recueils_ids').in('id', Array.from(illuIdsACocher));
+            const livresAVerifier = new Set();
+            const recueilsAVerifier = new Set();
+            (illusMeta || []).forEach(i => {
+              (i.livres_ids || []).forEach(lid => { if (!livresIdsACocher.has(lid)) livresAVerifier.add(lid); });
+              (i.recueils_ids || []).forEach(rid => { if (!recueilsIdsACocher.has(rid)) recueilsAVerifier.add(rid); });
+            });
+
+            for (const livreId of livresAVerifier) {
+              const { data: illusDuLivre } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [livreId]);
+              const ids = (illusDuLivre || []).map(i => i.id);
+              if (ids.length > 0 && ids.every(id => illusCocheesSet.has(id))) {
+                const { data: collLivre } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', user.id).eq('item_id', livreId).eq('item_type', 'livre').maybeSingle();
+                await supabase.from('collection_livres').upsert({ user_id: user.id, item_id: livreId, item_type: 'livre', j_ai_achete: true, j_ai: collLivre?.j_ai || false, je_veux: collLivre?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
+              }
+            }
+
+            for (const recueilId of recueilsAVerifier) {
+              const { data: illusDuRecueil } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [recueilId]);
+              const ids = (illusDuRecueil || []).map(i => i.id);
+              if (ids.length > 0 && ids.every(id => illusCocheesSet.has(id))) {
+                const { data: collRecueil } = await supabase.from('collection_livres').select('j_ai, je_veux').eq('user_id', user.id).eq('item_id', recueilId).eq('item_type', 'recueil').maybeSingle();
+                await supabase.from('collection_livres').upsert({ user_id: user.id, item_id: recueilId, item_type: 'recueil', j_ai_achete: true, j_ai: collRecueil?.j_ai || false, je_veux: collRecueil?.je_veux || false }, { onConflict: 'user_id,item_id,item_type' });
+              }
+            }
+          }
+        } catch (e) { console.error('Erreur coche achat:', e); }
       }
-    }
+    } catch {}
+    viderPanier();
+    setEtape(5);
   };
-
-  const toggleJeVeux = async (illuId, e) => {
-    e && e.stopPropagation();
-    if (!userId) return;
-    const nouveau = !(collection[illuId]?.je_veux || false);
-    setCollection(prev => ({ ...prev, [illuId]: { ...prev[illuId], je_veux: nouveau } }));
-    const { error } = await supabase.from('collection').upsert({ user_id: userId, illustration_id: illuId, je_veux: nouveau, j_ai: collection[illuId]?.j_ai || false, j_ai_auto: collection[illuId]?.j_ai_auto || false }, { onConflict: 'user_id,illustration_id' });
-    if (error) console.error('toggleJeVeux error:', error);
-  };
-
-  const handleColoUploaded = (illuId) => { setColoriages(prev => ({ ...prev, [illuId]: true })); };
-  const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
-
-  // Sélection catégorie normale
-  const selectionnerCategorie = (cat) => {
-    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
-  };
-
-  // Sélection mois Patreon (POINT 11)
-  const selectionnerPatreon = (mois) => {
-    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
-  };
-
-  const selectionnerSousCategorie = (sc) => {
-    setCategorie('Kawaii/Chibi'); setSousCategorie(sc); setShowCategories(false); setShowKawaiiMenu(false); setPage(1);
-  };
-
-  let illustrationsFiltrees = illustrations.filter(i => {
-    const SOUS_CAT_KAWAII = ['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'];
-    if (sousCategorie) {
-      if (SOUS_CAT_KAWAII.includes(sousCategorie)) {
-        // Filtre sous-catégorie Kawaii/Chibi (sans contrainte sur categorie principale)
-        if (i.sous_categorie_kawaii !== sousCategorie) return false;
-      } else {
-        // Filtre Patreon : chercher dans sous_categorie_patreon
-        if (i.sous_categorie_patreon !== sousCategorie) return false;
-      }
-    } else {
-      if (categorie !== 'Tout' && i.categorie !== categorie) return false;
-    }
-    if (annees.length > 0 && !annees.includes(i.annee)) return false;
-    if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
-    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto && !collection[i.id]?.j_ai_achete) return false;
-    if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
-    if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
-    if (filtreCollection === 'colorie' && !coloriages[i.id]) return false;
-    if (filtreNouveautes && refDateNouveautes) {
-      if (!i.date_publication || new Date(i.date_publication) <= refDateNouveautes) return false;
-    }
-    return true;
-  });
-
-  illustrationsFiltrees = [...illustrationsFiltrees].sort((a, b) => {
-    if (tri === 'za') return b.nom.localeCompare(a.nom, 'fr');
-    if (tri === 'recent') return (b.annee || 0) - (a.annee || 0);
-    return a.nom.localeCompare(b.nom, 'fr');
-  });
-
-  const total = illustrationsFiltrees.length;
-  const TAILLE_VIGNETTE = vueCompacte ? 100 : 150;
-  const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
-
-  const ouvrirPopup = (illu, index) => { setPopup(illu); setPopupIndex(index); };
-  const popupSuivant = () => { const next = (popupIndex + 1) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[next]); setPopupIndex(next); };
-  const popupPrecedent = () => { const prev = (popupIndex - 1 + illustrationsFiltrees.length) % illustrationsFiltrees.length; setPopup(illustrationsFiltrees[prev]); setPopupIndex(prev); };
 
   const P = isMobile ? 44 : 80;
   const L = isMobile ? 70 : 120;
@@ -374,169 +1419,73 @@ function Catalogue() {
   const MARGIN_NAV = isMobile ? 2 : 12;
   const H_NAV = isMobile ? 80 : 120;
 
-  const btnFiltreStyle = (actif) => ({
-    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
-    background: actif ? 'rgba(0,212,212,0.2)' : 'transparent',
-    border: actif ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)',
-    color: actif ? '#00d4d4' : 'rgba(255,255,255,0.5)',
-  });
-
-  const btnTriStyle = (actif) => ({
-    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
-    background: actif ? 'rgba(255,210,80,0.15)' : 'transparent',
-    border: actif ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)',
-    color: actif ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)',
-  });
-
-  const encartStyle = {
-    background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px',
-    padding: '12px 16px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column',
-    gap: '8px', alignSelf: 'stretch', justifyContent: 'center',
-  };
-
-  // Label affiché dans le compteur
-  const labelFiltre = sousCategorie ? ` · ${sousCategorie}` : (categorie !== 'Tout' ? ` · ${categorie}` : '');
-
   return (
-    <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
+    <div style={{ background: '#000', minHeight: '100vh', fontFamily: 'var(--font-texte)', overflowX: 'hidden' }}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-        @keyframes scrollPromo { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
-        @keyframes glowPromo0 { 0%, 100% { text-shadow: 0 0 4px rgba(0,212,212,0.3); } 50% { text-shadow: 0 0 12px rgba(0,212,212,0.9), 0 0 20px rgba(0,212,212,0.5); } }
-        @keyframes glowPromo1 { 0%, 100% { text-shadow: 0 0 4px rgba(255,210,80,0.3); } 50% { text-shadow: 0 0 12px rgba(255,210,80,0.9), 0 0 20px rgba(255,210,80,0.5); } }
-        @keyframes glowPromo2 { 0%, 100% { text-shadow: 0 0 4px rgba(255,62,181,0.3); } 50% { text-shadow: 0 0 12px rgba(255,62,181,0.9), 0 0 20px rgba(255,62,181,0.5); } }
-        @keyframes glowPromo3 { 0%, 100% { text-shadow: 0 0 4px rgba(180,127,255,0.3); } 50% { text-shadow: 0 0 12px rgba(180,127,255,0.9), 0 0 20px rgba(180,127,255,0.5); } }
-        @keyframes glowPromo4 { 0%, 100% { text-shadow: 0 0 4px rgba(0,255,204,0.3); } 50% { text-shadow: 0 0 12px rgba(0,255,204,0.9), 0 0 20px rgba(0,255,204,0.5); } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
-        .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
         .pastille { transition: transform .2s, filter .2s; cursor: pointer; }
         .pastille:hover { transform: scale(1.12); filter: brightness(1.2); }
-        .teoart-card::before {
-          content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%;
-          background: linear-gradient(to right, transparent 0%, rgba(255,215,80,0.02) 10%, rgba(255,225,110,0.07) 25%, rgba(255,235,150,0.12) 40%, rgba(255,245,170,0.08) 50%, rgba(255,235,140,0.11) 62%, rgba(255,220,100,0.06) 75%, rgba(255,210,80,0.02) 88%, transparent 100%);
-          transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen;
-        }
-        .teoart-card.shining::before { animation: shine 1.0s ease-in-out forwards; }
-        @keyframes shine { 0% { left: -150%; } 100% { left: 220%; } }
-        .teoart-card:hover { border-color: rgba(255,210,80,0.5) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.6), 0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(255,210,80,0.15) !important; }
-        .dropdown-cat { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 100; min-width: 220px; }
-        .dropdown-patreon { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid rgba(255,210,80,0.4); border-radius: 12px; padding: 8px; z-index: 100; min-width: 200px; }
-        .dropdown-item { padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; display: block; width: 100%; background: none; border: none; }
+        .dropdown-cat { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.96); border: 1px solid rgba(0,212,212,0.3); border-radius: 12px; padding: 8px; z-index: 200; min-width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); }
+        .dropdown-item { display: block; width: 100%; padding: 8px 14px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
-        .dropdown-item.actif { color: #00d4d4; font-weight: bold; }
-        .dropdown-item-patreon { padding: 8px 14px; color: rgba(255,210,80,0.8); font-size: 13px; cursor: pointer; border-radius: 6px; text-align: left; display: block; width: 100%; background: none; border: none; }
-        .dropdown-item-patreon:hover { background: rgba(255,210,80,0.1); color: rgba(255,210,80,1); }
-        .dropdown-item-patreon.actif { color: rgba(255,210,80,1); font-weight: bold; }
-        .dropdown-titre-patreon { padding: 6px 14px 4px; color: rgba(255,210,80,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
-        .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
-        .search-input::placeholder { color: rgba(255,255,255,0.4); }
-        .search-input:focus { outline: none; border-color: rgba(0,212,212,0.6) !important; }
-        @keyframes fadeImg { from { opacity: 0; } to { opacity: 1; } }
-        .card-img-fade { animation: fadeImg 0.6s ease; }
-        .badge-jai-actif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #00d4d4; color: #000; }
-        .badge-jai-achete { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: #ff3eb5; color: #fff; }
-        .badge-jai-inactif { position: absolute; top: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; font-size: 9px; font-weight: bold; z-index: 20; cursor: pointer; background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,80,80,0.4); }
-        .badge-panier { position: absolute; bottom: 8px; right: 8px; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .2s; box-shadow: 0 3px 10px rgba(255,62,181,0.65); }
-        .badge-panier:hover { transform: scale(1.12); }
-        .badge-palette { position: absolute; bottom: 36px; left: 6px; z-index: 20; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
-        .badge-palette.inactif { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); }
-        .badge-palette.actif { background: rgba(255,210,80,0.2); border: 1px solid rgba(255,210,80,0.6); }
-        .badge-palette:hover { transform: scale(1.2); }
-        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background .2s; z-index: 300; }
-        .nav-arrow:hover { background: rgba(0,212,212,0.3); }
-        @keyframes scrollSim { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .similaires-scroll { animation: scrollSim 45s linear infinite; display: flex; gap: 8px; width: max-content; }
-        .similaires-scroll:hover { animation-play-state: paused; }
-        .visuel-zoom { cursor: zoom-in; transition: opacity .2s; }
-        .visuel-zoom:hover { opacity: 0.9; }
-        .btn-vue { width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; font-size: 14px; }
-        .miniature-colo { position: relative; }
-        .miniature-colo-badge { position: absolute; top: -4px; right: -4px; background: rgba(255,210,80,0.9); border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-size: 8px; z-index: 5; }
-        .zoom-social { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.08); }
-        .zoom-like-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.5); font-size: 12px; transition: color .2s; padding: 0; }
-        .zoom-like-btn.actif { color: #ff4d7d; }
-        .zoom-like-btn:hover { color: #ff4d7d; }
-        .zoom-commentaire-input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff; font-size: 11px; width: 100%; resize: none; font-family: inherit; }
-        .zoom-commentaire-input:focus { outline: none; border-color: rgba(0,212,212,0.4); }
-        .zoom-commentaire-input::placeholder { color: rgba(255,255,255,0.3); }
-        .zoom-commentaire { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .zoom-commentaire:last-child { border-bottom: none; }
-        .shining-logo { position: relative; overflow: hidden; }
+        .dropdown-item-patreon { display: block; width: 100%; padding: 6px 10px; color: rgba(255,210,80,0.75); font-size: 12px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
+        .dropdown-item-patreon:hover { background: rgba(255,210,80,0.12); color: rgba(255,210,80,1); }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.35); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0,212,212,0.6); }
-
+        input { font-family: inherit; }
+        input:focus { border-color: rgba(0,212,212,0.6) !important; box-shadow: 0 0 0 2px rgba(0,212,212,0.1); }
+        img { -webkit-user-drag: none; user-drag: none; }
       `}</style>
 
       <BoutonsFlottants />
       <Cloche />
 
+      {/* Bannière haute */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
       </div>
 
-      {/* NAVIGATION */}
+      {/* Navigation sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, width: '100%', display: 'flex', justifyContent: 'center', marginTop: `-${Math.round(L * 0.5)}px`, overflow: 'visible' }}>
         <div style={{ maxWidth: BANNER_MAX, width: isMobile ? '100%' : '92%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', height: `${H_NAV}px`, overflow: 'visible' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
-            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/accueil' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/accueil')} />
-            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', ...(location.pathname === '/livres' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/livres')} />
-            {/* POINT 11 : dropdown catégories avec sous-menu Patreon 2026 */}
-            <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0' }}>
-              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block', ...(location.pathname === '/catalogue' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }}
-                onClick={e => { e.stopPropagation(); setShowCategories(v => !v); }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginRight: `${MARGIN_NAV}px`, flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_accueil.png`} alt="Accueil" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/accueil')} />
+            <img src={`${R2}/site/pastille_livres.png`} alt="Livres" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => navigate('/livres')} />
+            <div style={{ position: 'relative', width: `${P}px`, height: `${P}px`, flexShrink: 0, marginTop: isMobile ? '-8px' : '0', overflow: 'visible' }}>
+              <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); setShowKawaiiMenu(false); }} />
               {showCategories && (
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
                   {CATEGORIES.map(cat => (
                     cat === 'Kawaii/Chibi' ? (
                       <div key={cat}>
-                        <button className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
-                          onClick={() => setShowKawaiiMenu(v => !v)}>
-                          <span>{cat}</span>
-                          <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                        <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }} onClick={() => setShowKawaiiMenu(v => !v)}>
+                          <span>{cat}</span><span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
                         </button>
                         {showKawaiiMenu && (
                           <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
-                            <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ color: '#ff3eb5' }} onClick={() => { selectionnerCategorie('Kawaii/Chibi'); setShowKawaiiMenu(false); }}>
-                              Tout Kawaii/Chibi
-                            </button>
+                            <button className="dropdown-item" style={{ color: '#ff3eb5' }} onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi' } }); setShowCategories(false); setShowKawaiiMenu(false); }}>Tout Kawaii/Chibi</button>
                             {['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'].map(sc => (
-                              <button key={sc} className={`dropdown-item${sousCategorie === sc ? ' actif' : ''}`} style={{ color: '#ff3eb5' }}
-                                onClick={() => { selectionnerSousCategorie(sc); setShowKawaiiMenu(false); }}>
-                                {sc}
-                              </button>
+                              <button key={sc} className="dropdown-item" style={{ color: '#ff3eb5' }} onClick={() => { navigate('/catalogue', { state: { categorie: 'Kawaii/Chibi', sousCategorie: sc } }); setShowCategories(false); setShowKawaiiMenu(false); }}>{sc}</button>
                             ))}
                           </div>
                         )}
                       </div>
                     ) : (
-                    <button key={cat} className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`}
-                      style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}}
-                      onClick={() => selectionnerCategorie(cat)}>{cat}</button>
+                      <button key={cat} className="dropdown-item" style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}} onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>{cat}</button>
                     )
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
-                  <button
-                    className={`dropdown-item${sousCategorie ? ' actif' : ''}`}
-                    style={{ color: sousCategorie ? 'rgba(255,210,80,1)' : 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}
-                    onClick={() => setShowPatreonMenu(v => !v)}>
-                    <span>⭐ Patreon 2026</span>
-                    <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showPatreonMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                  <button className="dropdown-item" style={{ color: 'rgba(255,210,80,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }} onClick={() => setShowPatreonMenu(v => !v)}>
+                    <span>Patreon 2026</span><span style={{ fontSize: '11px', transition: 'transform .2s', transform: showPatreonMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
                   </button>
                   {showPatreonMenu && (
                     <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,210,80,0.2)', marginLeft: '14px', marginTop: '4px' }}>
                       {moisPatreon.map(mois => (
-                        <button key={mois} className={`dropdown-item-patreon${sousCategorie === mois ? ' actif' : ''}`}
-                          onClick={() => selectionnerPatreon(mois)}>
-                          {mois.replace('Patreon - ', '')}
-                        </button>
+                        <button key={mois} className="dropdown-item-patreon" onClick={() => { navigate('/catalogue', { state: { sousCategorie: mois } }); setShowCategories(false); setShowPatreonMenu(false); }}>{mois.replace('Patreon - ', '')}</button>
                       ))}
                     </div>
                   )}
@@ -545,28 +1494,20 @@ function Catalogue() {
             </div>
           </div>
           <LogoPremium onClick={() => navigate('/presentation')} isMobile={isMobile} L={L} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, overflow: 'visible', flexShrink: 0 }}>
-            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/pensees' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/pensees')} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: `${GAP_NAV}px`, marginLeft: `${MARGIN_NAV}px`, flexShrink: 0 }}>
+            <img src={`${R2}/site/pastille_pensees.png`} alt="Pensées" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/pensees')} />
             <div style={{ position: 'relative', flexShrink: 0 }}>
-                <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px' }} onClick={() => navigate('/panier')} />
-                {nbArticles > 0 && <div style={{ position: 'absolute', top: isMobile ? '12px' : '16px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: '#000', border: '2px solid #000', zIndex: 5 }}>{nbArticles}</div>}
-              </div>
-            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0', ...(location.pathname === '/mon-compte' && { filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(0,212,212,0.5))' }) }} onClick={() => navigate('/mon-compte')} />
+              <img src={`${R2}/site/pastille_panier.png`} alt="Panier" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '18px' : '20px', filter: 'brightness(1.3) drop-shadow(0 0 6px rgba(255,62,181,0.5))' }} onClick={() => navigate('/panier')} />
+              {nbArticles > 0 && (
+                <div style={{ position: 'absolute', top: isMobile ? '12px' : '16px', right: '-4px', background: '#ff3eb5', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: '#000', border: '2px solid #000', zIndex: 5 }}>{nbArticles}</div>
+              )}
+            </div>
+            <img src={`${R2}/site/pastille_mon_compte.png`} alt="Mon Compte" className="pastille" style={{ width: `${P}px`, height: `${P}px`, marginTop: isMobile ? '-8px' : '0' }} onClick={() => navigate('/mon-compte')} />
           </div>
         </div>
       </div>
 
-      {/* RECHERCHE */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 20px 0', position: 'relative', zIndex: 40 }}>
-        <input className="search-input" type="text" placeholder="🔍 Rechercher une illustration..."
-          value={recherche} onChange={e => { setRecherche(e.target.value); setPage(1); }}
-          style={{ width: '300px', maxWidth: '90%', background: 'rgba(30,30,30,0.9)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '24px', padding: '9px 16px', color: '#fff', fontSize: '12px' }} />
-      </div>
-
-      {/* POINT 9 : BANDEAU PROMO */}
-      <BandeauPromo />
-
-      {/* BARRES + CONTENU */}
+      {/* Bandes défilantes */}
       <div style={{ position: 'relative', width: '100%', marginTop: '16px' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -584,344 +1525,71 @@ function Catalogue() {
           </div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
+        {/* Contenu principal */}
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: isMobile ? '32px 16px 60px' : '40px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 300}px` }}>
+          <div style={{ maxWidth: etape === 4 ? '820px' : '600px', margin: '0 auto', transition: 'max-width 0.3s ease' }}>
 
-          {/* ENCARTS */}
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '12px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
-            {!isMobile && (
-              <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
-                  <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
-                  <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                  <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                  <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
-                </div>
-              </div>
-            )}
-
-            <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '14px', padding: isMobile ? '10px 12px' : '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: isMobile ? '6px' : '10px', justifyContent: 'center', width: isMobile ? '100%' : 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '6px' : '8px', flexWrap: 'wrap' }}>
-                {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)} style={{ fontSize: isMobile ? '11px' : '12px', padding: isMobile ? '3px 8px' : '4px 12px' }}>{a}</button>)}
-              </div>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textAlign: 'center' }}>
-                {total} illustration{total > 1 ? 's' : ''}
-                {labelFiltre}
-                {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
-                {recherche ? ` · "${recherche}"` : ''}
-              </p>
-              {/* Indicateur filtre Patreon actif */}
-              {sousCategorie && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px', fontWeight: 'bold' }}>⭐ {sousCategorie}</span>
-                  <button onClick={() => { setSousCategorie(''); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-                </div>
-              )}
-              {/* Indicateur filtre Nouveautés actif */}
-              {filtreNouveautes && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
-                  <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-                </div>
-              )}
+            {/* Encart titre */}
+            <div style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '16px 20px' : '20px 32px', textAlign: 'center', marginBottom: '20px', display: 'inline-block', width: '100%', boxSizing: 'border-box' }}>
+              <h1 style={{ color: '#fff', fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', marginBottom: '6px' }}>
+                Mon Panier
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px' }}>Paiement sécurisé · TVA non applicable (art. 293 B du CGI)</p>
             </div>
 
-            {!isMobile && (
-              <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
-                  <button style={btnFiltreStyle(filtreCollection === 'jai')} onClick={() => { setFiltreCollection('jai'); setPage(1); }}>✓ J'ai</button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
-                  <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'colorie')} onClick={() => { setFiltreCollection('colorie'); setPage(1); }}>🎨 Colorié</button>
-                </div>
-              </div>
-            )}
+            {/* Indicateur d'étapes */}
+            {etape < 5 && <div style={{ marginTop: '20px' }}><IndicateurEtapes etape={etape} isMobile={isMobile} /></div>}
 
-            {isMobile && (
-              <>
-                <div style={{ ...encartStyle, padding: '8px 10px', gap: '6px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setTri('az'); setPage(1); }} style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
-                    <button onClick={() => { setTri('za'); setPage(1); }} style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
-                    <button onClick={() => { setTri('recent'); setPage(1); }} style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
-                    <button onClick={() => setVueCompacte(false)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                    <button onClick={() => setVueCompacte(true)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
-                  </div>
-                </div>
-                <div style={{ ...encartStyle, padding: '8px 10px', gap: '6px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setFiltreCollection('tout'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'tout' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'tout' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'tout' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✦</button>
-                    <button onClick={() => { setFiltreCollection('jai'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'jai' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'jai' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jai' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✓</button>
-                    <button onClick={() => { setFiltreCollection('japas'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'japas' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'japas' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'japas' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✕</button>
-                    <button onClick={() => { setFiltreCollection('jeveux'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'jeveux' ? 'rgba(255,77,125,0.2)' : 'transparent', border: filtreCollection === 'jeveux' ? '1px solid rgba(255,77,125,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jeveux' ? '#ff4d7d' : 'rgba(255,255,255,0.5)' }}>♡</button>
-                    <button onClick={() => { setFiltreCollection('colorie'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.2)' : 'transparent', border: filtreCollection === 'colorie' ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)' }}>🎨</button>
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Tunnel */}
+            <div ref={encartRef} style={{ background: 'rgba(0,0,0,0.78)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '20px', padding: isMobile ? '20px 16px' : '36px 40px' }}>
+              {etape === 1 && <EtapePanier onContinuer={() => allerEtape(2)} isMobile={isMobile} onOuvrirIllu={ouvrirPopupIllu} />}
+              {etape === 2 && <EtapeInfos onContinuer={() => allerEtape(3)} onRetour={() => allerEtape(1)} isMobile={isMobile} infos={infos} setInfos={setInfos} infosFacturation={infosFacturation} setInfosFacturation={setInfosFacturation} facturationDifferente={facturationDifferente} setFacturationDifferente={setFacturationDifferente} />}
+              {etape === 3 && <EtapeRecap onContinuer={() => allerEtape(4)} onRetour={() => allerEtape(2)} isMobile={isMobile} infos={infos} infosFacturation={facturationDifferente ? infosFacturation : null} retractation={retractation} setRetractation={setRetractation} cgvAcceptees={cgvAcceptees} setCgvAcceptees={setCgvAcceptees} />}
+              {etape === 4 && <EtapePaiement onSucces={handleSuccesPaiement} onRetour={() => allerEtape(3)} isMobile={isMobile} infos={infos} />}
+              {etape === 5 && <EtapeConfirmation infos={infos} isMobile={isMobile} articlesAchetes={articlesAchetes} paymentIntentId={dernierPaymentIntentId} />}
+            </div>
+
           </div>
-
-          {/* GRILLE */}
-          {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
-            <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: vueCompacte ? '8px' : '14px', justifyContent: 'center', maxWidth: '1100px', margin: '0 auto' }}>
-                {illustrationsPage.map((illu, idx) => (
-                  <IlluCard key={illu.id} illu={illu}
-                    urlPresentation={getVisuelPresentation(illu.visuels)}
-                    visuelsOrdonnes={getVisuelsOrdonnes(illu.visuels)}
-                    jAi={collection[illu.id]?.j_ai || false}
-                    jAiAchete={collection[illu.id]?.j_ai_achete || false}
-                    jeVeux={collection[illu.id]?.je_veux || false}
-                    aColorié={coloriages[illu.id] || false}
-                    taille={TAILLE_VIGNETTE}
-                    onToggleJAi={(e) => handleToggleJAi(illu.id, e)}
-                    onToggleJeVeux={(e) => toggleJeVeux(illu.id, e)}
-                    onClickPopup={() => ouvrirPopup(illu, idx)}
-                    onClickPalette={(e) => { e.stopPropagation(); setPopupColo(illu); }}
-                    dansPanier={illu.prix && parseFloat(illu.prix) > 0 ? estDansPanier('illustration', illu.id) : false}
-                    onAjouterPanier={illu.prix && parseFloat(illu.prix) > 0 ? () => {
-                      if (estDansPanier('illustration', illu.id)) { supprimerArticle('illustration', illu.id); return; }
-                      if (collection[illu.id]?.j_ai) { setConfirmJaiCat(illu); return; }
-                      const imageUrl = getVisuelPresentation(illu.visuels);
-                      ajouterIllustration({ ...illu, image: imageUrl });
-                    } : null}
-                    onTelechargerGratuit={illu.prix !== null && illu.prix !== undefined && parseFloat(illu.prix) === 0 ? () => handleDlGratuitCat(illu) : null}
-                    dlGratuitState={dlGratuits[illu.id] || 'idle'}
-                  />
-                ))}
-              </div>
-              {illustrationsPage.length < total && (
-                <div style={{ textAlign: 'center', marginTop: '32px' }}>
-                  <button onClick={() => setPage(p => p + 1)}
-                    style={{ background: 'rgba(0,212,212,0.15)', border: '1px solid rgba(0,212,212,0.4)', borderRadius: '8px', padding: '12px 40px', color: '#00d4d4', fontSize: '14px', cursor: 'pointer' }}>
-                    Charger plus ({total - illustrationsPage.length} restantes)
-                  </button>
-                </div>
-              )}
-            </>
-          )}
         </div>
       </div>
 
-      {/* BANNIÈRE BAS */}
+      {/* Bannière bas */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0', position: 'relative', zIndex: 2 }}>
         <div style={{ position: 'relative', maxWidth: '1200px', width: '92%' }}>
           <img src={`${R2}/site/banniere_bas.jpg`} alt="bannière bas" style={{ width: '100%', borderRadius: '14px', display: 'block' }} />
           <div onClick={() => window.open('https://www.instagram.com/kevin_teoart/', '_blank')} style={{ position: 'absolute', top: 0, left: 0, width: '33.33%', height: '100%', cursor: 'pointer' }} />
-          <div onClick={() => window.open('https://patreon.com/u119601283?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink', '_blank')} style={{ position: 'absolute', top: 0, left: '33.33%', width: '33.33%', height: '100%', cursor: 'pointer' }} />
+          <div onClick={() => window.open('https://patreon.com/u119601283', '_blank')} style={{ position: 'absolute', top: 0, left: '33.33%', width: '33.33%', height: '100%', cursor: 'pointer' }} />
           <div onClick={() => window.open('https://www.facebook.com/groups/516417952677490/', '_blank')} style={{ position: 'absolute', top: 0, left: '66.66%', width: '33.34%', height: '100%', cursor: 'pointer' }} />
         </div>
       </div>
 
       <BandeLegale />
+      <OngletsLateraux userId={userId} />
 
-      {popup && (
+      {/* PopupFicheIllu — rendu à la racine pour éviter le piège backdropFilter */}
+      {popupIlluChargement && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>Chargement...</p>
+        </div>
+      )}
+      {popupIllu && (
         <PopupFicheIllu
-          illu={popup} illustrations={illustrations}
-          jAi={collection[popup.id]?.j_ai || false}
-          jAiAchete={collection[popup.id]?.j_ai_achete || false}
-          jeVeux={collection[popup.id]?.je_veux || false}
-          aColorié={coloriages[popup.id] || false}
-          onToggleJAi={(e) => handleToggleJAi(popup.id, e)}
-          onToggleJeVeux={(e) => toggleJeVeux(popup.id, e)}
-          onClose={() => setPopup(null)}
-          onOpenSimilaire={(illu) => setPopup(illu)}
+          illu={popupIllu}
+          illustrations={articles.filter(a => a.type === 'illustration')}
+          jAi={popupCollection[popupIllu.id]?.j_ai || false}
+          jeVeux={popupCollection[popupIllu.id]?.je_veux || false}
+          aColorié={popupColoriages[popupIllu.id] || false}
+          onToggleJAi={() => handleToggleJAiPopup(popupIllu.id)}
+          onToggleJeVeux={() => handleToggleJeVeuxPopup(popupIllu.id)}
+          onClose={() => setPopupIllu(null)}
+          onOpenSimilaire={(illu) => setPopupIllu(illu)}
           onSuivant={popupSuivant}
           onPrecedent={popupPrecedent}
           userPseudo={userPseudo}
           userId={userId}
-          onColoUploaded={() => handleColoUploaded(popup.id)}
-          onOuvrirLivre={(item) => { navigate('/livres', { state: { ouvrirItem: item } }); }}
-          onFiltrerPatreon={(mois) => { setPopup(null); selectionnerPatreon(mois); }}
+          onColoUploaded={() => setPopupColoriages(prev => ({ ...prev, [popupIllu.id]: true }))}
         />
       )}
-
-      {popupColo && (
-        <PopupColoVignette illu={popupColo} userId={userId} userPseudo={userPseudo}
-          onClose={() => setPopupColo(null)}
-          onUploaded={() => { handleColoUploaded(popupColo.id); setPopupColo(null); }} />
-      )}
-
-      {confirmJaiCat && (
-        <div onClick={() => setConfirmJaiCat(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 24px', maxWidth: '340px', width: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <p style={{ fontSize: '32px' }}>👀</p>
-            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>Eh, tu l'as déjà celle-là !</p>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', lineHeight: 1.6 }}>Tu as coché "J'ai" sur cette illustration... Tu collectionnes les doublons maintenant ? C'est pour offrir ?</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setConfirmJaiCat(null)} style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '10px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer' }}>Oups, annuler</button>
-              <button onClick={() => { const imageUrl = getVisuelPresentation(confirmJaiCat.visuels); ajouterIllustration({ ...confirmJaiCat, image: imageUrl }); setConfirmJaiCat(null); }} style={{ flex: 1, background: 'linear-gradient(135deg, #ffd24d, #c48a00)', border: 'none', borderRadius: '10px', padding: '10px', color: '#000', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 3px 10px rgba(255,210,80,0.35)' }}>Oui, j'assume !</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmation && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#111', border: '1px solid rgba(255,210,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', textAlign: 'center' }}>
-            <p style={{ fontSize: '28px', marginBottom: '12px' }}>🤔</p>
-            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>Attends, t'es sûr·e ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', lineHeight: '1.8', marginBottom: '24px' }}>
-              Cette illustration fait partie d'un livre ou recueil que tu as sélectionné lors de ta première visite.<br /><br />
-              Tu veux vraiment la retirer de ta collection ? Elle ne disparaîtra pas dans un trou noir, mais quand même... c'est du travail de Kevin ! 😅
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Non, je la garde !</button>
-              <button onClick={() => { toggleJAi(confirmation.illuId); setConfirmation(null); }} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px' }}>Oui, je décoche</button>
-            </div>
-          </div>
-        </div>
-      )}
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
     </div>
   );
 }
-
-function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jAiAchete = false, jeVeux, aColorié, taille, onToggleJAi, onToggleJeVeux, onClickPopup, onClickPalette, onAjouterPanier, dansPanier = false, onTelechargerGratuit = null, dlGratuitState = 'idle' }) {
-  const wrapRef = React.useRef(null);
-  const cardRef = React.useRef(null);
-  const [visuelIndex, setVisuelIndex] = React.useState(0);
-  const [fadeKey, setFadeKey] = React.useState(0);
-  const intervalRef = React.useRef(null);
-
-  const urlsVisuels = visuelsOrdonnes.map(v => cheminVersUrl(v)).filter(Boolean);
-  const urlActuelle = urlsVisuels.length > 0 ? urlsVisuels[visuelIndex] : urlPresentation;
-
-  const handleMouseEnter = () => {
-    const el = cardRef.current;
-    el.classList.remove('shining'); void el.offsetWidth; el.classList.add('shining');
-    if (urlsVisuels.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setVisuelIndex(prev => { const next = (prev + 1) % urlsVisuels.length; setFadeKey(k => k + 1); return next; });
-      }, 2500);
-    }
-  };
-  const handleMouseLeave = () => {
-    const el = cardRef.current; const wrap = wrapRef.current;
-    el.style.transform = ''; if (wrap) wrap.style.transform = '';
-    el.classList.remove('shining');
-    clearInterval(intervalRef.current);
-    setVisuelIndex(0); setFadeKey(k => k + 1);
-  };
-  const handleMouseMove = (e) => {
-    const el = cardRef.current; const wrap = wrapRef.current;
-    const rect = el.getBoundingClientRect();
-    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    el.style.transform = `rotateX(${-dy * 5}deg) rotateY(${dx * 5}deg) scale(1.04)`;
-    if (wrap) wrap.style.transform = 'perspective(800px)';
-  };
-  React.useEffect(() => () => clearInterval(intervalRef.current), []);
-
-  return (
-    <div ref={wrapRef} style={{ perspective: '800px', flexShrink: 0 }}>
-      <div ref={cardRef} className="teoart-card"
-        onMouseMove={handleMouseMove} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} onClick={onClickPopup}
-        style={{ width: `${taille}px`, cursor: 'pointer', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: '#111', overflow: 'hidden', position: 'relative', transformStyle: 'preserve-3d', transition: 'transform 0.1s ease, box-shadow 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.6)', willChange: 'transform' }}>
-        {urlActuelle
-          ? <img key={fadeKey} src={urlActuelle} alt={illu.nom} className="card-img-fade" style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
-          : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />}
-        <div className={jAiAchete ? 'badge-jai-achete' : jAi ? 'badge-jai-actif' : 'badge-jai-inactif'} onClick={onToggleJAi}>{(jAi || jAiAchete) ? "✓ J'ai" : "✕ J'ai"}</div>
-        <div onClick={onToggleJeVeux} style={{ position: 'absolute', top: '4px', right: '4px', zIndex: 20, cursor: 'pointer', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s' }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.3)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            {jeVeux ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />}
-          </svg>
-        </div>
-        <div className={`badge-palette ${aColorié ? 'actif' : 'inactif'}`} onClick={onClickPalette} title="Partager mon coloriage">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
-            {aColorié ? (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5"/><circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d"/><circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4"/><circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043"/><circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a"/></g>)
-              : (<g><path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/><circle cx="6.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="9.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="14.5" cy="7.5" r="1.5" fill="rgba(255,255,255,0.2)"/><circle cx="17.5" cy="11.5" r="1.5" fill="rgba(255,255,255,0.2)"/></g>)}
-          </svg>
-        </div>
-        {onTelechargerGratuit ? (
-          <div onClick={(e) => { e.stopPropagation(); onTelechargerGratuit(); }}
-            title="Télécharger gratuitement"
-            style={{ position: 'absolute', bottom: '8px', right: '8px', zIndex: 20, cursor: dlGratuitState !== 'idle' ? 'default' : 'pointer', width: '36px', height: '36px', borderRadius: '50%', background: dlGratuitState === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s', boxShadow: dlGratuitState === 'done' ? 'none' : '0 3px 10px rgba(0,212,212,0.65), inset 0 1px 0 rgba(255,255,255,0.2)', border: dlGratuitState === 'done' ? '2px solid #00d4d4' : 'none' }}
-            onMouseEnter={e => { if (dlGratuitState === 'idle') e.currentTarget.style.transform = 'scale(1.12)'; }}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-            {dlGratuitState === 'loading' ? <span style={{ fontSize: '12px' }}>⏳</span>
-              : dlGratuitState === 'done' ? <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>✓</span>
-              : <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.3px' }}>FREE</span>}
-          </div>
-        ) : onAjouterPanier ? (
-          <div className="badge-panier" onClick={(e) => { e.stopPropagation(); onAjouterPanier && onAjouterPanier(); }} title={dansPanier ? 'Déjà dans le panier' : 'Ajouter au panier'}
-            style={dansPanier ? { background: 'rgba(0,212,212,0.25)', border: '2px solid #00d4d4', boxShadow: '0 0 8px rgba(0,212,212,0.4)' } : {}}>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={dansPanier ? '#00d4d4' : '#000'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} /><circle cx="19" cy="21" r="1.4" fill={dansPanier ? '#00d4d4' : '#000'} />
-              <path d="M2.5 3h2.4l2.2 12.4a2 2 0 002 1.6h9.2a2 2 0 001.9-1.4L22 8H6.2" />
-            </svg>
-          </div>
-        ) : null}
-        <div style={{ padding: '6px 8px', background: 'rgba(0,0,0,0.85)' }}>
-          <p style={{ color: '#fff', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
-          <p style={{ color: parseFloat(illu.prix) === 0 ? '#00d4d4' : '#00d4d4', fontSize: '11px', fontWeight: parseFloat(illu.prix) === 0 ? 'bold' : 'normal' }}>{parseFloat(illu.prix) === 0 ? 'GRATUIT' : illu.prix ? `${illu.prix} €` : ''}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
-  const [coloImage, setColoImage] = React.useState(null);
-  const [coloDate, setColoDate] = React.useState('');
-  const [envoi, setEnvoi] = React.useState(false);
-  const [ok, setOk] = React.useState(false);
-
-  const handleUpload = async (avecImage = false) => {
-    setEnvoi(true);
-    try {
-      let imageUrl = null;
-      if (avecImage && coloImage) {
-        const ext = coloImage.name.split('.').pop();
-        const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-        const base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(coloImage); });
-        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        imageUrl = data.url;
-      }
-      await supabase.from('coloriages').upsert({ user_id: userId, illustration_id: illu.id, image_url: imageUrl, date_coloriage: coloDate || null });
-      setOk(true);
-      setTimeout(() => { onUploaded(); }, 1200);
-    } catch (e) { console.error(e); }
-    setEnvoi(false);
-  };
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 450, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '16px', padding: '24px', maxWidth: '360px', width: '100%', textAlign: 'center' }}>
-        <p style={{ fontSize: '24px', marginBottom: '8px' }}>🎨</p>
-        <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{illu.nom}</p>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px' }}>Partage ton coloriage !</p>
-        {ok ? <p style={{ color: 'rgba(255,210,80,0.9)', fontSize: '13px' }}>🎉 Coloriage partagé ! Merci {userPseudo} !</p> : (
-          <>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', marginBottom: '12px' }}>Pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
-            <label style={{ display: 'block', cursor: 'pointer', marginBottom: '14px' }}>
-              <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ display: 'none' }} />
-              <div style={{ background: coloImage ? 'linear-gradient(135deg, rgba(0,212,212,0.22), rgba(0,153,170,0.22))' : 'rgba(255,255,255,0.07)', border: `1px solid ${coloImage ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '8px 12px', color: coloImage ? '#00d4d4' : 'rgba(255,255,255,0.5)', fontSize: '11px', textAlign: 'center', transition: 'all .2s', boxShadow: coloImage ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : 'none' }}>
-                {coloImage ? `✓ ${coloImage.name}` : 'Choisir une image'}
-              </div>
-            </label>
-            <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '11px', marginBottom: '14px', width: '100%' }} />
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={() => handleUpload(true)} disabled={!coloImage || envoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, rgba(255,210,80,0.9), rgba(200,130,0,0.9))' : 'rgba(255,255,255,0.04)', border: coloImage ? 'none' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: coloImage ? '#000' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '11px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: envoi ? 0.6 : 1, boxShadow: coloImage ? '0 3px 10px rgba(255,210,80,0.35), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none' }}>Valider</button>
-              <button onClick={onClose} style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '8px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer' }}>Annuler</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default Catalogue;
