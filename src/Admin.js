@@ -410,6 +410,7 @@ export default function Admin() {
             { onglet === 'commandes' && 'Commandes reliées' }
             { onglet === 'usagers' && 'Tableau des usagers' }
             { onglet === 'moderation' && 'Modération des commentaires' }
+            { onglet === 'chat' && 'Conversations privées' }
           </span>
           <span style={s.topbarDate}>{new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</span>
         </div>
@@ -418,10 +419,11 @@ export default function Admin() {
         {isMobile && (
           <div style={s.sidebar(isMobile)}>
             {[
-              { id:'dashboard', icon:'ti-layout-dashboard', label:'Dashboard' },
-              { id:'commandes', icon:'ti-package', label:`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
-              { id:'usagers', icon:'ti-users', label:'Usagers' },
-              { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
+              { id:'dashboard', icon:'ti-layout-dashboard', label:'Dash' },
+              { id:'commandes', icon:'ti-package', label:`Com.${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
+              { id:'usagers', icon:'ti-users', label:'Usag.' },
+              { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
+              { id:'chat', icon:'ti-message-2', label:'Chat' },
             ].map(n => (
               <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
                 <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -444,7 +446,23 @@ export default function Admin() {
           {!loading && onglet === 'dashboard' && (
             <>
               {/* Stats sur 2 lignes compactes */}
-              <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5,1fr)', gap:'8px', marginBottom:'8px' }}>
+              {isMobile ? (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'5px', marginBottom:'8px' }}>
+                  {[
+                    { label:'Inscrits', val: stats?.nb_inscrits ?? '—', color:'#00e5ff' },
+                    { label:'Commandes', val: stats?.nb_commandes ?? '—', color:'#00e5ff' },
+                    { label:'CA total', val: stats ? fmtEur(stats.ca_total) : '—', color:'#ffd700' },
+                    { label:'Coloriages', val: stats?.nb_coloriages ?? '—', color:'#ff3eb5' },
+                    { label:'Pensées', val: stats?.nb_pensees ?? '—', color:'#a78bfa' },
+                  ].map(({ label, val, color }) => (
+                    <div key={label} style={{ background:'#0d0d1a', border:`1px solid ${color}44`, borderRadius:'8px', padding:'7px 4px', textAlign:'center' }}>
+                      <div style={{ fontSize:'8px', color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.02em', marginBottom:'3px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{label}</div>
+                      <div style={{ fontSize:'15px', fontWeight:600, color }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px', marginBottom:'8px' }}>
                 <div style={s.statCard('#00e5ff')}>
                   <div style={s.statLabel}>Inscrits</div>
                   <div style={s.statValue('#00e5ff')}>{stats?.nb_inscrits ?? '—'}</div>
@@ -505,6 +523,7 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+              )}
 
               <div style={s.grid2(isMobile)}>
                 {/* Commandes en attente */}
@@ -736,6 +755,13 @@ export default function Admin() {
                 ))}
               </div>
             </>
+          )}
+
+          {/* ======== CHAT (à construire) ======== */}
+          {!loading && onglet === 'chat' && (
+            <div style={{ textAlign:'center', padding:'40px 20px', color:'#44445a' }}>
+              <p style={{ fontSize:'13px' }}>Gestion des conversations privées — à venir.</p>
+            </div>
           )}
         </div>
       </div>
