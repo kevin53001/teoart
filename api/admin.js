@@ -228,8 +228,24 @@ async function actionStats() {
     caMoisParUser[c.user_id] = (caMoisParUser[c.user_id]||0) + (c.prix||0)
   })
 
+  // Dernière connexion : récupérée depuis auth.users via listUsers paginé (last_sign_in_at)
+  const derniereConnexionParUser = {}
+  {
+    let page = 1
+    const perPage = 1000
+    while (true) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage })
+      if (error) break
+      const users = data?.users || []
+      users.forEach(au => { derniereConnexionParUser[au.id] = au.last_sign_in_at || null })
+      if (users.length < perPage) break
+      page++
+    }
+  }
+
   const usagers = (profils||[]).map(u => ({
     id: u.id, prenom: u.prenom, nom: u.nom, email: u.email, inscrit_le: u.created_at,
+    derniere_connexion:    derniereConnexionParUser[u.id]  || null,
     nb_commandes:          commandesParUser[u.id]?.nb    || 0,
     ca_genere:             commandesParUser[u.id]?.total || 0,
     ca_mois:               caMoisParUser[u.id]           || 0,

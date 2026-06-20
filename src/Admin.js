@@ -158,6 +158,7 @@ export default function Admin() {
   const [commandes, setCommandes] = useState([])
   const [commentaires, setCommentaires] = useState([])
   const [usagers, setUsagers] = useState([])
+  const [vueUsagers, setVueUsagers] = useState('tableau') // 'tableau' | 'sante'
   const [sortCol, setSortCol] = useState('nb_commandes')
   const [sortDir, setSortDir] = useState('desc')
   const [suiviOpen, setSuiviOpen] = useState(null)
@@ -643,6 +644,89 @@ export default function Admin() {
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR') : '—'
   const fmtEur = (n) => n ? `${Number(n).toFixed(2)}€` : '0€'
 
+  // ── Vue santé usagers ──
+  const joursDepuis = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null
+  const scoreEngagement = (u) =>
+    (u.nb_commandes * 5) + (u.nb_illustrations * 1) + (u.nb_livres_recueils * 3) +
+    (u.nb_coloriages * 2) + (u.nb_commentaires * 1) + (u.nb_likes * 1) +
+    (u.nb_pensees * 2) + (u.nb_comments_pensees * 1) + (u.nb_likes_pensees * 1)
+
+  const usagersInactifs = [...usagers]
+    .filter(u => {
+      const j = joursDepuis(u.derniere_connexion)
+      return j === null || j >= 60
+    })
+    .sort((a, b) => {
+      const ja = joursDepuis(a.derniere_connexion) ?? Infinity
+      const jb = joursDepuis(b.derniere_connexion) ?? Infinity
+      return jb - ja
+    })
+
+  const usagersEngages = [...usagers]
+    .map(u => ({ ...u, _score: scoreEngagement(u) }))
+    .filter(u => u._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 15)
+
+  // ── Export CSV ──
+  const exporterCSV = (filename, headers, rows) => {
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lignes = [
+      headers.map(h => escape(h.label)).join(';'),
+      ...rows.map(r => headers.map(h => escape(h.value(r))).join(';'))
+    ]
+    const csv = '\uFEFF' + lignes.join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const exporterUsagersCSV = () => {
+    exporterCSV(`usagers_teoart_${new Date().toISOString().split('T')[0]}.csv`, [
+      { label: 'Prénom', value: u => u.prenom },
+      { label: 'Nom', value: u => u.nom },
+      { label: 'Email', value: u => u.email },
+      { label: 'Inscrit le', value: u => fmtDate(u.inscrit_le) },
+      { label: 'Dernière connexion', value: u => fmtDate(u.derniere_connexion) },
+      { label: 'Illustrations', value: u => u.nb_illustrations },
+      { label: 'Livres/Recueils', value: u => u.nb_livres_recueils },
+      { label: 'Commandes', value: u => u.nb_commandes },
+      { label: 'CA total', value: u => Number(u.ca_genere || 0).toFixed(2) },
+      { label: 'CA mois', value: u => Number(u.ca_mois || 0).toFixed(2) },
+      { label: 'Coloriages', value: u => u.nb_coloriages },
+      { label: 'Commentaires coloriages', value: u => u.nb_commentaires },
+      { label: 'Likes coloriages', value: u => u.nb_likes },
+      { label: 'Pensées', value: u => u.nb_pensees },
+      { label: 'Commentaires pensées', value: u => u.nb_comments_pensees },
+      { label: 'Likes pensées', value: u => u.nb_likes_pensees },
+      { label: 'Signalés', value: u => u.nb_signales },
+    ], usagersTries)
+  }
+
+  const exporterCommandesCSV = () => {
+    exporterCSV(`commandes_teoart_${new Date().toISOString().split('T')[0]}.csv`, [
+      { label: 'Date', value: c => fmtDate(c.date_commande) },
+      { label: 'Article', value: c => c.nom_article },
+      { label: 'Statut', value: c => STATUT_LABEL[c.statut] || c.statut },
+      { label: 'Client - Prénom', value: c => c.client?.prenom },
+      { label: 'Client - Nom', value: c => c.client?.nom },
+      { label: 'Client - Email', value: c => c.client?.email },
+      { label: 'Téléphone', value: c => c.client?.telephone },
+      { label: 'Adresse', value: c => c.client?.adresse },
+      { label: 'Code postal', value: c => c.client?.code_postal },
+      { label: 'Ville', value: c => c.client?.ville },
+      { label: 'Pays', value: c => c.client?.pays },
+      { label: 'Transporteur', value: c => c.livreur },
+      { label: 'N° suivi', value: c => c.numero_suivi },
+    ], commandes)
+  }
+
   if (!userId) return null
 
   const cmdActives = commandes.filter(c => c.statut !== 'archivee')
@@ -841,11 +925,21 @@ export default function Admin() {
               )}
 
               {nbNonLusChat > 0 && (
-                <div style={{ background:'rgba(255,62,181,0.08)', border:'1px solid #ff3eb555', borderRadius:'10px', padding:'12px 16px', marginBottom:'12px', display:'flex', alignItems:'center', gap:'10px' }}>
+                <div
+                  onClick={() => {
+                    setOnglet('chat')
+                    const premiereNonLue = conversations.find(c => c.non_lus > 0)
+                    if (premiereNonLue) ouvrirConversation(premiereNonLue.user_id)
+                  }}
+                  style={{ background:'rgba(255,62,181,0.08)', border:'1px solid #ff3eb555', borderRadius:'10px', padding:'12px 16px', marginBottom:'12px', display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', transition:'background 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,62,181,0.14)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,62,181,0.08)' }}
+                >
                   <span style={{ background:'#ff3eb5', color:'#000', fontSize:'12px', fontWeight:700, borderRadius:'10px', minWidth:'22px', height:'22px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 6px', flexShrink:0 }}>{nbNonLusChat}</span>
-                  <span style={{ fontSize:'12px', color:'#ff3eb5' }}>
+                  <span style={{ fontSize:'12px', color:'#ff3eb5', flex:1 }}>
                     {nbNonLusChat > 1 ? `conversations privées contiennent des messages non lus` : `conversation privée contient un message non lu`}
                   </span>
+                  <i className="ti ti-chevron-right" style={{ fontSize:'14px', color:'#ff3eb5', flexShrink:0 }} aria-hidden="true" />
                 </div>
               )}
 
@@ -895,6 +989,12 @@ export default function Admin() {
           {/* ======== COMMANDES ======== */}
           {!loading && onglet === 'commandes' && (
             <>
+              <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'12px' }}>
+                <button style={s.btnGold} onClick={exporterCommandesCSV}>
+                  <i className="ti ti-download" style={{ fontSize:'12px', marginRight:'4px' }} aria-hidden="true" />
+                  Export CSV
+                </button>
+              </div>
               {/* Commandes actives */}
               {['en_attente', 'expediee', 'livree'].map(statut => {
                 const liste = cmdActives.filter(c => c.statut === statut)
@@ -969,6 +1069,53 @@ export default function Admin() {
 
           {/* ======== USAGERS ======== */}
           {!loading && onglet === 'usagers' && (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'8px', marginBottom:'12px' }}>
+                <div style={{ display:'flex', gap:'6px' }}>
+                  <button style={vueUsagers === 'tableau' ? s.btnCyan : s.btnGhost} onClick={() => setVueUsagers('tableau')}>Tableau</button>
+                  <button style={vueUsagers === 'sante' ? s.btnCyan : s.btnGhost} onClick={() => setVueUsagers('sante')}>Santé</button>
+                </div>
+                <button style={s.btnGold} onClick={exporterUsagersCSV}>
+                  <i className="ti ti-download" style={{ fontSize:'12px', marginRight:'4px' }} aria-hidden="true" />
+                  Export CSV
+                </button>
+              </div>
+
+              {vueUsagers === 'sante' ? (
+                <div style={s.grid2(isMobile)}>
+                  <div>
+                    <div style={s.sectionTitle}>Inactifs ≥ 60 jours ({usagersInactifs.length})</div>
+                    {usagersInactifs.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucun usager inactif</div>}
+                    {usagersInactifs.map(u => {
+                      const j = joursDepuis(u.derniere_connexion)
+                      return (
+                        <div key={u.id} style={{ background:'#0d0d1a', border:'1px solid #ef444433', borderRadius:'10px', padding:'10px 14px', marginBottom:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}>
+                          <div>
+                            <div style={{ fontSize:'12px', fontWeight:500, color:'#f0f0ff' }}>{u.prenom} {u.nom}</div>
+                            <div style={{ fontSize:'10px', color:'#00e5ff88' }}>{u.email}</div>
+                          </div>
+                          <span style={{ fontSize:'11px', color:'#ef4444', fontWeight:600, whiteSpace:'nowrap' }}>
+                            {j === null ? 'Jamais connecté' : `${j} j`}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div>
+                    <div style={s.sectionTitle}>Très engagés — top {usagersEngages.length}</div>
+                    {usagersEngages.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucune donnée d'activité</div>}
+                    {usagersEngages.map(u => (
+                      <div key={u.id} style={{ background:'#0d0d1a', border:'1px solid #22c55e33', borderRadius:'10px', padding:'10px 14px', marginBottom:'8px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}>
+                        <div>
+                          <div style={{ fontSize:'12px', fontWeight:500, color:'#f0f0ff' }}>{u.prenom} {u.nom}</div>
+                          <div style={{ fontSize:'10px', color:'#00e5ff88' }}>{u.email}</div>
+                        </div>
+                        <span style={{ fontSize:'11px', color:'#22c55e', fontWeight:600, whiteSpace:'nowrap' }}>score {u._score}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
             isMobile ? (
               <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                 {/* Tri rapide mobile */}
@@ -977,6 +1124,7 @@ export default function Admin() {
                     { col:'nb_commandes', label:'Commandes' },
                     { col:'ca_genere', label:'CA total' },
                     { col:'inscrit_le', label:'Inscrit le' },
+                    { col:'derniere_connexion', label:'Dern. connexion' },
                     { col:'nb_signales', label:'Signalés' },
                   ].map(({ col, label }) => (
                     <button key={col} style={sortCol === col ? s.btnCyan : s.btnGhost} onClick={() => trier(col)}>
@@ -997,6 +1145,7 @@ export default function Admin() {
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px', fontSize:'11px' }}>
                       <div><span style={{ color:'#555570' }}>Inscrit : </span><span style={{ color:'#c0c0e0' }}>{fmtDate(u.inscrit_le)}</span></div>
+                      <div><span style={{ color:'#555570' }}>Dern. connexion : </span><span style={{ color: joursDepuis(u.derniere_connexion) === null || joursDepuis(u.derniere_connexion) >= 60 ? '#ef4444' : '#c0c0e0' }}>{fmtDate(u.derniere_connexion)}</span></div>
                       <div><span style={{ color:'#555570' }}>Commandes : </span><span style={{ color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</span></div>
                       <div><span style={{ color:'#555570' }}>CA total : </span><span style={{ color:'#ffd700' }}>{fmtEur(u.ca_genere)}</span></div>
                       <div><span style={{ color:'#555570' }}>CA mois : </span><span style={{ color: u.ca_mois > 0 ? '#22c55e' : '#44445a' }}>{fmtEur(u.ca_mois)}</span></div>
@@ -1019,6 +1168,7 @@ export default function Admin() {
                       { col:'prenom', label:'Nom' },
                       { col:'email', label:'Email' },
                       { col:'inscrit_le', label:'Inscrit' },
+                      { col:'derniere_connexion', label:'Dern. connexion' },
                       { col:'nb_illustrations', label:'Illus.' },
                       { col:'nb_livres_recueils', label:'Liv/Rec' },
                       { col:'nb_commandes', label:'Cmd' },
@@ -1039,7 +1189,9 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {usagersTries.map(u => (
+                  {usagersTries.map(u => {
+                    const jInactif = joursDepuis(u.derniere_connexion)
+                    return (
                     <tr key={u.id} style={{ borderBottom:'1px solid #ffffff06' }}
                       onMouseEnter={e => e.currentTarget.style.background='#0f0f1e'}
                       onMouseLeave={e => e.currentTarget.style.background='transparent'}
@@ -1047,6 +1199,7 @@ export default function Admin() {
                       <td style={s.td}>{u.prenom} {u.nom}</td>
                       <td style={{ ...s.td, color:'#00e5ff88', fontSize:'11px' }}>{u.email}</td>
                       <td style={s.td}>{fmtDate(u.inscrit_le)}</td>
+                      <td style={{ ...s.td, color: jInactif === null || jInactif >= 60 ? '#ef4444' : '#c0c0e0' }}>{fmtDate(u.derniere_connexion)}</td>
                       <td style={{ ...s.td, color:'#00e5ff' }}>{u.nb_illustrations}</td>
                       <td style={{ ...s.td, color:'#00e5ff' }}>{u.nb_livres_recueils}</td>
                       <td style={{ ...s.td, color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</td>
@@ -1060,11 +1213,13 @@ export default function Admin() {
                       <td style={s.td}>{u.nb_likes_pensees}</td>
                       <td style={{ ...s.td, color: u.nb_signales > 0 ? '#ef4444' : '#44445a', fontWeight: u.nb_signales > 0 ? 600 : 400 }}>{u.nb_signales || '—'}</td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
             )
+              )}
+            </>
           )}
 
           {/* ======== MODÉRATION ======== */}
