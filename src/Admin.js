@@ -60,27 +60,28 @@ const TRAITEMENT_LITIGE = ['En cours', 'Retour', 'Remboursement', 'Remplacement'
 const STATUT_LITIGE_COLOR = { ouvert: '#ef4444', resolu: '#ffd700', cloture: '#646482' }
 
 const s = {
-  shell: { display:'flex', height:'100vh', background:'#07070f', fontFamily:'sans-serif', fontSize:'13px', color:'#e0e0f0', overflow:'hidden' },
-  sidebar: { width:'172px', flexShrink:0, borderRight:'1px solid #00e5ff55', background:'linear-gradient(180deg, #08081a 0%, #002a3a 100%)', display:'flex', flexDirection:'column' },
+  shell: (isMobile) => ({ display:'flex', flexDirection: isMobile ? 'column' : 'row', height: isMobile ? 'auto' : '100vh', minHeight: '100vh', background:'#07070f', fontFamily:'sans-serif', fontSize:'13px', color:'#e0e0f0', overflow: isMobile ? 'visible' : 'hidden' }),
+  sidebar: (isMobile) => ({ width: isMobile ? '100%' : '172px', flexShrink:0, borderRight: isMobile ? 'none' : '1px solid #00e5ff55', borderBottom: isMobile ? '1px solid #00e5ff55' : 'none', background:'linear-gradient(180deg, #08081a 0%, #002a3a 100%)', display:'flex', flexDirection: isMobile ? 'row' : 'column', overflowX: isMobile ? 'auto' : 'visible' }),
   sidebarLogo: { padding:'14px 16px 12px', borderBottom:'1px solid #00e5ff1a' },
   logoImg: { width:'88px', height:'88px', borderRadius:'50%', marginBottom:'8px', display:'block' },
   logoName: { fontSize:'13px', fontWeight:600, color:'#e8e8f8', letterSpacing:'0.01em' },
   logoSub: { fontSize:'10px', color:'#00e5ff77', marginTop:'2px' },
-  navItem: (active) => ({
-    display:'flex', alignItems:'center', gap:'9px', padding:'9px 16px', cursor:'pointer',
-    fontSize:'13px', color: active ? '#00e5ff' : '#6a6a8a',
-    borderLeft: active ? '2px solid #00e5ff' : '2px solid transparent',
+  navItem: (active, isMobile) => ({
+    display:'flex', alignItems:'center', gap:'9px', padding: isMobile ? '12px 14px' : '9px 16px', cursor:'pointer',
+    fontSize:'13px', color: active ? '#00e5ff' : '#6a6a8a', whiteSpace: isMobile ? 'nowrap' : 'normal', flexShrink: isMobile ? 0 : 1,
+    borderLeft: isMobile ? 'none' : (active ? '2px solid #00e5ff' : '2px solid transparent'),
+    borderBottom: isMobile ? (active ? '2px solid #00e5ff' : '2px solid transparent') : 'none',
     background: active ? 'rgba(0,229,255,0.06)' : 'transparent',
     fontWeight: active ? 500 : 400, transition:'all 0.15s'
   }),
   navIcon: { fontSize:'17px' },
   sidebarBottom: { marginTop:'auto', padding:'14px 16px', borderTop:'1px solid #00e5ff1a' },
   liveDot: { width:'6px', height:'6px', borderRadius:'50%', background:'#22c55e', display:'inline-block', marginRight:'6px', animation:'pulse 2s infinite' },
-  main: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden' },
-  topbar: { height:'46px', flexShrink:0, borderBottom:'1px solid #00e5ff66', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', background:'linear-gradient(90deg, #07070f 0%, #003a50 100%)' },
+  main: { flex:1, display:'flex', flexDirection:'column', overflow:'hidden', minWidth: 0 },
+  topbar: (isMobile) => ({ height: isMobile ? 'auto' : '46px', minHeight: isMobile ? '46px' : '46px', flexShrink:0, borderBottom:'1px solid #00e5ff66', display:'flex', alignItems:'center', justifyContent:'space-between', padding: isMobile ? '10px 14px' : '0 20px', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? '4px' : '0', background:'linear-gradient(90deg, #07070f 0%, #003a50 100%)' }),
   topbarTitle: { fontSize:'14px', fontWeight:500, background:'linear-gradient(90deg, #e8e8f8 0%, #00e5ff 100%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' },
   topbarDate: { fontSize:'11px', color:'#44445a' },
-  content: { flex:1, overflow:'auto', padding:'16px' },
+  content: (isMobile) => ({ flex:1, overflow:'auto', padding: isMobile ? '12px' : '16px' }),
 
   // Stats
   statGrid: { display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'10px', marginBottom:'16px' },
@@ -90,7 +91,7 @@ const s = {
   statSub: { fontSize:'10px', color:'#44445a', marginTop:'2px' },
 
   // Grid 2 colonnes
-  grid2: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' },
+  grid2: (isMobile) => ({ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:'12px' }),
   sectionTitle: { fontSize:'10px', fontWeight:500, color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'10px' },
 
   // Commande card
@@ -111,7 +112,7 @@ const s = {
     background: STATUT_COLOR[statut]?.bg, border:`1px solid ${STATUT_COLOR[statut]?.border}`,
     color: STATUT_COLOR[statut]?.color
   }),
-  infoGrid: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'6px', fontSize:'11px', marginBottom:'10px' },
+  infoGrid: (isMobile) => ({ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap:'6px', fontSize:'11px', marginBottom:'10px' }),
   infoBlock: { },
   infoLbl: { color:'#555570', marginBottom:'2px', fontSize:'10px' },
   infoVal: { color:'#d0d0f0' },
@@ -129,7 +130,7 @@ const s = {
   // Formulaire suivi inline
   suiviForm: { background:'#0a0a18', border:'1px solid #00e5ff1a', borderRadius:'8px', padding:'12px', marginTop:'10px' },
   input: { width:'100%', background:'#12121f', border:'1px solid #ffffff1a', borderRadius:'6px', padding:'6px 10px', color:'#e0e0f0', fontSize:'12px', fontFamily:'sans-serif', outline:'none', marginBottom:'8px', boxSizing:'border-box' },
-  inputRow: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px' },
+  inputRow: (isMobile) => ({ display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:'8px' }),
 
   // Commentaires — plus visibles
   cmtCard: (flagged) => ({
@@ -168,6 +169,13 @@ export default function Admin() {
   const [toast, setToast] = useState(null)
   const intervalRef = useRef(null)
   const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 700)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 700)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Vérif auth admin
   useEffect(() => {
@@ -335,7 +343,7 @@ export default function Admin() {
   const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte) && !ignores.has(c.id))
 
   return (
-    <div style={s.shell}>
+    <div style={s.shell(isMobile)}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         ::-webkit-scrollbar { width:4px; height:4px }
@@ -347,8 +355,9 @@ export default function Admin() {
         textarea:focus { border-color:#00e5ff44 !important; outline:none }
       `}</style>
 
-      {/* SIDEBAR */}
-      <div style={s.sidebar}>
+      {/* SIDEBAR (desktop) */}
+      {!isMobile && (
+      <div style={s.sidebar(isMobile)}>
         <div style={s.sidebarLogo}>
           <img src="https://images.kevinteoart.fr/site/Logo.png" alt="Logo" style={s.logoImg} />
           <div style={s.logoName}>Kevin Teo'Art</div>
@@ -360,7 +369,7 @@ export default function Admin() {
           { id:'usagers', icon:'ti-users', label:'Usagers' },
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
         ].map(n => (
-          <div key={n.id} style={s.navItem(onglet === n.id)} onClick={() => setOnglet(n.id)}>
+          <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
             <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
             {n.label}
           </div>
@@ -391,10 +400,11 @@ export default function Admin() {
           </div>
         </div>
       </div>
+      )}
 
       {/* MAIN */}
       <div style={s.main}>
-        <div style={s.topbar}>
+        <div style={s.topbar(isMobile)}>
           <span style={s.topbarTitle}>
             { onglet === 'dashboard' && 'Dashboard' }
             { onglet === 'commandes' && 'Commandes reliées' }
@@ -404,14 +414,37 @@ export default function Admin() {
           <span style={s.topbarDate}>{new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</span>
         </div>
 
-        <div style={s.content}>
+        {/* NAV HORIZONTALE (mobile) — sous la bande haute */}
+        {isMobile && (
+          <div style={s.sidebar(isMobile)}>
+            {[
+              { id:'dashboard', icon:'ti-layout-dashboard', label:'Dashboard' },
+              { id:'commandes', icon:'ti-package', label:`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
+              { id:'usagers', icon:'ti-users', label:'Usagers' },
+              { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
+            ].map(n => (
+              <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
+                <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
+                {n.label}
+              </div>
+            ))}
+            <div
+              style={{ fontSize:'12px', color:'#44445a', cursor:'pointer', padding:'12px 14px', whiteSpace:'nowrap', flexShrink:0, display:'flex', alignItems:'center' }}
+              onClick={() => navigate('/accueil')}
+            >
+              ← Site
+            </div>
+          </div>
+        )}
+
+        <div style={s.content(isMobile)}>
           {loading && <div style={{ color:'#44445a', textAlign:'center', marginTop:'40px' }}>Chargement...</div>}
 
           {/* ======== DASHBOARD ======== */}
           {!loading && onglet === 'dashboard' && (
             <>
               {/* Stats sur 2 lignes compactes */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px', marginBottom:'8px' }}>
+              <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5,1fr)', gap:'8px', marginBottom:'8px' }}>
                 <div style={s.statCard('#00e5ff')}>
                   <div style={s.statLabel}>Inscrits</div>
                   <div style={s.statValue('#00e5ff')}>{stats?.nb_inscrits ?? '—'}</div>
@@ -473,7 +506,7 @@ export default function Admin() {
                 </div>
               </div>
 
-              <div style={s.grid2}>
+              <div style={s.grid2(isMobile)}>
                 {/* Commandes en attente */}
                 <div>
                   <div style={s.sectionTitle}>Commandes reliées en attente ({cmdEnAttente.length})</div>
@@ -489,7 +522,7 @@ export default function Admin() {
                       validerCommande={validerCommande}
                       archiverCommande={archiverCommande}
                       sauvegarderLitige={sauvegarderLitige}
-                      s={s} fmtDate={fmtDate}
+                      s={s} fmtDate={fmtDate} isMobile={isMobile}
                     />
                   ))}
                   {cmdEnAttente.length > 3 && (
@@ -504,7 +537,7 @@ export default function Admin() {
                   <div style={s.sectionTitle}>Commentaires signalés ({cmtSignales.length})</div>
                   {cmtSignales.length === 0 && <div style={{ color:'#44445a', fontSize:'12px' }}>Aucun commentaire signalé</div>}
                   {cmtSignales.slice(0, 3).map(c => (
-                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} />
+                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} isMobile={isMobile} />
                   ))}
                   {cmtSignales.length > 3 && (
                     <div style={{ fontSize:'11px', color:'#ff3eb5', cursor:'pointer', marginTop:'6px' }} onClick={() => setOnglet('moderation')}>
@@ -537,7 +570,7 @@ export default function Admin() {
                         validerCommande={validerCommande}
                         archiverCommande={archiverCommande}
                         sauvegarderLitige={sauvegarderLitige}
-                        s={s} fmtDate={fmtDate} full
+                        s={s} fmtDate={fmtDate} full isMobile={isMobile}
                       />
                     ))}
                   </div>
@@ -578,7 +611,7 @@ export default function Admin() {
                                 validerCommande={validerCommande}
                                 archiverCommande={archiverCommande}
                                 sauvegarderLitige={sauvegarderLitige}
-                                s={s} fmtDate={fmtDate} full archive
+                                s={s} fmtDate={fmtDate} full archive isMobile={isMobile}
                               />
                             ))}
                           </div>
@@ -593,6 +626,46 @@ export default function Admin() {
 
           {/* ======== USAGERS ======== */}
           {!loading && onglet === 'usagers' && (
+            isMobile ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                {/* Tri rapide mobile */}
+                <div style={{ display:'flex', gap:'6px', flexWrap:'wrap', marginBottom:'4px' }}>
+                  {[
+                    { col:'nb_commandes', label:'Commandes' },
+                    { col:'ca_genere', label:'CA total' },
+                    { col:'inscrit_le', label:'Inscrit le' },
+                    { col:'nb_signales', label:'Signalés' },
+                  ].map(({ col, label }) => (
+                    <button key={col} style={sortCol === col ? s.btnCyan : s.btnGhost} onClick={() => trier(col)}>
+                      {label} {sortCol === col ? (sortDir === 'desc' ? '↓' : '↑') : ''}
+                    </button>
+                  ))}
+                </div>
+                {usagersTries.map(u => (
+                  <div key={u.id} style={{ background:'#0d0d1a', border:'1px solid #00e5ff1a', borderRadius:'10px', padding:'12px 14px' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'8px' }}>
+                      <div>
+                        <div style={{ fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>{u.prenom} {u.nom}</div>
+                        <div style={{ fontSize:'10px', color:'#00e5ff88', marginTop:'2px' }}>{u.email}</div>
+                      </div>
+                      {u.nb_signales > 0 && (
+                        <span style={{ fontSize:'10px', color:'#ef4444', fontWeight:600, background:'rgba(239,68,68,0.12)', border:'1px solid #ef444444', borderRadius:'20px', padding:'2px 8px', flexShrink:0 }}>⚠️ {u.nb_signales}</span>
+                      )}
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px', fontSize:'11px' }}>
+                      <div><span style={{ color:'#555570' }}>Inscrit : </span><span style={{ color:'#c0c0e0' }}>{fmtDate(u.inscrit_le)}</span></div>
+                      <div><span style={{ color:'#555570' }}>Commandes : </span><span style={{ color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</span></div>
+                      <div><span style={{ color:'#555570' }}>CA total : </span><span style={{ color:'#ffd700' }}>{fmtEur(u.ca_genere)}</span></div>
+                      <div><span style={{ color:'#555570' }}>CA mois : </span><span style={{ color: u.ca_mois > 0 ? '#22c55e' : '#44445a' }}>{fmtEur(u.ca_mois)}</span></div>
+                      <div><span style={{ color:'#555570' }}>Coloriages : </span><span style={{ color:'#c0c0e0' }}>{u.nb_coloriages}</span></div>
+                      <div><span style={{ color:'#555570' }}>Pensées : </span><span style={{ color:'#c0c0e0' }}>{u.nb_pensees}</span></div>
+                      <div><span style={{ color:'#555570' }}>Coms / likes colo : </span><span style={{ color:'#c0c0e0' }}>{u.nb_commentaires} / {u.nb_likes}</span></div>
+                      <div><span style={{ color:'#555570' }}>Coms / likes pensées : </span><span style={{ color:'#c0c0e0' }}>{u.nb_comments_pensees} / {u.nb_likes_pensees}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div style={s.tableWrap}>
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
@@ -642,6 +715,7 @@ export default function Admin() {
                 </tbody>
               </table>
             </div>
+            )
           )}
 
           {/* ======== MODÉRATION ======== */}
@@ -651,14 +725,14 @@ export default function Admin() {
                 <div style={{ marginBottom:'20px' }}>
                   <div style={s.sectionTitle}>Signalés ({cmtSignales.length})</div>
                   {cmtSignales.map(c => (
-                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} />
+                    <CmtCard key={c.id} c={c} flagged={true} supprimerCommentaire={supprimerCommentaire} ignorer={(id) => setIgnores(prev => new Set([...prev, id]))} s={s} fmtDate={fmtDate} isMobile={isMobile} />
                   ))}
                 </div>
               )}
               <div>
                 <div style={s.sectionTitle}>Tous les commentaires ({commentaires.filter(c => !contientMotInterdit(c.texte)).length} normaux)</div>
                 {commentaires.filter(c => !contientMotInterdit(c.texte)).map(c => (
-                  <CmtCard key={c.id} c={c} flagged={false} supprimerCommentaire={supprimerCommentaire} s={s} fmtDate={fmtDate} />
+                  <CmtCard key={c.id} c={c} flagged={false} supprimerCommentaire={supprimerCommentaire} s={s} fmtDate={fmtDate} isMobile={isMobile} />
                 ))}
               </div>
             </>
@@ -683,7 +757,7 @@ export default function Admin() {
 }
 
 // ---- Composant CmdCard ----
-function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litigeOpen, setLitigeOpen, litigeData, setLitigeData, litigeExistant, validerCommande, archiverCommande, sauvegarderLitige, s, fmtDate, full, archive }) {
+function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litigeOpen, setLitigeOpen, litigeData, setLitigeData, litigeExistant, validerCommande, archiverCommande, sauvegarderLitige, s, fmtDate, full, archive, isMobile }) {
   const isOpen = suiviOpen === cmd.id
   const isLitigeOpen = litigeOpen === cmd.id
   const sd = suiviData[cmd.id] || {}
@@ -715,7 +789,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
       </div>
 
       {/* Infos client */}
-      <div style={s.infoGrid}>
+      <div style={s.infoGrid(isMobile)}>
         <div style={s.infoBlock}><div style={s.infoLbl}>Nom</div><div style={s.infoVal}>{cmd.client.prenom} {cmd.client.nom}</div></div>
         <div style={s.infoBlock}><div style={s.infoLbl}>Email</div><div style={{ ...s.infoVal, color:'#00e5ff88', fontSize:'10px' }}>{cmd.client.email}</div></div>
         <div style={s.infoBlock}><div style={s.infoLbl}>Téléphone</div><div style={s.infoVal}>{cmd.client.telephone || '—'}</div></div>
@@ -747,7 +821,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
       {isOpen && (
         <div style={s.suiviForm}>
           {/* Ligne 1 : dates Amazon */}
-          <div style={s.inputRow}>
+          <div style={s.inputRow(isMobile)}>
             <div>
               <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date commande Amazon</div>
               <input style={s.input} placeholder="ex: 19/06/2026" value={sd.date_commande_amazon ?? cmd.date_commande_amazon ?? ''} onChange={e => updateSuivi('date_commande_amazon', e.target.value)} />
@@ -775,7 +849,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
 
           {/* Infos transporteur */}
           <input style={s.input} placeholder="Transporteur (ex: Colissimo, Mondial Relay...)" value={sd.livreur ?? cmd.livreur ?? ''} onChange={e => updateSuivi('livreur', e.target.value)} />
-          <div style={s.inputRow}>
+          <div style={s.inputRow(isMobile)}>
             <input style={s.input} placeholder="Numéro de suivi" value={sd.numero_suivi ?? cmd.numero_suivi ?? ''} onChange={e => updateSuivi('numero_suivi', e.target.value)} />
             <input style={s.input} placeholder="Lien de suivi (URL)" value={sd.lien_suivi ?? cmd.lien_suivi ?? ''} onChange={e => updateSuivi('lien_suivi', e.target.value)} />
           </div>
@@ -793,7 +867,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
         <div style={s.litigeForm}>
           <div style={{ fontSize:'11px', color:'#ef4444', fontWeight:600, marginBottom:'10px' }}>⚠️ Gestion du litige</div>
 
-          <div style={s.inputRow}>
+          <div style={s.inputRow(isMobile)}>
             <div>
               <div style={{ ...s.infoLbl, marginBottom:'4px' }}>Date d'ouverture</div>
               <input style={s.input} type="date" value={ld.date_ouverture || new Date().toISOString().split('T')[0]} onChange={e => updateLitige('date_ouverture', e.target.value)} />
@@ -846,9 +920,32 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
 }
 
 // ---- Composant CmtCard ----
-function CmtCard({ c, flagged, supprimerCommentaire, ignorer, s, fmtDate }) {
+function CmtCard({ c, flagged, supprimerCommentaire, ignorer, s, fmtDate, isMobile }) {
   const prenom = c.profils?.prenom || 'Anonyme'
   const nom = c.profils?.nom || ''
+  if (isMobile) {
+    return (
+      <div style={{ ...s.cmtCard(flagged), display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ ...s.cmtUser, fontWeight: 500 }}>{prenom} {nom}</span>
+          {flagged && (
+            <span style={s.flagTag}>
+              <i className="ti ti-alert-triangle" style={{ fontSize: '12px' }} aria-hidden="true" />
+              Signalé
+            </span>
+          )}
+        </div>
+        <span style={{ color: '#44445a', fontSize: '10px' }}>{c.ref} · {fmtDate(c.created_at)}</span>
+        <span style={s.cmtText}>"{c.texte}"</span>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          {flagged && ignorer && (
+            <button style={s.btnGreen} onClick={() => ignorer(c.id)}>Valider</button>
+          )}
+          <button style={s.btnDanger} onClick={() => supprimerCommentaire(c.id, c.table)}>Supprimer</button>
+        </div>
+      </div>
+    )
+  }
   return (
     <div style={{ ...s.cmtCard(flagged), display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 14px' }}>
       <span style={{ ...s.cmtUser, whiteSpace: 'nowrap', flexShrink: 0 }}>{prenom} {nom}</span>
