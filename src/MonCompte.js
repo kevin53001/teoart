@@ -196,17 +196,23 @@ function HexBadge({ badge, obtenu, delaiAnim, small, ouvert, onToggle }) {
     }
   }, [delaiAnim, obtenu]);
 
-  // Quand on ouvre, on calcule la position réelle du badge
+  // Quand on ouvre, on calcule la position réelle du badge — et on la
+  // recalcule en continu tant que le message est ouvert, pour qu'il suive
+  // le badge si la mise en page bouge (ex: un encart au-dessus qui se déroule)
   React.useEffect(() => {
-    if (ouvert && ref.current) {
+    if (!ouvert || !ref.current) { setMsgPos(null); return; }
+    let frame;
+    const maj = () => {
+      if (!ref.current) return;
       const rect = ref.current.getBoundingClientRect();
       setMsgPos({
         top: rect.bottom + window.scrollY + 8,
         left: rect.left + rect.width / 2 + window.scrollX,
       });
-    } else {
-      setMsgPos(null);
-    }
+      frame = requestAnimationFrame(maj);
+    };
+    frame = requestAnimationFrame(maj);
+    return () => cancelAnimationFrame(frame);
   }, [ouvert]);
 
   const W = small ? 58 : 80;
