@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 )
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
 
@@ -375,6 +378,71 @@ async function actionDeleteComment(body) {
   return { ok: true }
 }
 
+// ─── BACKFILL PRIX (rattrapage commandes antérieures au fix prix) ──
+async function actionBackfillPrix() {
+  const { data: lignes, error } = await supabase
+    .from('commandes_articles')
+    .select('id, commande_id, nom, type')
+    .is('prix', null)
+  if (error) throw error
+  if (!lignes?.length) return { ok: true, message: 'Rien à rattraper.' }
+
+  const [{ data: illus }, { data: livres }, { data: recueils }] = await Promise.all([
+    supabase.from('illustrations').select('nom, prix'),
+    supabase.from('livres').select('nom, prix'),
+    supabase.from('recueils').select('nom, prix'),
+  ])
+  const prixParNom = (type) => {
+    if (type === 'illustration') return Object.fromEntries((illus || []).map(i => [i.nom, i.prix || 0]))
+    if (type === 'livre_pdf')    return Object.fromEntries((livres || []).map(l => [l.nom, l.prix || 0]))
+    if (type === 'recueil')      return Object.fromEntries((recueils || []).map(r => [r.nom, r.prix || 0]))
+    return {}
+  }
+
+  const parCommande = {}
+  for (const l of lignes) {
+    if (!parCommande[l.commande_id]) parCommande[l.commande_id] = []
+    parCommande[l.commande_id].push(l)
+  }
+
+  const resultats = { traitees: 0, erreurs: [] }
+
+  for (const [commandeId, items] of Object.entries(parCommande)) {
+    try {
+      const pi = await stripe.paymentIntents.retrieve(commandeId)
+      const montantCentimes = pi.amount_received || pi.amount || 0
+
+      const poids = items.map(it => {
+        if (it.type === 'relie') return 25
+        const table = prixParNom(it.type)
+        return table[it.nom] || 0
+      })
+      const totalPoids = poids.reduce((s, p) => s + p, 0)
+
+      const prixCentimes = items.map((_, i) => {
+        if (totalPoids <= 0) return Math.round(montantCentimes / items.length)
+        return Math.round((poids[i] / totalPoids) * montantCentimes)
+      })
+      const somme = prixCentimes.reduce((s, p) => s + p, 0)
+      const ecart = montantCentimes - somme
+      if (ecart !== 0) prixCentimes[prixCentimes.length - 1] += ecart
+
+      for (let i = 0; i < items.length; i++) {
+        const { error: updErr } = await supabase
+          .from('commandes_articles')
+          .update({ prix: prixCentimes[i] / 100 })
+          .eq('id', items[i].id)
+        if (updErr) throw updErr
+      }
+      resultats.traitees += items.length
+    } catch (e) {
+      resultats.erreurs.push({ commandeId, message: e.message })
+    }
+  }
+
+  return resultats
+}
+
 // ─── HANDLER PRINCIPAL ─────────────────────────────────────────
 export default async function handler(req, res) {
   const userId = req.method === 'GET' ? req.query.userId : req.body?.userId
@@ -398,6 +466,10 @@ export default async function handler(req, res) {
     if (action === 'delete-comment') {
       if (req.method !== 'POST') return res.status(405).end()
       return res.status(200).json(await actionDeleteComment(req.body))
+    }
+    if (action === 'backfill-prix') {
+      if (req.method !== 'GET') return res.status(405).end()
+      return res.status(200).json(await actionBackfillPrix())
     }
     return res.status(400).json({ error: 'Action inconnue' })
   } catch (err) {
