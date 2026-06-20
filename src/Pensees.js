@@ -679,6 +679,7 @@ function Pensees() {
       setIllustrationsOnglet(illusData || []);
     };
     charger();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleJAi = async (illuId) => {
