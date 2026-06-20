@@ -217,15 +217,20 @@ export default function Admin() {
     })
   }, [navigate])
 
-  // Compteur visiteurs en ligne (canal de présence partagé avec App.js — écoute seule, pas de track ici)
+  // Compteur visiteurs en ligne (canal de présence partagé avec App.js).
+  // Lecture par polling de presenceState() plutôt que par l'événement 'sync' seul,
+  // qui ne se déclenche pas de façon fiable selon les cas — le polling garantit un résultat
+  // correct en quelques secondes quoi qu'il arrive, largement suffisant pour ce compteur.
   useEffect(() => {
-    console.log('[presence] Admin.js : montage écoute compteur');
     const channel = getPresenceChannel()
-    onPresenceSync(() => {
+    const majCompteur = () => {
       const state = channel.presenceState()
-      console.log('[presence] Admin.js : sync reçu, state =', state);
       setNbEnLigne(Object.keys(state).length)
-    })
+    }
+    onPresenceSync(majCompteur)   // tentative event-driven (instantané si ça marche)
+    majCompteur()                  // lecture immédiate
+    const interval = setInterval(majCompteur, 3000)  // filet de sécurité toutes les 3s
+    return () => clearInterval(interval)
   }, [])
 
   const showToast = (msg, type = 'success') => {
