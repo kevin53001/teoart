@@ -170,6 +170,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
   const intervalRef = useRef(null)
+  const saisieEnCoursRef = useRef(false) // true tant qu'un input/textarea/select est focus — empêche le auto-refresh de couper l'admin en pleine saisie
   const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 700)
   const [nbEnLigne, setNbEnLigne] = useState(0)
@@ -576,10 +577,26 @@ export default function Admin() {
     finChatRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messagesChat])
 
+  // Détecte si l'admin est en train de saisir (input/textarea/select focus) pour suspendre l'auto-refresh
+  useEffect(() => {
+    const champsSaisie = ['INPUT', 'TEXTAREA', 'SELECT']
+    const onFocusIn = (e) => { if (champsSaisie.includes(e.target.tagName)) saisieEnCoursRef.current = true }
+    const onFocusOut = (e) => { if (champsSaisie.includes(e.target.tagName)) saisieEnCoursRef.current = false }
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
+    return () => {
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
+    }
+  }, [])
+
   useEffect(() => {
     if (!userId) return
     chargerTout()
-    intervalRef.current = setInterval(chargerTout, 30000)
+    intervalRef.current = setInterval(() => {
+      if (saisieEnCoursRef.current) return // admin en train d'écrire — on saute ce cycle, rien n'est coupé
+      chargerTout()
+    }, 30000)
     return () => clearInterval(intervalRef.current)
   }, [userId, chargerTout])
 
