@@ -171,6 +171,14 @@ export default function Admin() {
   const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 700)
 
+  // ── Chat privé ──
+  const [conversations, setConversations] = useState([]) // [{ user_id, pseudo, dernier_message, dernier_at, non_lus }]
+  const [conversationActive, setConversationActive] = useState(null) // user_id
+  const [messagesChat, setMessagesChat] = useState([])
+  const [texteChat, setTexteChat] = useState('')
+  const [loadingChat, setLoadingChat] = useState(false)
+  const finChatRef = useRef(null)
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 700)
     window.addEventListener('resize', handleResize)
@@ -248,6 +256,105 @@ export default function Admin() {
     await Promise.all([chargerStats(), chargerCommandes(), chargerCommentaires()])
     setLoading(false)
   }, [chargerStats, chargerCommandes, chargerCommentaires])
+
+  // ── Chat privé : liste des conversations ──
+  const chargerConversations = useCallback(async () => {
+    const { data: messages } = await supabase
+      .from('chat_prive')
+      .select('id, user_id, expediteur, contenu, created_at, lu_par_admin')
+      .order('created_at', { ascending: false })
+    if (!messages || messages.length === 0) { setConversations([]); return }
+
+    const userIds = [...new Set(messages.map(m => m.user_id))]
+    const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds)
+    const pseudoMap = {}
+    ;(profils || []).forEach(p => { pseudoMap[p.id] = p.pseudo || 'Anonyme' })
+
+    const parUser = {}
+    messages.forEach(m => {
+      if (!parUser[m.user_id]) {
+        parUser[m.user_id] = { user_id: m.user_id, pseudo: pseudoMap[m.user_id] || 'Anonyme', dernier_message: m.contenu, dernier_at: m.created_at, non_lus: 0 }
+      }
+      if (m.expediteur === 'user' && !m.lu_par_admin) {
+        parUser[m.user_id].non_lus += 1
+      }
+    })
+    const liste = Object.values(parUser).sort((a, b) => new Date(b.dernier_at) - new Date(a.dernier_at))
+    setConversations(liste)
+  }, [])
+
+  // ── Chat privé : messages d'une conversation ──
+  const ouvrirConversation = useCallback(async (uid) => {
+    setConversationActive(uid)
+    setLoadingChat(true)
+    const { data } = await supabase.from('chat_prive').select('*').eq('user_id', uid).order('created_at', { ascending: true })
+    setMessagesChat(data || [])
+    setLoadingChat(false)
+    await supabase.from('chat_prive').update({ lu_par_admin: true }).eq('user_id', uid).eq('expediteur', 'user').eq('lu_par_admin', false)
+    setConversations(prev => prev.map(c => c.user_id === uid ? { ...c, non_lus: 0 } : c))
+  }, [])
+
+  const envoyerMessageAdmin = async () => {
+    const texte = texteChat.trim()
+    if (!texte || !conversationActive) return
+    setTexteChat('')
+    const { data } = await supabase.from('chat_prive').insert({
+      user_id: conversationActive,
+      expediteur: 'admin',
+      contenu: texte,
+      lu_par_admin: true,
+      lu_par_user: false,
+    }).select().single()
+    if (data) {
+      setMessagesChat(prev => [...prev, data])
+      setConversations(prev => prev.map(c => c.user_id === conversationActive ? { ...c, dernier_message: texte, dernier_at: data.created_at } : c))
+    }
+  }
+
+  const supprimerMessageChat = async (id) => {
+    await supabase.from('chat_prive').delete().eq('id', id)
+    setMessagesChat(prev => prev.filter(m => m.id !== id))
+  }
+
+  useEffect(() => {
+    if (userId) chargerConversations()
+  }, [userId, chargerConversations])
+
+  useEffect(() => {
+    if (onglet === 'chat' && conversationActive) ouvrirConversation(conversationActive)
+  }, [onglet]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime global : tout nouveau message privé met à jour la liste/badge
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel('admin_chat_prive_global')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_prive' }, () => {
+        chargerConversations()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, chargerConversations])
+
+  // Realtime : nouveaux messages dans la conversation ouverte
+  useEffect(() => {
+    if (!conversationActive) return
+    const channel = supabase
+      .channel(`admin_chat_prive_${conversationActive}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_prive', filter: `user_id=eq.${conversationActive}` }, (payload) => {
+        const msg = payload.new
+        setMessagesChat(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+        if (msg.expediteur === 'user') {
+          supabase.from('chat_prive').update({ lu_par_admin: true }).eq('id', msg.id)
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [conversationActive])
+
+  useEffect(() => {
+    finChatRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messagesChat])
 
   useEffect(() => {
     if (!userId) return
@@ -341,6 +448,7 @@ export default function Admin() {
   const cmdEnAttente = commandes.filter(c => c.statut === 'en_attente')
   const cmdArchivees = commandes.filter(c => c.statut === 'archivee')
   const cmtSignales = commentaires.filter(c => contientMotInterdit(c.texte) && !ignores.has(c.id))
+  const nbNonLusChat = conversations.reduce((s, c) => s + c.non_lus, 0)
 
   return (
     <div style={s.shell(isMobile)}>
@@ -368,6 +476,7 @@ export default function Admin() {
           { id:'commandes', icon:'ti-package', label:`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
           { id:'usagers', icon:'ti-users', label:'Usagers' },
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
+          { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
         ].map(n => (
           <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
             <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -423,7 +532,7 @@ export default function Admin() {
               { id:'commandes', icon:'ti-package', label:`Com.${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
               { id:'usagers', icon:'ti-users', label:'Usag.' },
               { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
-              { id:'chat', icon:'ti-message-2', label:'Chat' },
+              { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
             ].map(n => (
               <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
                 <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -763,11 +872,116 @@ export default function Admin() {
             </>
           )}
 
-          {/* ======== CHAT (à construire) ======== */}
+          {/* ======== CHAT PRIVÉ ======== */}
           {!loading && onglet === 'chat' && (
-            <div style={{ textAlign:'center', padding:'40px 20px', color:'#44445a' }}>
-              <p style={{ fontSize:'13px' }}>Gestion des conversations privées — à venir.</p>
-            </div>
+            isMobile ? (
+              conversationActive ? (
+                /* Vue fil — mobile plein écran */
+                <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 140px)' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'8px 4px', borderBottom:'1px solid #ffffff0a', marginBottom:'10px' }}>
+                    <button style={s.btnGhost} onClick={() => setConversationActive(null)}>← Retour</button>
+                    <span style={{ fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>
+                      {conversations.find(c => c.user_id === conversationActive)?.pseudo || '...'}
+                    </span>
+                  </div>
+                  <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:'8px', padding:'4px' }}>
+                    {loadingChat ? (
+                      <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Chargement...</div>
+                    ) : messagesChat.length === 0 ? (
+                      <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Aucun message.</div>
+                    ) : messagesChat.map(m => (
+                      <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: m.expediteur === 'admin' ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ maxWidth:'80%', background: m.expediteur === 'admin' ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${m.expediteur === 'admin' ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
+                          {m.contenu}
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:'6px', marginTop:'3px' }}>
+                          <span style={{ fontSize:'9px', color:'#44445a' }}>{fmtDate(m.created_at)}</span>
+                          <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer' }} onClick={() => supprimerMessageChat(m.id)}>Supprimer</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={finChatRef} />
+                  </div>
+                  <div style={{ display:'flex', gap:'8px', paddingTop:'10px' }}>
+                    <input style={{ ...s.input, marginBottom:0, flex:1 }} placeholder="Répondre..." value={texteChat} onChange={e => setTexteChat(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') envoyerMessageAdmin() }} />
+                    <button style={s.btnCyan} onClick={envoyerMessageAdmin} disabled={!texteChat.trim()}>→</button>
+                  </div>
+                </div>
+              ) : (
+                /* Liste — mobile */
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  {conversations.length === 0 ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px' }}>Aucune conversation pour l'instant.</div>
+                  ) : conversations.map(c => (
+                    <div key={c.user_id} onClick={() => ouvrirConversation(c.user_id)} style={{ background:'#0d0d1a', border:'1px solid #00e5ff1a', borderRadius:'10px', padding:'12px 14px', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px' }}>
+                      <div style={{ minWidth:0, flex:1 }}>
+                        <div style={{ fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>{c.pseudo}</div>
+                        <div style={{ fontSize:'11px', color:'#6a6a8a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:'2px' }}>{c.dernier_message}</div>
+                      </div>
+                      {c.non_lus > 0 && (
+                        <span style={{ background:'#ff3eb5', color:'#000', fontSize:'10px', fontWeight:700, borderRadius:'10px', minWidth:'18px', height:'18px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', flexShrink:0 }}>{c.non_lus}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              /* Desktop — 2 colonnes */
+              <div style={{ display:'flex', gap:'14px', height:'calc(100vh - 110px)' }}>
+                <div style={{ width:'260px', flexShrink:0, ...s.tableWrap, overflowY:'auto' }}>
+                  {conversations.length === 0 ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px 16px' }}>Aucune conversation pour l'instant.</div>
+                  ) : conversations.map(c => (
+                    <div key={c.user_id} onClick={() => ouvrirConversation(c.user_id)}
+                      style={{ padding:'12px 14px', cursor:'pointer', borderBottom:'1px solid #ffffff08', background: conversationActive === c.user_id ? 'rgba(0,229,255,0.06)' : 'transparent', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'8px' }}
+                      onMouseEnter={e => { if (conversationActive !== c.user_id) e.currentTarget.style.background = '#0f0f1e' }}
+                      onMouseLeave={e => { if (conversationActive !== c.user_id) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <div style={{ minWidth:0, flex:1 }}>
+                        <div style={{ fontSize:'12px', fontWeight:500, color: conversationActive === c.user_id ? '#00e5ff' : '#f0f0ff' }}>{c.pseudo}</div>
+                        <div style={{ fontSize:'10px', color:'#6a6a8a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:'2px' }}>{c.dernier_message}</div>
+                      </div>
+                      {c.non_lus > 0 && (
+                        <span style={{ background:'#ff3eb5', color:'#000', fontSize:'10px', fontWeight:700, borderRadius:'10px', minWidth:'18px', height:'18px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px', flexShrink:0 }}>{c.non_lus}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ flex:1, ...s.tableWrap, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                  {!conversationActive ? (
+                    <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#44445a', fontSize:'12px' }}>Sélectionne une conversation</div>
+                  ) : (
+                    <>
+                      <div style={{ padding:'12px 16px', borderBottom:'1px solid #ffffff0a', fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>
+                        {conversations.find(c => c.user_id === conversationActive)?.pseudo}
+                      </div>
+                      <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:'8px', padding:'14px' }}>
+                        {loadingChat ? (
+                          <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Chargement...</div>
+                        ) : messagesChat.length === 0 ? (
+                          <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Aucun message.</div>
+                        ) : messagesChat.map(m => (
+                          <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: m.expediteur === 'admin' ? 'flex-end' : 'flex-start' }}>
+                            <div style={{ maxWidth:'60%', background: m.expediteur === 'admin' ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${m.expediteur === 'admin' ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
+                              {m.contenu}
+                            </div>
+                            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'3px' }}>
+                              <span style={{ fontSize:'9px', color:'#44445a' }}>{fmtDate(m.created_at)}</span>
+                              <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer' }} onClick={() => supprimerMessageChat(m.id)}>Supprimer</span>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={finChatRef} />
+                      </div>
+                      <div style={{ display:'flex', gap:'8px', padding:'12px 16px', borderTop:'1px solid #ffffff0a' }}>
+                        <input style={{ ...s.input, marginBottom:0, flex:1 }} placeholder="Répondre..." value={texteChat} onChange={e => setTexteChat(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') envoyerMessageAdmin() }} />
+                        <button style={s.btnCyan} onClick={envoyerMessageAdmin} disabled={!texteChat.trim()}>Envoyer</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
           )}
         </div>
       </div>
