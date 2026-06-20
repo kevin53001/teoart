@@ -676,6 +676,8 @@ export default function Admin() {
                       <div><span style={{ color:'#555570' }}>Commandes : </span><span style={{ color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</span></div>
                       <div><span style={{ color:'#555570' }}>CA total : </span><span style={{ color:'#ffd700' }}>{fmtEur(u.ca_genere)}</span></div>
                       <div><span style={{ color:'#555570' }}>CA mois : </span><span style={{ color: u.ca_mois > 0 ? '#22c55e' : '#44445a' }}>{fmtEur(u.ca_mois)}</span></div>
+                      <div><span style={{ color:'#555570' }}>Illustrations : </span><span style={{ color:'#00e5ff' }}>{u.nb_illustrations}</span></div>
+                      <div><span style={{ color:'#555570' }}>Livres/Recueils : </span><span style={{ color:'#00e5ff' }}>{u.nb_livres_recueils}</span></div>
                       <div><span style={{ color:'#555570' }}>Coloriages : </span><span style={{ color:'#c0c0e0' }}>{u.nb_coloriages}</span></div>
                       <div><span style={{ color:'#555570' }}>Pensées : </span><span style={{ color:'#c0c0e0' }}>{u.nb_pensees}</span></div>
                       <div><span style={{ color:'#555570' }}>Coms / likes colo : </span><span style={{ color:'#c0c0e0' }}>{u.nb_commentaires} / {u.nb_likes}</span></div>
@@ -693,6 +695,8 @@ export default function Admin() {
                       { col:'prenom', label:'Prénom / Nom' },
                       { col:'email', label:'Email' },
                       { col:'inscrit_le', label:'Inscrit le' },
+                      { col:'nb_illustrations', label:'Illustrations' },
+                      { col:'nb_livres_recueils', label:'Livres/Recueils' },
                       { col:'nb_commandes', label:'Commandes' },
                       { col:'ca_genere', label:'CA total' },
                       { col:'ca_mois', label:'CA mois' },
@@ -719,6 +723,8 @@ export default function Admin() {
                       <td style={s.td}>{u.prenom} {u.nom}</td>
                       <td style={{ ...s.td, color:'#00e5ff88', fontSize:'11px' }}>{u.email}</td>
                       <td style={s.td}>{fmtDate(u.inscrit_le)}</td>
+                      <td style={{ ...s.td, color:'#00e5ff' }}>{u.nb_illustrations}</td>
+                      <td style={{ ...s.td, color:'#00e5ff' }}>{u.nb_livres_recueils}</td>
                       <td style={{ ...s.td, color:'#ffd700', fontWeight:500 }}>{u.nb_commandes}</td>
                       <td style={{ ...s.td, color:'#ffd700' }}>{fmtEur(u.ca_genere)}</td>
                       <td style={{ ...s.td, color: u.ca_mois > 0 ? '#22c55e' : '#44445a' }}>{fmtEur(u.ca_mois)}</td>

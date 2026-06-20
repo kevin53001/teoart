@@ -74,7 +74,9 @@ async function actionStats() {
     { data: likesColoRaw },
     { data: likesPenseesRaw },
     { data: penseesRaw },
-    { data: reliesRaw }
+    { data: reliesRaw },
+    { data: collectionIllusRaw },
+    { data: collectionLivresRaw }
   ] = await Promise.all([
     supabase.from('profils').select('id, prenom, nom, email, created_at'),
     supabase.from('commandes_articles').select('user_id, prix, created_at'),
@@ -84,7 +86,9 @@ async function actionStats() {
     supabase.from('likes_coloriages').select('user_id, created_at'),
     supabase.from('likes_pensees').select('user_id, created_at'),
     supabase.from('pensees').select('id, user_id, created_at').neq('source', 'kevin'),
-    supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie')
+    supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie'),
+    supabase.from('collection').select('user_id, j_ai').eq('j_ai', true),
+    supabase.from('collection_livres').select('user_id, j_ai').eq('j_ai', true)
   ])
 
   // Inscrits
@@ -146,6 +150,14 @@ async function actionStats() {
   const likesPenseesParUser = {}
   ;(likesPenseesRaw||[]).forEach(l => { likesPenseesParUser[l.user_id] = (likesPenseesParUser[l.user_id]||0) + 1 })
 
+  // Collection : illustrations possédées (j_ai = true)
+  const nbIllusParUser = {}
+  ;(collectionIllusRaw||[]).forEach(c => { nbIllusParUser[c.user_id] = (nbIllusParUser[c.user_id]||0) + 1 })
+
+  // Collection : livres + recueils possédés additionnés (j_ai = true)
+  const nbLivresRecueilsParUser = {}
+  ;(collectionLivresRaw||[]).forEach(c => { nbLivresRecueilsParUser[c.user_id] = (nbLivresRecueilsParUser[c.user_id]||0) + 1 })
+
   // Commentaires signalés par user (mots interdits)
   const MOTS = ['connard','connasse','salope','pute','putain','enculé','enculée','fdp','fils de pute','batard','bâtard','merde','emmerdeur','cul','couille','branleur','abruti','crétin','idiot','imbécile','débile','nul','taré','dégueulasse','ordure','pourriture','déchet','raclure','salopard','fumier','bouffon','con','conne','ntm','nique','niquer','ta gueule','pd','pédé','gouine','mongol','attardé','négro','nègre','youpin','bougnoule','bicot','feuj','raton','haine','haïr','tuer','mort','crève','suicide','fuck','fucking','fucker','motherfucker','bitch','asshole','bastard','dickhead','dick','cock','pussy','cunt','whore','slut','moron','retard','stupid','dumbass','loser','shit','bullshit','kill yourself','kys','hate','faggot','fag','nigger','nigga','chink','die','kill','murder']
   const contientMot = t => t && MOTS.some(m => t.toLowerCase().includes(m))
@@ -172,6 +184,8 @@ async function actionStats() {
     nb_comments_pensees:   commentsPenseesParUser[u.id]   || 0,
     nb_likes_pensees:      likesPenseesParUser[u.id]      || 0,
     nb_signales:           signaledParUser[u.id]          || 0,
+    nb_illustrations:      nbIllusParUser[u.id]            || 0,
+    nb_livres_recueils:    nbLivresRecueilsParUser[u.id]   || 0,
   }))
 
   return {
