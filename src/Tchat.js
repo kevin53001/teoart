@@ -136,6 +136,14 @@ function Tchat({ hidden = false }) {
   const finListeGeneralRef = useRef(null);
   const finListePriveRef = useRef(null);
 
+  // ── Suivi "onglet vu pendant cette ouverture du panneau" — la LED ne s'éteint
+  // (et n'est marquée comme lue en base) qu'à la FERMETURE du panneau, et
+  // seulement pour les onglets effectivement consultés ──
+  const vuGeneralSessionRef = useRef(false);
+  const vuPriveSessionRef = useRef(false);
+  const messagesGeneralRef = useRef([]);
+  useEffect(() => { messagesGeneralRef.current = messagesGeneral; }, [messagesGeneral]);
+
   // ── Chargement initial user ──
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -206,23 +214,18 @@ function Tchat({ hidden = false }) {
       .order('created_at', { ascending: true });
     setMessagesPrive(data || []);
     setLoadingPrive(false);
-    // Marquer les messages admin comme lus
-    await supabase.from('chat_prive').update({ lu_par_user: true }).eq('user_id', userId).eq('expediteur', 'admin').eq('lu_par_user', false);
-    setNonLuPrive(false);
   }, [userId]);
 
   useEffect(() => {
     if (!ouvert) return;
     if (onglet === 'general') {
       chargerGeneral();
-      if (userId) {
-        supabase.from('profils').update({ dernier_vu_chat_general: new Date().toISOString() }).eq('id', userId);
-        setNonLuGeneral(false);
-      }
+      vuGeneralSessionRef.current = true;
     } else {
       chargerPrive();
+      vuPriveSessionRef.current = true;
     }
-  }, [ouvert, onglet, chargerGeneral, chargerPrive, userId]);
+  }, [ouvert, onglet, chargerGeneral, chargerPrive]);
 
   // ── Realtime : chat général ──
   useEffect(() => {
@@ -232,9 +235,9 @@ function Tchat({ hidden = false }) {
         const msg = payload.new;
         if (ouvert && onglet === 'general') {
           setMessagesGeneral(prev => [...prev, msg]);
-          if (userId) supabase.from('profils').update({ dernier_vu_chat_general: new Date().toISOString() }).eq('id', userId);
         } else if (msg.user_id !== userId) {
           setNonLuGeneral(true);
+          vuGeneralSessionRef.current = false;
         }
       })
       .subscribe();
@@ -250,11 +253,9 @@ function Tchat({ hidden = false }) {
         const msg = payload.new;
         if (ouvert && onglet === 'prive') {
           setMessagesPrive(prev => [...prev, msg]);
-          if (msg.expediteur === 'admin') {
-            supabase.from('chat_prive').update({ lu_par_user: true }).eq('id', msg.id);
-          }
         } else if (msg.expediteur === 'admin') {
           setNonLuPrive(true);
+          vuPriveSessionRef.current = false;
         }
       })
       .subscribe();
@@ -277,11 +278,40 @@ function Tchat({ hidden = false }) {
       if (
         panneauRef.current && !panneauRef.current.contains(e.target) &&
         boutonRef.current  && !boutonRef.current.contains(e.target)
-      ) setOuvert(false);
+      ) fermerPanneau();
     };
     const timer = setTimeout(() => document.addEventListener('mousedown', handler), 50);
     return () => { clearTimeout(timer); document.removeEventListener('mousedown', handler); };
-  }, [ouvert]);
+  }, [ouvert]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Fermeture du panneau : commit en base + extinction LED, uniquement pour
+  // les onglets effectivement consultés pendant cette ouverture ──
+  const fermerPanneau = useCallback(async () => {
+    if (vuGeneralSessionRef.current && userId) {
+      const liste = messagesGeneralRef.current;
+      const dernierMsg = liste.length > 0 ? liste[liste.length - 1] : null;
+      // Référence = date du dernier message réellement vu (pas l'heure du
+      // navigateur, pour éviter un décalage d'horloge qui rallumerait la LED)
+      const ref = dernierMsg ? dernierMsg.created_at : new Date().toISOString();
+      await supabase.from('profils').update({ dernier_vu_chat_general: ref }).eq('id', userId);
+      setNonLuGeneral(false);
+    }
+    if (vuPriveSessionRef.current && userId) {
+      await supabase.from('chat_prive').update({ lu_par_user: true }).eq('user_id', userId).eq('expediteur', 'admin').eq('lu_par_user', false);
+      setNonLuPrive(false);
+    }
+    setOuvert(false);
+  }, [userId]);
+
+  const toggleTchat = () => {
+    if (!ouvert) {
+      vuGeneralSessionRef.current = false;
+      vuPriveSessionRef.current = false;
+      setOuvert(true);
+    } else {
+      fermerPanneau();
+    }
+  };
 
   // ── Envoi message général ──
   const envoyerGeneral = async () => {
@@ -329,7 +359,9 @@ function Tchat({ hidden = false }) {
       <style>{`
         .tchat-btn:hover { opacity: 0.8; }
         .tchat-led { animation: tchat-pulse 1.6s ease-in-out infinite; }
+        .tchat-led-cyan { animation: tchat-pulse-cyan 1.6s ease-in-out infinite; }
         @keyframes tchat-pulse { 0%,100% { box-shadow: 0 0 6px #ff3eb5; } 50% { box-shadow: 0 0 12px #ff3eb5, 0 0 4px #fff; } }
+        @keyframes tchat-pulse-cyan { 0%,100% { box-shadow: 0 0 6px #00d4d4; } 50% { box-shadow: 0 0 12px #00d4d4, 0 0 4px #fff; } }
         .tchat-liste::-webkit-scrollbar { width: 4px; }
         .tchat-liste::-webkit-scrollbar-track { background: transparent; }
         .tchat-liste::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.3); border-radius: 4px; }
@@ -339,12 +371,15 @@ function Tchat({ hidden = false }) {
       <div
         ref={boutonRef}
         className="tchat-btn"
-        onClick={() => setOuvert(v => !v)}
+        onClick={toggleTchat}
         style={{ position: 'fixed', top: '56px', right: '14px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <img src={`${R2}/site/pastille_chat.png`} alt="Tchat" style={{ width: '39px', height: '39px', objectFit: 'contain', filter: nbNonLuTotal > 0 ? 'drop-shadow(0 0 4px rgba(255,62,181,0.6))' : 'none' }} />
-        {nbNonLuTotal > 0 && (
+        {nonLuGeneral && (
           <div className="tchat-led" style={{ position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', background: '#ff3eb5', border: '1.5px solid #000' }} />
+        )}
+        {nonLuPrive && (
+          <div className="tchat-led-cyan" style={{ position: 'absolute', top: '-2px', left: '-2px', width: '10px', height: '10px', borderRadius: '50%', background: '#00d4d4', border: '1.5px solid #000' }} />
         )}
       </div>
 
