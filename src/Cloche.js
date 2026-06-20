@@ -53,7 +53,7 @@ function texteNotif(n) {
         ? `Des gens ont craqué pour ton coloriage`
         : `Tes coloriages font un carton dans la communauté`;
     case 'badge_obtenu':
-      return `Badge ${c.niveau} dans la poche !${c.remise ? ` -${c.remise}% en cadeau` : ''}`;
+      return `Badge ${c.niveau} dans la poche !${c.remise ? ` -${c.remise}% en cadeau (sur ta prochaine commande)` : ''}`;
     case 'nouvelle_pensee':
       return nb === 1
         ? `Nouvelle pensée dans la nature`
