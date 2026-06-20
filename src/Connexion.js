@@ -225,7 +225,7 @@ function Connexion() {
             </button>
 
             <button onClick={() => navigate('/inscription')}
-              style={{ width: '100%', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '13px', color: 'rgba(255,255,255,0.7)', fontSize: '15px', cursor: 'pointer', transition: 'opacity .2s' }}>
+              style={{ width: '100%', background: 'linear-gradient(135deg, #ff3eb5, #b8268a)', border: 'none', borderRadius: '8px', padding: '13px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: 'opacity .2s' }}>
               Créer un compte
             </button>
           </div>
