@@ -123,10 +123,24 @@ function Inscription() {
     setError('');
     setLoading(true);
 
-    const { data, error: authError } = await supabase.auth.signUp({
+    const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: 'https://kevinteoart.fr/selection' }
+      options: {
+        emailRedirectTo: 'https://kevinteoart.fr/selection',
+        data: {
+          prenom,
+          nom,
+          pseudo,
+          date_naissance: dateNaissance || null,
+          pays: pays || null,
+          adresse: adresse || null,
+          complement: complement || null,
+          code_postal: codePostal || null,
+          ville: ville || null,
+          telephone: telephone || null,
+        },
+      }
     });
 
     if (authError) {
@@ -135,25 +149,13 @@ function Inscription() {
       return;
     }
 
-    const userId = data.user?.id;
-
-    const fileName = `avatars/${userId}.jpg`;
-    await supabase.storage.from('avatars').upload(fileName, photoCroppee, { upsert: true });
-
-    await supabase.from('profils').insert({
-      id: userId,
-      email,
-      prenom,
-      nom,
-      pseudo,
-      date_naissance: dateNaissance || null,
-      pays: pays || null,
-      adresse: adresse || null,
-      complement: complement || null,
-      code_postal: codePostal || null,
-      ville: ville || null,
-      telephone: telephone || null,
-    });
+    // La création de la ligne profils est désormais gérée automatiquement
+    // côté base par un trigger Postgres sur auth.users (handle_new_user),
+    // qui lit ces métadonnées. Plus d'insert client ici (bloqué par la RLS
+    // tant que l'email n'est pas confirmé / la session pas active).
+    // L'ancien upload vers le bucket Supabase "avatars" a aussi été retiré :
+    // il était mort (jamais réutilisé), le vrai flux avatar passe par R2
+    // via api/upload-avatar.js depuis MonCompte.js.
 
     setLoading(false);
     setSuccess(true);
