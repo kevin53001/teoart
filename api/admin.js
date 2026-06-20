@@ -266,10 +266,12 @@ async function actionGetCommandes() {
   if (error) throw error
 
   const userIds = [...new Set((articles||[]).map(a => a.user_id).filter(Boolean))]
-  const { data: profils } = await supabase
-    .from('profils')
-    .select('id, prenom, nom, email, telephone, adresse, code_postal, ville, pays')
-    .in('id', userIds.length > 0 ? userIds : ['none'])
+  const { data: profils } = userIds.length > 0
+    ? await supabase
+        .from('profils')
+        .select('id, prenom, nom, email, telephone, adresse, code_postal, ville, pays')
+        .in('id', userIds)
+    : { data: [] }
 
   const profilMap = {}
   ;(profils||[]).forEach(p => { profilMap[p.id] = p })
