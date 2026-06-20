@@ -443,7 +443,7 @@ export default function Admin() {
 
   // ── Cadeau anniversaire : config (message + lien PDF + actif) ──
   const chargerConfigCadeau = useCallback(async () => {
-    const { data } = await supabase.from('config_cadeau_anniversaire').select('message, chemin_pdf, actif').eq('id', 1).single()
+    const { data } = await supabase.from('config_cadeau_anniversaire').select('message, chemin_pdf, actif, date_activation').eq('id', 1).single()
     if (data) {
       setConfigCadeau(data)
       setMessageCadeauEdit(data.message || '')
@@ -472,10 +472,16 @@ export default function Admin() {
     if (!configCadeau) return
     setSavingCadeau(true)
     try {
-      const { error } = await supabase.from('config_cadeau_anniversaire').update({ actif: !configCadeau.actif, updated_at: new Date().toISOString() }).eq('id', 1)
+      const nouveauActif = !configCadeau.actif
+      const update = { actif: nouveauActif, updated_at: new Date().toISOString() }
+      if (nouveauActif) {
+        // Fige la date réelle d'activation (remplace la date "prévue" 1er juillet)
+        update.date_activation = new Date().toISOString().slice(0, 10)
+      }
+      const { error } = await supabase.from('config_cadeau_anniversaire').update(update).eq('id', 1)
       if (error) throw error
       await chargerConfigCadeau()
-      showToast(!configCadeau.actif ? 'Bouton Cadeau activé' : 'Bouton Cadeau désactivé')
+      showToast(nouveauActif ? 'Bouton Cadeau activé' : 'Bouton Cadeau désactivé')
     } catch (e) {
       showToast('Erreur lors de la sauvegarde', 'error')
     }
@@ -1412,7 +1418,9 @@ export default function Admin() {
                 <div>
                   <div style={{ fontSize:'13px', fontWeight:600, color:'#f0f0ff' }}>Statut du bouton</div>
                   <div style={{ fontSize:'11px', color: configCadeau.actif ? '#22c55e' : '#6a6a8a', marginTop:'2px' }}>
-                    {configCadeau.actif ? '● Actif — visible le jour de l\'anniversaire des usagers' : '○ Inactif — invisible pour tous les usagers'}
+                    {configCadeau.actif
+                      ? `● Actif — visible le jour de l'anniversaire des usagers${configCadeau.date_activation ? ` (activé le ${fmtDate(configCadeau.date_activation)})` : ''}`
+                      : '○ Inactif — invisible pour tous les usagers'}
                   </div>
                 </div>
                 <button
