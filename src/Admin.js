@@ -646,10 +646,14 @@ export default function Admin() {
 
   // ── Vue santé usagers ──
   const joursDepuis = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null
-  const scoreEngagement = (u) =>
-    (u.nb_commandes * 5) + (u.nb_illustrations * 1) + (u.nb_livres_recueils * 3) +
-    (u.nb_coloriages * 2) + (u.nb_commentaires * 1) + (u.nb_likes * 1) +
-    (u.nb_pensees * 2) + (u.nb_comments_pensees * 1) + (u.nb_likes_pensees * 1)
+  const scoreEngagement = (u) => {
+    const presence = Math.min(u.jours_presents_mois || 0, 30) // 1 pt par jour présent ce mois-ci, plafonné à 30
+    const coloriages = (u.nb_coloriages || 0) * 3
+    const pensees = (u.nb_pensees || 0) * 2
+    const commentaires = ((u.nb_commentaires || 0) + (u.nb_comments_pensees || 0)) * 2
+    const likes = ((u.nb_likes || 0) + (u.nb_likes_pensees || 0)) * 1
+    return presence + coloriages + pensees + commentaires + likes
+  }
 
   const usagersInactifs = [...usagers]
     .filter(u => {

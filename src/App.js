@@ -68,6 +68,16 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Tracking présence : enregistre le jour courant (1 ligne max par jour par usager, RLS limite à sa propre ligne)
+  React.useEffect(() => {
+    if (!session?.user?.id) return;
+    const aujourdHui = new Date().toISOString().split('T')[0];
+    supabase
+      .from('presence_jours')
+      .upsert({ user_id: session.user.id, date: aujourdHui }, { onConflict: 'user_id,date', ignoreDuplicates: true })
+      .then(() => {});
+  }, [session?.user?.id]);
+
   // Mobile : splash screen pendant le chargement
   if (isMobile && !splashTermine) return (
     <SplashScreen onTermine={() => setSplashTermine(true)} />

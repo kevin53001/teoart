@@ -82,7 +82,8 @@ async function actionStats() {
     { data: collectionLivresRaw },
     { data: livresRaw },
     { data: recueilsRaw },
-    { data: illustrationsRaw }
+    { data: illustrationsRaw },
+    { data: presenceJoursRaw }
   ] = await Promise.all([
     supabase.from('profils').select('id, prenom, nom, email, created_at'),
     supabase.from('commandes_articles').select('user_id, prix, created_at'),
@@ -97,7 +98,8 @@ async function actionStats() {
     supabase.from('collection_livres').select('user_id, item_id, item_type, j_ai'),
     supabase.from('livres').select('id').eq('statut', 'published'),
     supabase.from('recueils').select('id').eq('statut', 'published'),
-    supabase.from('illustrations').select('id, livres_ids, recueils_ids').eq('statut', 'published')
+    supabase.from('illustrations').select('id, livres_ids, recueils_ids').eq('statut', 'published'),
+    supabase.from('presence_jours').select('user_id, date').gte('date', debutMois.split('T')[0])
   ])
 
   // Inscrits
@@ -243,9 +245,14 @@ async function actionStats() {
     }
   }
 
+  // Jours de présence ce mois-ci par usager (1 ligne = 1 jour, déjà dédupliqué par la clé primaire)
+  const joursPresentsParUser = {}
+  ;(presenceJoursRaw||[]).forEach(p => { joursPresentsParUser[p.user_id] = (joursPresentsParUser[p.user_id]||0) + 1 })
+
   const usagers = (profils||[]).map(u => ({
     id: u.id, prenom: u.prenom, nom: u.nom, email: u.email, inscrit_le: u.created_at,
     derniere_connexion:    derniereConnexionParUser[u.id]  || null,
+    jours_presents_mois:   joursPresentsParUser[u.id]       || 0,
     nb_commandes:          commandesParUser[u.id]?.nb    || 0,
     ca_genere:             commandesParUser[u.id]?.total || 0,
     ca_mois:               caMoisParUser[u.id]           || 0,
