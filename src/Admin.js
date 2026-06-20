@@ -795,11 +795,11 @@ export default function Admin() {
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#38bdf8', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#38bdf8', display:'inline-block', boxShadow:'0 0 6px #38bdf8', flexShrink:0 }} />
-            <span>Inscrits aujourd'hui : <strong>{stats?.nb_inscrits_mois ?? '—'}</strong></span>
+            <span>Inscrits aujourd'hui : <strong>{stats?.nb_inscrits_aujourdhui ?? '—'}</strong></span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#f97316', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#f97316', display:'inline-block', boxShadow:'0 0 6px #f97316', flexShrink:0 }} />
-            <span>Visiteurs aujourd'hui : <strong>{stats?.nb_inscrits_mois ?? '—'}</strong></span>
+            <span>Visiteurs aujourd'hui : <strong>{stats?.nb_visiteurs_aujourdhui ?? '—'}</strong></span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#ef4444', marginBottom:'12px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#ef4444', display:'inline-block', boxShadow:'0 0 6px #ef4444', flexShrink:0 }} />

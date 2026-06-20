@@ -56,6 +56,8 @@ function emailLivraison({ prenom, nom, titre, note_client }) {
 // ─── STATS ─────────────────────────────────────────────────────
 async function actionStats() {
   const now = new Date()
+  const debutAujourdhui = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+  const aujourdhuiStr = debutAujourdhui.split('T')[0]
   const debutMois    = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const debutMoisM1  = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
   const finMoisM1    = debutMois
@@ -107,6 +109,10 @@ async function actionStats() {
   const nb_inscrits_mois  = mois(profils).length
   const nb_inscrits_m1    = moisM1(profils).length
   const nb_inscrits_m2    = moisM2(profils).length
+  const nb_inscrits_aujourdhui = dans(profils, debutAujourdhui).length
+
+  // Visiteurs aujourd'hui : usagers distincts présents dans presence_jours pour la date du jour
+  const nb_visiteurs_aujourdhui = (presenceJoursRaw||[]).filter(p => p.date === aujourdhuiStr).length
 
   // Commandes
   const cmds_mois          = mois(commandesRaw)
@@ -269,7 +275,8 @@ async function actionStats() {
 
   return {
     global: {
-      nb_inscrits, nb_inscrits_mois, nb_inscrits_m1, nb_inscrits_m2,
+      nb_inscrits, nb_inscrits_mois, nb_inscrits_m1, nb_inscrits_m2, nb_inscrits_aujourdhui,
+      nb_visiteurs_aujourdhui,
       nb_commandes, nb_commandes_mois,
       ca_total, ca_mois, ca_m1, ca_m2,
       panier_moyen_total, panier_moyen_mois,
