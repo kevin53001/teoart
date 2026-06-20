@@ -29,10 +29,40 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: `Paiement non confirmé (status: ${pi.status})` });
     }
 
-    // 2. Pour chaque article, récupérer le chemin fichier_pdf depuis Supabase
+    // 2. Calculer la répartition du montant réellement payé sur chaque article.
+    // On part des prix catalogue (prixBrut, envoyés par le client) comme poids,
+    // mais le total enregistré correspond TOUJOURS exactement à pi.amount_received
+    // (vérifié côté Stripe) — quelle que soit la promo appliquée côté panier
+    // (paliers, badges, PDF -75%...), donc le CA admin reste fiable même si la
+    // répartition par article est une approximation proportionnelle.
+    const montantPayeCentimes = pi.amount_received || pi.amount || 0;
+    const totalBrutCentimes = articles.reduce((s, a) => s + Math.round((a.prixBrut || 0) * 100), 0);
+
+    const prixParArticle = articles.map(a => {
+      const brutCentimes = Math.round((a.prixBrut || 0) * 100);
+      if (totalBrutCentimes <= 0) {
+        // fallback : répartition égale si aucun prix brut connu
+        return Math.round(montantPayeCentimes / articles.length) / 100;
+      }
+      return Math.round((brutCentimes / totalBrutCentimes) * montantPayeCentimes) / 100;
+    });
+
+    // Ajustement du dernier article pour compenser les arrondis (somme exacte)
+    if (prixParArticle.length > 0) {
+      const sommeCentimes = prixParArticle.reduce((s, p) => s + Math.round(p * 100), 0);
+      const ecartCentimes = montantPayeCentimes - sommeCentimes;
+      if (ecartCentimes !== 0) {
+        const dernier = prixParArticle.length - 1;
+        prixParArticle[dernier] = Math.round(prixParArticle[dernier] * 100 + ecartCentimes) / 100;
+      }
+    }
+
+    // 3. Pour chaque article, récupérer le chemin fichier_pdf depuis Supabase
     const lignes = [];
 
-    for (const article of articles) {
+    for (let i = 0; i < articles.length; i++) {
+      const article = articles[i];
+      const prix = prixParArticle[i];
       let fichierPdf = null;
 
       if (article.type === 'illustration') {
@@ -67,6 +97,7 @@ module.exports = async (req, res) => {
           nom:              article.nom,
           type:             article.type,
           fichier_pdf:      null,
+          prix,
           commande_recente: true,
         });
         continue;
@@ -78,6 +109,7 @@ module.exports = async (req, res) => {
         nom:              article.nom,
         type:             article.type,
         fichier_pdf:      fichierPdf, // chemin R2 brut, pas de signed URL
+        prix,
         commande_recente: true,
       });
     }

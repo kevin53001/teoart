@@ -1135,6 +1135,7 @@ export default function Panier() {
                 nom: a.nom,
                 type: a.type,
                 sousType: a.sousType || null,
+                prixBrut: a.type === 'relie' ? (a.prixRelie || 0) : (a.prix || 0),
               })),
             }),
           });
