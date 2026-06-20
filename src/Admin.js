@@ -294,10 +294,30 @@ export default function Admin() {
     setConversations(prev => prev.map(c => c.user_id === uid ? { ...c, non_lus: 0 } : c))
   }, [])
 
+  // ── Chat général (public) — épinglé en haut ──
+  const ouvrirGeneral = useCallback(async () => {
+    setConversationActive('__general__')
+    setLoadingChat(true)
+    const limite48h = new Date(Date.now() - 48 * 3600 * 1000).toISOString()
+    const { data } = await supabase.from('chat_general').select('*').gt('created_at', limite48h).order('created_at', { ascending: true })
+    setMessagesChat(data || [])
+    setLoadingChat(false)
+  }, [])
+
   const envoyerMessageAdmin = async () => {
     const texte = texteChat.trim()
     if (!texte || !conversationActive) return
     setTexteChat('')
+    if (conversationActive === '__general__') {
+      const { data } = await supabase.from('chat_general').insert({
+        user_id: userId,
+        pseudo: 'Kevin Teo\'Art',
+        avatar_url: null,
+        contenu: texte,
+      }).select().single()
+      if (data) setMessagesChat(prev => [...prev, data])
+      return
+    }
     const { data } = await supabase.from('chat_prive').insert({
       user_id: conversationActive,
       expediteur: 'admin',
@@ -312,7 +332,8 @@ export default function Admin() {
   }
 
   const supprimerMessageChat = async (id) => {
-    await supabase.from('chat_prive').delete().eq('id', id)
+    const table = conversationActive === '__general__' ? 'chat_general' : 'chat_prive'
+    await supabase.from(table).delete().eq('id', id)
     setMessagesChat(prev => prev.filter(m => m.id !== id))
   }
 
@@ -321,7 +342,8 @@ export default function Admin() {
   }, [userId, chargerConversations])
 
   useEffect(() => {
-    if (onglet === 'chat' && conversationActive) ouvrirConversation(conversationActive)
+    if (onglet === 'chat' && conversationActive === '__general__') ouvrirGeneral()
+    else if (onglet === 'chat' && conversationActive) ouvrirConversation(conversationActive)
   }, [onglet]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Realtime global : tout nouveau message privé met à jour la liste/badge
@@ -336,18 +358,22 @@ export default function Admin() {
     return () => { supabase.removeChannel(channel) }
   }, [userId, chargerConversations])
 
-  // Realtime : nouveaux messages dans la conversation ouverte
+  // Realtime : nouveaux messages dans la conversation ouverte (privée ou générale)
   useEffect(() => {
     if (!conversationActive) return
+    const estGeneral = conversationActive === '__general__'
     const channel = supabase
-      .channel(`admin_chat_prive_${conversationActive}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_prive', filter: `user_id=eq.${conversationActive}` }, (payload) => {
-        const msg = payload.new
-        setMessagesChat(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
-        if (msg.expediteur === 'user') {
-          supabase.from('chat_prive').update({ lu_par_admin: true }).eq('id', msg.id)
-        }
-      })
+      .channel(`admin_chat_${conversationActive}`)
+      .on('postgres_changes', estGeneral
+        ? { event: 'INSERT', schema: 'public', table: 'chat_general' }
+        : { event: 'INSERT', schema: 'public', table: 'chat_prive', filter: `user_id=eq.${conversationActive}` },
+        (payload) => {
+          const msg = payload.new
+          setMessagesChat(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+          if (!estGeneral && msg.expediteur === 'user') {
+            supabase.from('chat_prive').update({ lu_par_admin: true }).eq('id', msg.id)
+          }
+        })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [conversationActive])
@@ -634,6 +660,15 @@ export default function Admin() {
               </div>
               )}
 
+              {nbNonLusChat > 0 && (
+                <div style={{ background:'rgba(255,62,181,0.08)', border:'1px solid #ff3eb555', borderRadius:'10px', padding:'12px 16px', marginBottom:'12px', display:'flex', alignItems:'center', gap:'10px' }}>
+                  <span style={{ background:'#ff3eb5', color:'#000', fontSize:'12px', fontWeight:700, borderRadius:'10px', minWidth:'22px', height:'22px', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 6px', flexShrink:0 }}>{nbNonLusChat}</span>
+                  <span style={{ fontSize:'12px', color:'#ff3eb5' }}>
+                    {nbNonLusChat > 1 ? `conversations privées contiennent des messages non lus` : `conversation privée contient un message non lu`}
+                  </span>
+                </div>
+              )}
+
               <div style={s.grid2(isMobile)}>
                 {/* Commandes en attente */}
                 <div>
@@ -880,8 +915,8 @@ export default function Admin() {
                 <div style={{ display:'flex', flexDirection:'column', height:'calc(100vh - 140px)' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'8px 4px', borderBottom:'1px solid #ffffff0a', marginBottom:'10px' }}>
                     <button style={s.btnGhost} onClick={() => setConversationActive(null)}>← Retour</button>
-                    <span style={{ fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>
-                      {conversations.find(c => c.user_id === conversationActive)?.pseudo || '...'}
+                    <span style={{ fontSize:'13px', fontWeight:500, color: conversationActive === '__general__' ? '#00e5ff' : '#f0f0ff' }}>
+                      {conversationActive === '__general__' ? 'Chat Général' : (conversations.find(c => c.user_id === conversationActive)?.pseudo || '...')}
                     </span>
                   </div>
                   <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:'8px', padding:'4px' }}>
@@ -889,9 +924,14 @@ export default function Admin() {
                       <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Chargement...</div>
                     ) : messagesChat.length === 0 ? (
                       <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Aucun message.</div>
-                    ) : messagesChat.map(m => (
-                      <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: m.expediteur === 'admin' ? 'flex-end' : 'flex-start' }}>
-                        <div style={{ maxWidth:'80%', background: m.expediteur === 'admin' ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${m.expediteur === 'admin' ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
+                    ) : messagesChat.map(m => {
+                      const estMoi = conversationActive === '__general__' ? m.user_id === userId : m.expediteur === 'admin'
+                      return (
+                      <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: estMoi ? 'flex-end' : 'flex-start' }}>
+                        {conversationActive === '__general__' && (
+                          <span style={{ fontSize:'10px', color:'#6a6a8a', marginBottom:'2px' }}>{m.pseudo}</span>
+                        )}
+                        <div style={{ maxWidth:'80%', background: estMoi ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${estMoi ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
                           {m.contenu}
                         </div>
                         <div style={{ display:'flex', alignItems:'center', gap:'6px', marginTop:'3px' }}>
@@ -899,7 +939,8 @@ export default function Admin() {
                           <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer' }} onClick={() => supprimerMessageChat(m.id)}>Supprimer</span>
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                     <div ref={finChatRef} />
                   </div>
                   <div style={{ display:'flex', gap:'8px', paddingTop:'10px' }}>
@@ -910,6 +951,10 @@ export default function Admin() {
               ) : (
                 /* Liste — mobile */
                 <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  <div onClick={ouvrirGeneral} style={{ background:'rgba(0,229,255,0.05)', border:'1px solid #00e5ff44', borderRadius:'10px', padding:'12px 14px', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
+                    <i className="ti ti-message-2" style={{ fontSize:'15px', color:'#00e5ff' }} aria-hidden="true" />
+                    <span style={{ fontSize:'13px', fontWeight:600, color:'#00e5ff' }}>Chat Général</span>
+                  </div>
                   {conversations.length === 0 ? (
                     <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px' }}>Aucune conversation pour l'instant.</div>
                   ) : conversations.map(c => (
@@ -929,6 +974,14 @@ export default function Admin() {
               /* Desktop — 2 colonnes */
               <div style={{ display:'flex', gap:'14px', height:'calc(100vh - 110px)' }}>
                 <div style={{ width:'260px', flexShrink:0, ...s.tableWrap, overflowY:'auto' }}>
+                  <div onClick={ouvrirGeneral}
+                    style={{ padding:'12px 14px', cursor:'pointer', borderBottom:'1px solid #00e5ff22', background: conversationActive === '__general__' ? 'rgba(0,229,255,0.1)' : 'rgba(0,229,255,0.03)', display:'flex', alignItems:'center', gap:'8px' }}
+                    onMouseEnter={e => { if (conversationActive !== '__general__') e.currentTarget.style.background = 'rgba(0,229,255,0.07)' }}
+                    onMouseLeave={e => { if (conversationActive !== '__general__') e.currentTarget.style.background = 'rgba(0,229,255,0.03)' }}
+                  >
+                    <i className="ti ti-message-2" style={{ fontSize:'14px', color:'#00e5ff' }} aria-hidden="true" />
+                    <span style={{ fontSize:'12px', fontWeight:600, color:'#00e5ff' }}>Chat Général</span>
+                  </div>
                   {conversations.length === 0 ? (
                     <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px 16px' }}>Aucune conversation pour l'instant.</div>
                   ) : conversations.map(c => (
@@ -952,17 +1005,22 @@ export default function Admin() {
                     <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#44445a', fontSize:'12px' }}>Sélectionne une conversation</div>
                   ) : (
                     <>
-                      <div style={{ padding:'12px 16px', borderBottom:'1px solid #ffffff0a', fontSize:'13px', fontWeight:500, color:'#f0f0ff' }}>
-                        {conversations.find(c => c.user_id === conversationActive)?.pseudo}
+                      <div style={{ padding:'12px 16px', borderBottom:'1px solid #ffffff0a', fontSize:'13px', fontWeight:500, color: conversationActive === '__general__' ? '#00e5ff' : '#f0f0ff' }}>
+                        {conversationActive === '__general__' ? 'Chat Général' : conversations.find(c => c.user_id === conversationActive)?.pseudo}
                       </div>
                       <div style={{ flex:1, overflowY:'auto', display:'flex', flexDirection:'column', gap:'8px', padding:'14px' }}>
                         {loadingChat ? (
                           <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Chargement...</div>
                         ) : messagesChat.length === 0 ? (
                           <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Aucun message.</div>
-                        ) : messagesChat.map(m => (
-                          <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: m.expediteur === 'admin' ? 'flex-end' : 'flex-start' }}>
-                            <div style={{ maxWidth:'60%', background: m.expediteur === 'admin' ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${m.expediteur === 'admin' ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
+                        ) : messagesChat.map(m => {
+                          const estMoi = conversationActive === '__general__' ? m.user_id === userId : m.expediteur === 'admin'
+                          return (
+                          <div key={m.id} style={{ display:'flex', flexDirection:'column', alignItems: estMoi ? 'flex-end' : 'flex-start' }}>
+                            {conversationActive === '__general__' && (
+                              <span style={{ fontSize:'10px', color:'#6a6a8a', marginBottom:'2px' }}>{m.pseudo}</span>
+                            )}
+                            <div style={{ maxWidth:'60%', background: estMoi ? 'rgba(0,229,255,0.12)' : 'rgba(255,255,255,0.05)', border:`1px solid ${estMoi ? '#00e5ff44' : '#ffffff18'}`, borderRadius:'10px', padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', wordBreak:'break-word' }}>
                               {m.contenu}
                             </div>
                             <div style={{ display:'flex', alignItems:'center', gap:'8px', marginTop:'3px' }}>
@@ -970,7 +1028,8 @@ export default function Admin() {
                               <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer' }} onClick={() => supprimerMessageChat(m.id)}>Supprimer</span>
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                         <div ref={finChatRef} />
                       </div>
                       <div style={{ display:'flex', gap:'8px', padding:'12px 16px', borderTop:'1px solid #ffffff0a' }}>
