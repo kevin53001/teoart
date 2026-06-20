@@ -9,6 +9,7 @@ import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -2101,7 +2102,6 @@ function MonCompte() {
     );
   };
   const pctColo = stats.jAi > 0 ? (stats.colorie / stats.jAi) * 100 : 0;
-  const pctColoBadge = stats.totalIllus > 0 ? (stats.colorie / stats.totalIllus) * 100 : 0;
   const illusManquantes = stats.totalIllus - stats.jAi;
   const pctJeVeux = illusManquantes > 0 ? (stats.jeVeux / illusManquantes) * 100 : 0;
 
@@ -2157,6 +2157,7 @@ function MonCompte() {
 
       <BoutonsFlottants />
       <Cloche />
+      <Tchat />
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
@@ -2304,7 +2305,7 @@ function MonCompte() {
               {onglet === 'commandes' && <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,62,181,0.15)', borderRadius: '16px', padding: '20px' }}><SectionMesCommandes userId={userId} /></div>}
 
               {/* ── Badges hexagonaux — toujours en bas ── */}
-              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColoBadge} userId={userId} />
+              <BadgesHexagonaux pctJai={pctJai} pctColo={pctColo} userId={userId} />
             </div>
           )}
         </div>

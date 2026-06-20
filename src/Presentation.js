@@ -7,6 +7,7 @@ import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -251,6 +252,7 @@ function Presentation() {
 
       <BoutonsFlottants />
       <Cloche hidden={!!popupGlobal} />
+      <Tchat hidden={!!popupGlobal} />
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />

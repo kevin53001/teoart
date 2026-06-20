@@ -4,6 +4,7 @@ import { supabase } from './supabase';
 import { usePanier } from './PanierContext';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 import BandeLegale from './BandeLegale';
 import OngletsLateraux from './OngletsLateraux';
 import PopupFicheIllu from './PopupFicheIllu';
@@ -38,123 +39,6 @@ function getMoisPatreonDisponibles() {
   if (anneeCourante > 2026) return MOIS_FR.map(m => `Patreon - ${m} 2026`);
   return MOIS_FR.slice(0, moisCourant + 1).map(m => `Patreon - ${m} 2026`);
 }
-
-// ─── Texte CGV (synchronisé avec BandeLegale.js) ─────────────────────────────
-const TEXTE_CGV = `Dernière mise à jour : Juin 2026
-
-
-OBJET
-
-Les présentes Conditions Générales de Vente régissent les ventes réalisées sur le site KevinTeoArt.fr. Toute commande passée sur le site implique l'acceptation pleine et entière des présentes conditions.
-
-
-PRODUITS PROPOSÉS
-
-• Illustrations numériques à colorier
-• Livres numériques
-• Recueils numériques
-• Livres reliés imprimés à la demande
-• Recueils reliés imprimés à la demande
-
-
-PRIX
-
-Les prix sont indiqués en euros (€), toutes taxes comprises. Pour les produits numériques, le prix affiché correspond au montant total à payer. Pour les livres et recueils reliés, les frais de livraison sont inclus dans le prix affiché.
-
-Kevin Teo'Art se réserve le droit de modifier ses tarifs à tout moment. Les produits sont facturés au tarif en vigueur au moment de la validation de la commande.
-
-
-PROMOTIONS ET RÉDUCTIONS
-
-Des réductions automatiques peuvent s'appliquer à votre commande selon la quantité d'articles achetés (illustrations, livres, recueils) et selon les badges de fidélité obtenus via votre activité sur le site. Ces réductions sont calculées et affichées directement dans le panier.
-
-Le détail complet du fonctionnement — paliers, taux, conditions d'obtention des badges et règles de cumul — est disponible dans la section Présentation du site.
-
-
-CRÉATION D'UN COMPTE UTILISATEUR
-
-Certaines fonctionnalités du site nécessitent la création d'un compte utilisateur. L'utilisateur s'engage à fournir des informations exactes et à jour lors de son inscription. L'utilisateur est responsable de la confidentialité de ses identifiants.
-
-Kevin Teo'Art se réserve le droit de suspendre ou supprimer tout compte en cas d'utilisation frauduleuse ou contraire aux présentes conditions.
-
-
-PAIEMENT
-
-Le paiement s'effectue via les moyens de paiement suivants :
-• Carte bancaire (Visa, Mastercard, etc.) via Stripe
-• Apple Pay et Google Pay via Stripe
-• PayPal (disponible prochainement)
-
-La commande est définitive après validation du paiement. Une confirmation de commande est envoyée à l'adresse e-mail renseignée par l'utilisateur.
-
-
-LIVRAISON DES PRODUITS NUMÉRIQUES
-
-Les produits numériques sont disponibles immédiatement après validation du paiement. Les liens de téléchargement sont accessibles depuis le compte utilisateur. L'utilisateur est responsable de la conservation des fichiers téléchargés.
-
-
-LIVRES ET RECUEILS RELIÉS
-
-Les livres et recueils reliés sont imprimés à la demande par Amazon KDP. Kevin Teo'Art prend en charge l'ensemble de la commande de A à Z : passation de la commande auprès d'Amazon, suivi de fabrication, transmission des informations de livraison et service après-vente. Kevin Teo'Art est l'interlocuteur unique du client pour toute la durée de la commande.
-
-Les commandes sont actuellement limitées aux pays européens desservis par Amazon KDP, à l'exclusion de la Suisse, de Monaco et d'Andorre.
-
-
-DÉLAIS DE FABRICATION ET LIVRAISON
-
-Les délais indiqués sont donnés à titre indicatif et peuvent varier selon les contraintes de fabrication, de transport ou les périodes de forte activité. Kevin Teo'Art ne peut être tenu responsable de retards imputables au transporteur ou au prestataire d'impression.
-
-
-COLIS PERDU, ENDOMMAGÉ OU NON CONFORME
-
-En cas de problème à réception, le client doit contacter Kevin Teo'Art dans les meilleurs délais. Des justificatifs (photographies) pourront être demandés. Après étude du dossier, Kevin Teo'Art pourra procéder au remboursement, à la réimpression ou proposer toute autre solution adaptée.
-
-
-DROIT DE RÉTRACTATION
-
-Pour les produits numériques :
-Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation ne s'applique pas aux contenus numériques dès lors que l'utilisateur a expressément consenti à l'exécution immédiate du contrat et renoncé à son droit de rétractation avant le téléchargement. Cette renonciation est recueillie explicitement lors de la validation de la commande (case à cocher obligatoire). Aucun remboursement ne pourra être accordé après téléchargement.
-
-Pour les livres et recueils reliés :
-Le client dispose d'un délai de 14 jours à compter de la réception pour exercer son droit de rétractation. Toute demande doit être adressée à Kevin Teo'Art via les coordonnées figurant sur le site. Les frais de retour sont pris en charge par Amazon KDP ; le client devra simplement déposer le colis selon les instructions communiquées. Le remboursement sera effectué après confirmation du dépôt du colis retour, conformément à la réglementation applicable.
-
-
-UTILISATION DES ILLUSTRATIONS ET FICHIERS NUMÉRIQUES
-
-Les illustrations, livres et recueils numériques sont destinés exclusivement à un usage personnel. Sont notamment interdits : la revente des fichiers, le partage avec des tiers, la diffusion publique, l'utilisation commerciale et la redistribution même partielle.
-
-Toute utilisation commerciale nécessite une autorisation écrite préalable de Kevin Teo'Art.
-
-
-CONTENUS PUBLIÉS PAR LES UTILISATEURS
-
-En publiant un contenu (coloriage, commentaire...), l'utilisateur autorise Kevin Teo'Art à l'afficher et le diffuser dans le cadre du fonctionnement du site. L'utilisateur conserve la propriété de ses créations.
-
-
-MODÉRATION
-
-Kevin Teo'Art se réserve le droit de supprimer sans préavis tout contenu illégal, injurieux, diffamatoire, discriminatoire, haineux, publicitaire, trompeur ou contraire à l'esprit du site.
-
-
-PROPRIÉTÉ INTELLECTUELLE
-
-L'ensemble des contenus du site est protégé par le droit d'auteur. Toute reproduction ou exploitation sans autorisation écrite préalable est interdite.
-
-
-RESPONSABILITÉ
-
-Kevin Teo'Art ne pourra être tenu responsable en cas d'interruption temporaire du service, de dysfonctionnement indépendant de sa volonté, d'incident technique lié à un prestataire tiers ou de force majeure.
-
-
-MÉDIATION
-
-En cas de litige non résolu à l'amiable, le client peut recourir gratuitement à la plateforme européenne de règlement en ligne des litiges :
-https://ec.europa.eu/consumers/odr
-
-
-DROIT APPLICABLE
-
-Les présentes CGV sont soumises au droit français. Tout litige relève des juridictions françaises compétentes.`;
 
 function LogoPremium({ onClick, isMobile, L }) {
   const ref = React.useRef(null);
@@ -630,7 +514,6 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, 
   const aPdf = articles.some(a => a.type !== 'relie');
   const aRelie = articles.some(a => a.type === 'relie');
   const peutContinuer = cgvAcceptees && (!aPdf || retractation);
-  const [popupCgv, setPopupCgv] = React.useState(false);
 
   const labelType = (type) => {
     if (type === 'illustration') return 'Illustration';
@@ -653,34 +536,9 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-      {/* Popup CGV */}
-      {popupCgv && (
-        <div
-          onClick={() => setPopupCgv(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: 'rgba(8,8,8,0.98)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-          >
-            {/* Titre sticky */}
-            <div style={{ position: 'sticky', top: 0, background: 'linear-gradient(135deg, rgba(0,212,212,0.35) 0%, rgba(10,10,10,0.98) 60%, rgba(0,212,212,0.15) 100%)', borderBottom: '1px solid rgba(0,212,212,0.3)', padding: '14px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} />
-              <span style={{ fontFamily: 'var(--font-titre)', fontSize: isMobile ? '16px' : '20px', color: '#00D4D4', textShadow: '0 0 12px rgba(0,212,212,0.5)' }}>
-                Conditions Générales de Vente
-              </span>
-              <button onClick={() => setPopupCgv(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>✕</button>
-            </div>
-            {/* Texte scrollable */}
-            <div style={{ overflowY: 'auto', padding: '20px 24px 28px', color: 'rgba(255,255,255,0.82)', fontFamily: 'var(--font-texte)', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {TEXTE_CGV}
-            </div>
-          </div>
-        </div>
-      )}
-
       <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>Récapitulatif final</h2>
+
+      {/* Articles — même ordre et regroupement que l'étape 1 */}
       <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Articles</p>
         {(() => {
@@ -825,13 +683,7 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, 
             {cgvAcceptees && <span style={{ color: '#000', fontSize: '13px', fontWeight: 'bold', lineHeight: 1 }}>✓</span>}
           </div>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', lineHeight: '1.6' }}>
-            J'ai lu et j'accepte les{' '}
-            <span
-              onClick={e => { e.stopPropagation(); setPopupCgv(true); }}
-              style={{ color: '#00d4d4', textDecoration: 'underline', cursor: 'pointer', fontWeight: '600' }}
-            >
-              Conditions Générales de Vente
-            </span>.{' '}
+            J'ai lu et j'accepte les <strong style={{ color: '#fff' }}>Conditions Générales de Vente</strong>.{' '}
             <strong style={{ color: '#00d4d4' }}>Obligatoire pour finaliser la commande.</strong>
           </p>
         </div>
@@ -1443,6 +1295,7 @@ export default function Panier() {
 
       <BoutonsFlottants />
       <Cloche />
+      <Tchat />
 
       {/* Bannière haute */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>

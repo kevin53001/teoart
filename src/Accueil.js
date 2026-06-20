@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 import PopupFicheIllu from './PopupFicheIllu';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -745,6 +746,7 @@ function Accueil() {
 
       {/* Cloche */}
       <Cloche hidden={anyPopup} />
+      <Tchat hidden={anyPopup} />
 
       {/* Bannière haut */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>

@@ -7,6 +7,7 @@ import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -1034,6 +1035,7 @@ function Pensees() {
       {/* ─── BOUTON DÉCO + SCROLL-TO-TOP ─── */}
       <BoutonsFlottants />
       <Cloche />
+      <Tchat />
 
       {/* ─── BANNIÈRE HAUT ─── */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>

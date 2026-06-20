@@ -7,6 +7,7 @@ import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -344,9 +345,9 @@ function Catalogue() {
     }
     if (annees.length > 0 && !annees.includes(i.annee)) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
-    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_achete) return false;
+    if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto && !collection[i.id]?.j_ai_achete) return false;
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
-    if (filtreCollection === 'japas' && (collection[i.id]?.j_ai || collection[i.id]?.j_ai_achete)) return false;
+    if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
     if (filtreCollection === 'colorie' && !coloriages[i.id]) return false;
     if (filtreNouveautes && refDateNouveautes) {
       if (!i.date_publication || new Date(i.date_publication) <= refDateNouveautes) return false;
@@ -477,6 +478,7 @@ function Catalogue() {
 
       <BoutonsFlottants />
       <Cloche />
+      <Tchat />
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />

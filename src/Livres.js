@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
+import Tchat from './Tchat';
 import PopupFicheIllu from './PopupFicheIllu';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -751,6 +752,7 @@ function Livres() {
 
       <BoutonsFlottants />
       <Cloche />
+      <Tchat />
 
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '24px 0 0', position: 'relative', zIndex: 2 }}>
         <img src={`${R2}/site/banniere.jpg`} alt="bannière" style={{ maxWidth: BANNER_MAX, width: '92%', borderRadius: '14px', display: 'block' }} />
