@@ -9,6 +9,8 @@ const CONFIG_TYPE = {
   nouvelle_illustration:    { couleur: '#00d4d4', icone: `${R2}/site/pastille_categories.png` },
   nouveau_livre_pdf:        { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
   nouveau_livre_relie:      { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_recueil_pdf:      { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_recueil_relie:    { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
   like_coloriage:           { couleur: '#ff3eb5', icone: `${R2}/site/pastille_colos.png`      },
   commentaire_coloriage:    { couleur: '#ffd250', icone: `${R2}/site/pastille_colos.png`      },
   badge_obtenu:             { couleur: '#00cc66', icone: `${R2}/site/pastille_mon_compte.png` },
@@ -437,6 +439,8 @@ function Cloche({ hidden = false }) {
         break;
       case 'nouveau_livre_pdf':
       case 'nouveau_livre_relie':
+      case 'nouveau_recueil_pdf':
+      case 'nouveau_recueil_relie':
         navigate('/livres', { state: { ouvrirItem: notif.contenu?.item_id, itemType: notif.contenu?.item_type } });
         break;
       case 'like_coloriage':
