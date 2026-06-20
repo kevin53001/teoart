@@ -371,6 +371,24 @@ function PenseeSocial({ pensee, userId, pseudo }) {
     } else {
       await supabase.from('likes_pensees').insert({ pensee_id: penseeId, user_id: userId });
       setLikes(prev => [...prev, { user_id: userId }]);
+      // Notif like pour le propriétaire de la pensée (pas pour soi-même) — regroupée tant que non lue
+      const proprietaireId = pensee?.user_id;
+      if (proprietaireId && proprietaireId !== userId) {
+        const { data: existante } = await supabase.from('notifications')
+          .select('id, contenu').eq('user_id', proprietaireId).eq('type', 'like_pensee').eq('lu', false)
+          .order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (existante) {
+          const nb = (existante.contenu?.count || 1) + 1;
+          await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, pensee_id: penseeId, pseudo: pseudo || 'Anonyme' }, created_at: new Date().toISOString() }).eq('id', existante.id);
+        } else {
+          await supabase.from('notifications').insert({
+            user_id: proprietaireId,
+            type: 'like_pensee',
+            contenu: { pensee_id: penseeId, count: 1, pseudo: pseudo || 'Anonyme' },
+            lu: false,
+          });
+        }
+      }
     }
   };
 
@@ -386,6 +404,24 @@ function PenseeSocial({ pensee, userId, pseudo }) {
       setCommentaires(prev => [...prev, { ...data, pseudo: pseudo || 'Anonyme' }]);
       setTexte('');
       setParentId(null);
+    }
+    // Notif commentaire pour le propriétaire de la pensée (pas pour soi-même) — regroupée tant que non lue
+    const proprietaireId = pensee?.user_id;
+    if (proprietaireId && proprietaireId !== userId) {
+      const { data: existante } = await supabase.from('notifications')
+        .select('id, contenu').eq('user_id', proprietaireId).eq('type', 'commentaire_pensee').eq('lu', false)
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (existante) {
+        const nb = (existante.contenu?.count || 1) + 1;
+        await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, pensee_id: penseeId, pseudo: pseudo || 'Anonyme' }, created_at: new Date().toISOString() }).eq('id', existante.id);
+      } else {
+        await supabase.from('notifications').insert({
+          user_id: proprietaireId,
+          type: 'commentaire_pensee',
+          contenu: { pensee_id: penseeId, count: 1, pseudo: pseudo || 'Anonyme' },
+          lu: false,
+        });
+      }
     }
     setEnvoi(false);
   };
@@ -600,6 +636,11 @@ function Pensees() {
         if (droite[i] !== undefined) reorg.push(droite[i]);
       }
       setPensees(reorg.length ? reorg : raw);
+      // Ouverture directe d'une pensée précise si on arrive depuis une notif like/commentaire
+      if (location.state?.penseeId) {
+        const cible = (reorg.length ? reorg : raw).find(p => p.id === location.state.penseeId);
+        if (cible) setPopup(cible);
+      }
       if (user) {
         const { data: vuesData } = await supabase.from('pensees_vues').select('pensee_id').eq('user_id', user.id);
         const vuesMap = {};

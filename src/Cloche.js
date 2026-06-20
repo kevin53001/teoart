@@ -6,17 +6,19 @@ import { supabase } from './supabase';
 const R2 = 'https://images.kevinteoart.fr';
 
 const CONFIG_TYPE = {
-  nouvelle_illustration:    { couleur: '#00d4d4', icone: `${R2}/site/pastille_categories.png` },
-  nouveau_livre_pdf:        { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
-  nouveau_livre_relie:      { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
-  nouveau_recueil_pdf:      { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
-  nouveau_recueil_relie:    { couleur: '#a78bfa', icone: `${R2}/site/pastille_livres.png`     },
-  like_coloriage:           { couleur: '#ff3eb5', icone: `${R2}/site/pastille_colos.png`      },
-  commentaire_coloriage:    { couleur: '#ffd250', icone: `${R2}/site/pastille_colos.png`      },
-  badge_obtenu:             { couleur: '#00cc66', icone: `${R2}/site/pastille_mon_compte.png` },
-  nouvelle_pensee:          { couleur: '#a78bfa', icone: `${R2}/site/pastille_pensees.png`    },
-  nouvelle_presentation:    { couleur: '#00d4d4', icone: `${R2}/site/pastille_logomini.png`   },
-  nouveau_coloriage_partage:{ couleur: '#00d4d4', icone: `${R2}/site/pastille_colos.png`      },
+  nouvelle_illustration:    { couleur: '#1D9E75', icone: `${R2}/site/pastille_categories.png` },
+  nouveau_livre_pdf:        { couleur: '#7F77DD', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_livre_relie:      { couleur: '#7F77DD', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_recueil_pdf:      { couleur: '#D85A30', icone: `${R2}/site/pastille_livres.png`     },
+  nouveau_recueil_relie:    { couleur: '#D85A30', icone: `${R2}/site/pastille_livres.png`     },
+  like_coloriage:           { couleur: '#D4537E', icone: `${R2}/site/pastille_colos.png`      },
+  commentaire_coloriage:    { couleur: '#D4537E', icone: `${R2}/site/pastille_colos.png`      },
+  nouveau_coloriage_partage:{ couleur: '#D4537E', icone: `${R2}/site/pastille_colos.png`      },
+  badge_obtenu:             { couleur: '#639922', icone: `${R2}/site/pastille_mon_compte.png` },
+  nouvelle_pensee:          { couleur: '#BA7517', icone: `${R2}/site/pastille_pensees.png`    },
+  like_pensee:              { couleur: '#BA7517', icone: `${R2}/site/pastille_pensees.png`    },
+  commentaire_pensee:       { couleur: '#BA7517', icone: `${R2}/site/pastille_pensees.png`    },
+  nouvelle_presentation:    { couleur: '#378ADD', icone: `${R2}/site/pastille_logomini.png`   },
 };
 
 function dateRelative(iso) {
@@ -48,9 +50,12 @@ function texteNotif(n) {
     case 'nouveau_recueil_relie':
       return `Amazon est prêt à te livrer le nouveau recueil ${c.nom || '...'}, à un prix défiant toute concurrence. Ça te tente ?`;
     case 'like_coloriage':
+      return nb === 1
+        ? `${c.pseudo || 'Quelqu\u2019un'} a craqué pour ton coloriage`
+        : `Tes coloriages font un carton dans la communauté`;
     case 'commentaire_coloriage':
       return nb === 1
-        ? `Des gens ont craqué pour ton coloriage`
+        ? `${c.pseudo || 'Quelqu\u2019un'} a commenté ton coloriage`
         : `Tes coloriages font un carton dans la communauté`;
     case 'badge_obtenu':
       return `Badge ${c.niveau} dans la poche !${c.remise ? ` -${c.remise}% en cadeau (sur ta prochaine commande)` : ''}`;
@@ -58,6 +63,14 @@ function texteNotif(n) {
       return nb === 1
         ? `Nouvelle pensée dans la nature`
         : `${nb} nouvelles pensées à découvrir`;
+    case 'like_pensee':
+      return nb === 1
+        ? `${c.pseudo || 'Quelqu\u2019un'} a aimé ta pensée`
+        : `Tes pensées font un carton dans la communauté`;
+    case 'commentaire_pensee':
+      return nb === 1
+        ? `${c.pseudo || 'Quelqu\u2019un'} a commenté ta pensée`
+        : `Tes pensées font un carton dans la communauté`;
     case 'nouvelle_presentation':
       return `Kevin a retouché sa vitrine : ${c.derniere_titre || '...'}`;
     case 'nouveau_coloriage_partage':
@@ -130,12 +143,12 @@ function SocialColo({ coloId, userId, userPseudo }) {
           .order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (existante) {
           const nb = (existante.contenu?.count || 1) + 1;
-          await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId }, created_at: new Date().toISOString() }).eq('id', existante.id);
+          await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId, pseudo: userPseudo }, created_at: new Date().toISOString() }).eq('id', existante.id);
         } else {
           await supabase.from('notifications').insert({
             user_id: colo.user_id,
             type: 'like_coloriage',
-            contenu: { coloriage_id: coloId, count: 1 },
+            contenu: { coloriage_id: coloId, count: 1, pseudo: userPseudo },
             lu: false,
           });
         }
@@ -158,12 +171,12 @@ function SocialColo({ coloId, userId, userPseudo }) {
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (existante) {
         const nb = (existante.contenu?.count || 1) + 1;
-        await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId }, created_at: new Date().toISOString() }).eq('id', existante.id);
+        await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId, pseudo: userPseudo }, created_at: new Date().toISOString() }).eq('id', existante.id);
       } else {
         await supabase.from('notifications').insert({
           user_id: colo.user_id,
           type: 'commentaire_coloriage',
-          contenu: { coloriage_id: coloId, count: 1 },
+          contenu: { coloriage_id: coloId, count: 1, pseudo: userPseudo },
           lu: false,
         });
       }
@@ -453,6 +466,10 @@ function Cloche({ hidden = false }) {
           await supabase.from('profils').update({ dernier_vu_pensees: maintenant }).eq('id', userId);
         }
         navigate('/pensees');
+        break;
+      case 'like_pensee':
+      case 'commentaire_pensee':
+        navigate('/pensees', { state: { penseeId: notif.contenu?.pensee_id } });
         break;
       case 'nouvelle_presentation':
         if (userId) {
