@@ -28,6 +28,8 @@ const GAP = 6;
 const SPEED = '80s';
 
 const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
+const SOUS_CAT_KAWAII = ['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'];
+const PATREON_TOUT = '__patreon_tout__';
 
 // Helpers utilisés par IlluCard (cheminVersUrl, getVisuelsOrdonnes, getVisuelPresentation)
 function cheminVersUrl(chemin) {
@@ -133,7 +135,9 @@ function Catalogue() {
   const [loading, setLoading] = React.useState(true);
   const [categorie, setCategorie] = React.useState('Tout');
   const [sousCategorie, setSousCategorie] = React.useState(''); // POINT 10/11
-  const [annees, setAnnees] = React.useState([]);
+  const [anneeFiltre, setAnneeFiltre] = React.useState(null);
+  const [openCapsule, setOpenCapsule] = React.useState(null); // 'annee' | 'kawaii' | 'patreon' | 'categorie' | 'collection' | null
+  const [igniteKey, setIgniteKey] = React.useState(null);
   const [showCategories, setShowCategories] = React.useState(false);
   const [showPatreonMenu, setShowPatreonMenu] = React.useState(false);
   const [showKawaiiMenu, setShowKawaiiMenu] = React.useState(false);
@@ -178,7 +182,7 @@ function Catalogue() {
 
   // Fermer dropdowns au clic extérieur
   React.useEffect(() => {
-    const handler = () => { setShowCategories(false); setShowPatreonMenu(false); };
+    const handler = () => { setShowCategories(false); setShowPatreonMenu(false); setOpenCapsule(null); };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
@@ -314,25 +318,71 @@ function Catalogue() {
   };
 
   const handleColoUploaded = (illuId) => { setColoriages(prev => ({ ...prev, [illuId]: true })); };
-  const toggleAnnee = (a) => { setAnnees(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]); setPage(1); };
+  // Un seul des 5 filtres (Années / Kawaii / Patreon / Catégorie / Collection) actif à la fois :
+  // sélectionner l'un éteint et réinitialise automatiquement les autres.
+  const resetAutresFiltres = (sauf) => {
+    if (sauf !== 'annee') setAnneeFiltre(null);
+    if (sauf !== 'collection') setFiltreCollection('tout');
+    if (sauf !== 'categorie') { setCategorie('Tout'); setSousCategorie(''); }
+  };
+  const ignite = (key) => { setIgniteKey(key); setTimeout(() => setIgniteKey(null), 400); };
 
-  // Sélection catégorie normale
+  // Sélection catégorie normale (utilisée par la nav du haut ET par la capsule "Catégorie")
   const selectionnerCategorie = (cat) => {
-    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
+    resetAutresFiltres('categorie');
+    setCategorie(cat); setSousCategorie(''); setShowCategories(false); setShowPatreonMenu(false); setOpenCapsule(null); setPage(1);
+    if (cat !== 'Tout') ignite(cat === 'Kawaii/Chibi' ? 'kawaii' : 'categorie');
   };
 
-  // Sélection mois Patreon (POINT 11)
+  // Sélection mois Patreon (utilisée par la nav du haut ET par la capsule "Patreon 2026")
   const selectionnerPatreon = (mois) => {
-    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setPage(1);
+    resetAutresFiltres('categorie');
+    setSousCategorie(mois); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setOpenCapsule(null); setPage(1);
+    ignite('patreon');
+  };
+
+  // "Tout" Patreon (uniquement depuis la capsule, montre toutes les illus Patreon peu importe le mois)
+  const selectionnerPatreonTout = () => {
+    resetAutresFiltres('categorie');
+    setSousCategorie(PATREON_TOUT); setCategorie('Tout'); setShowCategories(false); setShowPatreonMenu(false); setOpenCapsule(null); setPage(1);
+    ignite('patreon');
   };
 
   const selectionnerSousCategorie = (sc) => {
-    setCategorie('Kawaii/Chibi'); setSousCategorie(sc); setShowCategories(false); setShowKawaiiMenu(false); setPage(1);
+    resetAutresFiltres('categorie');
+    setCategorie('Kawaii/Chibi'); setSousCategorie(sc); setShowCategories(false); setShowKawaiiMenu(false); setOpenCapsule(null); setPage(1);
+    ignite('kawaii');
+  };
+
+  const choisirAnnee = (a) => {
+    resetAutresFiltres('annee');
+    setAnneeFiltre(a); setOpenCapsule(null); setPage(1);
+    ignite('annee');
+  };
+
+  const choisirCollection = (val) => {
+    resetAutresFiltres('collection');
+    setFiltreCollection(val); setOpenCapsule(null); setPage(1);
+    if (val !== 'tout') ignite('collection');
+  };
+
+  // Clic sur une capsule allumée → l'éteint. Clic sur une capsule éteinte → ouvre/ferme son menu.
+  const toggleCapsule = (key, estAllumee) => {
+    if (estAllumee) {
+      if (key === 'annee') setAnneeFiltre(null);
+      else if (key === 'collection') setFiltreCollection('tout');
+      else { setCategorie('Tout'); setSousCategorie(''); }
+      setOpenCapsule(null);
+    } else {
+      setOpenCapsule(prev => prev === key ? null : key);
+    }
   };
 
   let illustrationsFiltrees = illustrations.filter(i => {
-    const SOUS_CAT_KAWAII = ['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'];
-    if (sousCategorie) {
+    if (sousCategorie === PATREON_TOUT) {
+      // Filtre "Tout Patreon" : n'importe quel mois, du moment qu'il y en a un
+      if (!i.sous_categorie_patreon) return false;
+    } else if (sousCategorie) {
       if (SOUS_CAT_KAWAII.includes(sousCategorie)) {
         // Filtre sous-catégorie Kawaii/Chibi (sans contrainte sur categorie principale)
         if (i.sous_categorie_kawaii !== sousCategorie) return false;
@@ -343,7 +393,7 @@ function Catalogue() {
     } else {
       if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     }
-    if (annees.length > 0 && !annees.includes(i.annee)) return false;
+    if (anneeFiltre !== null && i.annee !== anneeFiltre) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
     if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto && !collection[i.id]?.j_ai_achete) return false;
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
@@ -375,28 +425,62 @@ function Catalogue() {
   const MARGIN_NAV = isMobile ? 2 : 12;
   const H_NAV = isMobile ? 80 : 120;
 
-  const btnFiltreStyle = (actif) => ({
-    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
-    background: actif ? 'rgba(0,212,212,0.2)' : 'transparent',
-    border: actif ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)',
-    color: actif ? '#00d4d4' : 'rgba(255,255,255,0.5)',
+  const triVueBtnStyle = (actif) => ({
+    padding: '3px 8px', borderRadius: '8px', fontSize: '10px', cursor: 'pointer', transition: 'all .2s',
+    background: actif ? 'rgba(255,255,255,0.12)' : 'transparent',
+    border: '1px solid rgba(255,255,255,0.15)',
+    color: actif ? '#fff' : 'rgba(255,255,255,0.45)',
+    fontWeight: actif ? 'bold' : 'normal', width: '100%',
   });
 
-  const btnTriStyle = (actif) => ({
-    padding: '4px 10px', borderRadius: '20px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
-    background: actif ? 'rgba(255,210,80,0.15)' : 'transparent',
-    border: actif ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)',
-    color: actif ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)',
-  });
+  const labelCapsuleStyle = { fontSize: '10px', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' };
 
-  const encartStyle = {
-    background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px',
-    padding: '12px 16px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column',
-    gap: '8px', alignSelf: 'stretch', justifyContent: 'center',
-  };
+  // États allumé/éteint des 5 capsules (dérivés directement des filtres réels :
+  // ça reste synchro que la sélection vienne de la capsule ou de la nav du haut)
+  const anneeOn = anneeFiltre !== null;
+  const kawaiiOn = categorie === 'Kawaii/Chibi';
+  const patreonOn = categorie === 'Tout' && sousCategorie !== '' && !SOUS_CAT_KAWAII.includes(sousCategorie);
+  const categorieOn = categorie !== 'Tout' && categorie !== 'Kawaii/Chibi';
+  const collectionOn = filtreCollection !== 'tout';
 
-  // Label affiché dans le compteur
-  const labelFiltre = sousCategorie ? ` · ${sousCategorie}` : (categorie !== 'Tout' ? ` · ${categorie}` : '');
+  const LABELS_COLLECTION = { tout: 'Tout', jai: "J'ai", jeveux: 'Je veux', japas: "J'ai pas", colorie: 'Colorié' };
+
+  const capsules = [
+    {
+      key: 'annee', label: 'Années', color: 'pink', on: anneeOn,
+      options: ANNEES.map(a => ({ value: a, label: String(a), active: anneeFiltre === a, onClick: () => choisirAnnee(a) })),
+    },
+    {
+      key: 'kawaii', label: 'Kawaii / Chibi', color: 'gold', on: kawaiiOn,
+      options: [
+        { value: '__tout__', label: 'Tous Kawaii/Chibi', active: kawaiiOn && !sousCategorie, onClick: () => selectionnerCategorie('Kawaii/Chibi'), separateur: true },
+        ...SOUS_CAT_KAWAII.map(sc => ({ value: sc, label: sc, active: sousCategorie === sc, onClick: () => selectionnerSousCategorie(sc) })),
+      ],
+    },
+    {
+      key: 'patreon', label: 'Patreon 2026', color: 'cyan', on: patreonOn,
+      options: [
+        { value: PATREON_TOUT, label: 'Tout', active: sousCategorie === PATREON_TOUT, onClick: () => selectionnerPatreonTout(), separateur: true },
+        ...moisPatreon.map(m => ({ value: m, label: m.replace('Patreon - ', ''), active: sousCategorie === m, onClick: () => selectionnerPatreon(m) })),
+      ],
+    },
+    {
+      key: 'categorie', label: 'Catégorie', color: 'gold', on: categorieOn,
+      options: CATEGORIES.filter(c => c !== 'Kawaii/Chibi').map((c, i) => ({ value: c, label: c, active: categorie === c, onClick: () => selectionnerCategorie(c), separateur: i === 0 })),
+    },
+    {
+      key: 'collection', label: 'Collection', color: 'pink', on: collectionOn,
+      options: ['tout', 'jai', 'jeveux', 'japas', 'colorie'].map((v, i) => ({ value: v, label: LABELS_COLLECTION[v], active: filtreCollection === v, onClick: () => choisirCollection(v), separateur: i === 0 })),
+    },
+  ];
+
+  // Filtre actif affiché sous la rangée de capsules, avec croix pour le retirer
+  const filtreActifInfo = anneeOn ? { label: `Année · ${anneeFiltre}`, clear: () => setAnneeFiltre(null) }
+    : kawaiiOn ? { label: `Kawaii/Chibi${sousCategorie ? ' · ' + sousCategorie : ''}`, clear: () => { setCategorie('Tout'); setSousCategorie(''); } }
+    : patreonOn ? { label: `Patreon 2026 · ${sousCategorie === PATREON_TOUT ? 'Tout' : sousCategorie.replace('Patreon - ', '')}`, clear: () => { setCategorie('Tout'); setSousCategorie(''); } }
+    : categorieOn ? { label: categorie, clear: () => setCategorie('Tout') }
+    : collectionOn ? { label: LABELS_COLLECTION[filtreCollection], clear: () => setFiltreCollection('tout') }
+    : null;
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', fontFamily: "var(--font-texte)", overflowX: 'hidden' }}>
@@ -434,6 +518,23 @@ function Catalogue() {
         .dropdown-titre-patreon { padding: 6px 14px 4px; color: rgba(255,210,80,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
+        .capsule-pill { width: 50px; height: 14px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+        .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
+        .capsule-pill.dim-pink { background: rgba(48,10,28,0.92); border: 1px solid rgba(255,62,181,0.35); }
+        .capsule-pill.dim-gold { background: rgba(45,32,0,0.92); border: 1px solid rgba(255,210,80,0.35); }
+        .capsule-pill.on-cyan { background: #00d4d4; border: none; box-shadow: 0 0 10px rgba(0,212,212,0.9), 0 0 22px rgba(0,212,212,0.5); transform: scale(1.12); }
+        .capsule-pill.on-pink { background: #ff3eb5; border: none; box-shadow: 0 0 10px rgba(255,62,181,0.9), 0 0 22px rgba(255,62,181,0.5); transform: scale(1.12); }
+        .capsule-pill.on-gold { background: rgba(255,210,80,0.95); border: none; box-shadow: 0 0 10px rgba(255,210,80,0.9), 0 0 22px rgba(255,210,80,0.5); transform: scale(1.12); }
+        .capsule-pill.ignite { animation: capsuleIgnite .4s ease; }
+        @keyframes capsuleIgnite { 0% { filter: brightness(1); } 45% { filter: brightness(1.9); } 100% { filter: brightness(1); } }
+        .dropdown-capsule { position: absolute; top: 100%; margin-top: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.96); border-radius: 12px; padding: 6px 0; z-index: 45; min-width: 175px; backdrop-filter: blur(8px); }
+        .dropdown-capsule.c-cyan { border: 1px solid rgba(0,212,212,0.35); }
+        .dropdown-capsule.c-pink { border: 1px solid rgba(255,62,181,0.35); }
+        .dropdown-capsule.c-gold { border: 1px solid rgba(255,210,80,0.35); }
+        .dropdown-capsule-item { display: flex; align-items: center; width: 100%; text-align: left; background: none; border: none; padding: 7px 14px; font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer; white-space: nowrap; }
+        .dropdown-capsule-item:hover { background: rgba(255,255,255,0.07); }
+        .dropdown-capsule-item.actif { color: #fff; font-weight: bold; }
+        .dropdown-capsule-sep { height: 1px; background: rgba(255,255,255,0.12); margin: 4px 10px; }
         .search-input::placeholder { color: rgba(255,255,255,0.4); }
         .search-input:focus { outline: none; border-color: rgba(0,212,212,0.6) !important; }
         @keyframes fadeImg { from { opacity: 0; } to { opacity: 1; } }
@@ -509,7 +610,7 @@ function Catalogue() {
                             <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ color: '#ff3eb5' }} onClick={() => { selectionnerCategorie('Kawaii/Chibi'); setShowKawaiiMenu(false); }}>
                               Tout Kawaii/Chibi
                             </button>
-                            {['Astro', 'Creepy', 'Monsters', 'Princess', 'Divers'].map(sc => (
+                            {SOUS_CAT_KAWAII.map(sc => (
                               <button key={sc} className={`dropdown-item${sousCategorie === sc ? ' actif' : ''}`} style={{ color: '#ff3eb5' }}
                                 onClick={() => { selectionnerSousCategorie(sc); setShowKawaiiMenu(false); }}>
                                 {sc}
@@ -588,85 +689,64 @@ function Catalogue() {
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
-          {/* ENCARTS */}
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'stretch', justifyContent: 'center', gap: '10px', marginBottom: '12px', flexWrap: isMobile ? 'nowrap' : 'wrap' }}>
-            {!isMobile && (
-              <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnTriStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
-                  <button style={btnTriStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
-                  <button style={btnTriStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                  <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                  <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
-                </div>
+          {/* RANGÉE DE FILTRES : Tri (gauche) — 5 capsules colorées — Vue (droite) */}
+          <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: isMobile ? '8px' : '16px', flexWrap: 'nowrap', overflowX: isMobile ? 'auto' : 'visible' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+              <span style={labelCapsuleStyle}>Tri</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: isMobile ? '40px' : '52px' }}>
+                <button style={triVueBtnStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
+                <button style={triVueBtnStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
+                <button style={triVueBtnStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
               </div>
-            )}
-
-            <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '14px', padding: isMobile ? '10px 12px' : '16px 24px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: isMobile ? '6px' : '10px', justifyContent: 'center', width: isMobile ? '100%' : 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: isMobile ? '6px' : '8px', flexWrap: 'wrap' }}>
-                {ANNEES.map(a => <button key={a} className={`btn-annee${annees.includes(a) ? ' actif' : ''}`} onClick={() => toggleAnnee(a)} style={{ fontSize: isMobile ? '11px' : '12px', padding: isMobile ? '3px 8px' : '4px 12px' }}>{a}</button>)}
-              </div>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px', textAlign: 'center' }}>
-                {total} illustration{total > 1 ? 's' : ''}
-                {labelFiltre}
-                {annees.length > 0 ? ` · ${annees.join(', ')}` : ''}
-                {recherche ? ` · "${recherche}"` : ''}
-              </p>
-              {/* Indicateur filtre Patreon actif */}
-              {sousCategorie && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: 'rgba(255,210,80,0.9)', fontSize: '11px', fontWeight: 'bold' }}>⭐ {sousCategorie}</span>
-                  <button onClick={() => { setSousCategorie(''); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-                </div>
-              )}
-              {/* Indicateur filtre Nouveautés actif */}
-              {filtreNouveautes && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
-                  <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-                </div>
-              )}
             </div>
 
-            {!isMobile && (
-              <div style={{ ...encartStyle, padding: '12px 16px', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'tout')} onClick={() => { setFiltreCollection('tout'); setPage(1); }}>Tout</button>
-                  <button style={btnFiltreStyle(filtreCollection === 'jai')} onClick={() => { setFiltreCollection('jai'); setPage(1); }}>✓ J'ai</button>
+            <div style={{ display: 'flex', gap: isMobile ? '5px' : '10px', flexShrink: 0 }}>
+              {capsules.map(cap => (
+                <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '46px' : '66px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
+                  <button
+                    aria-label={cap.label}
+                    onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
+                    className={`capsule-pill ${cap.on ? 'on-' : 'dim-'}${cap.color}${igniteKey === cap.key ? ' ignite' : ''}`} />
+                  {openCapsule === cap.key && (
+                    <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
+                      {cap.options.map(opt => (
+                        <React.Fragment key={String(opt.value)}>
+                          <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
+                          {opt.separateur && <div className="dropdown-capsule-sep" />}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'jeveux')} onClick={() => { setFiltreCollection('jeveux'); setPage(1); }}>♡ Je veux</button>
-                  <button style={btnFiltreStyle(filtreCollection === 'japas')} onClick={() => { setFiltreCollection('japas'); setPage(1); }}>✕ J'ai pas</button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  <button style={btnFiltreStyle(filtreCollection === 'colorie')} onClick={() => { setFiltreCollection('colorie'); setPage(1); }}>🎨 Colorié</button>
-                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+              <span style={labelCapsuleStyle}>Vue</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: isMobile ? '34px' : '40px' }}>
+                <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ width: '100%', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
+                <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ width: '100%', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+              </div>
+            </div>
+          </div>
+
+          {/* COMPTEUR + filtre actif (avec croix) + indicateur Nouveautés */}
+          <div style={{ textAlign: 'center', marginTop: '10px', marginBottom: '16px' }}>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px' }}>
+              {total} illustration{total > 1 ? 's' : ''}{recherche ? ` · "${recherche}"` : ''}
+            </p>
+            {filtreActifInfo && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '11px', fontWeight: 'bold' }}>{filtreActifInfo.label}</span>
+                <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
               </div>
             )}
-
-            {isMobile && (
-              <>
-                <div style={{ ...encartStyle, padding: '8px 10px', gap: '6px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setTri('az'); setPage(1); }} style={{ ...btnTriStyle(tri === 'az'), padding: '3px 7px', fontSize: '10px' }}>A→Z</button>
-                    <button onClick={() => { setTri('za'); setPage(1); }} style={{ ...btnTriStyle(tri === 'za'), padding: '3px 7px', fontSize: '10px' }}>Z→A</button>
-                    <button onClick={() => { setTri('recent'); setPage(1); }} style={{ ...btnTriStyle(tri === 'recent'), padding: '3px 7px', fontSize: '10px' }}>🕐</button>
-                    <button onClick={() => setVueCompacte(false)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                    <button onClick={() => setVueCompacte(true)} style={{ padding: '3px 6px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
-                  </div>
-                </div>
-                <div style={{ ...encartStyle, padding: '8px 10px', gap: '6px', width: '100%' }}>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center' }}>
-                    <button onClick={() => { setFiltreCollection('tout'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'tout' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'tout' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'tout' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✦</button>
-                    <button onClick={() => { setFiltreCollection('jai'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'jai' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'jai' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jai' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✓</button>
-                    <button onClick={() => { setFiltreCollection('japas'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '10px', cursor: 'pointer', background: filtreCollection === 'japas' ? 'rgba(0,212,212,0.2)' : 'transparent', border: filtreCollection === 'japas' ? '1px solid #00d4d4' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'japas' ? '#00d4d4' : 'rgba(255,255,255,0.5)' }}>✕</button>
-                    <button onClick={() => { setFiltreCollection('jeveux'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'jeveux' ? 'rgba(255,77,125,0.2)' : 'transparent', border: filtreCollection === 'jeveux' ? '1px solid rgba(255,77,125,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'jeveux' ? '#ff4d7d' : 'rgba(255,255,255,0.5)' }}>♡</button>
-                    <button onClick={() => { setFiltreCollection('colorie'); setPage(1); }} style={{ padding: '3px 7px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', background: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.2)' : 'transparent', border: filtreCollection === 'colorie' ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: filtreCollection === 'colorie' ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.5)' }}>🎨</button>
-                  </div>
-                </div>
-              </>
+            {filtreNouveautes && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
+                <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+              </div>
             )}
           </div>
 
