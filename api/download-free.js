@@ -45,14 +45,20 @@ module.exports = async (req, res) => {
     });
     const url = await getSignedUrl(s3, command, { expiresIn: 60 });
 
-    // Enregistrer le téléchargement en base
-    await supabase.from('telechargements_gratuits').insert({
-      user_id: userId,
-      item_id: itemId,
-      item_type: itemType,
-      fichier: fichierPdf,
-      created_at: new Date().toISOString(),
-    });
+    // Enregistrer le téléchargement en base (best-effort : un souci ici — par exemple un
+    // type de colonne incompatible avec itemId='cadeau_anniversaire' — ne doit pas
+    // empêcher le téléchargement lui-même)
+    try {
+      await supabase.from('telechargements_gratuits').insert({
+        user_id: userId,
+        item_id: itemId,
+        item_type: itemType,
+        fichier: fichierPdf,
+        created_at: new Date().toISOString(),
+      });
+    } catch (logErr) {
+      console.error('download-free: échec enregistrement telechargements_gratuits (non bloquant):', logErr);
+    }
 
     return res.status(200).json({ url });
   } catch (err) {

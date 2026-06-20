@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
 import { PanierProvider } from './PanierContext';
 import Connexion from './Connexion';
@@ -16,6 +16,7 @@ import BannerePWA from './BannerePWA';
 import SplashScreen from './SplashScreen';
 import Panier from './Panier';
 import Admin from './Admin';
+import BoutonCadeau from './BoutonCadeau';
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -42,6 +43,16 @@ function RouteSelection({ session }) {
   if (etat === 'chargement') return <div style={{ background: '#000', minHeight: '100vh' }} />;
   if (etat === 'deja_fait') return <Navigate to="/accueil" />;
   return <Selection />;
+}
+
+// Affiche le bouton Cadeau anniversaire sur tout le site sauf l'admin.
+// Le composant BoutonCadeau gère lui-même toute la logique (date de naissance,
+// verrouillage, config active ou non) — ici on ne fait que le cacher sur /admin-kt2024.
+function ZoneCadeauAnniversaire({ session }) {
+  const location = useLocation();
+  if (!session) return null;
+  const surAdmin = location.pathname.startsWith('/admin-kt2024');
+  return <BoutonCadeau hidden={surAdmin} />;
 }
 
 function App() {
@@ -122,6 +133,7 @@ function App() {
           <Route path="/panier" element={session ? <Panier /> : <Navigate to="/" />} />
           <Route path="/admin-kt2024" element={<Admin />} />
         </Routes>
+        <ZoneCadeauAnniversaire session={session} />
         <BannerePWA />
       </BrowserRouter>
     </PanierProvider>
