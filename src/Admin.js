@@ -179,6 +179,16 @@ export default function Admin() {
   const [loadingChat, setLoadingChat] = useState(false)
   const finChatRef = useRef(null)
 
+  // ── Notif admin (nouvel onglet) ──
+  const [modeCibleNotif, setModeCibleNotif] = useState('tous') // 'tous' | 'cible'
+  const [texteNotifAdmin, setTexteNotifAdmin] = useState('')
+  const [rechercheUsagerNotif, setRechercheUsagerNotif] = useState('')
+  const [usagerCible, setUsagerCible] = useState(null) // { id, pseudo }
+  const [suggestionsUsagers, setSuggestionsUsagers] = useState([])
+  const [envoiNotifEnCours, setEnvoiNotifEnCours] = useState(false)
+  const [notifsEnvoyees, setNotifsEnvoyees] = useState([])
+  const [loadingNotifsEnvoyees, setLoadingNotifsEnvoyees] = useState(false)
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 700)
     window.addEventListener('resize', handleResize)
@@ -337,6 +347,71 @@ export default function Admin() {
     setMessagesChat(prev => prev.filter(m => m.id !== id))
   }
 
+  // ── Notif admin : recherche d'usager par pseudo (autocomplete) ──
+  const rechercherUsagersNotif = useCallback(async (q) => {
+    if (!q || q.trim().length === 0) { setSuggestionsUsagers([]); return }
+    const { data } = await supabase
+      .from('profils')
+      .select('id, pseudo')
+      .ilike('pseudo', `%${q.trim()}%`)
+      .order('pseudo', { ascending: true })
+      .limit(20)
+    setSuggestionsUsagers(data || [])
+  }, [])
+
+  // ── Notif admin : charger l'historique des notifs envoyées manuellement ──
+  const chargerNotifsEnvoyees = useCallback(async () => {
+    setLoadingNotifsEnvoyees(true)
+    const { data } = await supabase
+      .from('notifications')
+      .select('id, user_id, contenu, created_at, lu')
+      .eq('type', 'notif_admin')
+      .order('created_at', { ascending: false })
+      .limit(100)
+    if (!data || data.length === 0) { setNotifsEnvoyees([]); setLoadingNotifsEnvoyees(false); return }
+    const userIds = [...new Set(data.map(n => n.user_id))]
+    const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds)
+    const pseudoMap = {}
+    ;(profils || []).forEach(p => { pseudoMap[p.id] = p.pseudo || 'Anonyme' })
+    setNotifsEnvoyees(data.map(n => ({ ...n, pseudo: pseudoMap[n.user_id] || 'Anonyme' })))
+    setLoadingNotifsEnvoyees(false)
+  }, [])
+
+  // ── Notif admin : envoi (tous les usagers ou un usager ciblé) ──
+  const envoyerNotifAdmin = async () => {
+    const texte = texteNotifAdmin.trim()
+    if (!texte) return
+    if (modeCibleNotif === 'cible' && !usagerCible) { showToast('Sélectionne un usager', 'error'); return }
+    setEnvoiNotifEnCours(true)
+    try {
+      let destinataires = []
+      if (modeCibleNotif === 'tous') {
+        const { data: profils } = await supabase.from('profils').select('id')
+        destinataires = (profils || []).map(p => p.id)
+      } else {
+        destinataires = [usagerCible.id]
+      }
+      if (destinataires.length === 0) { showToast('Aucun destinataire trouvé', 'error'); setEnvoiNotifEnCours(false); return }
+      const lignes = destinataires.map(uid => ({ user_id: uid, type: 'notif_admin', contenu: { texte }, lu: false }))
+      const { error } = await supabase.from('notifications').insert(lignes)
+      if (error) throw error
+      showToast(modeCibleNotif === 'tous' ? `Notification envoyée à ${destinataires.length} usagers` : `Notification envoyée à ${usagerCible.pseudo}`)
+      setTexteNotifAdmin('')
+      setUsagerCible(null)
+      setRechercheUsagerNotif('')
+      setSuggestionsUsagers([])
+      chargerNotifsEnvoyees()
+    } catch (e) {
+      showToast('Erreur lors de l\'envoi', 'error')
+    }
+    setEnvoiNotifEnCours(false)
+  }
+
+  const supprimerNotifEnvoyee = async (id) => {
+    await supabase.from('notifications').delete().eq('id', id)
+    setNotifsEnvoyees(prev => prev.filter(n => n.id !== id))
+  }
+
   useEffect(() => {
     if (userId) chargerConversations()
   }, [userId, chargerConversations])
@@ -345,6 +420,15 @@ export default function Admin() {
     if (onglet === 'chat' && conversationActive === '__general__') ouvrirGeneral()
     else if (onglet === 'chat' && conversationActive) ouvrirConversation(conversationActive)
   }, [onglet]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (onglet === 'notif') chargerNotifsEnvoyees()
+  }, [onglet, chargerNotifsEnvoyees])
+
+  useEffect(() => {
+    const timer = setTimeout(() => rechercherUsagersNotif(rechercheUsagerNotif), 250)
+    return () => clearTimeout(timer)
+  }, [rechercheUsagerNotif, rechercherUsagersNotif])
 
   // Realtime global : tout nouveau message privé met à jour la liste/badge
   useEffect(() => {
@@ -503,6 +587,7 @@ export default function Admin() {
           { id:'usagers', icon:'ti-users', label:'Usagers' },
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
           { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
+          { id:'notif', icon:'ti-bell', label:'Notif' },
         ].map(n => (
           <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
             <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -546,6 +631,7 @@ export default function Admin() {
             { onglet === 'usagers' && 'Tableau des usagers' }
             { onglet === 'moderation' && 'Modération des commentaires' }
             { onglet === 'chat' && 'Conversations privées' }
+            { onglet === 'notif' && 'Notifications manuelles' }
           </span>
           <span style={s.topbarDate}>{new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</span>
         </div>
@@ -559,6 +645,7 @@ export default function Admin() {
               { id:'usagers', icon:'ti-users', label:'Usag.' },
               { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
               { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
+              { id:'notif', icon:'ti-bell', label:'Notif' },
             ].map(n => (
               <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
                 <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -1037,6 +1124,143 @@ export default function Admin() {
                         <button style={s.btnCyan} onClick={envoyerMessageAdmin} disabled={!texteChat.trim()}>Envoyer</button>
                       </div>
                     </>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+
+          {/* ======== NOTIF ADMIN ======== */}
+          {!loading && onglet === 'notif' && (
+            isMobile ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
+                {/* Formulaire */}
+                <div style={{ ...s.tableWrap, padding:'14px' }}>
+                  <div style={{ display:'flex', gap:'6px', marginBottom:'10px' }}>
+                    <button style={modeCibleNotif === 'tous' ? s.btnCyan : s.btnGhost} onClick={() => { setModeCibleNotif('tous'); setUsagerCible(null) }}>À tous</button>
+                    <button style={modeCibleNotif === 'cible' ? s.btnCyan : s.btnGhost} onClick={() => setModeCibleNotif('cible')}>À un usager</button>
+                  </div>
+                  {modeCibleNotif === 'cible' && (
+                    <div style={{ position:'relative', marginBottom:'8px' }}>
+                      <input
+                        style={s.input}
+                        placeholder="Tape un pseudo..."
+                        value={usagerCible ? usagerCible.pseudo : rechercheUsagerNotif}
+                        onChange={e => { setUsagerCible(null); setRechercheUsagerNotif(e.target.value) }}
+                      />
+                      {!usagerCible && suggestionsUsagers.length > 0 && (
+                        <div style={{ background:'#0d0d1a', border:'1px solid #00e5ff33', borderRadius:'8px', overflow:'hidden', marginTop:'-4px' }}>
+                          {suggestionsUsagers.map(u => (
+                            <div key={u.id} onClick={() => { setUsagerCible(u); setSuggestionsUsagers([]) }}
+                              style={{ padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', cursor:'pointer', borderBottom:'1px solid #ffffff08' }}>
+                              {u.pseudo}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <textarea
+                    style={{ ...s.input, minHeight:'80px', resize:'vertical', fontFamily:'inherit' }}
+                    placeholder="Texte de la notification..."
+                    value={texteNotifAdmin}
+                    onChange={e => setTexteNotifAdmin(e.target.value)}
+                  />
+                  <button style={{ ...s.btnCyan, width:'100%', textAlign:'center', opacity: envoiNotifEnCours ? 0.5 : 1 }}
+                    onClick={envoyerNotifAdmin} disabled={!texteNotifAdmin.trim() || envoiNotifEnCours}>
+                    {envoiNotifEnCours ? 'Envoi...' : 'Envoyer'}
+                  </button>
+                </div>
+
+                {/* Historique */}
+                <div>
+                  <div style={s.sectionTitle}>Notifications envoyées</div>
+                  {loadingNotifsEnvoyees ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Chargement...</div>
+                  ) : notifsEnvoyees.length === 0 ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'20px' }}>Aucune notification envoyée pour l'instant.</div>
+                  ) : (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      {notifsEnvoyees.map(n => (
+                        <div key={n.id} style={{ background:'#0d0d1a', border:'1px solid #ffffff12', borderRadius:'8px', padding:'10px 12px' }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px', marginBottom:'4px' }}>
+                            <span style={{ fontSize:'11px', color:'#F5C84C', fontWeight:600 }}>{n.pseudo}</span>
+                            <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer', flexShrink:0 }} onClick={() => supprimerNotifEnvoyee(n.id)}>Supprimer</span>
+                          </div>
+                          <div style={{ fontSize:'12px', color:'#c0c0e0', lineHeight:'1.4' }}>{n.contenu?.texte}</div>
+                          <div style={{ fontSize:'9px', color:'#44445a', marginTop:'4px' }}>{fmtDate(n.created_at)} · {n.lu ? 'Lue' : 'Non lue'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Desktop — 2 colonnes */
+              <div style={{ display:'flex', gap:'14px' }}>
+                <div style={{ width:'360px', flexShrink:0, ...s.tableWrap, padding:'16px' }}>
+                  <div style={s.sectionTitle}>Rédiger une notification</div>
+                  <div style={{ display:'flex', gap:'6px', marginBottom:'12px' }}>
+                    <button style={modeCibleNotif === 'tous' ? s.btnCyan : s.btnGhost} onClick={() => { setModeCibleNotif('tous'); setUsagerCible(null) }}>À tous</button>
+                    <button style={modeCibleNotif === 'cible' ? s.btnCyan : s.btnGhost} onClick={() => setModeCibleNotif('cible')}>À un usager</button>
+                  </div>
+                  {modeCibleNotif === 'cible' && (
+                    <div style={{ position:'relative', marginBottom:'8px' }}>
+                      <input
+                        style={s.input}
+                        placeholder="Tape un pseudo..."
+                        value={usagerCible ? usagerCible.pseudo : rechercheUsagerNotif}
+                        onChange={e => { setUsagerCible(null); setRechercheUsagerNotif(e.target.value) }}
+                      />
+                      {!usagerCible && suggestionsUsagers.length > 0 && (
+                        <div style={{ background:'#0d0d1a', border:'1px solid #00e5ff33', borderRadius:'8px', overflow:'hidden', marginTop:'-4px', maxHeight:'200px', overflowY:'auto' }}>
+                          {suggestionsUsagers.map(u => (
+                            <div key={u.id} onClick={() => { setUsagerCible(u); setSuggestionsUsagers([]) }}
+                              style={{ padding:'8px 12px', fontSize:'12px', color:'#e0e0f0', cursor:'pointer', borderBottom:'1px solid #ffffff08' }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#12121f'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              {u.pseudo}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <textarea
+                    style={{ ...s.input, minHeight:'100px', resize:'vertical', fontFamily:'inherit' }}
+                    placeholder="Texte de la notification..."
+                    value={texteNotifAdmin}
+                    onChange={e => setTexteNotifAdmin(e.target.value)}
+                  />
+                  <button style={{ ...s.btnCyan, opacity: envoiNotifEnCours ? 0.5 : 1 }}
+                    onClick={envoyerNotifAdmin} disabled={!texteNotifAdmin.trim() || envoiNotifEnCours}>
+                    {envoiNotifEnCours ? 'Envoi...' : 'Envoyer'}
+                  </button>
+                </div>
+
+                <div style={{ flex:1, ...s.tableWrap, padding:'16px', maxHeight:'calc(100vh - 110px)', overflowY:'auto' }}>
+                  <div style={s.sectionTitle}>Notifications envoyées</div>
+                  {loadingNotifsEnvoyees ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px' }}>Chargement...</div>
+                  ) : notifsEnvoyees.length === 0 ? (
+                    <div style={{ textAlign:'center', color:'#44445a', fontSize:'12px', padding:'30px' }}>Aucune notification envoyée pour l'instant.</div>
+                  ) : (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+                      {notifsEnvoyees.map(n => (
+                        <div key={n.id} style={{ background:'#0d0d1a', border:'1px solid #ffffff12', borderRadius:'8px', padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'10px' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#12121f'}
+                          onMouseLeave={e => e.currentTarget.style.background = '#0d0d1a'}>
+                          <div style={{ minWidth:0, flex:1 }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px' }}>
+                              <span style={{ fontSize:'11px', color:'#F5C84C', fontWeight:600 }}>{n.pseudo}</span>
+                              <span style={{ fontSize:'9px', color:'#44445a' }}>{fmtDate(n.created_at)} · {n.lu ? 'Lue' : 'Non lue'}</span>
+                            </div>
+                            <div style={{ fontSize:'12px', color:'#c0c0e0', lineHeight:'1.4' }}>{n.contenu?.texte}</div>
+                          </div>
+                          <span style={{ fontSize:'10px', color:'#ef4444', cursor:'pointer', flexShrink:0 }} onClick={() => supprimerNotifEnvoyee(n.id)}>Supprimer</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

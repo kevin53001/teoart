@@ -19,6 +19,7 @@ const CONFIG_TYPE = {
   like_pensee:              { couleur: '#BA7517', icone: `${R2}/site/pastille_pensees.png`    },
   commentaire_pensee:       { couleur: '#BA7517', icone: `${R2}/site/pastille_pensees.png`    },
   nouvelle_presentation:    { couleur: '#378ADD', icone: `${R2}/site/pastille_logomini.png`   },
+  notif_admin:              { couleur: '#F5C84C', icone: `${R2}/site/Logo.png`                },
 };
 
 function dateRelative(iso) {
@@ -73,6 +74,8 @@ function texteNotif(n) {
         : `Tes pensées font un carton dans la communauté`;
     case 'nouvelle_presentation':
       return `Kevin a retouché sa vitrine : ${c.derniere_titre || '...'}`;
+    case 'notif_admin':
+      return c.texte || 'Message de Kevin Teo\u2019Art';
     case 'nouveau_coloriage_partage':
       return nb === 1
         ? `Les crayons ont chauffé dans la communauté`
@@ -482,6 +485,9 @@ function Cloche({ hidden = false }) {
           await supabase.from('profils').update({ dernier_vu_coloriages_partages: maintenant }).eq('id', userId);
         }
         setPopupColos(true);
+        break;
+      case 'notif_admin':
+        // Pas de navigation associée — la notif est juste lue puis supprimée (déjà fait en amont)
         break;
       default:
         break;
