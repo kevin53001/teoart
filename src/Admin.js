@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
-import { getPresenceChannel, onPresenceSubscribed } from './presence'
+import { getPresenceChannel, onPresenceSubscribed, onPresenceSync } from './presence'
 
 const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
 
@@ -221,13 +221,11 @@ export default function Admin() {
   useEffect(() => {
     console.log('[presence] Admin.js : montage écoute compteur');
     const channel = getPresenceChannel()
-    const majCompteur = () => {
+    onPresenceSync(() => {
       const state = channel.presenceState()
       console.log('[presence] Admin.js : sync reçu, state =', state);
       setNbEnLigne(Object.keys(state).length)
-    }
-    channel.on('presence', { event: 'sync' }, majCompteur)
-    onPresenceSubscribed(majCompteur)
+    })
   }, [])
 
   const showToast = (msg, type = 'success') => {
