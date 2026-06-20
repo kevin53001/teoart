@@ -78,6 +78,20 @@ function App() {
       .then(() => {});
   }, [session?.user?.id]);
 
+  // Présence temps réel : signale que cet usager est en ligne, pour le compteur live d'Admin
+  React.useEffect(() => {
+    if (!session?.user?.id) return;
+    const channel = supabase.channel('online-users', {
+      config: { presence: { key: session.user.id } }
+    });
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ online_at: new Date().toISOString() });
+      }
+    });
+    return () => { supabase.removeChannel(channel); };
+  }, [session?.user?.id]);
+
   // Mobile : splash screen pendant le chargement
   if (isMobile && !splashTermine) return (
     <SplashScreen onTermine={() => setSplashTermine(true)} />

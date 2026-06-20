@@ -171,6 +171,7 @@ export default function Admin() {
   const intervalRef = useRef(null)
   const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 700)
+  const [nbEnLigne, setNbEnLigne] = useState(0)
 
   // ── Chat privé ──
   const [conversations, setConversations] = useState([]) // [{ user_id, pseudo, dernier_message, dernier_at, non_lus }]
@@ -214,6 +215,18 @@ export default function Admin() {
       setUserId(uid)
     })
   }, [navigate])
+
+  // Compteur visiteurs en ligne (Presence channel partagé avec le reste du site, écoute seule — pas de track)
+  useEffect(() => {
+    const channel = supabase.channel('online-users')
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        setNbEnLigne(Object.keys(state).length)
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
@@ -778,7 +791,7 @@ export default function Admin() {
           <div style={{ fontSize:'10px', color:'#44445a', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'8px' }}>Activité</div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#22c55e', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#22c55e', display:'inline-block', boxShadow:'0 0 6px #22c55e', animation:'pulse 2s infinite', flexShrink:0 }} />
-            Temps réel actif
+            <span>En ligne maintenant : <strong>{nbEnLigne}</strong></span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'7px', fontSize:'11px', color:'#38bdf8', marginBottom:'6px' }}>
             <span style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#38bdf8', display:'inline-block', boxShadow:'0 0 6px #38bdf8', flexShrink:0 }} />
