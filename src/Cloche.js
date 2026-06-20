@@ -220,12 +220,12 @@ function PopupColoriages({ userId, userPseudo, onClose }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      // Tous les coloriages avec image_url, du plus ancien au plus récent, sans limite
+      // Tous les coloriages avec image_url, du plus récent au plus ancien, sans limite
       const { data } = await supabase
         .from('coloriages')
         .select('id, image_url, user_id, illustration_id, created_at')
         .not('image_url', 'is', null)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (!data || data.length === 0) { setLoading(false); return; }
 
@@ -459,6 +459,9 @@ function Cloche({ hidden = false }) {
         navigate('/presentation');
         break;
       case 'nouveau_coloriage_partage':
+        if (userId) {
+          await supabase.from('profils').update({ dernier_vu_coloriages_partages: maintenant }).eq('id', userId);
+        }
         setPopupColos(true);
         break;
       default:

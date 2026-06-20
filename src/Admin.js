@@ -145,8 +145,8 @@ const s = {
 
   // Tableau usagers
   tableWrap: { background:'#0d0d1a', border:'1px solid #00e5ff1a', borderRadius:'10px', overflow:'hidden' },
-  th: { padding:'9px 12px', textAlign:'left', fontSize:'10px', fontWeight:500, color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.05em', borderBottom:'1px solid #ffffff0a', background:'#0a0a15', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' },
-  td: { padding:'8px 12px', fontSize:'12px', borderBottom:'1px solid #ffffff06', color:'#c0c0e0' },
+  th: { padding:'9px 7px', textAlign:'left', fontSize:'10px', fontWeight:500, color:'#6a6a8a', textTransform:'uppercase', letterSpacing:'0.05em', borderBottom:'1px solid #ffffff0a', background:'#0a0a15', cursor:'pointer', userSelect:'none', whiteSpace:'nowrap' },
+  td: { padding:'8px 7px', fontSize:'12px', borderBottom:'1px solid #ffffff06', color:'#c0c0e0' },
   trHover: { transition:'background 0.1s' },
 }
 
@@ -836,21 +836,21 @@ export default function Admin() {
                 <thead>
                   <tr>
                     {[
-                      { col:'prenom', label:'Prénom / Nom' },
+                      { col:'prenom', label:'Nom' },
                       { col:'email', label:'Email' },
-                      { col:'inscrit_le', label:'Inscrit le' },
-                      { col:'nb_illustrations', label:'Illustrations' },
-                      { col:'nb_livres_recueils', label:'Livres/Recueils' },
-                      { col:'nb_commandes', label:'Commandes' },
-                      { col:'ca_genere', label:'CA total' },
+                      { col:'inscrit_le', label:'Inscrit' },
+                      { col:'nb_illustrations', label:'Illus.' },
+                      { col:'nb_livres_recueils', label:'Liv/Rec' },
+                      { col:'nb_commandes', label:'Cmd' },
+                      { col:'ca_genere', label:'CA tot.' },
                       { col:'ca_mois', label:'CA mois' },
-                      { col:'nb_coloriages', label:'Coloriages' },
-                      { col:'nb_commentaires', label:'Coms colo' },
-                      { col:'nb_likes', label:'Likes colo' },
-                      { col:'nb_pensees', label:'Pensées' },
-                      { col:'nb_comments_pensees', label:'Coms pensées' },
-                      { col:'nb_likes_pensees', label:'Likes pensées' },
-                      { col:'nb_signales', label:'⚠️ Signalés' },
+                      { col:'nb_coloriages', label:'Colos' },
+                      { col:'nb_commentaires', label:'Com.C' },
+                      { col:'nb_likes', label:'Like C' },
+                      { col:'nb_pensees', label:'Pens.' },
+                      { col:'nb_comments_pensees', label:'Com.P' },
+                      { col:'nb_likes_pensees', label:'Like P' },
+                      { col:'nb_signales', label:'⚠️' },
                     ].map(({ col, label }) => (
                       <th key={col} style={s.th} onClick={() => trier(col)}>
                         {label} {sortCol === col ? (sortDir === 'desc' ? '↓' : '↑') : ''}

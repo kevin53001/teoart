@@ -81,7 +81,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, on
           .limit(50);
         if (data && data.length > 0) {
           const uids = [...new Set(data.map(c => c.user_id))];
-          const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+          const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
           const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
           const colos = data.map(c => ({ url: c.image_url, nom: `🎨 ${pm[c.user_id] || 'Coloriste'}`, coloId: c.id, illuId: c.illustration_id, userId: c.user_id }));
           const testerUrl = (url) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve(true); img.onerror = () => resolve(false); img.src = url; });
@@ -139,7 +139,7 @@ function PanneauOnglet({ id, couleur, pastille, label, userId, zoomSocialRef, on
     // Charger commentaires
     const { data: commData } = await supabase.from('commentaires_coloriages').select('id, texte, user_id, created_at').eq('coloriage_id', colo.coloId).order('created_at', { ascending: true });
     const uids = [...new Set((commData || []).map(c => c.user_id))];
-    const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', uids);
+    const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
     const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
     setCommentaires(prev => ({ ...prev, [colo.coloId]: (commData || []).map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })) }));
   };
