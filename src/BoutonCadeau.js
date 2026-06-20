@@ -4,10 +4,9 @@ import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
 
-// ⚠️ Visuels — à remplacer par Kevin une fois disponibles sur R2 (pas pilotables
-// depuis Admin, seuls le message et le PDF le sont) :
-const VISUEL_BOUTON_CADEAU = `${R2}/site/bouton_cadeau.png`;        // bouton flottant scintillant
-const VISUEL_ENCART_CADEAU = `${R2}/site/cadeau_offert.png`;        // visuel dans l'encart (optionnel)
+// Visuels (non pilotables depuis Admin, seuls le message et le PDF le sont) :
+const VISUEL_BOUTON_CADEAU = `${R2}/site/pastille_birthday.png`;    // bouton flottant scintillant
+const VISUEL_ENCART_CADEAU = `${R2}/site/pastille_cadeau.png`;      // visuel dans l'encart (optionnel)
 
 // Taille du bouton flottant — 2.5x le bouton Tchat (39px)
 const TAILLE_BOUTON = 98;
