@@ -40,15 +40,13 @@ function texteNotif(n) {
         ? `Kevin a encore passé une nuit blanche`
         : `${nb} illustrations ont envahi le catalogue`;
     case 'nouveau_livre_pdf':
+      return `Un nouveau livre PDF est sorti du four : ${c.nom || '...'}`;
     case 'nouveau_livre_relie':
-      return nb === 1
-        ? `Un nouveau livre est sorti du four : ${c.nom || '...'}`
-        : `${nb} nouveaux livres sont sortis du four`;
+      return `Amazon est prêt à te livrer le nouveau livre ${c.nom || '...'}, à un prix défiant toute concurrence. Ça te tente ?`;
     case 'nouveau_recueil_pdf':
+      return `Un nouveau recueil PDF est sorti du four : ${c.nom || '...'}`;
     case 'nouveau_recueil_relie':
-      return nb === 1
-        ? `Un nouveau recueil est sorti du four : ${c.nom || '...'}`
-        : `${nb} nouveaux recueils sont sortis du four`;
+      return `Amazon est prêt à te livrer le nouveau recueil ${c.nom || '...'}, à un prix défiant toute concurrence. Ça te tente ?`;
     case 'like_coloriage':
     case 'commentaire_coloriage':
       return nb === 1
