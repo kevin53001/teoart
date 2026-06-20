@@ -177,6 +177,8 @@ export default function Admin() {
   const [messagesChat, setMessagesChat] = useState([])
   const [texteChat, setTexteChat] = useState('')
   const [loadingChat, setLoadingChat] = useState(false)
+  const [rechercheUsagerChat, setRechercheUsagerChat] = useState('')
+  const [suggestionsUsagersChat, setSuggestionsUsagersChat] = useState([])
   const finChatRef = useRef(null)
 
   // ── Notif admin (nouvel onglet) ──
@@ -304,6 +306,28 @@ export default function Admin() {
     setConversations(prev => prev.map(c => c.user_id === uid ? { ...c, non_lus: 0 } : c))
   }, [])
 
+  // ── Chat privé : recherche d'un usager par pseudo pour démarrer une conversation ──
+  const rechercherUsagersChat = useCallback(async (q) => {
+    if (!q || q.trim().length === 0) { setSuggestionsUsagersChat([]); return }
+    const { data } = await supabase
+      .from('profils')
+      .select('id, pseudo')
+      .ilike('pseudo', `%${q.trim()}%`)
+      .order('pseudo', { ascending: true })
+      .limit(20)
+    setSuggestionsUsagersChat(data || [])
+  }, [])
+
+  // ── Chat privé : démarrer (ou rouvrir) une conversation avec l'usager choisi ──
+  const demarrerConversationAvec = (usager) => {
+    setConversations(prev => prev.some(c => c.user_id === usager.id)
+      ? prev
+      : [{ user_id: usager.id, pseudo: usager.pseudo || 'Anonyme', dernier_message: '', dernier_at: new Date().toISOString(), non_lus: 0 }, ...prev])
+    setRechercheUsagerChat('')
+    setSuggestionsUsagersChat([])
+    ouvrirConversation(usager.id)
+  }
+
   // ── Chat général (public) — épinglé en haut ──
   const ouvrirGeneral = useCallback(async () => {
     setConversationActive('__general__')
@@ -429,6 +453,11 @@ export default function Admin() {
     const timer = setTimeout(() => rechercherUsagersNotif(rechercheUsagerNotif), 250)
     return () => clearTimeout(timer)
   }, [rechercheUsagerNotif, rechercherUsagersNotif])
+
+  useEffect(() => {
+    const timer = setTimeout(() => rechercherUsagersChat(rechercheUsagerChat), 250)
+    return () => clearTimeout(timer)
+  }, [rechercheUsagerChat, rechercherUsagersChat])
 
   // Realtime global : tout nouveau message privé met à jour la liste/badge
   useEffect(() => {
@@ -1038,6 +1067,25 @@ export default function Admin() {
               ) : (
                 /* Liste — mobile */
                 <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  <div style={{ position:'relative' }}>
+                    <input
+                      style={{ ...s.input, marginBottom:0 }}
+                      placeholder="Démarrer une conversation — pseudo..."
+                      value={rechercheUsagerChat}
+                      onChange={e => setRechercheUsagerChat(e.target.value)}
+                    />
+                    {suggestionsUsagersChat.length > 0 && (
+                      <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:10, background:'#0d0d1a', border:'1px solid #00e5ff44', borderRadius:'8px', marginTop:'4px', maxHeight:'200px', overflowY:'auto' }}>
+                        {suggestionsUsagersChat.map(u => (
+                          <div key={u.id} onClick={() => demarrerConversationAvec(u)}
+                            style={{ padding:'10px 12px', cursor:'pointer', fontSize:'12px', color:'#f0f0ff', borderBottom:'1px solid #ffffff08' }}
+                          >
+                            {u.pseudo || 'Anonyme'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div onClick={ouvrirGeneral} style={{ background:'rgba(0,229,255,0.05)', border:'1px solid #00e5ff44', borderRadius:'10px', padding:'12px 14px', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px' }}>
                     <i className="ti ti-message-2" style={{ fontSize:'15px', color:'#00e5ff' }} aria-hidden="true" />
                     <span style={{ fontSize:'13px', fontWeight:600, color:'#00e5ff' }}>Chat Général</span>
@@ -1061,8 +1109,29 @@ export default function Admin() {
               /* Desktop — 2 colonnes */
               <div style={{ display:'flex', gap:'14px', height:'calc(100vh - 110px)' }}>
                 <div style={{ width:'260px', flexShrink:0, ...s.tableWrap, overflowY:'auto' }}>
+                  <div style={{ position:'relative', padding:'10px 10px 0' }}>
+                    <input
+                      style={{ ...s.input, marginBottom:0 }}
+                      placeholder="Démarrer une conversation — pseudo..."
+                      value={rechercheUsagerChat}
+                      onChange={e => setRechercheUsagerChat(e.target.value)}
+                    />
+                    {suggestionsUsagersChat.length > 0 && (
+                      <div style={{ position:'absolute', top:'100%', left:'10px', right:'10px', zIndex:10, background:'#0d0d1a', border:'1px solid #00e5ff44', borderRadius:'8px', marginTop:'4px', maxHeight:'200px', overflowY:'auto' }}>
+                        {suggestionsUsagersChat.map(u => (
+                          <div key={u.id} onClick={() => demarrerConversationAvec(u)}
+                            style={{ padding:'9px 12px', cursor:'pointer', fontSize:'12px', color:'#f0f0ff', borderBottom:'1px solid #ffffff08' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#0f0f1e' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                          >
+                            {u.pseudo || 'Anonyme'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div onClick={ouvrirGeneral}
-                    style={{ padding:'12px 14px', cursor:'pointer', borderBottom:'1px solid #00e5ff22', background: conversationActive === '__general__' ? 'rgba(0,229,255,0.1)' : 'rgba(0,229,255,0.03)', display:'flex', alignItems:'center', gap:'8px' }}
+                    style={{ padding:'12px 14px', cursor:'pointer', borderBottom:'1px solid #00e5ff22', background: conversationActive === '__general__' ? 'rgba(0,229,255,0.1)' : 'rgba(0,229,255,0.03)', display:'flex', alignItems:'center', gap:'8px', marginTop:'10px' }}
                     onMouseEnter={e => { if (conversationActive !== '__general__') e.currentTarget.style.background = 'rgba(0,229,255,0.07)' }}
                     onMouseLeave={e => { if (conversationActive !== '__general__') e.currentTarget.style.background = 'rgba(0,229,255,0.03)' }}
                   >
