@@ -2,7 +2,7 @@
 :root {
   --font-titre:  'Bubblegum Sans', cursive;   /* titres pages, encarts, popups */
   --font-bouton: 'Boogaloo', cursive;          /* boutons, menus, nav, dropdown */
-  --font-texte:  'Kalam', cursive;             /* tout le reste : textes, labels, inputs */
+  --font-texte:  'Baloo 2', cursive;            /* tout le reste : textes, labels, inputs */
 }
 
 body {
