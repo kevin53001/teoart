@@ -9,17 +9,21 @@ let callbacksEnAttente = []
 
 export function getPresenceChannel(presenceKey) {
   if (!channel) {
+    console.log('[presence] création canal, key=', presenceKey)
     channel = presenceKey
       ? supabase.channel('online-users', { config: { presence: { key: presenceKey } } })
       : supabase.channel('online-users')
 
     channel.subscribe((status) => {
+      console.log('[presence] statut canal online-users:', status)
       if (status === 'SUBSCRIBED') {
         subscribed = true
         callbacksEnAttente.forEach(cb => cb())
         callbacksEnAttente = []
       }
     })
+  } else {
+    console.log('[presence] canal déjà existant, réutilisation (key demandée ignorée si déjà créé)=', presenceKey)
   }
   return channel
 }

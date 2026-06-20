@@ -82,9 +82,12 @@ function App() {
   // Présence temps réel : signale que cet usager est en ligne, pour le compteur live d'Admin
   React.useEffect(() => {
     if (!session?.user?.id) return;
+    console.log('[presence] App.js : démarrage tracking pour', session.user.id);
     const channel = getPresenceChannel(session.user.id);
     onPresenceSubscribed(() => {
-      channel.track({ online_at: new Date().toISOString() });
+      channel.track({ online_at: new Date().toISOString() }).then((result) => {
+        console.log('[presence] App.js : track() résultat =', result);
+      });
     });
   }, [session?.user?.id]);
 

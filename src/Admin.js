@@ -219,8 +219,13 @@ export default function Admin() {
 
   // Compteur visiteurs en ligne (canal de présence partagé avec App.js — écoute seule, pas de track ici)
   useEffect(() => {
+    console.log('[presence] Admin.js : montage écoute compteur');
     const channel = getPresenceChannel()
-    const majCompteur = () => setNbEnLigne(Object.keys(channel.presenceState()).length)
+    const majCompteur = () => {
+      const state = channel.presenceState()
+      console.log('[presence] Admin.js : sync reçu, state =', state);
+      setNbEnLigne(Object.keys(state).length)
+    }
     channel.on('presence', { event: 'sync' }, majCompteur)
     onPresenceSubscribed(majCompteur)
   }, [])
