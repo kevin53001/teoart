@@ -179,6 +179,11 @@ export default function Admin() {
   const [loadingChat, setLoadingChat] = useState(false)
   const [rechercheUsagerChat, setRechercheUsagerChat] = useState('')
   const [suggestionsUsagersChat, setSuggestionsUsagersChat] = useState([])
+
+  const [configCadeau, setConfigCadeau] = useState(null) // { message, chemin_pdf, actif }
+  const [messageCadeauEdit, setMessageCadeauEdit] = useState('')
+  const [pdfCadeauEdit, setPdfCadeauEdit] = useState('')
+  const [savingCadeau, setSavingCadeau] = useState(false)
   const finChatRef = useRef(null)
 
   // ── Notif admin (nouvel onglet) ──
@@ -436,6 +441,57 @@ export default function Admin() {
     setNotifsEnvoyees(prev => prev.filter(n => n.id !== id))
   }
 
+  // ── Cadeau anniversaire : config (message + lien PDF + actif) ──
+  const chargerConfigCadeau = useCallback(async () => {
+    const { data } = await supabase.from('config_cadeau_anniversaire').select('message, chemin_pdf, actif').eq('id', 1).single()
+    if (data) {
+      setConfigCadeau(data)
+      setMessageCadeauEdit(data.message || '')
+      setPdfCadeauEdit(data.chemin_pdf || '')
+    }
+  }, [])
+
+  const sauvegarderConfigCadeau = async () => {
+    setSavingCadeau(true)
+    try {
+      const { error } = await supabase.from('config_cadeau_anniversaire').update({
+        message: messageCadeauEdit.trim(),
+        chemin_pdf: pdfCadeauEdit.trim(),
+        updated_at: new Date().toISOString(),
+      }).eq('id', 1)
+      if (error) throw error
+      await chargerConfigCadeau()
+      showToast('Configuration du cadeau mise à jour')
+    } catch (e) {
+      showToast('Erreur lors de la sauvegarde', 'error')
+    }
+    setSavingCadeau(false)
+  }
+
+  const toggleActifCadeau = async () => {
+    if (!configCadeau) return
+    setSavingCadeau(true)
+    try {
+      const { error } = await supabase.from('config_cadeau_anniversaire').update({ actif: !configCadeau.actif, updated_at: new Date().toISOString() }).eq('id', 1)
+      if (error) throw error
+      await chargerConfigCadeau()
+      showToast(!configCadeau.actif ? 'Bouton Cadeau activé' : 'Bouton Cadeau désactivé')
+    } catch (e) {
+      showToast('Erreur lors de la sauvegarde', 'error')
+    }
+    setSavingCadeau(false)
+  }
+
+  useEffect(() => {
+    if (userId) chargerConfigCadeau()
+  }, [userId, chargerConfigCadeau])
+
+  // Rappel visible tant que le bouton n'est pas encore actif et qu'on est avant le 1er juillet 2026
+  const DATE_ACTIVATION_PREVUE = new Date('2026-07-01T00:00:00')
+  const rappelCadeau = !!configCadeau && !configCadeau.actif && new Date() < DATE_ACTIVATION_PREVUE
+
+
+
   useEffect(() => {
     if (userId) chargerConversations()
   }, [userId, chargerConversations])
@@ -617,6 +673,7 @@ export default function Admin() {
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
           { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
           { id:'notif', icon:'ti-bell', label:'Notif' },
+          { id:'cadeau', icon:'ti-gift', label:`Cadeau${rappelCadeau ? ' ⚠️' : ''}` },
         ].map(n => (
           <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
             <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -675,6 +732,7 @@ export default function Admin() {
               { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
               { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
               { id:'notif', icon:'ti-bell', label:'Notif' },
+              { id:'cadeau', icon:'ti-gift', label:`Cadeau${rappelCadeau ? ' ⚠️' : ''}` },
             ].map(n => (
               <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
                 <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
@@ -1334,6 +1392,67 @@ export default function Admin() {
                 </div>
               </div>
             )
+          )}
+
+          {/* ======== CADEAU ANNIVERSAIRE ======== */}
+          {!loading && onglet === 'cadeau' && configCadeau && (
+            <div style={{ maxWidth:'520px', display:'flex', flexDirection:'column', gap:'16px' }}>
+
+              {rappelCadeau && (
+                <div style={{ background:'rgba(255,210,80,0.1)', border:'1px solid #ffd25066', borderRadius:'10px', padding:'14px 16px', display:'flex', alignItems:'center', gap:'10px' }}>
+                  <span style={{ fontSize:'20px' }}>⚠️</span>
+                  <div>
+                    <div style={{ fontSize:'13px', fontWeight:600, color:'#ffd250' }}>Pense à activer le bouton Cadeau le 1er juillet 2026 !</div>
+                    <div style={{ fontSize:'11px', color:'#6a6a8a', marginTop:'2px' }}>Ce rappel disparaîtra une fois le bouton activé.</div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ ...s.tableWrap, padding:'16px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'12px' }}>
+                <div>
+                  <div style={{ fontSize:'13px', fontWeight:600, color:'#f0f0ff' }}>Statut du bouton</div>
+                  <div style={{ fontSize:'11px', color: configCadeau.actif ? '#22c55e' : '#6a6a8a', marginTop:'2px' }}>
+                    {configCadeau.actif ? '● Actif — visible le jour de l\'anniversaire des usagers' : '○ Inactif — invisible pour tous les usagers'}
+                  </div>
+                </div>
+                <button
+                  onClick={toggleActifCadeau}
+                  disabled={savingCadeau}
+                  style={{
+                    background: configCadeau.actif ? 'rgba(239,68,68,0.12)' : 'linear-gradient(135deg, #ffd250, #c48a00)',
+                    border: configCadeau.actif ? '1px solid #ef444466' : 'none',
+                    borderRadius:'8px', padding:'9px 16px', color: configCadeau.actif ? '#ef4444' : '#000',
+                    fontWeight:'bold', fontSize:'12px', cursor: savingCadeau ? 'wait' : 'pointer', flexShrink:0
+                  }}
+                >
+                  {configCadeau.actif ? 'Désactiver' : 'Activer'}
+                </button>
+              </div>
+
+              <div style={{ ...s.tableWrap, padding:'16px', display:'flex', flexDirection:'column', gap:'10px' }}>
+                <label style={{ fontSize:'11px', color:'#6a6a8a', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px' }}>Message d'anniversaire</label>
+                <textarea
+                  value={messageCadeauEdit}
+                  onChange={e => setMessageCadeauEdit(e.target.value)}
+                  rows={4}
+                  style={{ ...s.input, marginBottom:0, resize:'vertical', fontFamily:'inherit' }}
+                />
+                <label style={{ fontSize:'11px', color:'#6a6a8a', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.5px', marginTop:'6px' }}>Lien du PDF (chemin R2, ex: cadeaux/cadeau_2026.pdf)</label>
+                <input
+                  value={pdfCadeauEdit}
+                  onChange={e => setPdfCadeauEdit(e.target.value)}
+                  style={{ ...s.input, marginBottom:0 }}
+                  placeholder="cadeaux/cadeau_anniversaire.pdf"
+                />
+                <button
+                  onClick={sauvegarderConfigCadeau}
+                  disabled={savingCadeau}
+                  style={{ ...s.btnCyan, marginTop:'8px', alignSelf:'flex-start', opacity: savingCadeau ? 0.6 : 1 }}
+                >
+                  {savingCadeau ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

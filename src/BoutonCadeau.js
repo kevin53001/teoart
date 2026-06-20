@@ -4,13 +4,10 @@ import { supabase } from './supabase';
 
 const R2 = 'https://images.kevinteoart.fr';
 
-// ⚠️ Mettre à true quand les visuels et le PDF seront prêts sur R2
-const ACTIF = false;
-
-// ⚠️ À remplacer par Kevin une fois les visuels et le PDF disponibles sur R2 :
+// ⚠️ Visuels — à remplacer par Kevin une fois disponibles sur R2 (pas pilotables
+// depuis Admin, seuls le message et le PDF le sont) :
 const VISUEL_BOUTON_CADEAU = `${R2}/site/bouton_cadeau.png`;        // bouton flottant scintillant
 const VISUEL_ENCART_CADEAU = `${R2}/site/cadeau_offert.png`;        // visuel dans l'encart (optionnel)
-const LIEN_PDF_CADEAU = 'cadeaux/cadeau_anniversaire.pdf';          // chemin R2 brut (clé du bucket, pas l'URL complète)
 
 // Taille du bouton flottant — 2.5x le bouton Tchat (39px)
 const TAILLE_BOUTON = 98;
@@ -35,6 +32,7 @@ function BoutonCadeau({ hidden = false }) {
   const [jourReference, setJourReference] = useState(null); // 'MM-DD' à verrouiller au clic
   const [dejaVerrouille, setDejaVerrouille] = useState(false);
   const [telechargement, setTelechargement] = useState(false);
+  const [config, setConfig] = useState(null); // { message, chemin_pdf, actif } — piloté depuis Admin
 
   // ── Détermine si le bouton doit apparaître aujourd'hui ──
   const verifierAnniversaire = useCallback(async () => {
@@ -42,12 +40,13 @@ function BoutonCadeau({ hidden = false }) {
     if (!user) return;
     setUserId(user.id);
 
-    const { data: profil } = await supabase
-      .from('profils')
-      .select('date_naissance, cadeau_anniv_jour_verrouille, cadeau_anniv_annee_recue')
-      .eq('id', user.id)
-      .single();
-    if (!profil) return;
+    const [{ data: profil }, { data: conf }] = await Promise.all([
+      supabase.from('profils').select('date_naissance, cadeau_anniv_jour_verrouille, cadeau_anniv_annee_recue').eq('id', user.id).single(),
+      supabase.from('config_cadeau_anniversaire').select('message, chemin_pdf, actif').eq('id', 1).single(),
+    ]);
+    if (!profil || !conf) return;
+    setConfig(conf);
+    if (!conf.actif) { setVisible(false); return; }
 
     const aujourdhui = aujourdhuiMMDD();
     const anneeActuelle = new Date().getFullYear();
@@ -74,7 +73,7 @@ function BoutonCadeau({ hidden = false }) {
   const ouvrirEncart = () => setOuvert(true);
 
   const recupererCadeau = async () => {
-    if (telechargement || !userId || !jourReference) return;
+    if (telechargement || !userId || !jourReference || !config) return;
     setTelechargement(true);
 
     try {
@@ -84,7 +83,7 @@ function BoutonCadeau({ hidden = false }) {
       const resp = await fetch('/api/download-free', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, itemId: 'cadeau_anniversaire', itemType: 'cadeau', fichierPdf: LIEN_PDF_CADEAU }),
+        body: JSON.stringify({ userId, itemId: 'cadeau_anniversaire', itemType: 'cadeau', fichierPdf: config.chemin_pdf }),
       });
       const { url, error } = await resp.json();
       if (error) throw new Error(error);
@@ -109,7 +108,7 @@ function BoutonCadeau({ hidden = false }) {
     setTelechargement(false);
   };
 
-  if (hidden || !ACTIF || !visible) return null;
+  if (hidden || !config?.actif || !visible) return null;
 
   return (
     <>
@@ -145,8 +144,8 @@ function BoutonCadeau({ hidden = false }) {
             <p style={{ color: '#ffd250', fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
               🎉 Joyeux anniversaire !
             </p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
-              Toute l'équipe de Kevin Teo'Art te souhaite une merveilleuse journée. Pour l'occasion, voici un petit cadeau rien que pour toi !
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px', whiteSpace: 'pre-line' }}>
+              {config.message}
             </p>
             <button
               onClick={recupererCadeau}
