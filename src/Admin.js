@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
+import { getPresenceChannel, onPresenceSubscribed } from './presence'
 
 const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
 
@@ -216,16 +217,12 @@ export default function Admin() {
     })
   }, [navigate])
 
-  // Compteur visiteurs en ligne (Presence channel partagé avec le reste du site, écoute seule — pas de track)
+  // Compteur visiteurs en ligne (canal de présence partagé avec App.js — écoute seule, pas de track ici)
   useEffect(() => {
-    const channel = supabase.channel('online-users')
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState()
-        setNbEnLigne(Object.keys(state).length)
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    const channel = getPresenceChannel()
+    const majCompteur = () => setNbEnLigne(Object.keys(channel.presenceState()).length)
+    channel.on('presence', { event: 'sync' }, majCompteur)
+    onPresenceSubscribed(majCompteur)
   }, [])
 
   const showToast = (msg, type = 'success') => {

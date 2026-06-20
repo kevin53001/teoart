@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
+import { getPresenceChannel, onPresenceSubscribed } from './presence';
 import { PanierProvider } from './PanierContext';
 import Connexion from './Connexion';
 import Inscription from './Inscription';
@@ -81,15 +82,10 @@ function App() {
   // Présence temps réel : signale que cet usager est en ligne, pour le compteur live d'Admin
   React.useEffect(() => {
     if (!session?.user?.id) return;
-    const channel = supabase.channel('online-users', {
-      config: { presence: { key: session.user.id } }
+    const channel = getPresenceChannel(session.user.id);
+    onPresenceSubscribed(() => {
+      channel.track({ online_at: new Date().toISOString() });
     });
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({ online_at: new Date().toISOString() });
-      }
-    });
-    return () => { supabase.removeChannel(channel); };
   }, [session?.user?.id]);
 
   // Mobile : splash screen pendant le chargement
