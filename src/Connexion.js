@@ -220,11 +220,9 @@ function Connexion() {
             )}
 
             <button onClick={handleConnexion} disabled={loading}
-              style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginBottom: '12px', transition: 'opacity .2s', opacity: loading ? 0.6 : 1 }}>
+              style={{ width: '100%', background: 'linear-gradient(135deg, #00d4d4, #0099aa)', border: 'none', borderRadius: '8px', padding: '13px', color: '#fff', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginBottom: '8px', transition: 'opacity .2s', opacity: loading ? 0.6 : 1 }}>
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
-
-            <div style={{ color: 'rgba(255,255,255,0.28)', textAlign: 'center', marginBottom: '12px', fontSize: '13px' }}>— ou —</div>
 
             <button onClick={() => navigate('/inscription')}
               style={{ width: '100%', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '13px', color: 'rgba(255,255,255,0.7)', fontSize: '15px', cursor: 'pointer', transition: 'opacity .2s' }}>
