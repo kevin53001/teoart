@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabase'
-import { getPresenceChannel, onPresenceSync } from './presence'
 
 const ADMIN_USER_ID = 'd5865b2c-d5b0-4422-bd74-010ef651735c'
 
@@ -218,19 +217,20 @@ export default function Admin() {
     })
   }, [navigate])
 
-  // Compteur visiteurs en ligne (canal de présence partagé avec App.js).
-  // Lecture par polling de presenceState() plutôt que par l'événement 'sync' seul,
-  // qui ne se déclenche pas de façon fiable selon les cas — le polling garantit un résultat
-  // correct en quelques secondes quoi qu'il arrive, largement suffisant pour ce compteur.
+  // Compteur visiteurs en ligne — approche heartbeat (table `en_ligne`), plus simple et fiable
+  // que Supabase Realtime Presence (abandonné après plusieurs tentatives infructueuses).
+  // Un usager est considéré "en ligne" si son dernier heartbeat date de moins d'1 minute.
   useEffect(() => {
-    const channel = getPresenceChannel()
-    const majCompteur = () => {
-      const state = channel.presenceState()
-      setNbEnLigne(Object.keys(state).length)
+    const majCompteur = async () => {
+      const seuil = new Date(Date.now() - 60000).toISOString()
+      const { count } = await supabase
+        .from('en_ligne')
+        .select('user_id', { count: 'exact', head: true })
+        .gt('updated_at', seuil)
+      setNbEnLigne(count || 0)
     }
-    onPresenceSync(majCompteur)   // tentative event-driven (instantané si ça marche)
-    majCompteur()                  // lecture immédiate
-    const interval = setInterval(majCompteur, 3000)  // filet de sécurité toutes les 3s
+    majCompteur()
+    const interval = setInterval(majCompteur, 15000) // rafraîchi toutes les 15s, largement suffisant pour un compteur admin
     return () => clearInterval(interval)
   }, [])
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
-import { getPresenceChannel, onPresenceSubscribed } from './presence';
 import { PanierProvider } from './PanierContext';
 import Connexion from './Connexion';
 import Inscription from './Inscription';
@@ -79,13 +78,20 @@ function App() {
       .then(() => {});
   }, [session?.user?.id]);
 
-  // Présence temps réel : signale que cet usager est en ligne, pour le compteur live d'Admin
+  // Présence "en ligne" : heartbeat périodique dans la table `en_ligne`, lu par Admin
+  // pour le compteur live. Remplace l'ancienne approche Supabase Realtime Presence
+  // (abandonnée — track() fonctionnait mais presenceState() restait vide côté lecture).
   React.useEffect(() => {
     if (!session?.user?.id) return;
-    const channel = getPresenceChannel(session.user.id);
-    onPresenceSubscribed(() => {
-      channel.track({ online_at: new Date().toISOString() });
-    });
+    const envoyerHeartbeat = () => {
+      supabase
+        .from('en_ligne')
+        .upsert({ user_id: session.user.id, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+        .then(() => {});
+    };
+    envoyerHeartbeat(); // immédiat à la connexion
+    const interval = setInterval(envoyerHeartbeat, 20000); // toutes les 20s — sous le seuil de 60s utilisé côté Admin
+    return () => clearInterval(interval);
   }, [session?.user?.id]);
 
   // Mobile : splash screen pendant le chargement
