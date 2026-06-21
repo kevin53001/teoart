@@ -124,8 +124,8 @@ function getVisuelB(visuels) {
 }
 
 // ─── Tracker Ma Collection : mini-lignes (format tableau) réparties en 3 colonnes ──
-const FONDS_LIGNE_DESKTOP = ['rgba(255,62,181,0.05)', 'rgba(255,210,80,0.05)', 'rgba(0,212,212,0.05)'];
-const FONDS_LIGNE_MOBILE = ['rgba(255,62,181,0.1)', 'rgba(255,210,80,0.1)', 'rgba(0,212,212,0.1)'];
+const FONDS_LIGNE_DESKTOP = ['rgba(255,62,181,0.26)', 'rgba(255,210,80,0.26)', 'rgba(0,212,212,0.26)'];
+const FONDS_LIGNE_MOBILE = ['rgba(255,62,181,0.26)', 'rgba(255,210,80,0.26)', 'rgba(0,212,212,0.26)'];
 
 function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, ligneIdx, isMobile }) {
   const url = getVisuelB(illu.visuels);
