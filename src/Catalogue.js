@@ -392,7 +392,7 @@ function Catalogue() {
       }
     } else {
       if (categorie === 'Calendrier') {
-        if (!i.nom || !i.nom.includes('202')) return false;
+        if (!i.nom || !i.nom.includes('202') || i.nom.includes('Rose')) return false;
       } else if (categorie === 'FREE') {
         if (parseFloat(i.prix) !== 0) return false;
       } else if (categorie !== 'Tout' && i.categorie !== categorie) return false;
