@@ -123,6 +123,35 @@ function Inscription() {
     setError('');
     setLoading(true);
 
+    // Upload de la photo de profil vers R2 (via api/upload-avatar.js) AVANT le signUp,
+    // car l'utilisateur n'existe pas encore et on n'a pas de session active pour écrire
+    // directement dans 'profils' ensuite (RLS). On génère donc une clé temporaire,
+    // et on transmet l'URL obtenue dans les métadonnées du signUp : c'est le trigger
+    // Postgres handle_new_user() (SECURITY DEFINER) qui la reprendra pour créer la ligne
+    // profils avec le bon avatar_url dès la création du compte.
+    let avatarUrl = null;
+    if (photoCroppee) {
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(photoCroppee);
+        });
+        const idTemp = (typeof crypto !== 'undefined' && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : `signup-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const response = await fetch('/api/upload-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64, userId: idTemp }),
+        });
+        const data = await response.json();
+        if (data.url) { avatarUrl = data.url; }
+        else { console.error('upload-avatar (inscription) erreur:', data.error); }
+      } catch (e) { console.error('upload-avatar (inscription) exception:', e); }
+    }
+
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -139,6 +168,7 @@ function Inscription() {
           code_postal: codePostal || null,
           ville: ville || null,
           telephone: telephone || null,
+          avatar_url: avatarUrl,
         },
       }
     });
@@ -151,11 +181,9 @@ function Inscription() {
 
     // La création de la ligne profils est désormais gérée automatiquement
     // côté base par un trigger Postgres sur auth.users (handle_new_user),
-    // qui lit ces métadonnées. Plus d'insert client ici (bloqué par la RLS
-    // tant que l'email n'est pas confirmé / la session pas active).
-    // L'ancien upload vers le bucket Supabase "avatars" a aussi été retiré :
-    // il était mort (jamais réutilisé), le vrai flux avatar passe par R2
-    // via api/upload-avatar.js depuis MonCompte.js.
+    // qui lit ces métadonnées (dont avatar_url, voir ci-dessus). Plus d'insert
+    // client ici (bloqué par la RLS tant que l'email n'est pas confirmé /
+    // la session pas active).
 
     setLoading(false);
     setSuccess(true);
