@@ -216,7 +216,7 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
     { couleur: '#2ecc71', valeur: stats.colorie, total: coloriesRealises, label: 'Coloriages partagés' },
     { couleur: '#ff3eb5', valeur: stats.jeVeux, total: illusManquantes, label: 'Favoris' },
   ];
-  const TAILLE = isMobile ? 72 : 78;
+  const TAILLE = isMobile ? 92 : 78;
   return (
     <div style={{
       display: 'flex',
@@ -238,8 +238,8 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
 
 // ─── Encart avatar — même format que l'encart titre ───────────────────────
 function EncartAvatar({ avatarUrl, isMobile }) {
-  const TAILLE = isMobile ? 72 : 78;
-  const TAILLE_AVATAR = isMobile ? 58 : 68;
+  const TAILLE = isMobile ? 92 : 78;
+  const TAILLE_AVATAR = isMobile ? 76 : 68;
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2655,12 +2655,12 @@ function MonCompte() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', gap: isMobile ? '6px' : '12px', width: '100%' }}>
                 <EncartCompteurs stats={stats} coloriesRealises={coloriesRealises} illusManquantes={illusManquantes} isMobile={isMobile} />
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '6px 8px' : '14px 24px', flex: '0 0 auto', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px 10px' : '14px 24px', flex: '0 0 auto', minWidth: 0 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
-                    <p style={{ color: '#fff', fontSize: isMobile ? '11px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       MON COMPTE
                     </p>
-                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '7px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       Ma Collection Kevin Teo'Art
                     </p>
                   </div>
