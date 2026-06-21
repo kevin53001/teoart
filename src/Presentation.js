@@ -2,6 +2,7 @@ import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
+import GuideFlottant from './GuideFlottant';
 import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -360,6 +361,7 @@ function Presentation() {
         </div>
       </div>
 
+      <GuideFlottant pageKey="presentation" userId={userId} isMobile={isMobile} />
       <BandeLegale />
       <OngletsLateraux userId={userId} onOuvrirFiche={(illu, liste) => {
         const l = liste || [illu];

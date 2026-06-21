@@ -2,6 +2,7 @@ import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
+import GuideFlottant from './GuideFlottant';
 import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -955,6 +956,7 @@ function Catalogue() {
         </div>
       </div>
 
+      <GuideFlottant pageKey="catalogue" userId={userId} isMobile={isMobile} />
       <BandeLegale />
 
       {popup && (

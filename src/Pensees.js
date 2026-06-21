@@ -2,6 +2,7 @@ import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
+import GuideFlottant from './GuideFlottant';
 import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -1245,6 +1246,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
         </div>
       </div>
 
+      <GuideFlottant pageKey="pensees" userId={userId} isMobile={isMobile} />
       <BandeLegale />
 
       {/* ─── POPUP LECTURE ─── */}

@@ -2,6 +2,7 @@ import React from 'react';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
+import GuideFlottant from './GuideFlottant';
 import BoutonsFlottants from './BoutonsFlottants';
 import Cloche from './Cloche';
 import Tchat from './Tchat';
@@ -1408,6 +1409,7 @@ function Livres() {
         </div>
       )}
 
+      <GuideFlottant pageKey="livres" userId={userId} isMobile={isMobile} />
       <BandeLegale />
       <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </div>

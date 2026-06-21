@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import OngletsLateraux from './OngletsLateraux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from './supabase';
+import GuideFlottant from './GuideFlottant';
 import BoutonsFlottants from './BoutonsFlottants';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
@@ -2753,6 +2754,7 @@ function MonCompte() {
         </div>
       </div>
 
+      <GuideFlottant pageKey="mon-compte" userId={userId} isMobile={isMobile} />
       <BandeLegale />
       {popupIllu && (
         <PopupFicheIllu
