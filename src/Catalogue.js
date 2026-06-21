@@ -414,6 +414,9 @@ function Catalogue() {
   });
 
   const total = illustrationsFiltrees.length;
+  const nbJai = illustrations.filter(i => collection[i.id]?.j_ai || collection[i.id]?.j_ai_auto || collection[i.id]?.j_ai_achete).length;
+  const nbJeVeux = illustrations.filter(i => collection[i.id]?.je_veux).length;
+  const nbColorie = illustrations.filter(i => coloriages[i.id]).length;
   const TAILLE_VIGNETTE = vueCompacte ? 100 : 150;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
@@ -521,7 +524,7 @@ function Catalogue() {
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
         .capsule-pill { width: 84px; height: 24px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
-        .encart-filtres-premium { background: linear-gradient(180deg, rgba(20,20,20,0.45), rgba(0,0,0,0.55)); border: 1px solid rgba(255,210,80,0.35); border-radius: 18px; padding: 14px 24px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
+        .encart-filtres-premium { background: linear-gradient(180deg, rgba(0,0,0,0.62), rgba(0,0,0,0.8)); border: 1px solid rgba(255,210,80,0.35); border-radius: 18px; padding: 14px 24px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
         .encart-filtres-premium, .encart-filtres-premium * { font-family: var(--font-texte); }
         .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
         .capsule-pill.dim-pink { background: rgba(48,10,28,0.92); border: 1px solid rgba(255,62,181,0.35); }
@@ -746,9 +749,25 @@ function Catalogue() {
 
             </div>
 
-            {/* Ligne 2 : filtre actif centré + nombre d'illustrations à droite — hauteur ajustée au texte */}
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)', lineHeight: 1.2 }}>
-              <div style={{ flex: 1 }} />
+            {/* Ligne 2 : compteurs collection à gauche + filtre actif centré + nombre d'illustrations à droite */}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '6px', lineHeight: 1.2 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="J'ai">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '15px', height: '15px', borderRadius: '4px', background: '#00d4d4', color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
+                  <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px' }}>{nbJai}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="Je veux">
+                  <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" /></svg>
+                  <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px' }}>{nbJeVeux}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="Colorié">
+                  <svg viewBox="0 0 24 24" width="14" height="14">
+                    <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5" />
+                    <circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d" /><circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4" /><circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043" /><circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a" />
+                  </svg>
+                  <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px' }}>{nbColorie}</span>
+                </div>
+              </div>
               <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px' }}>
                 {filtreActifInfo && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -767,6 +786,7 @@ function Catalogue() {
                 {total} illustration{total > 1 ? 's' : ''}{recherche ? ` · "${recherche}"` : ''}
               </div>
             </div>
+
           </div>
 
           {/* GRILLE */}
