@@ -197,13 +197,21 @@ function LegendeItem({ couleur, texte }) {
 
 // ─── Un compteur avec LED scintillante (encart en haut de Mon Compte) ─────
 function CompteurLED({ couleur, valeur, total, label, isMobile }) {
+  if (isMobile) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flex: 1, minWidth: 0 }}>
+        <span className="led-dot" style={{ width: '6px', height: '6px', background: couleur, boxShadow: `0 0 6px ${couleur}` }} />
+        <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
+      </div>
+    );
+  }
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '2px' : '4px', flex: 1, minWidth: 0 }}>
-      <span className="led-dot" style={{ width: isMobile ? '6px' : '8px', height: isMobile ? '6px' : '8px', background: couleur, boxShadow: `0 0 6px ${couleur}` }} />
-      <span style={{ color: '#fff', fontSize: isMobile ? '10px' : '13px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
-      {!isMobile && (
-        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '8px', textAlign: 'center', lineHeight: 1.2 }}>{label}</span>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <span className="led-dot" style={{ width: '7px', height: '7px', flexShrink: 0, background: couleur, boxShadow: `0 0 6px ${couleur}` }} />
+        <span style={{ color: '#fff', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
+      </div>
+      <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '8px', lineHeight: 1.2, marginLeft: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
     </div>
   );
 }
@@ -217,7 +225,20 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
     { couleur: '#ff3eb5', valeur: stats.jeVeux, total: illusManquantes, label: 'Favoris' },
   ];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '4px' : '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px 6px' : '14px 18px', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? 'auto' : '260px', minWidth: 0, overflow: 'hidden' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: isMobile ? 'row' : 'column',
+      alignItems: isMobile ? 'center' : 'stretch',
+      justifyContent: isMobile ? 'space-between' : 'center',
+      gap: isMobile ? '4px' : '5px',
+      background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px',
+      padding: isMobile ? '10px 6px' : '8px 14px',
+      flex: isMobile ? '1 1 0' : '0 0 auto',
+      aspectRatio: isMobile ? undefined : '1',
+      width: isMobile ? 'auto' : undefined,
+      alignSelf: isMobile ? undefined : 'stretch',
+      minWidth: 0, overflow: 'hidden',
+    }}>
       {compteurs.map((c, i) => <CompteurLED key={i} couleur={c.couleur} valeur={c.valeur} total={c.total} label={c.label} isMobile={isMobile} />)}
     </div>
   );
@@ -226,11 +247,19 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
 // ─── Encart avatar — même format que l'encart titre ───────────────────────
 function EncartAvatar({ avatarUrl, isMobile }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px' : '14px 18px', flex: isMobile ? '0 0 auto' : '0 0 auto', width: isMobile ? 'auto' : '260px' }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px',
+      padding: isMobile ? '4px' : '6px',
+      flex: isMobile ? '0 0 auto' : '0 0 auto',
+      aspectRatio: isMobile ? undefined : '1',
+      width: isMobile ? 'auto' : undefined,
+      alignSelf: isMobile ? undefined : 'stretch',
+    }}>
       {avatarUrl ? (
-        <img src={avatarUrl} alt="avatar" style={{ width: isMobile ? '36px' : '52px', height: isMobile ? '36px' : '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)' }} />
+        <img src={avatarUrl} alt="avatar" style={{ width: isMobile ? '36px' : '100%', height: isMobile ? '36px' : '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', display: 'block' }} />
       ) : (
-        <div style={{ width: isMobile ? '36px' : '52px', height: isMobile ? '36px' : '52px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(0,212,212,0.4)' }} />
+        <div style={{ width: isMobile ? '36px' : '100%', height: isMobile ? '36px' : '100%', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(0,212,212,0.4)' }} />
       )}
     </div>
   );
@@ -2662,7 +2691,7 @@ function MonCompte() {
               </div>
 
               {/* ── Boutons onglets ── */}
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: isMobile ? 'wrap' : 'nowrap', justifyContent: 'center', width: '100%' }}>
                 {BTNS_CONFIG.map(btn => {
                   const actif = btn.id === 'favoris' ? showFavoris : onglet === btn.id;
                   return <BoutonOnglet key={btn.id} label={btn.label} couleur={btn.couleur} couleurRgb={btn.couleurRgb} actif={actif}
