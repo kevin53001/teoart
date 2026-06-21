@@ -36,6 +36,8 @@ function Selection() {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 700);
+  const [texteAffiche, setTexteAffiche] = React.useState('');
+  const [compteARebours, setCompteARebours] = React.useState(10);
 
   React.useEffect(() => {
     const charger = async () => {
@@ -62,6 +64,23 @@ function Selection() {
   const toggleRecueil = (id) => setRecueilsCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleLivre = (id) => setLivresCoches(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const retourRecueils = () => { setLivresCoches([]); setEtape(1); setTimeout(() => encartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); };
+
+  React.useEffect(() => {
+    if (etape !== 3) return;
+    const phrase = "Sélection validée ! Je classe, je trie, je range, patience, petite fée des couleurs. Toutes les illustrations de ces livres et recueils sont en train de s'organiser dans ta collection.";
+    let i = 0;
+    setTexteAffiche('');
+    const typingInterval = setInterval(() => {
+      i++;
+      setTexteAffiche(phrase.slice(0, i));
+      if (i >= phrase.length) clearInterval(typingInterval);
+    }, 28);
+    setCompteARebours(10);
+    const countdownInterval = setInterval(() => {
+      setCompteARebours(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => { clearInterval(typingInterval); clearInterval(countdownInterval); };
+  }, [etape]);
 
   const livresFiltres = livres.filter(l => {
     if (!l.recueils_ids || l.recueils_ids.length === 0) return true;
@@ -99,7 +118,8 @@ function Selection() {
     }
 
     setSaving(false);
-    navigate('/accueil');
+    setEtape(3);
+    setTimeout(() => navigate('/accueil'), 10000);
   };
 
   const encartStyle = {
@@ -193,7 +213,7 @@ function Selection() {
         <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13.5px', lineHeight: '1.9' }}>
           Avant de te laisser explorer toutes les illustrations, il faut résoudre une énigme de la plus haute importance :
         </p>
-        <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '15px', margin: '12px 0', fontWeight: 'bold' }}>Quels livres possèdes-tu déjà ?</p>
+        <p style={{ color: '#00d4d4', fontStyle: 'italic', fontSize: '15px', margin: '12px 0', fontWeight: 'bold' }}>Quels livres possèdes-tu déjà ? (format PDF ou livre papier)</p>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', lineHeight: '1.9' }}>
           Sélectionne simplement tes recueils et livres, et je m'occuperai du reste en ajoutant automatiquement les illustrations correspondantes à ta collection.
         </p>
@@ -210,7 +230,7 @@ function Selection() {
     if (etape === 1) return (
       <div style={{ width: '92%', maxWidth: '800px', textAlign: 'center' }}>
         <div style={encartStyle}>
-          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>📚 Quels recueils possèdes-tu ?</p>
+          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>Quels recueils possèdes-tu ?</p>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
         </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
@@ -240,11 +260,11 @@ function Selection() {
     if (etape === 2) return (
       <div style={{ width: '94%', maxWidth: '1100px', textAlign: 'center' }}>
         <div style={encartStyle}>
-          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>📖 Quels livres possèdes-tu ?</p>
+          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>Quels livres possèdes-tu ?</p>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>
             {livresFiltres.length === 0
               ? 'Tous tes livres sont déjà inclus dans tes recueils ! 🎉'
-              : 'Coche les livres que tu possèdes, puis clique sur Valider.'}
+              : 'Tu recherches des livres que tu ne vois pas ? C\'est peut-être que ces livres sont déjà présents dans un des recueils que tu as sélectionné. Donc pas d\'inquiétude. Coche les livres que tu possèdes, puis clique sur Valider.'}
           </p>
         </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
@@ -268,6 +288,34 @@ function Selection() {
         )}
       </div>
     );
+
+    if (etape === 3) return (
+      <div style={{ background: 'rgba(0,0,0,0.82)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '16px', padding: '36px 40px', maxWidth: '480px', width: '92%', backdropFilter: 'blur(10px)', textAlign: 'center' }}>
+        <p style={{ color: '#00d4d4', fontSize: '16px', fontWeight: 'bold', lineHeight: '1.7', marginBottom: '24px', minHeight: '110px' }}>
+          {texteAffiche}
+          <span style={{ borderRight: '2px solid #00d4d4', marginLeft: '1px', animation: 'clignoteCurseur 0.8s step-end infinite' }} />
+        </p>
+        <div style={{
+          width: '64px',
+          height: '64px',
+          margin: '0 auto',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            border: '4px solid rgba(0,212,212,0.2)',
+            borderTopColor: '#00d4d4',
+            borderRadius: '50%',
+            animation: 'spinChargement 0.9s linear infinite',
+          }} />
+          <span style={{ color: '#00d4d4', fontSize: '18px', fontWeight: 'bold' }}>{compteARebours}</span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -276,6 +324,8 @@ function Selection() {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes scrollLeft  { from { transform: translateX(0);    } to { transform: translateX(-50%); } }
         @keyframes scrollRight { from { transform: translateX(-50%); } to { transform: translateX(0);    } }
+        @keyframes spinChargement { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes clignoteCurseur { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
         .barre-left  { animation: scrollLeft  ${SPEED} linear infinite; }
         .barre-right { animation: scrollRight ${SPEED} linear infinite; }
         .barre-left:hover, .barre-right:hover { animation-play-state: paused; }
