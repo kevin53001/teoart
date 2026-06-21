@@ -391,7 +391,11 @@ function Catalogue() {
         if (i.sous_categorie_patreon !== sousCategorie) return false;
       }
     } else {
-      if (categorie !== 'Tout' && i.categorie !== categorie) return false;
+      if (categorie === 'Calendrier') {
+        if (!i.nom || !i.nom.includes('202')) return false;
+      } else if (categorie === 'FREE') {
+        if (parseFloat(i.prix) !== 0) return false;
+      } else if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     }
     if (anneeFiltre !== null && i.annee !== anneeFiltre) return false;
     if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
@@ -471,7 +475,15 @@ function Catalogue() {
     },
     {
       key: 'categorie', label: 'Catégorie', color: 'gold', on: categorieOn,
-      options: CATEGORIES.filter(c => c !== 'Kawaii/Chibi').map((c, i) => ({ value: c, label: c, active: categorie === c, onClick: () => selectionnerCategorie(c), separateur: i === 0 })),
+      options: [
+        { value: 'Tout', label: 'Tout', active: categorie === 'Tout', onClick: () => selectionnerCategorie('Tout'), separateur: true },
+        ...[...CATEGORIES.filter(c => c !== 'Tout' && c !== 'Kawaii/Chibi'), 'Calendrier', 'FREE']
+          .sort((a, b) => a.localeCompare(b, 'fr'))
+          .map(c => ({
+            value: c, label: c, active: categorie === c, onClick: () => selectionnerCategorie(c),
+            style: c === 'FREE' ? { color: '#ffd250', fontWeight: 'bold' } : undefined,
+          })),
+      ],
     },
     {
       key: 'collection', label: 'Collection', color: 'pink', on: collectionOn,
@@ -719,7 +731,7 @@ function Catalogue() {
                       <div className={`dropdown-capsule c-${cap.color}${cap.key === 'annee' ? ' dropdown-capsule-left' : ''}${cap.key === 'collection' ? ' dropdown-capsule-right' : ''}`} onClick={e => e.stopPropagation()}>
                         {cap.options.map(opt => (
                           <React.Fragment key={String(opt.value)}>
-                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
+                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick} style={opt.style}>{opt.label}</button>
                             {opt.separateur && <div className="dropdown-capsule-sep" />}
                           </React.Fragment>
                         ))}
@@ -813,7 +825,7 @@ function Catalogue() {
                       <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
                         {cap.options.map(opt => (
                           <React.Fragment key={String(opt.value)}>
-                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
+                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick} style={opt.style}>{opt.label}</button>
                             {opt.separateur && <div className="dropdown-capsule-sep" />}
                           </React.Fragment>
                         ))}
