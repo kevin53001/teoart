@@ -17,6 +17,7 @@ import SplashScreen from './SplashScreen';
 import Panier from './Panier';
 import Admin from './Admin';
 import BoutonCadeau from './BoutonCadeau';
+import BanniereNotifications from './BanniereNotifications';
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -53,6 +54,16 @@ function ZoneCadeauAnniversaire({ session }) {
   if (!session) return null;
   const surAdmin = location.pathname.startsWith('/admin-kt2024');
   return <BoutonCadeau hidden={surAdmin} />;
+}
+
+// Bannière notifications : même logique de masquage que le bouton Cadeau —
+// cachée sur /admin-kt2024, sinon affichée (le composant gère lui-même
+// la compatibilité Android, le délai et le flag "déjà vue").
+function ZoneNotifications({ session }) {
+  const location = useLocation();
+  if (!session) return null;
+  if (location.pathname.startsWith('/admin-kt2024')) return null;
+  return <BanniereNotifications session={session} />;
 }
 
 function App() {
@@ -134,6 +145,7 @@ function App() {
           <Route path="/admin-kt2024" element={<Admin />} />
         </Routes>
         <ZoneCadeauAnniversaire session={session} />
+        <ZoneNotifications session={session} />
         <BannerePWA />
       </BrowserRouter>
     </PanierProvider>

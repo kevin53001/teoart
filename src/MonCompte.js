@@ -10,6 +10,7 @@ import PopupFicheIllu from './PopupFicheIllu';
 import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 import Cloche from './Cloche';
 import Tchat from './Tchat';
+import { estCompatibleNotifications, permissionBloquee, aSouscriptionActive, activerNotifications } from './pushNotifications';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -1188,6 +1189,28 @@ function SectionMesInfos({ userId }) {
   const [showSupprimerCompte, setShowSupprimerCompte] = React.useState(false);
   const [suppressionEnCours, setSuppressionEnCours] = React.useState(false);
 
+  // ── Notifications push (Android navigateur classique uniquement) ──
+  const [notifCompatible, setNotifCompatible] = React.useState(false);
+  const [notifActive, setNotifActive] = React.useState(false);
+  const [notifBloquee, setNotifBloquee] = React.useState(false);
+  const [notifEnCours, setNotifEnCours] = React.useState(false);
+
+  React.useEffect(() => {
+    const compatible = estCompatibleNotifications();
+    setNotifCompatible(compatible);
+    if (!compatible) return;
+    setNotifBloquee(permissionBloquee());
+    aSouscriptionActive().then(setNotifActive);
+  }, []);
+
+  const handleActiverNotifications = async () => {
+    setNotifEnCours(true);
+    const resultat = await activerNotifications(userId);
+    setNotifEnCours(false);
+    if (resultat === 'activé') { setNotifActive(true); setNotifBloquee(false); }
+    else if (resultat === 'refusé') { setNotifBloquee(permissionBloquee()); }
+  };
+
   // POINT 5 : envoi du mail de réinitialisation
   const handleReset = async () => {
     if (!resetEmail.trim()) { setResetErreur('Adresse email requise.'); return; }
@@ -1405,6 +1428,28 @@ function SectionMesInfos({ userId }) {
                     </>
                   )}
                 </div>
+              )}
+
+              {/* ── Notifications push (Android navigateur classique uniquement) ── */}
+              {notifCompatible && (
+                <>
+                  <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                  {notifActive ? (
+                    <p style={{ color: 'rgba(29,214,160,0.7)', fontSize: '11px', textAlign: 'center' }}>✓ Notifications activées</p>
+                  ) : notifBloquee ? (
+                    <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
+                      🔕 Notifications bloquées par ton navigateur.<br/>
+                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>Réactive-les depuis les réglages du site dans Chrome.</span>
+                    </p>
+                  ) : (
+                    <button
+                      onClick={handleActiverNotifications}
+                      disabled={notifEnCours}
+                      style={{ background: 'linear-gradient(135deg, rgba(29,214,160,0.18), rgba(29,214,160,0.08))', border: '1px solid rgba(29,214,160,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#1dd6a0', fontSize: '12px', cursor: notifEnCours ? 'default' : 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: '0 0 10px rgba(29,214,160,0.15)', opacity: notifEnCours ? 0.6 : 1 }}>
+                      🔔 {notifEnCours ? 'Activation...' : 'Activer les notifications'}
+                    </button>
+                  )}
+                </>
               )}
 
               {avatarPreview && (
