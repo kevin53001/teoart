@@ -38,9 +38,15 @@ function Selection() {
   const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 700);
   const [texteAffiche, setTexteAffiche] = React.useState('');
   const [compteARebours, setCompteARebours] = React.useState(10);
+  const [pseudo, setPseudo] = React.useState('');
 
   React.useEffect(() => {
     const charger = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profil } = await supabase.from('profils').select('pseudo').eq('id', user.id).single();
+        setPseudo(profil?.pseudo || '');
+      }
       const { data: r } = await supabase
         .from('recueils')
         .select('id, nom, annee, visuel_presentation')
@@ -67,7 +73,7 @@ function Selection() {
 
   React.useEffect(() => {
     if (etape !== 3) return;
-    const phrase = "Sélection validée ! Je classe, je trie, je range, patience, petite fée des couleurs. Toutes les illustrations de ces livres et recueils sont en train de s'organiser dans ta collection.";
+    const phrase = `Merci ${pseudo}, sélection validée ! Je classe, je trie, je range, patience, petite fée des couleurs. Toutes les illustrations de ces livres et recueils sont en train de s'organiser dans ta collection.`;
     let i = 0;
     setTexteAffiche('');
     const typingInterval = setInterval(() => {
@@ -230,8 +236,8 @@ function Selection() {
     if (etape === 1) return (
       <div style={{ width: '92%', maxWidth: '800px', textAlign: 'center' }}>
         <div style={encartStyle}>
-          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>Quels recueils possèdes-tu ?</p>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Coche les recueils que tu as déjà, puis clique sur Valider.</p>
+          <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>Alors {pseudo}, que ce soit PDF ou format papier, quels recueils possèdes-tu ?</p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>Coche ceux que tu as déjà, puis clique sur Valider.</p>
         </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
           <>
@@ -263,8 +269,8 @@ function Selection() {
           <p style={{ color: '#fff', fontSize: '17px', fontWeight: 'bold', marginBottom: '6px' }}>Quels livres possèdes-tu ?</p>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px' }}>
             {livresFiltres.length === 0
-              ? 'Tous tes livres sont déjà inclus dans tes recueils ! 🎉'
-              : 'Tu recherches des livres que tu ne vois pas ? C\'est peut-être que ces livres sont déjà présents dans un des recueils que tu as sélectionné. Donc pas d\'inquiétude. Coche les livres que tu possèdes, puis clique sur Valider.'}
+              ? 'Je suis choqué !! Tous tes livres sont déjà inclus dans tes recueils !'
+              : 'Tu recherches des références que tu ne vois pas ? C\'est peut-être que ces livres sont déjà présents dans un des recueils que tu as sélectionné. Donc pas d\'inquiétude. Coche les livres que tu possèdes parmi ceux que tu vois, puis clique sur Valider.'}
           </p>
         </div>
         {loading ? <p style={{ color: '#00d4d4' }}>Chargement...</p> : (
