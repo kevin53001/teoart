@@ -1472,7 +1472,6 @@ function SectionMesInfos({ userId }) {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
-  const [avatarFile, setAvatarFile] = React.useState(null);
   const [avatarPreview, setAvatarPreview] = React.useState(null);
   const [showCrop, setShowCrop] = React.useState(false);
   const [cropSrc, setCropSrc] = React.useState(null);
@@ -1500,46 +1499,57 @@ function SectionMesInfos({ userId }) {
     setShowCrop(true);
   };
 
-  const handleCropConfirm = (blob) => {
-    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(blob));
+  const [avatarSaving, setAvatarSaving] = React.useState(false);
+  const [avatarSaved, setAvatarSaved] = React.useState(false);
+
+  const handleCropConfirm = async (blob) => {
     setShowCrop(false);
     setCropSrc(null);
+    setAvatarPreview(URL.createObjectURL(blob));
+    setAvatarSaving(true);
+    try {
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const response = await fetch('/api/upload-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64, userId }),
+      });
+      const data = await response.json();
+      if (data.url) {
+        const { error: errUpdate } = await supabase.from('profils').update({ avatar_url: data.url }).eq('id', userId);
+        if (errUpdate) {
+          console.error('[MesInfos] erreur écriture Supabase (avatar_url):', errUpdate);
+          alert("La photo a été envoyée mais son enregistrement a échoué. Réessaie.");
+        } else {
+          setProfil(p => ({ ...p, avatar_url: data.url }));
+          setAvatarSaved(true);
+          setTimeout(() => setAvatarSaved(false), 2500);
+        }
+      } else {
+        console.error('[MesInfos] upload-avatar erreur retournée par l\'API:', data.error);
+        alert("Erreur lors de l'envoi de la photo. Réessaie.");
+      }
+    } catch (e) {
+      console.error('[MesInfos] upload-avatar exception réseau:', e);
+      alert("Erreur lors de l'envoi de la photo. Réessaie.");
+    }
+    setAvatarSaving(false);
   };
 
   const handleSave = async () => {
     setSaving(true);
-    let avatarUrl = profil.avatar_url;
-    if (avatarFile) {
-      try {
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(avatarFile);
-        });
-        const response = await fetch('/api/upload-avatar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64, userId }),
-        });
-        const data = await response.json();
-        if (data.url) { avatarUrl = data.url; console.log('[MesInfos] avatar uploadé avec succès:', data.url); }
-        else { console.error('[MesInfos] upload-avatar erreur retournée par l\'API:', data.error); }
-      } catch (e) { console.error('[MesInfos] upload-avatar exception réseau:', e); }
-    }
     const { error: errUpdate } = await supabase.from('profils').update({
       pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
       telephone: profil.telephone, adresse: profil.adresse, complement: profil.complement,
-      code_postal: profil.code_postal, ville: profil.ville, etat: profil.etat, pays: profil.pays, avatar_url: avatarUrl,
+      code_postal: profil.code_postal, ville: profil.ville, etat: profil.etat, pays: profil.pays,
     }).eq('id', userId);
     if (errUpdate) console.error('[MesInfos] erreur écriture Supabase (profils):', errUpdate);
-    // Bug corrigé : l'état local "profil" n'était jamais resynchronisé après la sauvegarde,
-    // donc en cas de retour ultérieur sur la page sans rechargement complet, l'ancien avatar
-    // pouvait sembler "revenir" puisque profil.avatar_url restait sur sa valeur d'avant l'upload.
-    setProfil(p => ({ ...p, avatar_url: avatarUrl }));
-    setAvatarFile(null);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -1720,6 +1730,11 @@ function SectionMesInfos({ userId }) {
               <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', textAlign: 'center' }}>
                 JPG, PNG<br/>Recommandé 400×400px
               </p>
+              {(avatarSaving || avatarSaved) && (
+                <p style={{ color: avatarSaved ? '#00d4d4' : 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: 'bold', textAlign: 'center' }}>
+                  {avatarSaving ? 'Enregistrement de la photo…' : '✓ Photo enregistrée !'}
+                </p>
+              )}
               <label style={{ background: 'rgba(0,212,212,0.12)', border: '1px solid rgba(0,212,212,0.3)', borderRadius: '8px', padding: '10px 18px', color: '#00d4d4', fontSize: '12px', cursor: 'pointer', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
                 📷 Choisir une photo
                 <input type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
