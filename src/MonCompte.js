@@ -232,11 +232,10 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
       justifyContent: isMobile ? 'space-between' : 'space-evenly',
       gap: isMobile ? '4px' : '2px',
       background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px',
-      padding: isMobile ? '10px 6px' : '8px 14px',
+      padding: isMobile ? '10px 6px' : '8px 8px',
       flex: isMobile ? '1 1 0' : '0 0 auto',
-      aspectRatio: isMobile ? undefined : '1',
-      width: isMobile ? 'auto' : undefined,
-      alignSelf: isMobile ? undefined : 'stretch',
+      width: isMobile ? 'auto' : '78px',
+      height: isMobile ? undefined : '78px',
       minWidth: 0, overflow: 'hidden',
     }}>
       {compteurs.map((c, i) => <CompteurLED key={i} couleur={c.couleur} valeur={c.valeur} total={c.total} label={c.label} isMobile={isMobile} />)}
@@ -246,17 +245,16 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
 
 // ─── Encart avatar — même format que l'encart titre ───────────────────────
 function EncartAvatar({ avatarUrl, isMobile }) {
+  const TAILLE = isMobile ? 44 : 78;
+  const TAILLE_AVATAR = isMobile ? 36 : 68;
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px',
-      padding: isMobile ? '4px' : '6px',
-      flex: isMobile ? '0 0 auto' : '0 0 auto',
-      aspectRatio: isMobile ? undefined : '1',
-      width: isMobile ? 'auto' : undefined,
-      alignSelf: isMobile ? undefined : 'stretch',
+      width: `${TAILLE}px`, height: `${TAILLE}px`,
+      flex: '0 0 auto',
     }}>
-      <img src={avatarUrl || `${R2}/site/Logo.png`} alt="avatar" style={{ width: isMobile ? '36px' : '100%', height: isMobile ? '36px' : '100%', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', display: 'block' }} />
+      <img src={avatarUrl || `${R2}/site/Logo.png`} alt="avatar" style={{ width: `${TAILLE_AVATAR}px`, height: `${TAILLE_AVATAR}px`, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', display: 'block' }} />
     </div>
   );
 }
