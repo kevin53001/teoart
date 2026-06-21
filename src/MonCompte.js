@@ -197,21 +197,13 @@ function LegendeItem({ couleur, texte }) {
 
 // ─── Un compteur avec LED scintillante (encart en haut de Mon Compte) ─────
 function CompteurLED({ couleur, valeur, total, label, isMobile }) {
-  if (isMobile) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flex: 1, minWidth: 0 }}>
-        <span className="led-dot" style={{ width: '6px', height: '6px', background: couleur, boxShadow: `0 0 6px ${couleur}` }} />
-        <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
-      </div>
-    );
-  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', width: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span className="led-dot" style={{ width: '6px', height: '6px', flexShrink: 0, background: couleur, boxShadow: `0 0 5px ${couleur}` }} />
-        <span style={{ color: '#fff', fontSize: '10px', fontWeight: 'bold', lineHeight: 1.1, whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '3px' : '4px' }}>
+        <span className="led-dot" style={{ width: isMobile ? '5px' : '6px', height: isMobile ? '5px' : '6px', flexShrink: 0, background: couleur, boxShadow: `0 0 5px ${couleur}` }} />
+        <span style={{ color: '#fff', fontSize: isMobile ? '7.5px' : '8.5px', fontWeight: 'bold', lineHeight: 1.1, whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
       </div>
-      <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '6.5px', lineHeight: 1, marginLeft: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: isMobile ? '5px' : '5.5px', lineHeight: 1, marginLeft: isMobile ? '8px' : '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
     </div>
   );
 }
@@ -224,18 +216,19 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
     { couleur: '#2ecc71', valeur: stats.colorie, total: coloriesRealises, label: 'Coloriages partagés' },
     { couleur: '#ff3eb5', valeur: stats.jeVeux, total: illusManquantes, label: 'Favoris' },
   ];
+  const TAILLE = isMobile ? 50 : 78;
   return (
     <div style={{
       display: 'flex',
-      flexDirection: isMobile ? 'row' : 'column',
-      alignItems: isMobile ? 'center' : 'stretch',
-      justifyContent: isMobile ? 'space-between' : 'space-evenly',
-      gap: isMobile ? '4px' : '2px',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      justifyContent: 'space-evenly',
+      gap: isMobile ? '1px' : '2px',
       background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px',
-      padding: isMobile ? '10px 6px' : '8px 8px',
-      flex: isMobile ? '1 1 0' : '0 0 auto',
-      width: isMobile ? 'auto' : '78px',
-      height: isMobile ? undefined : '78px',
+      padding: isMobile ? '5px 6px' : '8px 8px',
+      flex: '0 0 auto',
+      width: `${TAILLE}px`,
+      height: `${TAILLE}px`,
       minWidth: 0, overflow: 'hidden',
     }}>
       {compteurs.map((c, i) => <CompteurLED key={i} couleur={c.couleur} valeur={c.valeur} total={c.total} label={c.label} isMobile={isMobile} />)}
@@ -245,8 +238,8 @@ function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile })
 
 // ─── Encart avatar — même format que l'encart titre ───────────────────────
 function EncartAvatar({ avatarUrl, isMobile }) {
-  const TAILLE = isMobile ? 44 : 78;
-  const TAILLE_AVATAR = isMobile ? 36 : 68;
+  const TAILLE = isMobile ? 50 : 78;
+  const TAILLE_AVATAR = isMobile ? 40 : 68;
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
