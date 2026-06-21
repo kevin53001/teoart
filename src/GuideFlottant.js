@@ -122,7 +122,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
 
   const dernier = index === slides.length - 1;
   // La mascotte est toujours en bas-gauche : on réserve la place côté gauche
-  const paddingMascotte = { paddingLeft: isMobile ? '54px' : '64px' };
+  const paddingMascotte = { paddingLeft: isMobile ? '92px' : '78px' };
 
   return ReactDOM.createPortal(
     <div
