@@ -58,7 +58,6 @@ function Mascotte() {
       position: 'absolute', bottom: '0', left: '0',
       width: `${TAILLE}px`, height: `${TAILLE}px`,
       pointerEvents: 'none', zIndex: 5,
-      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.35))',
     }}>
       <img
         src={MASCOTTE_URL}
