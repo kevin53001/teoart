@@ -518,8 +518,8 @@ function Catalogue() {
         .dropdown-titre-patreon { padding: 6px 14px 4px; color: rgba(255,210,80,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
-        .capsule-pill { width: 58px; height: 16px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
-        .encart-filtres-premium { background: linear-gradient(180deg, rgba(24,24,24,0.92), rgba(0,0,0,0.94)); border: 1px solid rgba(255,210,80,0.3); border-radius: 18px; padding: 16px 26px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05); }
+        .capsule-pill { width: 84px; height: 24px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+        .encart-filtres-premium { background: linear-gradient(180deg, rgba(20,20,20,0.45), rgba(0,0,0,0.55)); border: 1px solid rgba(255,210,80,0.35); border-radius: 18px; padding: 14px 24px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
         .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
         .capsule-pill.dim-pink { background: rgba(48,10,28,0.92); border: 1px solid rgba(255,62,181,0.35); }
         .capsule-pill.dim-gold { background: rgba(45,32,0,0.92); border: 1px solid rgba(255,210,80,0.35); }
@@ -691,7 +691,7 @@ function Catalogue() {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
           {/* RANGÉE DE FILTRES dans un encart "carte premium", calé sur la largeur de la grille */}
-          <div className="encart-filtres-premium" style={{ maxWidth: '1100px', margin: '0 auto 16px', overflowX: isMobile ? 'auto' : 'visible' }}>
+          <div className="encart-filtres-premium" style={{ maxWidth: '1000px', margin: '0 auto 16px', overflowX: isMobile ? 'auto' : 'visible' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: isMobile ? '10px' : '20px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
                 <span style={labelCapsuleStyle}>Tri</span>
@@ -702,10 +702,10 @@ function Catalogue() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px' }}>
+              <div style={{ display: 'flex', gap: isMobile ? '10px' : '20px' }}>
                 {capsules.map(cap => (
                   <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '50px' : '70px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
+                    <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '64px' : '84px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
                     <button
                       aria-label={cap.label}
                       onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
@@ -733,20 +733,20 @@ function Catalogue() {
               </div>
             </div>
 
-            {/* Ligne 2 : filtre actif centré + nombre d'illustrations à droite */}
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            {/* Ligne 2 : filtre actif centré + nombre d'illustrations à droite — hauteur ajustée au texte */}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.08)', lineHeight: 1.2 }}>
               <div style={{ flex: 1 }} />
               <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px' }}>
                 {filtreActifInfo && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '11px', fontWeight: 'bold' }}>{filtreActifInfo.label}</span>
-                    <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                    <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '13px', lineHeight: 1 }}>✕</button>
                   </div>
                 )}
                 {filtreNouveautes && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
-                    <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                    <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '13px', lineHeight: 1 }}>✕</button>
                   </div>
                 )}
               </div>
