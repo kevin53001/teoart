@@ -811,9 +811,9 @@ function Catalogue() {
 
             </div>
           ) : (
-          <div className="encart-filtres-premium" style={{ maxWidth: '920px', margin: '0 auto 16px', overflowX: 'visible', position: 'relative', zIndex: 45 }}>
+          <div className="encart-filtres-premium" style={{ maxWidth: '920px', margin: '0 auto 16px', overflowX: 'visible', position: 'relative', zIndex: 45, padding: '8px 24px 8px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '3px' }}>
                 <span style={labelCapsuleStyle}>Tri</span>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   <button style={triVueBtnStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
@@ -824,7 +824,7 @@ function Catalogue() {
 
               <div style={{ display: 'flex', gap: '20px' }}>
                 {capsules.map(cap => (
-                  <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                  <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
                     <span style={{ ...labelCapsuleStyle, maxWidth: '84px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
                     <button
                       aria-label={cap.label}
@@ -845,14 +845,14 @@ function Catalogue() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                   <span style={labelCapsuleStyle}>Prix</span>
                   <div style={{ display: 'flex', gap: '5px' }}>
                     <button style={triVueBtnStyle(tri === 'prix_asc')} onClick={() => { setTri('prix_asc'); setPage(1); }}>€ ↑</button>
                     <button style={triVueBtnStyle(tri === 'prix_desc')} onClick={() => { setTri('prix_desc'); setPage(1); }}>€ ↓</button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
                   <span style={labelCapsuleStyle}>Vue</span>
                   <div style={{ display: 'flex', gap: '5px' }}>
                     <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
@@ -864,7 +864,7 @@ function Catalogue() {
             </div>
 
             {/* Ligne 2 : compteurs collection à gauche + filtre actif centré + nombre d'illustrations à droite */}
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '6px', lineHeight: 1.2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '4px', lineHeight: 1.1 }}>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }} title="J'ai">
                   <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '15px', height: '15px', borderRadius: '4px', background: '#00d4d4', color: '#000', fontSize: '9px', fontWeight: 'bold' }}>✓</span>
