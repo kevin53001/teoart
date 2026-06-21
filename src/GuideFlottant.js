@@ -5,17 +5,10 @@ import { supabase } from './supabase';
 const R2 = 'https://images.kevinteoart.fr';
 const MASCOTTE_URL = `${R2}/site/mascotte_kitsu.png`;
 
-// ─── MODE TEST ──────────────────────────────────────────────────────────────
-// Tant que c'est à true, le guide s'affiche à CHAQUE chargement de page,
-// sans vérifier ni écrire dans Supabase (pratique pour tester les textes).
-// Repasser à false pour activer le comportement définitif ("vu une fois,
-// disparaît pour toujours").
-const MODE_TEST = true;
-
 // ─── Contenu des guides par page ───────────────────────────────────────────
 const GUIDES = {
   accueil: [
-    "Salut toi ! Bienvenue chez Kevin Teo'Art. Ici tu trouveras une boutique d'illustrations à colorier, mais aussi tout un espace pour bâtir et suivre ta propre collection, un peu comme un musée perso qui grandit avec toi.",
+    "Salut toi ! Bienvenue chez moi ! Ici tu trouveras une boutique d'illustrations à colorier, mais aussi tout un espace pour bâtir et suivre ta propre collection, un peu comme un musée perso qui grandit avec toi.",
     "Une fois ton coloriage terminé, n'oublie surtout pas de le partager ! C'est ce qui fait vivre la communauté : chaque mise en couleur vient rejoindre la galerie de l'illustration. J'adore voir un même dessin prendre vie sous des dizaines de styles différents, alors viens enrichir la collection.",
     "Je t'ai préparé un petit guide juste en dessous : jette un œil à l'encart \"Comment fonctionne le site ?\", il t'explique tout en détail pour bien démarrer.",
   ],
@@ -26,13 +19,13 @@ const GUIDES = {
     "Et surtout, une fois ton coloriage terminé, partage-le ! Ouvre la fiche de l'illustration ou clique directement sur la vignette en bas à gauche de l'image. Il rejoint alors la galerie de cette illustration, où tous les coloriages de la communauté s'affichent ensemble, juste pour le plaisir des yeux.",
   ],
   livres: [
-    "Ici les recueils et livres PDF prennent vie. Chaque livre regroupe un thème précis, chaque recueil regroupe plusieurs livres pour un tarif plus avantageux.",
+    "Ici les recueils et livres PDF prennent vie. Chaque livre regroupe un thème précis, chaque recueil regroupe plusieurs livres.",
     "Coche \"J'ai\" sur un livre ou un recueil entier pour cocher d'un coup toutes ses illustrations dans ta collection.",
-    "Certains titres existent aussi en version reliée : un vrai livre papier, à tarif avantageux. Je m'occupe moi-même de passer la commande auprès d'Amazon, qui te livre directement chez toi. Prix et délais varient selon ton pays.",
+    "Certains titres existent aussi en version reliée : un vrai livre papier, pour un tarif plus avantageux. Je m'occupe moi-même de passer la commande auprès d'Amazon, qui te livre directement chez toi. Prix et délais varient selon ton pays.",
   ],
   presentation: [
     "L'envers du décor. Qui je suis, pourquoi je dessine, et comment tout ça a commencé. Spoiler : beaucoup de café et de patience.",
-    "Si après ça t'as encore des questions, le tchat est juste là pour me les poser directement.",
+    "Si après ça t'as encore des questions, le tchat est là en haut à gauche de l'écran.",
   ],
   pensees: [
     "Le coin des pensées qui flottent. Une roue interactive remplie de textes que j'écris, à parcourir tranquillement.",
@@ -51,7 +44,7 @@ const GUIDES = {
 // toutes les pages — voir le composant Mascotte ci-dessous.
 
 function Mascotte() {
-  const TAILLE = 92; // taille de base de la mascotte (px)
+  const TAILLE = 110; // taille de base de la mascotte (px) — x1.2 par rapport à l'original
 
   return (
     <div style={{
@@ -72,7 +65,6 @@ function Mascotte() {
  * GuideFlottant — fenêtre qui apparaît automatiquement à la première visite
  * d'une page (par utilisateur connecté), puis ne réapparaît plus jamais une
  * fois fermée. Mémorisation via la table Supabase `guides_vus`.
- * (Mode test actif : voir MODE_TEST en haut du fichier.)
  *
  * Props :
  *  - pageKey : clé de la page, doit correspondre à une entrée de GUIDES
@@ -89,12 +81,6 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
   React.useEffect(() => {
     let annule = false;
     if (!userId || !slides || slides.length === 0) { setPret(true); return; }
-
-    if (MODE_TEST) {
-      setVisible(true);
-      setPret(true);
-      return;
-    }
 
     (async () => {
       const { data } = await supabase
@@ -125,7 +111,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
 
   const fermer = async () => {
     setVisible(false);
-    if (!userId || MODE_TEST) return;
+    if (!userId) return;
     await supabase.from('guides_vus').upsert(
       { user_id: userId, page_key: pageKey },
       { onConflict: 'user_id,page_key' }
