@@ -129,19 +129,22 @@ function EnTeteTracker() {
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px 6px' }}>
       <span style={{ width: '34px', flexShrink: 0 }} />
       <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Illustration</span>
-      <span style={{ width: '22px', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '9px', textTransform: 'uppercase' }}>J'ai</span>
-      <span style={{ width: '22px', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '9px' }}>🎨</span>
+      <span style={{ width: '26px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '9px', textTransform: 'uppercase', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '2px 0' }}>J'ai</span>
+      <span style={{ width: '26px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '9px' }}>🎨</span>
     </div>
   );
 }
 
 // ─── Tracker Ma Collection : une ligne illustration ────────────────────────
-function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir }) {
+const FONDS_LIGNE = ['rgba(255,62,181,0.05)', 'rgba(255,210,80,0.05)', 'rgba(0,212,212,0.05)'];
+
+function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
   const url = getVisuelB(illu.visuels);
-  const couleurJai = illu.aAchete ? '#ff3eb5' : '#00d4d4'; // rose = acheté sur le site, bleu = sélection initiale/manuelle
+  const couleurJai = illu.aAchete ? '#ff3eb5' : '#00d4d4'; // rose = acheté sur le site, bleu/cyan = sélection initiale/manuelle
   const colorieActif = colorieVerrouille || colorieManuel;
+  const couleurColorie = colorieVerrouille ? '#ffd250' : (colorieManuel ? '#2ecc71' : 'rgba(255,255,255,0.15)');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: FONDS_LIGNE[index % FONDS_LIGNE.length] }}>
       <div
         onClick={() => url && onAgrandir(url, illu.nom)}
         style={{ width: '34px', height: '34px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.15)', cursor: url ? 'zoom-in' : 'default' }}
@@ -149,12 +152,12 @@ function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManu
         {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : null}
       </div>
       <span style={{ flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{illu.nom}</span>
-      <span title={illu.aAchete ? "Acheté sur le site" : "J'ai (sélection initiale ou manuelle)"} style={{ width: '22px', textAlign: 'center', color: couleurJai, fontSize: '15px', fontWeight: 'bold' }}>✓</span>
+      <span title={illu.aAchete ? "Acheté sur le site" : "J'ai (sélection initiale ou manuelle)"} style={{ width: '26px', textAlign: 'center', color: couleurJai, fontSize: '16px', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '2px 0' }}>✓</span>
       <span
         title={colorieVerrouille ? "Colorié partagé par vous" : (colorieManuel ? "Marqué colorié manuellement (non partagé)" : "Marquer comme colorié (manuel, non partagé)")}
         onClick={() => !colorieVerrouille && onToggleManuel(illu.id)}
-        style={{ width: '22px', textAlign: 'center', fontSize: '15px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: colorieActif ? '#ffd250' : 'rgba(255,255,255,0.15)' }}
-      >✓</span>
+        style={{ width: '26px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: couleurColorie, background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '2px 0' }}
+      >{colorieActif ? '✓' : '✓'}</span>
     </div>
   );
 }
@@ -164,10 +167,11 @@ function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onTogg
   return (
     <div>
       <EnTeteTracker />
-      {illus.map(illu => (
+      {illus.map((illu, idx) => (
         <LigneTrackerIllu
           key={illu.id}
           illu={illu}
+          index={idx}
           colorieVerrouille={colosPartagesSet.has(illu.id)}
           colorieManuel={!!coloriesManuels[illu.id]}
           onToggleManuel={onToggleManuel}
@@ -809,52 +813,53 @@ function SectionMaCollection({ userId, totalIllus }) {
   const anneesSorted = Object.keys(parAnnee).filter(a => totauxAnnee[a] > 0).sort((a, b) => b - a);
 
   // ─── Export PDF compact de la collection (uniquement éléments possédés) ──
-  const urlVersDataUrl = async (url) => {
-    try {
-      const res = await fetch(url, { mode: 'cors' });
-      const blob = await res.blob();
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (e) { return null; }
-  };
-
   const exporterPDF = async () => {
     setExportEnCours(true);
     try {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       const MARGIN = 14;
+      const PAGE_W = 210;
       const PAGE_H = 297;
+      const PAGE_CENTER_X = PAGE_W / 2;
       const ROW_H = 6;
-      const IMG = 5;
-      const COL_NOM_X = MARGIN + IMG + 4;
-      const COL_JAI_X = 165;
-      const COL_COLO_X = 178;
+      const HEADER_H = 6;
+      const TABLE_W = 110;
+      const COL_NOM_W = 70;
+      const COL_CHK_W = 20;
+      const TABLE_X = PAGE_CENTER_X - TABLE_W / 2;
       let y = MARGIN;
 
       const sautDePage = (needed = ROW_H) => {
         if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
       };
 
+      // Dessine une coche (✓) faite de 2 segments, pour éviter les soucis de police/encodage
+      const tracerCoche = (cx, cy, couleurRgb) => {
+        doc.setDrawColor(...couleurRgb);
+        doc.setLineWidth(0.7);
+        doc.lines([[1.1, 1.3], [2.3, -2.6]], cx - 1.6, cy + 0.2, [1, 1], 'S');
+      };
+
+      doc.setFont(undefined, 'bold');
       doc.setFontSize(15);
       doc.setTextColor(20, 20, 20);
-      doc.text("Ma Collection — Kevin Teo'Art", MARGIN, y);
-      y += 7;
+      doc.text("Ma Collection — Kevin Teo'Art", PAGE_CENTER_X, y, { align: 'center' });
+      doc.setFont(undefined, 'normal');
+      y += 8;
+
+      // Légende
       doc.setFontSize(8);
-      doc.setFillColor(0, 150, 150);
-      doc.circle(MARGIN + 1, y - 1.2, 1.1, 'F');
-      doc.text("J'ai (initial/manuel)", MARGIN + 4, y);
-      doc.setFillColor(230, 60, 160);
-      doc.circle(MARGIN + 45, y - 1.2, 1.1, 'F');
-      doc.text("J'ai (acheté)", MARGIN + 48, y);
-      doc.setFillColor(220, 170, 30);
-      doc.circle(MARGIN + 80, y - 1.2, 1.1, 'F');
-      doc.text('Colorié (partagé ou manuel)', MARGIN + 83, y);
-      y += 9;
+      doc.setTextColor(60, 60, 60);
+      tracerCoche(MARGIN + 1.5, y - 1.5, [0, 150, 150]);
+      doc.text("J'ai (initial/manuel)", MARGIN + 5, y);
+      tracerCoche(MARGIN + 42, y - 1.5, [230, 60, 160]);
+      doc.text("J'ai (acheté)", MARGIN + 45.5, y);
+      tracerCoche(MARGIN + 72, y - 1.5, [220, 170, 30]);
+      doc.text('Colorié (partagé)', MARGIN + 75.5, y);
+      tracerCoche(MARGIN + 108, y - 1.5, [46, 204, 113]);
+      doc.text('Colorié (manuel)', MARGIN + 111.5, y);
+      y += 10;
 
       // Construit la liste des sections (années + hors-séries) en ne gardant que ce qui est possédé
       const sections = [];
@@ -884,46 +889,62 @@ function SectionMaCollection({ userId, totalIllus }) {
       if (horsDossiers.length > 0) sections.push({ titre: 'Hors-séries', dossiers: horsDossiers });
 
       for (const section of sections) {
-        sautDePage(8);
-        doc.setFontSize(12);
+        sautDePage(10);
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(13);
         doc.setTextColor(0, 120, 120);
-        doc.text(section.titre, MARGIN, y);
-        y += 6;
+        doc.text(section.titre, PAGE_CENTER_X, y, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        y += 7;
 
         for (const dossier of section.dossiers) {
-          sautDePage(6);
-          doc.setFontSize(9);
-          doc.setTextColor(40, 40, 40);
-          doc.text(dossier.nom, MARGIN + 2, y);
-          y += 4;
+          sautDePage(HEADER_H + ROW_H + 6);
+          doc.setFont(undefined, 'bold');
+          doc.setFontSize(10);
+          doc.setTextColor(255, 62, 181);
+          doc.text(dossier.nom, PAGE_CENTER_X, y, { align: 'center' });
+          doc.setFont(undefined, 'normal');
+          y += 5;
+
+          // En-tête du tableau
+          sautDePage(HEADER_H);
+          doc.setDrawColor(170, 170, 170);
+          doc.setLineWidth(0.1);
+          doc.setFontSize(8);
+          doc.setTextColor(90, 90, 90);
+          doc.rect(TABLE_X, y, COL_NOM_W, HEADER_H);
+          doc.rect(TABLE_X + COL_NOM_W, y, COL_CHK_W, HEADER_H);
+          doc.rect(TABLE_X + COL_NOM_W + COL_CHK_W, y, COL_CHK_W, HEADER_H);
+          doc.text('Illustration', TABLE_X + 3, y + 4);
+          doc.text("J'ai", TABLE_X + COL_NOM_W + COL_CHK_W / 2, y + 4, { align: 'center' });
+          doc.text('Colorié', TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 4, { align: 'center' });
+          y += HEADER_H;
 
           for (const illu of dossier.illus) {
             sautDePage(ROW_H);
-            const url = getVisuelB(illu.visuels);
-            if (url) {
-              const dataUrl = await urlVersDataUrl(url);
-              if (dataUrl) {
-                const fmt = dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-                try { doc.addImage(dataUrl, fmt, MARGIN + 4, y - 4, IMG, IMG); } catch (e) {}
-              }
-            }
+            doc.setDrawColor(170, 170, 170);
+            doc.setLineWidth(0.1);
+            doc.rect(TABLE_X, y, COL_NOM_W, ROW_H);
+            doc.rect(TABLE_X + COL_NOM_W, y, COL_CHK_W, ROW_H);
+            doc.rect(TABLE_X + COL_NOM_W + COL_CHK_W, y, COL_CHK_W, ROW_H);
+
             doc.setFontSize(8);
             doc.setTextColor(20, 20, 20);
-            doc.text(String(illu.nom || ''), COL_NOM_X, y, { maxWidth: COL_JAI_X - COL_NOM_X - 4 });
+            doc.text(String(illu.nom || ''), TABLE_X + 3, y + 4, { maxWidth: COL_NOM_W - 5 });
 
-            doc.setFillColor(illu.aAchete ? 230 : 0, illu.aAchete ? 60 : 150, illu.aAchete ? 160 : 150);
-            doc.circle(COL_JAI_X, y - 1.2, 1.2, 'F');
+            const couleurJai = illu.aAchete ? [230, 60, 160] : [0, 150, 150];
+            tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W / 2, y + 3.2, couleurJai);
 
-            const colorieActif = colosPartagesSet.has(illu.id) || !!coloriesManuels[illu.id];
-            if (colorieActif) {
-              doc.setFillColor(220, 170, 30);
-              doc.circle(COL_COLO_X, y - 1.2, 1.2, 'F');
-            }
+            const colorieVerrouille = colosPartagesSet.has(illu.id);
+            const colorieManuel = !!coloriesManuels[illu.id];
+            if (colorieVerrouille) tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 3.2, [220, 170, 30]);
+            else if (colorieManuel) tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 3.2, [46, 204, 113]);
+
             y += ROW_H;
           }
-          y += 2;
+          y += 6;
         }
-        y += 4;
+        y += 3;
       }
 
       doc.save('ma_collection_kevinteoart.pdf');
@@ -938,14 +959,15 @@ function SectionMaCollection({ userId, totalIllus }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* ── Légende explicative du fonctionnement de Ma Collection ── */}
-      <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', margin: 0, lineHeight: 1.5 }}>
+      <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>
           Ma Collection se remplit automatiquement dès que tu coches « J'ai » sur une fiche illustration, une vignette ou un livre — ou que tu achètes une illustration sur le site. La case « Colorié » se coche automatiquement seulement si tu partages ton coloriage ; tu peux aussi la cocher manuellement si tu as colorié sans partager (sans effet sur les fiches du site ni sur le badge Coloriste, qui ne compte que les coloriages partagés).
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
           <LegendeItem couleur="#00d4d4" texte="J'ai (sélection initiale / manuel)" />
           <LegendeItem couleur="#ff3eb5" texte="J'ai (acheté sur le site)" />
-          <LegendeItem couleur="#ffd250" texte="Colorié (partagé ou manuel)" />
+          <LegendeItem couleur="#ffd250" texte="Colorié (partagé)" />
+          <LegendeItem couleur="#2ecc71" texte="Colorié (manuel, non partagé)" />
         </div>
       </div>
 
@@ -1166,7 +1188,7 @@ function SectionMaCollection({ userId, totalIllus }) {
             opacity: exportEnCours ? 0.7 : 1,
           }}
         >
-          {exportEnCours ? 'Génération du PDF…' : '📄 Exporter ma collection en PDF'}
+          {exportEnCours ? 'Génération du PDF…' : 'Exporter ma collection en PDF'}
         </button>
       </div>
 
