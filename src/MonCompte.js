@@ -116,18 +116,76 @@ function JaugeDouble({ pctJai, pctColorie, pctJeVeux, hauteur = 8, showLabels = 
   );
 }
 
-function VignetteIlluLecture({ illu, taille = 100, aColorie = false }) {
-  const url = getVisuelPresentation(illu.visuels);
+function getVisuelB(visuels) {
+  if (!visuels) return null;
+  if (visuels['B']) return cheminVersUrl(visuels['B']);
+  if (visuels['b']) return cheminVersUrl(visuels['b']);
+  return getVisuelPresentation(visuels);
+}
+
+// ─── Tracker Ma Collection : en-tête de colonnes ───────────────────────────
+function EnTeteTracker() {
   return (
-    <div style={{ flexShrink: 0, width: `${taille}px`, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(0,212,212,0.15)', background: '#0a0a0a', position: 'relative' }}>
-      {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: `${taille}px`, objectFit: 'cover', display: 'block' }} />
-        : <div style={{ width: '100%', height: `${taille}px`, background: '#111' }} />}
-      <div style={{ position: 'absolute', top: '3px', left: '3px', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', fontWeight: 'bold', background: '#00d4d4', color: '#000' }}>✓</div>
-      {aColorie && (
-        <div style={{ position: 'absolute', bottom: `${taille > 80 ? 22 : 18}px`, left: '3px', width: '16px', height: '16px', borderRadius: '50%', background: 'rgba(255,210,80,0.2)', border: '1px solid rgba(255,210,80,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px' }}>🎨</div>
-      )}
-      <div style={{ padding: '3px 6px', background: 'rgba(0,0,0,0.85)' }}>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{illu.nom}</p>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px 6px' }}>
+      <span style={{ width: '34px', flexShrink: 0 }} />
+      <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Illustration</span>
+      <span style={{ width: '22px', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '9px', textTransform: 'uppercase' }}>J'ai</span>
+      <span style={{ width: '22px', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '9px' }}>🎨</span>
+    </div>
+  );
+}
+
+// ─── Tracker Ma Collection : une ligne illustration ────────────────────────
+function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir }) {
+  const url = getVisuelB(illu.visuels);
+  const couleurJai = illu.aAchete ? '#ff3eb5' : '#00d4d4'; // rose = acheté sur le site, bleu = sélection initiale/manuelle
+  const colorieActif = colorieVerrouille || colorieManuel;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div
+        onClick={() => url && onAgrandir(url, illu.nom)}
+        style={{ width: '34px', height: '34px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.15)', cursor: url ? 'zoom-in' : 'default' }}
+      >
+        {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : null}
+      </div>
+      <span style={{ flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{illu.nom}</span>
+      <span title={illu.aAchete ? "Acheté sur le site" : "J'ai (sélection initiale ou manuelle)"} style={{ width: '22px', textAlign: 'center', color: couleurJai, fontSize: '15px', fontWeight: 'bold' }}>✓</span>
+      <span
+        title={colorieVerrouille ? "Colorié partagé par vous" : (colorieManuel ? "Marqué colorié manuellement (non partagé)" : "Marquer comme colorié (manuel, non partagé)")}
+        onClick={() => !colorieVerrouille && onToggleManuel(illu.id)}
+        style={{ width: '22px', textAlign: 'center', fontSize: '15px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: colorieActif ? '#ffd250' : 'rgba(255,255,255,0.15)' }}
+      >✓</span>
+    </div>
+  );
+}
+
+// ─── Tracker Ma Collection : liste complète pour un dossier (livre/recueil/hors-série) ─
+function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onToggleManuel, onAgrandir }) {
+  return (
+    <div>
+      <EnTeteTracker />
+      {illus.map(illu => (
+        <LigneTrackerIllu
+          key={illu.id}
+          illu={illu}
+          colorieVerrouille={colosPartagesSet.has(illu.id)}
+          colorieManuel={!!coloriesManuels[illu.id]}
+          onToggleManuel={onToggleManuel}
+          onAgrandir={onAgrandir}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Lightbox simple : agrandissement de la miniature au clic ─────────────
+function LightboxIllu({ image, onClose }) {
+  if (!image) return null;
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', cursor: 'zoom-out' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '90vw', maxHeight: '90vh' }}>
+        <img src={image.url} alt={image.nom} style={{ maxWidth: '90vw', maxHeight: '80vh', borderRadius: '10px', border: '1px solid rgba(0,212,212,0.3)', objectFit: 'contain' }} />
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px' }}>{image.nom}</p>
       </div>
     </div>
   );
@@ -526,6 +584,9 @@ function BadgesHexagonaux({ pctJai, pctColo, userId }) {
                 ouvert={badgeOuvert === b.id} onToggle={() => handleBadgeClick(b.id)} />
             ))}
           </div>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '9px', textAlign: 'center', margin: 0, lineHeight: 1.3 }}>
+            Seuls les coloriages partagés comptent pour ce badge.
+          </p>
         </div>
 
       </div>
@@ -560,6 +621,19 @@ function SectionMaCollection({ userId, totalIllus }) {
   const [anneesOuvertes, setAnneesOuvertes] = React.useState({});
   const [recueilsOuverts, setRecueilsOuverts] = React.useState({});
   const [livresOuverts, setLivresOuverts] = React.useState({});
+  const [colosPartagesSet, setColosPartagesSet] = React.useState(new Set());
+  const [coloriesManuels, setColoriesManuels] = React.useState({});
+  const [imageAgrandie, setImageAgrandie] = React.useState(null);
+
+  const toggleColorieManuel = async (illustrationId) => {
+    const nouvelEtat = !coloriesManuels[illustrationId];
+    setColoriesManuels(prev => ({ ...prev, [illustrationId]: nouvelEtat }));
+    const { error } = await supabase.from('collection').update({ colorie_manuel: nouvelEtat }).eq('user_id', userId).eq('illustration_id', illustrationId);
+    if (error) {
+      // rollback en cas d'échec de l'écriture
+      setColoriesManuels(prev => ({ ...prev, [illustrationId]: !nouvelEtat }));
+    }
+  };
 
   const COULEURS_ARC = ['#ff3eb5','#ff6b35','#ffd250','#a8e063','#00d4d4','#4a9eff','#9b59b6'];
   const getCouleurAnnee = (idx) => COULEURS_ARC[idx % COULEURS_ARC.length];
@@ -591,10 +665,14 @@ function SectionMaCollection({ userId, totalIllus }) {
   React.useEffect(() => {
     const charger = async () => {
       try {
-        const { data: collIllus } = await supabase.from('collection').select('illustration_id').eq('user_id', userId).eq('j_ai', true);
+        const { data: collIllus } = await supabase.from('collection').select('illustration_id, j_ai_achete, colorie_manuel').eq('user_id', userId).eq('j_ai', true);
         const { data: colos } = await supabase.from('coloriages').select('illustration_id').eq('user_id', userId);
         const colosSet = new Set((colos || []).map(c => c.illustration_id));
         const illuIds = new Set((collIllus || []).map(c => c.illustration_id));
+        const collInfoMap = {};
+        (collIllus || []).forEach(c => { collInfoMap[c.illustration_id] = { achete: !!c.j_ai_achete, manuel: !!c.colorie_manuel }; });
+        setColosPartagesSet(colosSet);
+        setColoriesManuels(Object.fromEntries(Object.entries(collInfoMap).map(([id, v]) => [id, v.manuel])));
 
         const { data: tousLivres } = await supabase.from('livres').select('id, nom, annee, visuel_presentation, recueils_ids').in('statut', ['published', 'dossier']);
         const { data: tousRecueils } = await supabase.from('recueils').select('id, nom, annee, visuel_presentation').eq('statut', 'published');
@@ -618,7 +696,7 @@ function SectionMaCollection({ userId, totalIllus }) {
         });
 
         (toutesIllus || []).forEach(illu => {
-          const illuPossedee = illuIds.has(illu.id) ? { ...illu, aColorie: colosSet.has(illu.id) } : null;
+          const illuPossedee = illuIds.has(illu.id) ? { ...illu, aColorie: colosSet.has(illu.id), aAchete: collInfoMap[illu.id]?.achete || false } : null;
           const ridsExclus = (illu.recueils_ids || []).filter(rid => EXCLUS.has(rid));
           const ridsNormaux = (illu.recueils_ids || []).filter(rid => !EXCLUS.has(rid));
           const lidsExclus = (illu.livres_ids || []).filter(lid => EXCLUS.has(lid));
@@ -795,8 +873,8 @@ function SectionMaCollection({ userId, totalIllus }) {
                                   <span style={{ color: ouvertL ? couleurL.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                                 </div>
                                 {ouvertL && jaiL > 0 && (
-                                  <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                    {livreData.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
+                                  <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
                                   </div>
                                 )}
                                 {ouvertL && jaiL === 0 && (
@@ -838,9 +916,9 @@ function SectionMaCollection({ userId, totalIllus }) {
                         <span style={{ color: ouvertL ? couleurHS.plein : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
                       {ouvertL && jaiL > 0 && (
-                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {livreData.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
-                        </div>
+                        <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                                  </div>
                       )}
                       {ouvertL && jaiL === 0 && (
                         <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
@@ -900,9 +978,9 @@ function SectionMaCollection({ userId, totalIllus }) {
                         <span style={{ color: ouvertL ? '#00d4d4' : 'rgba(255,255,255,0.3)', fontSize: '14px', transition: 'transform .2s', transform: ouvertL ? 'rotate(90deg)' : 'none' }}>›</span>
                       </div>
                       {ouvertL && jaiL > 0 && (
-                        <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {livreData.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
-                        </div>
+                        <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                                  </div>
                       )}
                       {ouvertL && jaiL === 0 && (
                         <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)' }}>
@@ -915,13 +993,14 @@ function SectionMaCollection({ userId, totalIllus }) {
               </div>
             )}
             {ouvert && entree.type === 'livre' && entree.illus && (
-              <div style={{ padding: '12px 16px', background: 'rgba(0,0,0,0.3)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {entree.illus.map(illu => <VignetteIlluLecture key={illu.id} illu={illu} taille={85} aColorie={illu.aColorie} />)}
+              <div style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.3)' }}>
+                <TrackerIllustrations illus={entree.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
               </div>
             )}
           </div>
         );
       })}
+      <LightboxIllu image={imageAgrandie} onClose={() => setImageAgrandie(null)} />
     </div>
   );
 }
