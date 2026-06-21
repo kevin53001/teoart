@@ -454,7 +454,7 @@ function Catalogue() {
 
   const LABELS_COLLECTION = { tout: 'Tout', jai: "J'ai", jeveux: 'Je veux', japas: "J'ai pas", colorie: 'Colorié' };
 
-  const categoriesTrieesAvecSpeciales = [...CATEGORIES.filter(c => c !== 'Tout' && c !== 'Kawaii/Chibi'), 'Calendrier', 'FREE']
+  const categoriesTrieesAvecSpeciales = [...CATEGORIES.filter(c => c !== 'Tout'), 'Calendrier', 'FREE']
     .sort((a, b) => a.localeCompare(b, 'fr'));
 
   const capsules = [
@@ -480,7 +480,7 @@ function Catalogue() {
       key: 'categorie', label: 'Catégorie', color: 'gold', on: categorieOn,
       options: [
         { value: 'Tout', label: 'Tout', active: categorie === 'Tout', onClick: () => selectionnerCategorie('Tout'), separateur: true },
-        ...categoriesTrieesAvecSpeciales.map(c => ({
+        ...categoriesTrieesAvecSpeciales.filter(c => c !== 'Kawaii/Chibi').map(c => ({
           value: c, label: c, active: categorie === c, onClick: () => selectionnerCategorie(c),
           style: c === 'FREE' ? { color: '#ffd250', fontWeight: 'bold' } : undefined,
         })),
@@ -626,30 +626,33 @@ function Catalogue() {
                   <button className={`dropdown-item${categorie === 'Tout' && !sousCategorie ? ' actif' : ''}`}
                     style={{ fontWeight: 'bold', fontSize: '15px' }}
                     onClick={() => selectionnerCategorie('Tout')}>Tout</button>
-                  <div key="Kawaii/Chibi">
-                    <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
-                      onClick={() => setShowKawaiiMenu(v => !v)}>
-                      <span>Kawaii/Chibi</span>
-                      <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
-                    </button>
-                    {showKawaiiMenu && (
-                      <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
-                        <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ color: '#ff3eb5' }} onClick={() => { selectionnerCategorie('Kawaii/Chibi'); setShowKawaiiMenu(false); }}>
-                          Tout Kawaii/Chibi
-                        </button>
-                        {SOUS_CAT_KAWAII.map(sc => (
-                          <button key={sc} className={`dropdown-item${sousCategorie === sc ? ' actif' : ''}`} style={{ color: '#ff3eb5' }}
-                            onClick={() => { selectionnerSousCategorie(sc); setShowKawaiiMenu(false); }}>
-                            {sc}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                   {categoriesTrieesAvecSpeciales.map(cat => (
-                    <button key={cat} className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`}
-                      style={cat === 'FREE' ? { color: '#ffd250', fontWeight: 'bold' } : {}}
-                      onClick={() => selectionnerCategorie(cat)}>{cat}</button>
+                    cat === 'Kawaii/Chibi' ? (
+                      <div key={cat}>
+                        <button className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }}
+                          onClick={() => setShowKawaiiMenu(v => !v)}>
+                          <span>{cat}</span>
+                          <span style={{ fontSize: '11px', transition: 'transform .2s', transform: showKawaiiMenu ? 'rotate(90deg)' : 'none', display: 'inline-block' }}>›</span>
+                        </button>
+                        {showKawaiiMenu && (
+                          <div style={{ paddingLeft: '8px', borderLeft: '2px solid rgba(255,62,181,0.3)', marginLeft: '14px', marginTop: '4px' }}>
+                            <button className={`dropdown-item${categorie === 'Kawaii/Chibi' && !sousCategorie ? ' actif' : ''}`} style={{ color: '#ff3eb5' }} onClick={() => { selectionnerCategorie('Kawaii/Chibi'); setShowKawaiiMenu(false); }}>
+                              Tout Kawaii/Chibi
+                            </button>
+                            {SOUS_CAT_KAWAII.map(sc => (
+                              <button key={sc} className={`dropdown-item${sousCategorie === sc ? ' actif' : ''}`} style={{ color: '#ff3eb5' }}
+                                onClick={() => { selectionnerSousCategorie(sc); setShowKawaiiMenu(false); }}>
+                                {sc}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <button key={cat} className={`dropdown-item${categorie === cat && !sousCategorie ? ' actif' : ''}`}
+                        style={cat === 'FREE' ? { color: '#ffd250', fontWeight: 'bold' } : {}}
+                        onClick={() => selectionnerCategorie(cat)}>{cat}</button>
+                    )
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
                   <button
