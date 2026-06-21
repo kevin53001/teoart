@@ -195,6 +195,47 @@ function LegendeItem({ couleur, texte }) {
   );
 }
 
+// ─── Un compteur avec LED scintillante (encart en haut de Mon Compte) ─────
+function CompteurLED({ couleur, valeur, total, label, isMobile }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '2px' : '4px', flex: 1, minWidth: 0 }}>
+      <span className="led-dot" style={{ width: isMobile ? '6px' : '8px', height: isMobile ? '6px' : '8px', background: couleur, boxShadow: `0 0 6px ${couleur}` }} />
+      <span style={{ color: '#fff', fontSize: isMobile ? '10px' : '13px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{valeur} / {total}</span>
+      {!isMobile && (
+        <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '8px', textAlign: 'center', lineHeight: 1.2 }}>{label}</span>
+      )}
+    </div>
+  );
+}
+
+// ─── Encart compteurs (4 LED) — même format que l'encart titre ────────────
+function EncartCompteurs({ stats, coloriesRealises, illusManquantes, isMobile }) {
+  const compteurs = [
+    { couleur: '#3ec1ff', valeur: stats.jAi, total: stats.totalIllus, label: 'Illustrations' },
+    { couleur: '#ffd250', valeur: coloriesRealises, total: stats.jAi, label: 'Coloriages réalisés' },
+    { couleur: '#2ecc71', valeur: stats.colorie, total: coloriesRealises, label: 'Coloriages partagés' },
+    { couleur: '#ff3eb5', valeur: stats.jeVeux, total: illusManquantes, label: 'Favoris' },
+  ];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? '4px' : '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px 6px' : '14px 18px', flex: isMobile ? '1 1 0' : '0 0 auto', width: isMobile ? 'auto' : '260px', minWidth: 0, overflow: 'hidden' }}>
+      {compteurs.map((c, i) => <CompteurLED key={i} couleur={c.couleur} valeur={c.valeur} total={c.total} label={c.label} isMobile={isMobile} />)}
+    </div>
+  );
+}
+
+// ─── Encart avatar — même format que l'encart titre ───────────────────────
+function EncartAvatar({ avatarUrl, isMobile }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px' : '14px 18px', flex: isMobile ? '0 0 auto' : '0 0 auto', width: isMobile ? 'auto' : '260px' }}>
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="avatar" style={{ width: isMobile ? '36px' : '52px', height: isMobile ? '36px' : '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)' }} />
+      ) : (
+        <div style={{ width: isMobile ? '36px' : '52px', height: isMobile ? '36px' : '52px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(0,212,212,0.4)' }} />
+      )}
+    </div>
+  );
+}
+
 // ─── Badges hexagonaux ────────────────────────────────────────────────────────
 
 const BADGES_FAN = [
@@ -980,7 +1021,7 @@ function SectionMaCollection({ userId, totalIllus }) {
       {/* ── Légende explicative du fonctionnement de Ma Collection ── */}
       <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: 0, lineHeight: 1.6, textAlign: 'center' }}>
-          Ma Collection se remplit automatiquement dès que tu coches « J'ai » sur une fiche illustration, une vignette ou un livre — ou que tu achètes une illustration sur le site. La case « Colorié » se coche automatiquement seulement si tu partages ton coloriage ; tu peux aussi la cocher manuellement si tu as colorié sans partager (sans effet sur les fiches du site ni sur le badge Coloriste, qui ne compte que les coloriages partagés).
+          Ma Collection se remplit automatiquement dès que tu coches « J'ai » sur une fiche illustration, une vignette ou un livre — ou que tu achètes une illustration sur le site. La case « Colorié » se coche automatiquement si tu partages ton coloriage ; tu peux aussi la cocher manuellement si tu as colorié sans partager (sans effet sur les fiches du site ni sur le badge Coloriste, qui ne compte que les coloriages partagés).
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
           <LegendeItem couleur="#ffd250" texte="Colorié (partagé)" />
@@ -2299,7 +2340,7 @@ function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
   const handleMouseEnter = () => { const el = ref.current; el.classList.remove('shining'); void el.offsetWidth; el.classList.add('shining'); };
   return (
     <button ref={ref} className={`btn-onglet${actif ? ' actif' : ''}`} onMouseEnter={handleMouseEnter} onClick={onClick}
-      style={{ background: actif ? `linear-gradient(135deg, rgba(${couleurRgb},0.35), rgba(${couleurRgb},0.15))` : `linear-gradient(135deg, rgba(${couleurRgb},0.18), rgba(${couleurRgb},0.08))`, border: `1px solid rgba(${couleurRgb},${actif ? '0.8' : '0.45'})`, color: couleur, boxShadow: actif ? `0 0 18px rgba(${couleurRgb},0.3), 0 4px 12px rgba(0,0,0,0.5)` : `0 2px 8px rgba(0,0,0,0.4)`, transform: actif ? 'scale(1.07)' : 'scale(1)' }}>
+      style={{ background: actif ? `linear-gradient(135deg, rgba(${couleurRgb},0.55), rgba(${couleurRgb},0.32))` : `linear-gradient(135deg, rgba(${couleurRgb},0.34), rgba(${couleurRgb},0.2))`, border: `1px solid rgba(${couleurRgb},${actif ? '0.9' : '0.55'})`, color: couleur, boxShadow: actif ? `0 0 18px rgba(${couleurRgb},0.3), 0 4px 12px rgba(0,0,0,0.5)` : `0 2px 8px rgba(0,0,0,0.4)`, transform: actif ? 'scale(1.07)' : 'scale(1)' }}>
       {label}
     </button>
   );
@@ -2368,6 +2409,7 @@ function MonCompte() {
   const [onglet, setOnglet] = React.useState(null);
   const [showFavoris, setShowFavoris] = React.useState(false);
   const [stats, setStats] = React.useState({ totalIllus: 0, jAi: 0, colorie: 0, jeVeux: 0 });
+  const [coloriesRealises, setColoriesRealises] = React.useState(0);
   const [popupIllu, setPopupIllu] = React.useState(null);
   const [popupIlluIndex, setPopupIlluIndex] = React.useState(null);
   const [popupIlluList, setPopupIlluList] = React.useState([]);
@@ -2405,7 +2447,7 @@ function MonCompte() {
       setStats({ totalIllus: total || 0, jAi: jAiCount || 0, colorie: colorieCount || 0, jeVeux: jeVeuxCount || 0 });
 
       // Collection pour j_ai / je_veux dans les popups
-      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete').eq('user_id', user.id);
+      const { data: coll } = await supabase.from('collection').select('illustration_id, j_ai, je_veux, j_ai_auto, j_ai_achete, colorie_manuel').eq('user_id', user.id);
       const collMap = {};
       (coll || []).forEach(c => { collMap[c.illustration_id] = { j_ai: c.j_ai, je_veux: c.je_veux, j_ai_auto: c.j_ai_auto || false, j_ai_achete: c.j_ai_achete || false }; });
       setPopupCollection(collMap);
@@ -2413,6 +2455,12 @@ function MonCompte() {
       const colosMap = {};
       (colosData || []).forEach(c => { colosMap[c.illustration_id] = true; });
       setPopupColoriages(colosMap);
+
+      // Coloriages réalisés = union des partagés (table coloriages) et des coches manuelles dans Ma Collection
+      const manuelIds = (coll || []).filter(c => c.colorie_manuel).map(c => c.illustration_id);
+      const unionRealises = new Set([...Object.keys(colosMap), ...manuelIds]);
+      setColoriesRealises(unionRealises.size);
+
       setLoading(false);
     };
     charger();
@@ -2449,11 +2497,11 @@ function MonCompte() {
   const pctJeVeux = illusManquantes > 0 ? (stats.jeVeux / illusManquantes) * 100 : 0;
 
   const BTNS_CONFIG = [
-    { id: 'collection', label: '📚 Ma Collection', couleur: '#ff3eb5', couleurRgb: '255,62,181' },
-    { id: 'favoris',    label: '♡ Mes Favoris',    couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
-    { id: 'coloriages', label: '🎨 Mes Coloriages', couleur: '#00d4d4', couleurRgb: '0,212,212' },
-    { id: 'infos',      label: '👤 Mes Infos',      couleur: 'rgba(255,210,80,0.9)', couleurRgb: '255,210,80' },
-    { id: 'commandes',  label: '🛒 Mes Commandes',  couleur: '#ff3eb5', couleurRgb: '255,62,181' },
+    { id: 'collection', label: 'Ma Collection', couleur: '#ff3eb5', couleurRgb: '255,62,181' },
+    { id: 'favoris',    label: 'Mes Favoris',    couleur: '#ffd250', couleurRgb: '255,210,80' },
+    { id: 'coloriages', label: 'Mes Coloriages', couleur: '#00d4d4', couleurRgb: '0,212,212' },
+    { id: 'infos',      label: 'Mes Infos',      couleur: '#ffd250', couleurRgb: '255,210,80' },
+    { id: 'commandes',  label: 'Mes Commandes',  couleur: '#ff3eb5', couleurRgb: '255,62,181' },
   ];
 
   return (
@@ -2482,12 +2530,14 @@ function MonCompte() {
         .dropdown-item:hover { background: rgba(0,212,212,0.15); color: #00d4d4; }
         .dropdown-item-patreon { display: block; width: 100%; padding: 6px 10px; color: rgba(255,210,80,0.75); font-size: 12px; cursor: pointer; border-radius: 6px; background: none; border: none; text-align: left; font-family: inherit; }
         .dropdown-item-patreon:hover { background: rgba(255,210,80,0.12); color: rgba(255,210,80,1); }
-        .btn-onglet { position: relative; overflow: hidden; border-radius: 14px; padding: 12px 20px; cursor: pointer; font-size: 13px; font-weight: bold; transition: transform .2s, box-shadow .2s; flex: 1; min-width: 120px; }
+        .btn-onglet { position: relative; overflow: hidden; border-radius: 999px; padding: 13px 22px; cursor: pointer; font-size: 15px; font-weight: bold; transition: transform .2s, box-shadow .2s; flex: 1; min-width: 120px; }
         .btn-onglet::before { content: ''; position: absolute; top: -20%; left: -150%; width: 80%; height: 140%; background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 75%, transparent 100%); transform: skewX(-28deg); z-index: 10; pointer-events: none; mix-blend-mode: screen; }
         .btn-onglet.shining::before { animation: btn-shine 0.8s ease-in-out forwards; }
         @keyframes btn-shine { 0% { left: -150%; } 100% { left: 220%; } }
         .btn-onglet:hover { transform: scale(1.04); }
         .btn-onglet.actif { transform: scale(1.07); }
+        .led-dot { border-radius: 50%; animation: led-scintille 1.8s ease-in-out infinite; }
+        @keyframes led-scintille { 0%, 100% { opacity: 0.5; filter: brightness(0.9); } 50% { opacity: 1; filter: brightness(1.5); } }
         .shining-logo { position: relative; overflow: hidden; }
         .shining-logo::before { animation: shine-logo 1.0s ease-in-out forwards; }
         @keyframes shine-logo { 0% { left: -150%; } 100% { left: 220%; } }
@@ -2585,21 +2635,22 @@ function MonCompte() {
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-              {/* ── POINT 6 : Titre centré dans un encart largeur fit-content ── */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '14px 24px' }}>
-                  {avatarUrl && (
-                    <img src={avatarUrl} alt="avatar" style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,212,212,0.4)', flexShrink: 0 }} />
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center' }}>
-                    <p style={{ color: '#fff', fontSize: isMobile ? '16px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+              {/* ── Ligne d'en-tête : compteurs LED / titre / avatar — 3 encarts alignés ── */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch', gap: isMobile ? '4px' : '12px', width: '100%' }}>
+                <EncartCompteurs stats={stats} coloriesRealises={coloriesRealises} illusManquantes={illusManquantes} isMobile={isMobile} />
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: isMobile ? '10px 6px' : '14px 24px', flex: isMobile ? '1 1 0' : '0 0 auto', minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center', minWidth: 0, overflow: 'hidden' }}>
+                    <p style={{ color: '#fff', fontSize: isMobile ? '13px' : '22px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       MON COMPTE
                     </p>
-                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '11px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: isMobile ? '8px' : '13px', fontWeight: 'normal', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       Ma Collection Kevin Teo'Art
                     </p>
                   </div>
                 </div>
+
+                <EncartAvatar avatarUrl={avatarUrl} isMobile={isMobile} />
               </div>
 
               {/* ── Triple jauge globale (point 1 déjà appliqué dans UneBarre) ── */}
