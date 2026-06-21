@@ -536,6 +536,8 @@ function Catalogue() {
         .capsule-pill.ignite { animation: capsuleIgnite .4s ease; }
         @keyframes capsuleIgnite { 0% { filter: brightness(1); } 45% { filter: brightness(1.9); } 100% { filter: brightness(1); } }
         .dropdown-capsule { position: absolute; top: 100%; margin-top: 8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.96); border-radius: 12px; padding: 6px 0; z-index: 45; min-width: 175px; backdrop-filter: blur(8px); }
+        .dropdown-capsule.dropdown-capsule-left { left: 0; transform: none; }
+        .dropdown-capsule.dropdown-capsule-right { left: auto; right: 0; transform: none; }
         .dropdown-capsule.c-cyan { border: 1px solid rgba(0,212,212,0.35); }
         .dropdown-capsule.c-pink { border: 1px solid rgba(255,62,181,0.35); }
         .dropdown-capsule.c-gold { border: 1px solid rgba(255,210,80,0.35); }
@@ -711,7 +713,7 @@ function Catalogue() {
                       className={`capsule-pill capsule-pill-mobile ${cap.on ? 'on-' : 'dim-'}${cap.color}${igniteKey === cap.key ? ' ignite' : ''}`} />
                     <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', maxWidth: '46px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{cap.label}</span>
                     {openCapsule === cap.key && (
-                      <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
+                      <div className={`dropdown-capsule c-${cap.color}${cap.key === 'annee' ? ' dropdown-capsule-left' : ''}${cap.key === 'collection' ? ' dropdown-capsule-right' : ''}`} onClick={e => e.stopPropagation()}>
                         {cap.options.map(opt => (
                           <React.Fragment key={String(opt.value)}>
                             <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
