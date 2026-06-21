@@ -208,7 +208,9 @@ function Tchat({ hidden = false }) {
     // Récupère l'avatar ACTUEL de chaque expéditeur (et non celui figé au moment de l'envoi)
     const idsUniques = [...new Set((data || []).map(m => m.user_id).filter(Boolean))];
     if (idsUniques.length > 0) {
-      const { data: profilsData } = await supabase.from('profils').select('id, avatar_url').in('id', idsUniques);
+      const { data: profilsData, error: errProfils } = await supabase.from('profils').select('id, avatar_url').in('id', idsUniques);
+      if (errProfils) console.error('[Tchat] Erreur récupération avatars:', errProfils);
+      console.log('[Tchat] ids recherchés:', idsUniques, '→ profils trouvés:', profilsData);
       const map = {};
       (profilsData || []).forEach(p => { map[p.id] = p.avatar_url || null; });
       setAvatarsParUser(prev => ({ ...prev, ...map }));
