@@ -210,7 +210,7 @@ function Tchat({ hidden = false }) {
     if (idsUniques.length > 0) {
       const { data: profilsData, error: errProfils } = await supabase.from('profils').select('id, avatar_url').in('id', idsUniques);
       if (errProfils) console.error('[Tchat] Erreur récupération avatars:', errProfils);
-      console.log('[Tchat] ids recherchés:', idsUniques, '→ profils trouvés:', profilsData);
+      console.log('[Tchat] avatar_url trouvé pour chaque profil:', (profilsData || []).map(p => ({ id: p.id, avatar_url: p.avatar_url })));
       const map = {};
       (profilsData || []).forEach(p => { map[p.id] = p.avatar_url || null; });
       setAvatarsParUser(prev => ({ ...prev, ...map }));
