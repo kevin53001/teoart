@@ -47,53 +47,23 @@ const GUIDES = {
   ],
 };
 
-// ─── Position fixe de la mascotte par page ─────────────────────────────────
-// corner  : 'br' (bas-droite) | 'bl' (bas-gauche) | 'tr' (haut-droite) | 'tl' (haut-gauche) | 'bc' (bas-centre)
-// variant : 'full' (mascotte entière, petite) | 'tete' (seule la tête dépasse, cadrée sur les 2/3 hauts de l'image)
-// rotate  : rotation en degrés (ex: 180 pour "à l'envers, pendue du coin")
-const MASCOTTE_CONFIG = {
-  accueil:      { corner: 'br', variant: 'full', rotate: 0 },
-  catalogue:    { corner: 'bl', variant: 'tete', rotate: -18 },
-  livres:       { corner: 'tr', variant: 'full', rotate: 180 },
-  presentation: { corner: 'bc', variant: 'full', rotate: 0 },
-  pensees:      { corner: 'bl', variant: 'full', rotate: 0 },
-  'mon-compte': { corner: 'tl', variant: 'tete', rotate: 18 },
-};
+// La mascotte est désormais fixe (bas-gauche, entière, sans rotation) sur
+// toutes les pages — voir le composant Mascotte ci-dessous.
 
-function Mascotte({ pageKey }) {
-  const cfg = MASCOTTE_CONFIG[pageKey];
-  if (!cfg) return null;
-
+function Mascotte() {
   const TAILLE = 92; // taille de base de la mascotte (px)
-
-  const posStyle = {
-    br: { bottom: '-10px', right: '-10px' },
-    bl: { bottom: '-10px', left: '-10px' },
-    tr: { top: '-10px', right: '-10px' },
-    tl: { top: '-10px', left: '-10px' },
-    bc: { bottom: '-12px', left: '50%', transform: 'translateX(-50%)' },
-  }[cfg.corner];
-
-  // Variant "tete" : on ne montre que les 2/3 hauts de l'image (crop par overflow)
-  const estTete = cfg.variant === 'tete';
-  const hauteurVisible = estTete ? Math.round(TAILLE * (2 / 3)) : TAILLE;
 
   return (
     <div style={{
-      position: 'absolute', ...posStyle,
-      width: `${TAILLE}px`, height: `${hauteurVisible}px`,
-      overflow: 'hidden', pointerEvents: 'none', zIndex: 5,
-      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))',
+      position: 'absolute', bottom: '0', left: '0',
+      width: `${TAILLE}px`, height: `${TAILLE}px`,
+      pointerEvents: 'none', zIndex: 5,
+      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.35))',
     }}>
       <img
         src={MASCOTTE_URL}
         alt=""
-        style={{
-          width: `${TAILLE}px`, height: `${TAILLE}px`,
-          objectFit: 'contain',
-          transform: `rotate(${cfg.rotate}deg)`,
-          display: 'block',
-        }}
+        style={{ width: `${TAILLE}px`, height: `${TAILLE}px`, objectFit: 'contain', display: 'block' }}
       />
     </div>
   );
@@ -166,17 +136,8 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
   if (!pret || !visible || !slides || slides.length === 0) return null;
 
   const dernier = index === slides.length - 1;
-  const COULEURS = ['#00d4d4', '#ffd250', '#ff3eb5'];
-  const couleur = COULEURS[index % COULEURS.length];
-  const cfg = MASCOTTE_CONFIG[pageKey];
-  // On laisse de la place au texte côté opposé à la mascotte pour ne jamais passer dessus
-  const paddingMascotte = !cfg ? {} : {
-    br: { paddingRight: isMobile ? '54px' : '64px' },
-    bl: { paddingLeft: isMobile ? '54px' : '64px' },
-    tr: { paddingRight: isMobile ? '54px' : '64px' },
-    tl: { paddingLeft: isMobile ? '54px' : '64px' },
-    bc: { paddingBottom: '50px' },
-  }[cfg.corner];
+  // La mascotte est toujours en bas-gauche : on réserve la place côté gauche
+  const paddingMascotte = { paddingLeft: isMobile ? '54px' : '64px' };
 
   return ReactDOM.createPortal(
     <div
@@ -196,10 +157,10 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
         style={{
           width: isMobile ? '100%' : '420px',
           maxWidth: '92vw',
-          background: 'linear-gradient(160deg, rgba(15,15,18,0.97), rgba(8,8,10,0.97))',
-          border: `1px solid ${couleur}55`,
+          background: '#5bf9ff',
+          border: '1px solid #000',
           borderRadius: '20px',
-          boxShadow: `0 4px 8px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.6), 0 0 24px ${couleur}25`,
+          boxShadow: '0 4px 8px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.6)',
           padding: isMobile ? '22px 18px' : '28px 26px',
           position: 'relative',
           overflow: 'hidden',
@@ -211,7 +172,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
           aria-label="Fermer"
           style={{
             position: 'absolute', top: '12px', right: '12px', zIndex: 20,
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+            background: '#000', border: '1px solid #000',
             borderRadius: '50%', width: '30px', height: '30px',
             color: '#fff', fontSize: '16px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -220,7 +181,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
 
         <div style={{ position: 'relative', zIndex: 6, ...paddingMascotte }}>
           <p style={{
-            color: couleur, fontSize: isMobile ? '15px' : '16px', lineHeight: '1.75',
+            color: '#000', fontSize: isMobile ? '15px' : '16px', lineHeight: '1.75',
             fontWeight: 500, marginTop: '4px', marginBottom: '22px', paddingRight: '20px',
           }}>
             {slides[index]}
@@ -231,7 +192,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
               {slides.map((_, i) => (
                 <div key={i} style={{
                   width: i === index ? '20px' : '7px', height: '7px', borderRadius: '4px',
-                  background: i === index ? couleur : 'rgba(255,255,255,0.18)',
+                  background: i === index ? '#000' : 'rgba(0,0,0,0.25)',
                   transition: 'all 0.3s',
                 }} />
               ))}
@@ -240,9 +201,9 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
             <button
               onClick={() => dernier ? fermer() : setIndex(i => i + 1)}
               style={{
-                background: couleur, border: 'none', borderRadius: '999px',
-                padding: '9px 20px', color: '#000', fontWeight: 'bold', fontSize: '13px',
-                cursor: 'pointer', boxShadow: `0 0 16px ${couleur}60`,
+                background: '#000', border: 'none', borderRadius: '999px',
+                padding: '9px 20px', color: '#fff', fontWeight: 'bold', fontSize: '13px',
+                cursor: 'pointer',
               }}
             >
               {dernier ? "C'est compris !" : 'Suivant'}
@@ -250,7 +211,7 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
           </div>
         </div>
 
-        <Mascotte pageKey={pageKey} />
+        <Mascotte />
       </div>
 
       <style>{`
