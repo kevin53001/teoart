@@ -391,7 +391,7 @@ function Tchat({ hidden = false }) {
         ref={boutonRef}
         className="tchat-btn"
         onClick={toggleTchat}
-        style={{ position: 'fixed', top: '56px', right: '14px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'fixed', top: '4px', right: '58px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <img src={`${R2}/site/pastille_chat.png`} alt="Tchat" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: nbNonLuTotal > 0 ? 'drop-shadow(0 0 4px rgba(255,62,181,0.6))' : 'none' }} />
         {nonLuGeneral && (
@@ -404,7 +404,7 @@ function Tchat({ hidden = false }) {
 
       {/* Panneau */}
       {ouvert && ReactDOM.createPortal(
-        <div ref={panneauRef} style={{ position: 'fixed', top: '98px', right: '12px', width: '320px', maxHeight: '480px', zIndex: 9999, background: 'rgba(8,16,20,0.97)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div ref={panneauRef} style={{ position: 'fixed', top: '64px', right: '12px', width: '320px', maxHeight: '480px', zIndex: 9999, background: 'rgba(8,16,20,0.97)', border: '1px solid rgba(0,212,212,0.25)', borderRadius: '14px', boxShadow: '0 8px 32px rgba(0,0,0,0.7)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
           {/* Onglets */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
