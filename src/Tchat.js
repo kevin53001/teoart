@@ -391,7 +391,7 @@ function Tchat({ hidden = false }) {
         ref={boutonRef}
         className="tchat-btn"
         onClick={toggleTchat}
-        style={{ position: 'fixed', top: '4px', right: '58px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'fixed', top: '4px', right: '48px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <img src={`${R2}/site/pastille_chat.png`} alt="Tchat" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: nbNonLuTotal > 0 ? 'drop-shadow(0 0 4px rgba(255,62,181,0.6))' : 'none' }} />
         {nonLuGeneral && (
