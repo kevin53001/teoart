@@ -906,11 +906,10 @@ function SectionMaCollection({ userId, totalIllus }) {
 
       for (const section of sections) {
         avancerColonne(10);
-        const cx = () => xCol[currentCol] + COL_W / 2;
         doc.setFont(undefined, 'bold');
         doc.setFontSize(12);
         doc.setTextColor(0, 120, 120);
-        doc.text(section.titre, cx(), y, { align: 'center' });
+        doc.text(section.titre, xCol[currentCol] + COL_W / 2, y, { align: 'center' });
         doc.setFont(undefined, 'normal');
         y += 7;
 
@@ -919,7 +918,7 @@ function SectionMaCollection({ userId, totalIllus }) {
           doc.setFont(undefined, 'bold');
           doc.setFontSize(9);
           doc.setTextColor(255, 62, 181);
-          doc.text(dossier.nom, cx(), y, { align: 'center', maxWidth: COL_W - 4 });
+          doc.text(dossier.nom, xCol[currentCol] + COL_W / 2, y, { align: 'center', maxWidth: COL_W - 4 });
           doc.setFont(undefined, 'normal');
           y += 5;
 
