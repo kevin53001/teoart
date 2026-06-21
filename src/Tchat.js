@@ -52,14 +52,15 @@ function heureRelative(iso) {
 }
 
 // ── Ligne message (chat général) ─────────────────────────────────────────────
-function LigneMessageGeneral({ msg, estMoi }) {
+function LigneMessageGeneral({ msg, estMoi, avatarLive }) {
+  const avatarAffiche = avatarLive !== undefined ? avatarLive : msg.avatar_url;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: estMoi ? 'flex-end' : 'flex-start', marginBottom: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px', flexDirection: estMoi ? 'row-reverse' : 'row' }}>
-        {msg.avatar_url ? (
-          <img src={msg.avatar_url} alt="" style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }} />
+        {avatarAffiche ? (
+          <img src={avatarAffiche} alt="" style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
         ) : (
-          <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,212,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#00d4d4' }}>
+          <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(0,212,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#00d4d4', flexShrink: 0 }}>
             {(msg.pseudo || '?')[0].toUpperCase()}
           </div>
         )}
@@ -119,6 +120,7 @@ function Tchat({ hidden = false }) {
   const [onglet, setOnglet] = useState('general'); // 'general' | 'prive'
 
   const [messagesGeneral, setMessagesGeneral] = useState([]);
+  const [avatarsParUser, setAvatarsParUser] = useState({});
   const [messagesPrive, setMessagesPrive] = useState([]);
   const [loadingGeneral, setLoadingGeneral] = useState(false);
   const [loadingPrive, setLoadingPrive] = useState(false);
@@ -202,6 +204,15 @@ function Tchat({ hidden = false }) {
       .limit(500);
     setMessagesGeneral(data || []);
     setLoadingGeneral(false);
+
+    // Récupère l'avatar ACTUEL de chaque expéditeur (et non celui figé au moment de l'envoi)
+    const idsUniques = [...new Set((data || []).map(m => m.user_id).filter(Boolean))];
+    if (idsUniques.length > 0) {
+      const { data: profilsData } = await supabase.from('profils').select('id, avatar_url').in('id', idsUniques);
+      const map = {};
+      (profilsData || []).forEach(p => { map[p.id] = p.avatar_url || null; });
+      setAvatarsParUser(prev => ({ ...prev, ...map }));
+    }
   }, []);
 
   const chargerPrive = useCallback(async () => {
@@ -238,6 +249,14 @@ function Tchat({ hidden = false }) {
         } else if (msg.user_id !== userId) {
           setNonLuGeneral(true);
           vuGeneralSessionRef.current = false;
+        }
+        if (msg.user_id) {
+          setAvatarsParUser(prev => {
+            if (Object.prototype.hasOwnProperty.call(prev, msg.user_id)) return prev;
+            supabase.from('profils').select('avatar_url').eq('id', msg.user_id).single()
+              .then(({ data: p }) => setAvatarsParUser(p2 => ({ ...p2, [msg.user_id]: p?.avatar_url || null })));
+            return prev;
+          });
         }
       })
       .subscribe();
@@ -374,12 +393,12 @@ function Tchat({ hidden = false }) {
         onClick={toggleTchat}
         style={{ position: 'fixed', top: '56px', right: '14px', zIndex: 1000, cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        <img src={`${R2}/site/pastille_chat.png`} alt="Tchat" style={{ width: '39px', height: '39px', objectFit: 'contain', filter: nbNonLuTotal > 0 ? 'drop-shadow(0 0 4px rgba(255,62,181,0.6))' : 'none' }} />
+        <img src={`${R2}/site/pastille_chat.png`} alt="Tchat" style={{ width: '55px', height: '55px', objectFit: 'contain', filter: nbNonLuTotal > 0 ? 'drop-shadow(0 0 4px rgba(255,62,181,0.6))' : 'none' }} />
         {nonLuGeneral && (
-          <div className="tchat-led" style={{ position: 'absolute', top: '-2px', right: '-2px', width: '10px', height: '10px', borderRadius: '50%', background: '#ff3eb5', border: '1.5px solid #000' }} />
+          <div className="tchat-led" style={{ position: 'absolute', top: '-2px', right: '-2px', width: '14px', height: '14px', borderRadius: '50%', background: '#ff3eb5', border: '1.5px solid #000' }} />
         )}
         {nonLuPrive && (
-          <div className="tchat-led-cyan" style={{ position: 'absolute', top: '-2px', left: '-2px', width: '10px', height: '10px', borderRadius: '50%', background: '#00d4d4', border: '1.5px solid #000' }} />
+          <div className="tchat-led-cyan" style={{ position: 'absolute', top: '-2px', left: '-2px', width: '14px', height: '14px', borderRadius: '50%', background: '#00d4d4', border: '1.5px solid #000' }} />
         )}
       </div>
 
@@ -431,7 +450,7 @@ function Tchat({ hidden = false }) {
                   </div>
                 ) : (
                   <>
-                    {messagesGeneral.map(m => <LigneMessageGeneral key={m.id} msg={m} estMoi={m.user_id === userId} />)}
+                    {messagesGeneral.map(m => <LigneMessageGeneral key={m.id} msg={m} estMoi={m.user_id === userId} avatarLive={avatarsParUser[m.user_id]} />)}
                     <div ref={finListeGeneralRef} />
                   </>
                 )}
