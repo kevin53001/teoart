@@ -2673,7 +2673,7 @@ function MonCompte() {
               <div style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '16px', padding: '18px 24px' }}>
                 <JaugeDouble pctJai={pctJai} pctColorie={pctColo} pctJeVeux={pctJeVeux} hauteur={14} showLabels={true} />
                 <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', marginTop: '10px', textAlign: 'center' }}>
-                  {stats.jAi} / {stats.totalIllus} illustrations possédées · {stats.colorie} / {stats.jAi} coloriées · {stats.jeVeux} / {illusManquantes} souhaitées parmi les illustrations manquantes
+                  {stats.jAi} / {stats.totalIllus} illustrations possédées · {stats.colorie} / {stats.jAi} coloriées · {stats.jeVeux} / {illusManquantes} parmi les illustrations manquantes
                 </p>
               </div>
 
