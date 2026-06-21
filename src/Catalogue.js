@@ -524,6 +524,7 @@ function Catalogue() {
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
         .capsule-pill { width: 84px; height: 24px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+        .capsule-pill.capsule-pill-mobile { width: 26px; height: 26px; border-radius: 50%; }
         .encart-filtres-premium { background: linear-gradient(180deg, rgba(0,0,0,0.62), rgba(0,0,0,0.8)); border: 1px solid rgba(255,210,80,0.35); border-radius: 18px; padding: 14px 24px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
         .encart-filtres-premium, .encart-filtres-premium * { font-family: var(--font-texte); }
         .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
@@ -697,8 +698,95 @@ function Catalogue() {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
           {/* RANGÉE DE FILTRES dans un encart "carte premium", calé sur la largeur de la grille */}
-          <div className="encart-filtres-premium" style={{ maxWidth: '920px', margin: '0 auto 16px', overflowX: isMobile ? 'auto' : 'visible', position: 'relative', zIndex: 45 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: isMobile ? '10px' : '20px' }}>
+          {isMobile ? (
+            <div className="encart-filtres-premium" style={{ maxWidth: '920px', margin: '0 auto 16px', padding: '12px 36px 10px 14px', position: 'relative', zIndex: 45 }}>
+
+              {/* Ligne 1 : les 5 capsules en pastilles rondes condensées */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '4px' }}>
+                {capsules.map(cap => (
+                  <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', flex: '0 0 auto' }}>
+                    <button
+                      aria-label={cap.label}
+                      onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
+                      className={`capsule-pill capsule-pill-mobile ${cap.on ? 'on-' : 'dim-'}${cap.color}${igniteKey === cap.key ? ' ignite' : ''}`} />
+                    <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', maxWidth: '46px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{cap.label}</span>
+                    {openCapsule === cap.key && (
+                      <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
+                        {cap.options.map(opt => (
+                          <React.Fragment key={String(opt.value)}>
+                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
+                            {opt.separateur && <div className="dropdown-capsule-sep" />}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Ligne 2 : Tri + Prix + Vue, condensés sur une ligne */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginRight: '2px' }}>Tri</span>
+                  <button style={{ ...triVueBtnStyle(tri === 'az'), padding: '3px 6px', fontSize: '10px' }} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
+                  <button style={{ ...triVueBtnStyle(tri === 'za'), padding: '3px 6px', fontSize: '10px' }} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
+                  <button style={{ ...triVueBtnStyle(tri === 'recent'), padding: '3px 6px', fontSize: '10px' }} onClick={() => { setTri('recent'); setPage(1); }}>Réc.</button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', marginRight: '2px' }}>€</span>
+                  <button style={{ ...triVueBtnStyle(tri === 'prix_asc'), padding: '3px 6px', fontSize: '10px' }} onClick={() => { setTri('prix_asc'); setPage(1); }}>↑</button>
+                  <button style={{ ...triVueBtnStyle(tri === 'prix_desc'), padding: '3px 6px', fontSize: '10px' }} onClick={() => { setTri('prix_desc'); setPage(1); }}>↓</button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ padding: '3px 6px', fontSize: '11px', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
+                  <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ padding: '3px 6px', fontSize: '11px', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+                </div>
+              </div>
+
+              {/* Ligne 3 : compteurs + filtre actif + total, condensés */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginTop: '8px', flexWrap: 'wrap', lineHeight: 1.2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="J'ai">
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '13px', height: '13px', borderRadius: '4px', background: '#00d4d4', color: '#000', fontSize: '8px', fontWeight: 'bold' }}>✓</span>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px' }}>{nbJai}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Je veux">
+                    <svg viewBox="0 0 24 24" width="11" height="11"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" /></svg>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px' }}>{nbJeVeux}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }} title="Colorié">
+                    <svg viewBox="0 0 24 24" width="12" height="12">
+                      <path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 1.1 0 2-.9 2-2 0-.52-.2-1-.52-1.36-.32-.34-.52-.82-.52-1.32 0-1.1.9-2 2-2h2.36c3.12 0 5.68-2.56 5.68-5.68C22 6.12 17.52 2 12 2z" fill="rgba(255,210,80,0.8)" stroke="rgba(255,210,80,1)" strokeWidth="0.5" />
+                      <circle cx="6.5" cy="11.5" r="1.5" fill="#ff4d7d" /><circle cx="9.5" cy="7.5" r="1.5" fill="#00d4d4" /><circle cx="14.5" cy="7.5" r="1.5" fill="#ff7043" /><circle cx="17.5" cy="11.5" r="1.5" fill="#66bb6a" />
+                    </svg>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px' }}>{nbColorie}</span>
+                  </div>
+                </div>
+                {(filtreActifInfo || filtreNouveautes) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {filtreActifInfo && (
+                      <>
+                        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '10px', fontWeight: 'bold' }}>{filtreActifInfo.label}</span>
+                        <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '12px', lineHeight: 1 }}>✕</button>
+                      </>
+                    )}
+                    {filtreNouveautes && (
+                      <>
+                        <span style={{ color: '#00d4d4', fontSize: '10px', fontWeight: 'bold' }}>Nouveautés</span>
+                        <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '12px', lineHeight: 1 }}>✕</button>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px' }}>
+                  {total} illu{total > 1 ? 's' : ''}{recherche ? ` · "${recherche}"` : ''}
+                </div>
+              </div>
+
+            </div>
+          ) : (
+          <div className="encart-filtres-premium" style={{ maxWidth: '920px', margin: '0 auto 16px', overflowX: 'visible', position: 'relative', zIndex: 45 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: '20px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
                 <span style={labelCapsuleStyle}>Tri</span>
                 <div style={{ display: 'flex', gap: '5px' }}>
@@ -708,10 +796,10 @@ function Catalogue() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: isMobile ? '10px' : '20px' }}>
+              <div style={{ display: 'flex', gap: '20px' }}>
                 {capsules.map(cap => (
                   <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '64px' : '84px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
+                    <span style={{ ...labelCapsuleStyle, maxWidth: '84px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
                     <button
                       aria-label={cap.label}
                       onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
@@ -730,7 +818,7 @@ function Catalogue() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: isMobile ? '10px' : '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
                   <span style={labelCapsuleStyle}>Prix</span>
                   <div style={{ display: 'flex', gap: '5px' }}>
@@ -788,7 +876,7 @@ function Catalogue() {
             </div>
 
           </div>
-
+          )}
           {/* GRILLE */}
           {loading ? <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p> : (
             <>
