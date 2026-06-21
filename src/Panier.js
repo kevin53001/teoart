@@ -30,6 +30,7 @@ const BARRES = [
 ];
 
 const CATEGORIES = ['Tout', 'Animaux', 'Cartes Postales et Marques Page', 'Contes et Princesses', 'Halloween', 'Kawaii/Chibi', 'Manga', 'Noël', 'Portrait'];
+const CATEGORIES_TRIEES_AVEC_SPECIALES = [...CATEGORIES.filter(c => c !== 'Tout'), 'Calendrier', 'FREE'].sort((a, b) => a.localeCompare(b, 'fr'));
 const MOIS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 function getMoisPatreonDisponibles() {
   const maintenant = new Date();
@@ -1313,7 +1314,8 @@ export default function Panier() {
               <img src={`${R2}/site/pastille_categories.png`} alt="Catégories" className="pastille" style={{ width: `${P}px`, height: `${P}px`, display: 'block' }} onClick={e => { e.stopPropagation(); setShowCategories(v => !v); setShowPatreonMenu(false); setShowKawaiiMenu(false); }} />
               {showCategories && (
                 <div className="dropdown-cat" onClick={e => e.stopPropagation()}>
-                  {CATEGORIES.map(cat => (
+                  <button className="dropdown-item" style={{ fontWeight: 'bold', fontSize: '15px' }} onClick={() => { navigate('/catalogue', { state: { categorie: 'Tout' } }); setShowCategories(false); }}>Tout</button>
+                  {CATEGORIES_TRIEES_AVEC_SPECIALES.map(cat => (
                     cat === 'Kawaii/Chibi' ? (
                       <div key={cat}>
                         <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', color: '#ff3eb5' }} onClick={() => setShowKawaiiMenu(v => !v)}>
@@ -1329,7 +1331,7 @@ export default function Panier() {
                         )}
                       </div>
                     ) : (
-                      <button key={cat} className="dropdown-item" style={cat === 'Tout' ? { fontWeight: 'bold', fontSize: '15px' } : {}} onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>{cat}</button>
+                      <button key={cat} className="dropdown-item" style={cat === 'FREE' ? { color: '#ffd250', fontWeight: 'bold' } : {}} onClick={() => { navigate('/catalogue', { state: { categorie: cat } }); setShowCategories(false); }}>{cat}</button>
                     )
                   ))}
                   <div style={{ height: '1px', background: 'rgba(255,210,80,0.2)', margin: '6px 8px' }} />
