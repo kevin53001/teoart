@@ -123,52 +123,40 @@ function getVisuelB(visuels) {
   return getVisuelPresentation(visuels);
 }
 
-// ─── Tracker Ma Collection : en-tête de colonnes ───────────────────────────
-function EnTeteTracker() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 8px 6px' }}>
-      <span style={{ width: '34px', flexShrink: 0 }} />
-      <span style={{ flex: 1, color: 'rgba(255,255,255,0.35)', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Illustration</span>
-      <span style={{ width: '26px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '9px', textTransform: 'uppercase', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', padding: '2px 0' }}>J'ai</span>
-      <span style={{ width: '26px', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '9px' }}>🎨</span>
-    </div>
-  );
-}
+// ─── Tracker Ma Collection : grille de cartes, fonds de couleur bien visibles ──
+const FONDS_CARTE = ['rgba(255,62,181,0.14)', 'rgba(255,210,80,0.14)', 'rgba(0,212,212,0.14)'];
+const BORDS_CARTE = ['rgba(255,62,181,0.3)', 'rgba(255,210,80,0.3)', 'rgba(0,212,212,0.3)'];
 
-// ─── Tracker Ma Collection : une ligne illustration ────────────────────────
-const FONDS_LIGNE = ['rgba(255,62,181,0.05)', 'rgba(255,210,80,0.05)', 'rgba(0,212,212,0.05)'];
-
-function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
+function CarteTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
   const url = getVisuelB(illu.visuels);
-  const couleurJai = illu.aAchete ? '#ff3eb5' : '#00d4d4'; // rose = acheté sur le site, bleu/cyan = sélection initiale/manuelle
   const colorieActif = colorieVerrouille || colorieManuel;
-  const couleurColorie = colorieVerrouille ? '#ffd250' : (colorieManuel ? '#2ecc71' : 'rgba(255,255,255,0.15)');
+  const couleurColorie = colorieVerrouille ? '#ffd250' : (colorieManuel ? '#2ecc71' : 'rgba(255,255,255,0.2)');
+  const fond = FONDS_CARTE[index % FONDS_CARTE.length];
+  const bord = BORDS_CARTE[index % BORDS_CARTE.length];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 8px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: FONDS_LIGNE[index % FONDS_LIGNE.length] }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', padding: '8px', borderRadius: '10px', background: fond, border: `1px solid ${bord}` }}>
       <div
         onClick={() => url && onAgrandir(url, illu.nom)}
-        style={{ width: '34px', height: '34px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.15)', cursor: url ? 'zoom-in' : 'default' }}
+        style={{ width: '46px', height: '46px', borderRadius: '7px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.2)', cursor: url ? 'zoom-in' : 'default' }}
       >
         {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : null}
       </div>
-      <span style={{ flex: 1, color: 'rgba(255,255,255,0.8)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{illu.nom}</span>
-      <span title={illu.aAchete ? "Acheté sur le site" : "J'ai (sélection initiale ou manuelle)"} style={{ width: '26px', textAlign: 'center', color: couleurJai, fontSize: '16px', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '2px 0' }}>✓</span>
+      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '10px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{illu.nom}</span>
       <span
         title={colorieVerrouille ? "Colorié partagé par vous" : (colorieManuel ? "Marqué colorié manuellement (non partagé)" : "Marquer comme colorié (manuel, non partagé)")}
         onClick={() => !colorieVerrouille && onToggleManuel(illu.id)}
-        style={{ width: '26px', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: couleurColorie, background: 'rgba(255,255,255,0.05)', borderRadius: '4px', padding: '2px 0' }}
+        style={{ fontSize: '17px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: couleurColorie, lineHeight: 1 }}
       >{colorieActif ? '✓' : '✓'}</span>
     </div>
   );
 }
 
-// ─── Tracker Ma Collection : liste complète pour un dossier (livre/recueil/hors-série) ─
-function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onToggleManuel, onAgrandir }) {
+// ─── Tracker Ma Collection : grille complète pour un dossier (livre/recueil/hors-série) ─
+function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onToggleManuel, onAgrandir, isMobile }) {
   return (
-    <div>
-      <EnTeteTracker />
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '8px' }}>
       {illus.map((illu, idx) => (
-        <LigneTrackerIllu
+        <CarteTrackerIllu
           key={illu.id}
           illu={illu}
           index={idx}
@@ -639,6 +627,13 @@ function SectionMaCollection({ userId, totalIllus }) {
   const [coloriesManuels, setColoriesManuels] = React.useState({});
   const [imageAgrandie, setImageAgrandie] = React.useState(null);
   const [exportEnCours, setExportEnCours] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth <= 600);
+
+  React.useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const toggleColorieManuel = async (illustrationId) => {
     const nouvelEtat = !coloriesManuels[illustrationId];
@@ -824,21 +819,37 @@ function SectionMaCollection({ userId, totalIllus }) {
       const PAGE_CENTER_X = PAGE_W / 2;
       const ROW_H = 6;
       const HEADER_H = 6;
-      const TABLE_W = 110;
-      const COL_NOM_W = 70;
+      const GAP_COLS = 10;
+      const COL_W = (PAGE_W - 2 * MARGIN - GAP_COLS) / 2; // largeur d'une colonne de page
+      const TABLE_W = COL_W;
       const COL_CHK_W = 20;
-      const TABLE_X = PAGE_CENTER_X - TABLE_W / 2;
-      let y = MARGIN;
+      const COL_NOM_W = TABLE_W - COL_CHK_W;
+      const xCol = [MARGIN, MARGIN + COL_W + GAP_COLS];
 
-      const sautDePage = (needed = ROW_H) => {
-        if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
-      };
+      let currentCol = 0;
+      let yColTop = MARGIN;
+      let y = MARGIN;
 
       // Dessine une coche (✓) faite de 2 segments, pour éviter les soucis de police/encodage
       const tracerCoche = (cx, cy, couleurRgb) => {
         doc.setDrawColor(...couleurRgb);
         doc.setLineWidth(0.7);
         doc.lines([[1.1, 1.3], [2.3, -2.6]], cx - 1.6, cy + 0.2, [1, 1], 'S');
+      };
+
+      // Gère le passage colonne 1 → colonne 2 → nouvelle page
+      const avancerColonne = (needed = ROW_H) => {
+        if (y + needed > PAGE_H - MARGIN) {
+          if (currentCol === 0) {
+            currentCol = 1;
+            y = yColTop;
+          } else {
+            doc.addPage();
+            yColTop = MARGIN;
+            y = yColTop;
+            currentCol = 0;
+          }
+        }
       };
 
       doc.setFont(undefined, 'bold');
@@ -848,18 +859,23 @@ function SectionMaCollection({ userId, totalIllus }) {
       doc.setFont(undefined, 'normal');
       y += 8;
 
-      // Légende
+      // Légende centrée (uniquement Colorié, car seules les illustrations possédées apparaissent)
       doc.setFontSize(8);
       doc.setTextColor(60, 60, 60);
-      tracerCoche(MARGIN + 1.5, y - 1.5, [0, 150, 150]);
-      doc.text("J'ai (initial/manuel)", MARGIN + 5, y);
-      tracerCoche(MARGIN + 42, y - 1.5, [230, 60, 160]);
-      doc.text("J'ai (acheté)", MARGIN + 45.5, y);
-      tracerCoche(MARGIN + 72, y - 1.5, [220, 170, 30]);
-      doc.text('Colorié (partagé)', MARGIN + 75.5, y);
-      tracerCoche(MARGIN + 108, y - 1.5, [46, 204, 113]);
-      doc.text('Colorié (manuel)', MARGIN + 111.5, y);
+      const legendeItems = [
+        { couleur: [220, 170, 30], texte: 'Colorié (partagé)' },
+        { couleur: [46, 204, 113], texte: 'Colorié (manuel, non partagé)' },
+      ];
+      const largeursLegende = legendeItems.map(it => doc.getTextWidth(it.texte) + 8);
+      const largeurTotaleLegende = largeursLegende.reduce((a, b) => a + b, 0);
+      let xLeg = PAGE_CENTER_X - largeurTotaleLegende / 2;
+      legendeItems.forEach((it, i) => {
+        tracerCoche(xLeg + 1.5, y - 1.5, it.couleur);
+        doc.text(it.texte, xLeg + 5, y);
+        xLeg += largeursLegende[i];
+      });
       y += 10;
+      yColTop = y;
 
       // Construit la liste des sections (années + hors-séries) en ne gardant que ce qui est possédé
       const sections = [];
@@ -889,56 +905,53 @@ function SectionMaCollection({ userId, totalIllus }) {
       if (horsDossiers.length > 0) sections.push({ titre: 'Hors-séries', dossiers: horsDossiers });
 
       for (const section of sections) {
-        sautDePage(10);
+        avancerColonne(10);
+        const cx = () => xCol[currentCol] + COL_W / 2;
         doc.setFont(undefined, 'bold');
-        doc.setFontSize(13);
+        doc.setFontSize(12);
         doc.setTextColor(0, 120, 120);
-        doc.text(section.titre, PAGE_CENTER_X, y, { align: 'center' });
+        doc.text(section.titre, cx(), y, { align: 'center' });
         doc.setFont(undefined, 'normal');
         y += 7;
 
         for (const dossier of section.dossiers) {
-          sautDePage(HEADER_H + ROW_H + 6);
+          avancerColonne(HEADER_H + ROW_H + 6);
           doc.setFont(undefined, 'bold');
-          doc.setFontSize(10);
+          doc.setFontSize(9);
           doc.setTextColor(255, 62, 181);
-          doc.text(dossier.nom, PAGE_CENTER_X, y, { align: 'center' });
+          doc.text(dossier.nom, cx(), y, { align: 'center', maxWidth: COL_W - 4 });
           doc.setFont(undefined, 'normal');
           y += 5;
 
           // En-tête du tableau
-          sautDePage(HEADER_H);
+          avancerColonne(HEADER_H);
+          const tx = xCol[currentCol];
           doc.setDrawColor(170, 170, 170);
           doc.setLineWidth(0.1);
-          doc.setFontSize(8);
+          doc.setFontSize(7.5);
           doc.setTextColor(90, 90, 90);
-          doc.rect(TABLE_X, y, COL_NOM_W, HEADER_H);
-          doc.rect(TABLE_X + COL_NOM_W, y, COL_CHK_W, HEADER_H);
-          doc.rect(TABLE_X + COL_NOM_W + COL_CHK_W, y, COL_CHK_W, HEADER_H);
-          doc.text('Illustration', TABLE_X + 3, y + 4);
-          doc.text("J'ai", TABLE_X + COL_NOM_W + COL_CHK_W / 2, y + 4, { align: 'center' });
-          doc.text('Colorié', TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 4, { align: 'center' });
+          doc.rect(tx, y, COL_NOM_W, HEADER_H);
+          doc.rect(tx + COL_NOM_W, y, COL_CHK_W, HEADER_H);
+          doc.text('Illustration', tx + 2.5, y + 4);
+          doc.text('Colorié', tx + COL_NOM_W + COL_CHK_W / 2, y + 4, { align: 'center' });
           y += HEADER_H;
 
           for (const illu of dossier.illus) {
-            sautDePage(ROW_H);
+            avancerColonne(ROW_H);
+            const txr = xCol[currentCol];
             doc.setDrawColor(170, 170, 170);
             doc.setLineWidth(0.1);
-            doc.rect(TABLE_X, y, COL_NOM_W, ROW_H);
-            doc.rect(TABLE_X + COL_NOM_W, y, COL_CHK_W, ROW_H);
-            doc.rect(TABLE_X + COL_NOM_W + COL_CHK_W, y, COL_CHK_W, ROW_H);
+            doc.rect(txr, y, COL_NOM_W, ROW_H);
+            doc.rect(txr + COL_NOM_W, y, COL_CHK_W, ROW_H);
 
-            doc.setFontSize(8);
+            doc.setFontSize(7.5);
             doc.setTextColor(20, 20, 20);
-            doc.text(String(illu.nom || ''), TABLE_X + 3, y + 4, { maxWidth: COL_NOM_W - 5 });
-
-            const couleurJai = illu.aAchete ? [230, 60, 160] : [0, 150, 150];
-            tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W / 2, y + 3.2, couleurJai);
+            doc.text(String(illu.nom || ''), txr + 2.5, y + 4, { maxWidth: COL_NOM_W - 4 });
 
             const colorieVerrouille = colosPartagesSet.has(illu.id);
             const colorieManuel = !!coloriesManuels[illu.id];
-            if (colorieVerrouille) tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 3.2, [220, 170, 30]);
-            else if (colorieManuel) tracerCoche(TABLE_X + COL_NOM_W + COL_CHK_W * 1.5, y + 3.2, [46, 204, 113]);
+            if (colorieVerrouille) tracerCoche(txr + COL_NOM_W + COL_CHK_W / 2, y + 3.2, [220, 170, 30]);
+            else if (colorieManuel) tracerCoche(txr + COL_NOM_W + COL_CHK_W / 2, y + 3.2, [46, 204, 113]);
 
             y += ROW_H;
           }
@@ -964,8 +977,6 @@ function SectionMaCollection({ userId, totalIllus }) {
           Ma Collection se remplit automatiquement dès que tu coches « J'ai » sur une fiche illustration, une vignette ou un livre — ou que tu achètes une illustration sur le site. La case « Colorié » se coche automatiquement seulement si tu partages ton coloriage ; tu peux aussi la cocher manuellement si tu as colorié sans partager (sans effet sur les fiches du site ni sur le badge Coloriste, qui ne compte que les coloriages partagés).
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
-          <LegendeItem couleur="#00d4d4" texte="J'ai (sélection initiale / manuel)" />
-          <LegendeItem couleur="#ff3eb5" texte="J'ai (acheté sur le site)" />
           <LegendeItem couleur="#ffd250" texte="Colorié (partagé)" />
           <LegendeItem couleur="#2ecc71" texte="Colorié (manuel, non partagé)" />
         </div>
@@ -1046,7 +1057,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                                 </div>
                                 {ouvertL && jaiL > 0 && (
                                   <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
-                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} isMobile={isMobile} />
                                   </div>
                                 )}
                                 {ouvertL && jaiL === 0 && (
@@ -1089,7 +1100,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                       </div>
                       {ouvertL && jaiL > 0 && (
                         <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
-                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} isMobile={isMobile} />
                                   </div>
                       )}
                       {ouvertL && jaiL === 0 && (
@@ -1151,7 +1162,7 @@ function SectionMaCollection({ userId, totalIllus }) {
                       </div>
                       {ouvertL && jaiL > 0 && (
                         <div style={{ padding: '4px 0', background: 'rgba(0,0,0,0.3)' }}>
-                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                                    <TrackerIllustrations illus={livreData.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} isMobile={isMobile} />
                                   </div>
                       )}
                       {ouvertL && jaiL === 0 && (
@@ -1166,7 +1177,7 @@ function SectionMaCollection({ userId, totalIllus }) {
             )}
             {ouvert && entree.type === 'livre' && entree.illus && (
               <div style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.3)' }}>
-                <TrackerIllustrations illus={entree.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} />
+                <TrackerIllustrations illus={entree.illus} colosPartagesSet={colosPartagesSet} coloriesManuels={coloriesManuels} onToggleManuel={toggleColorieManuel} onAgrandir={(url, nom) => setImageAgrandie({ url, nom })} isMobile={isMobile} />
               </div>
             )}
           </div>
