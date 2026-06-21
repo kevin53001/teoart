@@ -524,7 +524,8 @@ function Catalogue() {
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
         .capsule-pill { width: 84px; height: 24px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
-        .capsule-pill.capsule-pill-mobile { width: 26px; height: 26px; border-radius: 50%; }
+        .capsule-pill.capsule-pill-mobile { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 3px 0 rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.15), inset 0 -2px 2px rgba(0,0,0,0.2); }
+        .capsule-pill.capsule-pill-mobile:active { transform: scale(0.88) translateY(2px) !important; box-shadow: 0 0 0 rgba(0,0,0,0.45), inset 0 1px 3px rgba(0,0,0,0.4) !important; }
         .encart-filtres-premium { background: linear-gradient(180deg, rgba(0,0,0,0.62), rgba(0,0,0,0.8)); border: 1px solid rgba(255,210,80,0.35); border-radius: 18px; padding: 14px 24px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
         .encart-filtres-premium, .encart-filtres-premium * { font-family: var(--font-texte); }
         .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
