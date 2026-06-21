@@ -191,6 +191,16 @@ function LightboxIllu({ image, onClose }) {
   );
 }
 
+// ─── Légende couleurs des coches (au-dessus de la liste des années) ───────
+function LegendeItem({ couleur, texte }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{ color: couleur, fontSize: '14px', fontWeight: 'bold' }}>✓</span>
+      <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px' }}>{texte}</span>
+    </div>
+  );
+}
+
 // ─── Badges hexagonaux ────────────────────────────────────────────────────────
 
 const BADGES_FAN = [
@@ -624,6 +634,7 @@ function SectionMaCollection({ userId, totalIllus }) {
   const [colosPartagesSet, setColosPartagesSet] = React.useState(new Set());
   const [coloriesManuels, setColoriesManuels] = React.useState({});
   const [imageAgrandie, setImageAgrandie] = React.useState(null);
+  const [exportEnCours, setExportEnCours] = React.useState(false);
 
   const toggleColorieManuel = async (illustrationId) => {
     const nouvelEtat = !coloriesManuels[illustrationId];
@@ -797,8 +808,147 @@ function SectionMaCollection({ userId, totalIllus }) {
   const { parAnnee, totauxAnnee, totauxLivre, totauxRecueil, horsAnnees } = data;
   const anneesSorted = Object.keys(parAnnee).filter(a => totauxAnnee[a] > 0).sort((a, b) => b - a);
 
+  // ─── Export PDF compact de la collection (uniquement éléments possédés) ──
+  const urlVersDataUrl = async (url) => {
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      const blob = await res.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) { return null; }
+  };
+
+  const exporterPDF = async () => {
+    setExportEnCours(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const MARGIN = 14;
+      const PAGE_H = 297;
+      const ROW_H = 6;
+      const IMG = 5;
+      const COL_NOM_X = MARGIN + IMG + 4;
+      const COL_JAI_X = 165;
+      const COL_COLO_X = 178;
+      let y = MARGIN;
+
+      const sautDePage = (needed = ROW_H) => {
+        if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
+      };
+
+      doc.setFontSize(15);
+      doc.setTextColor(20, 20, 20);
+      doc.text("Ma Collection — Kevin Teo'Art", MARGIN, y);
+      y += 7;
+      doc.setFontSize(8);
+      doc.setFillColor(0, 150, 150);
+      doc.circle(MARGIN + 1, y - 1.2, 1.1, 'F');
+      doc.text("J'ai (initial/manuel)", MARGIN + 4, y);
+      doc.setFillColor(230, 60, 160);
+      doc.circle(MARGIN + 45, y - 1.2, 1.1, 'F');
+      doc.text("J'ai (acheté)", MARGIN + 48, y);
+      doc.setFillColor(220, 170, 30);
+      doc.circle(MARGIN + 80, y - 1.2, 1.1, 'F');
+      doc.text('Colorié (partagé ou manuel)', MARGIN + 83, y);
+      y += 9;
+
+      // Construit la liste des sections (années + hors-séries) en ne gardant que ce qui est possédé
+      const sections = [];
+      anneesSorted.forEach(annee => {
+        const anneeData = parAnnee[annee];
+        const dossiers = [];
+        Object.values(anneeData.recueils).forEach(r => {
+          Object.values(r.livres).forEach(l => {
+            if (l.illus.length > 0) dossiers.push({ nom: `${r.info.nom} — ${l.info.nom}`, illus: l.illus });
+          });
+        });
+        Object.values(anneeData.horsSerieParent || {}).forEach(l => {
+          if (l.illus.length > 0) dossiers.push({ nom: l.info.nom, illus: l.illus });
+        });
+        if (dossiers.length > 0) sections.push({ titre: `Année ${annee}`, dossiers });
+      });
+      const horsDossiers = [];
+      Object.values(horsAnnees || {}).forEach(entree => {
+        if (entree.type === 'recueil') {
+          Object.values(entree.livres || {}).forEach(l => {
+            if (l.illus && l.illus.length > 0) horsDossiers.push({ nom: `${entree.info.nom} — ${l.info.nom}`, illus: l.illus });
+          });
+        } else if (entree.illus && entree.illus.length > 0) {
+          horsDossiers.push({ nom: entree.info.nom, illus: entree.illus });
+        }
+      });
+      if (horsDossiers.length > 0) sections.push({ titre: 'Hors-séries', dossiers: horsDossiers });
+
+      for (const section of sections) {
+        sautDePage(8);
+        doc.setFontSize(12);
+        doc.setTextColor(0, 120, 120);
+        doc.text(section.titre, MARGIN, y);
+        y += 6;
+
+        for (const dossier of section.dossiers) {
+          sautDePage(6);
+          doc.setFontSize(9);
+          doc.setTextColor(40, 40, 40);
+          doc.text(dossier.nom, MARGIN + 2, y);
+          y += 4;
+
+          for (const illu of dossier.illus) {
+            sautDePage(ROW_H);
+            const url = getVisuelB(illu.visuels);
+            if (url) {
+              const dataUrl = await urlVersDataUrl(url);
+              if (dataUrl) {
+                const fmt = dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+                try { doc.addImage(dataUrl, fmt, MARGIN + 4, y - 4, IMG, IMG); } catch (e) {}
+              }
+            }
+            doc.setFontSize(8);
+            doc.setTextColor(20, 20, 20);
+            doc.text(String(illu.nom || ''), COL_NOM_X, y, { maxWidth: COL_JAI_X - COL_NOM_X - 4 });
+
+            doc.setFillColor(illu.aAchete ? 230 : 0, illu.aAchete ? 60 : 150, illu.aAchete ? 160 : 150);
+            doc.circle(COL_JAI_X, y - 1.2, 1.2, 'F');
+
+            const colorieActif = colosPartagesSet.has(illu.id) || !!coloriesManuels[illu.id];
+            if (colorieActif) {
+              doc.setFillColor(220, 170, 30);
+              doc.circle(COL_COLO_X, y - 1.2, 1.2, 'F');
+            }
+            y += ROW_H;
+          }
+          y += 2;
+        }
+        y += 4;
+      }
+
+      doc.save('ma_collection_kevinteoart.pdf');
+    } catch (e) {
+      console.error('Erreur export PDF:', e);
+      alert("Une erreur est survenue pendant la génération du PDF.");
+    }
+    setExportEnCours(false);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+      {/* ── Légende explicative du fonctionnement de Ma Collection ── */}
+      <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', margin: 0, lineHeight: 1.5 }}>
+          Ma Collection se remplit automatiquement dès que tu coches « J'ai » sur une fiche illustration, une vignette ou un livre — ou que tu achètes une illustration sur le site. La case « Colorié » se coche automatiquement seulement si tu partages ton coloriage ; tu peux aussi la cocher manuellement si tu as colorié sans partager (sans effet sur les fiches du site ni sur le badge Coloriste, qui ne compte que les coloriages partagés).
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+          <LegendeItem couleur="#00d4d4" texte="J'ai (sélection initiale / manuel)" />
+          <LegendeItem couleur="#ff3eb5" texte="J'ai (acheté sur le site)" />
+          <LegendeItem couleur="#ffd250" texte="Colorié (partagé ou manuel)" />
+        </div>
+      </div>
+
       {anneesSorted.map((annee, anneeIdx) => {
         const anneeData = parAnnee[annee];
         const totalAnnee = totauxAnnee[annee] || 1;
@@ -1000,6 +1150,26 @@ function SectionMaCollection({ userId, totalIllus }) {
           </div>
         );
       })}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px' }}>
+        <button
+          onClick={exporterPDF}
+          disabled={exportEnCours}
+          style={{
+            background: exportEnCours ? 'rgba(0,212,212,0.15)' : 'rgba(0,212,212,0.1)',
+            border: '1px solid rgba(0,212,212,0.4)',
+            color: '#00d4d4',
+            borderRadius: '10px',
+            padding: '10px 20px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            cursor: exportEnCours ? 'default' : 'pointer',
+            opacity: exportEnCours ? 0.7 : 1,
+          }}
+        >
+          {exportEnCours ? 'Génération du PDF…' : '📄 Exporter ma collection en PDF'}
+        </button>
+      </div>
+
       <LightboxIllu image={imageAgrandie} onClose={() => setImageAgrandie(null)} />
     </div>
   );
