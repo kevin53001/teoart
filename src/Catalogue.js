@@ -426,11 +426,11 @@ function Catalogue() {
   const H_NAV = isMobile ? 80 : 120;
 
   const triVueBtnStyle = (actif) => ({
-    padding: '3px 8px', borderRadius: '8px', fontSize: '10px', cursor: 'pointer', transition: 'all .2s',
-    background: actif ? 'rgba(255,255,255,0.12)' : 'transparent',
-    border: '1px solid rgba(255,255,255,0.15)',
-    color: actif ? '#fff' : 'rgba(255,255,255,0.45)',
-    fontWeight: actif ? 'bold' : 'normal', width: '100%',
+    padding: '5px 11px', borderRadius: '8px', fontSize: '11px', cursor: 'pointer', transition: 'all .2s',
+    background: actif ? 'rgba(255,255,255,0.14)' : 'transparent',
+    border: '1px solid rgba(255,255,255,0.18)',
+    color: actif ? '#fff' : 'rgba(255,255,255,0.5)',
+    fontWeight: actif ? 'bold' : 'normal', whiteSpace: 'nowrap',
   });
 
   const labelCapsuleStyle = { fontSize: '10px', color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' };
@@ -518,7 +518,8 @@ function Catalogue() {
         .dropdown-titre-patreon { padding: 6px 14px 4px; color: rgba(255,210,80,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-annee { padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.5); font-size: 12px; cursor: pointer; transition: all .2s; }
         .btn-annee.actif { background: rgba(0,212,212,0.2); border-color: #00d4d4; color: #00d4d4; }
-        .capsule-pill { width: 50px; height: 14px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+        .capsule-pill { width: 58px; height: 16px; border-radius: 999px; cursor: pointer; padding: 0; transition: transform .15s ease, box-shadow .2s ease, background .2s ease; }
+        .encart-filtres-premium { background: linear-gradient(180deg, rgba(24,24,24,0.92), rgba(0,0,0,0.94)); border: 1px solid rgba(255,210,80,0.3); border-radius: 18px; padding: 16px 26px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05); }
         .capsule-pill.dim-cyan { background: rgba(0,40,42,0.92); border: 1px solid rgba(0,212,212,0.35); }
         .capsule-pill.dim-pink { background: rgba(48,10,28,0.92); border: 1px solid rgba(255,62,181,0.35); }
         .capsule-pill.dim-gold { background: rgba(45,32,0,0.92); border: 1px solid rgba(255,210,80,0.35); }
@@ -689,65 +690,70 @@ function Catalogue() {
 
         <div style={{ position: 'relative', zIndex: 10, width: '100%', padding: '14px 20px 60px', minHeight: `${BARRES.length * (IMG_H + GAP) + 200}px` }}>
 
-          {/* RANGÉE DE FILTRES : Tri (gauche) — 5 capsules colorées — Vue (droite) */}
-          <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: isMobile ? '8px' : '16px', flexWrap: 'nowrap', overflowX: isMobile ? 'auto' : 'visible' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-              <span style={labelCapsuleStyle}>Tri</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: isMobile ? '40px' : '52px' }}>
-                <button style={triVueBtnStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
-                <button style={triVueBtnStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
-                <button style={triVueBtnStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: isMobile ? '5px' : '10px', flexShrink: 0 }}>
-              {capsules.map(cap => (
-                <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                  <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '46px' : '66px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
-                  <button
-                    aria-label={cap.label}
-                    onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
-                    className={`capsule-pill ${cap.on ? 'on-' : 'dim-'}${cap.color}${igniteKey === cap.key ? ' ignite' : ''}`} />
-                  {openCapsule === cap.key && (
-                    <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
-                      {cap.options.map(opt => (
-                        <React.Fragment key={String(opt.value)}>
-                          <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
-                          {opt.separateur && <div className="dropdown-capsule-sep" />}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  )}
+          {/* RANGÉE DE FILTRES dans un encart "carte premium", calé sur la largeur de la grille */}
+          <div className="encart-filtres-premium" style={{ maxWidth: '1100px', margin: '0 auto 16px', overflowX: isMobile ? 'auto' : 'visible' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: isMobile ? '10px' : '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+                <span style={labelCapsuleStyle}>Tri</span>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <button style={triVueBtnStyle(tri === 'az')} onClick={() => { setTri('az'); setPage(1); }}>A→Z</button>
+                  <button style={triVueBtnStyle(tri === 'za')} onClick={() => { setTri('za'); setPage(1); }}>Z→A</button>
+                  <button style={triVueBtnStyle(tri === 'recent')} onClick={() => { setTri('recent'); setPage(1); }}>Récent</button>
                 </div>
-              ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: isMobile ? '8px' : '16px' }}>
+                {capsules.map(cap => (
+                  <div key={cap.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ ...labelCapsuleStyle, maxWidth: isMobile ? '50px' : '70px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>{cap.label}</span>
+                    <button
+                      aria-label={cap.label}
+                      onClick={(e) => { e.stopPropagation(); toggleCapsule(cap.key, cap.on); }}
+                      className={`capsule-pill ${cap.on ? 'on-' : 'dim-'}${cap.color}${igniteKey === cap.key ? ' ignite' : ''}`} />
+                    {openCapsule === cap.key && (
+                      <div className={`dropdown-capsule c-${cap.color}`} onClick={e => e.stopPropagation()}>
+                        {cap.options.map(opt => (
+                          <React.Fragment key={String(opt.value)}>
+                            <button className={`dropdown-capsule-item${opt.active ? ' actif' : ''}`} onClick={opt.onClick}>{opt.label}</button>
+                            {opt.separateur && <div className="dropdown-capsule-sep" />}
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
+                <span style={labelCapsuleStyle}>Vue</span>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
+                  <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+                </div>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-              <span style={labelCapsuleStyle}>Vue</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: isMobile ? '34px' : '40px' }}>
-                <button className="btn-vue" onClick={() => setVueCompacte(false)} style={{ width: '100%', background: !vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: !vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: !vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊞</button>
-                <button className="btn-vue" onClick={() => setVueCompacte(true)} style={{ width: '100%', background: vueCompacte ? 'rgba(255,210,80,0.15)' : 'transparent', border: vueCompacte ? '1px solid rgba(255,210,80,0.5)' : '1px solid rgba(255,255,255,0.2)', color: vueCompacte ? 'rgba(255,210,80,0.9)' : 'rgba(255,255,255,0.4)' }}>⊟</button>
+            {/* Ligne 2 : filtre actif centré + nombre d'illustrations à droite */}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ flex: 1 }} />
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px' }}>
+                {filtreActifInfo && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '11px', fontWeight: 'bold' }}>{filtreActifInfo.label}</span>
+                    <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                  </div>
+                )}
+                {filtreNouveautes && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
+                    <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, textAlign: 'right', color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                {total} illustration{total > 1 ? 's' : ''}{recherche ? ` · "${recherche}"` : ''}
               </div>
             </div>
-          </div>
-
-          {/* COMPTEUR + filtre actif (avec croix) + indicateur Nouveautés */}
-          <div style={{ textAlign: 'center', marginTop: '10px', marginBottom: '16px' }}>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '11px' }}>
-              {total} illustration{total > 1 ? 's' : ''}{recherche ? ` · "${recherche}"` : ''}
-            </p>
-            {filtreActifInfo && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '11px', fontWeight: 'bold' }}>{filtreActifInfo.label}</span>
-                <button onClick={() => { filtreActifInfo.clear(); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-              </div>
-            )}
-            {filtreNouveautes && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>Nouveautés</span>
-                <button onClick={() => { setFiltreNouveautes(false); setPage(1); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}>✕</button>
-              </div>
-            )}
           </div>
 
           {/* GRILLE */}
