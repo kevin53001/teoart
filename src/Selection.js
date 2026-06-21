@@ -86,7 +86,7 @@ function Selection() {
       setCompteARebours(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => { clearInterval(typingInterval); clearInterval(countdownInterval); };
-  }, [etape]);
+  }, [etape, pseudo]);
 
   const livresFiltres = livres.filter(l => {
     if (!l.recueils_ids || l.recueils_ids.length === 0) return true;
