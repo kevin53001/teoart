@@ -1411,7 +1411,20 @@ function AvatarCrop({ src, onConfirm, onCancel }) {
   const onMouseDown = (e) => { setDragging(true); setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y }); };
   const onMouseMove = (e) => { if (!dragging || !dragStart) return; setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
   const onMouseUp = () => setDragging(false);
-  const onWheel = (e) => { e.preventDefault(); setScale(s => Math.max(0.2, Math.min(5, s - e.deltaY * 0.001))); };
+
+  // Écouteur wheel attaché manuellement en { passive: false } : React attache son listener
+  // delegate en mode passif par défaut, ce qui empêche preventDefault() de fonctionner
+  // (la page scrollait pendant qu'on essayait de zoomer l'avatar).
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handler = (e) => {
+      e.preventDefault();
+      setScale(s => Math.max(0.2, Math.min(5, s - e.deltaY * 0.001)));
+    };
+    canvas.addEventListener('wheel', handler, { passive: false });
+    return () => canvas.removeEventListener('wheel', handler);
+  }, []);
 
   // touch support
   const lastTouch = React.useRef(null);
@@ -1443,7 +1456,6 @@ function AvatarCrop({ src, onConfirm, onCancel }) {
         width={SIZE} height={SIZE}
         style={{ borderRadius: '50%', cursor: dragging ? 'grabbing' : 'grab', border: '3px solid rgba(0,212,212,0.5)', touchAction: 'none' }}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-        onWheel={onWheel}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
       />
       <div style={{ display: 'flex', gap: '12px' }}>
