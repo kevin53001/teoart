@@ -414,9 +414,9 @@ function Catalogue() {
   });
 
   const total = illustrationsFiltrees.length;
-  const nbJai = illustrations.filter(i => collection[i.id]?.j_ai || collection[i.id]?.j_ai_auto || collection[i.id]?.j_ai_achete).length;
-  const nbJeVeux = illustrations.filter(i => collection[i.id]?.je_veux).length;
-  const nbColorie = illustrations.filter(i => coloriages[i.id]).length;
+  const nbJai = illustrationsFiltrees.filter(i => collection[i.id]?.j_ai || collection[i.id]?.j_ai_auto || collection[i.id]?.j_ai_achete).length;
+  const nbJeVeux = illustrationsFiltrees.filter(i => collection[i.id]?.je_veux).length;
+  const nbColorie = illustrationsFiltrees.filter(i => coloriages[i.id]).length;
   const TAILLE_VIGNETTE = vueCompacte ? 100 : 150;
   const illustrationsPage = illustrationsFiltrees.slice(0, page * PAR_PAGE);
 
