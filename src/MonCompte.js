@@ -1363,7 +1363,9 @@ function SectionMesInfos({ userId }) {
               {/* ── Bouton installation PWA ── */}
               <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
               {pwa.installed ? (
-                <p style={{ color: 'rgba(255,62,181,0.7)', fontSize: '11px', textAlign: 'center' }}>✓ Application installée</p>
+                <div style={{ background: 'transparent', border: '1px solid rgba(255,62,181,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#ff3eb5', fontSize: '12px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+                  ✓ Application installée
+                </div>
               ) : pwa.ios ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%' }}>
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
@@ -1435,7 +1437,7 @@ function SectionMesInfos({ userId }) {
                 <>
                   <div style={{ width: '80%', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
                   {notifActive ? (
-                    <p style={{ color: 'rgba(29,214,160,0.7)', fontSize: '11px', textAlign: 'center' }}>✓ Notifications activées</p>
+                    <div style={{ background: 'transparent', border: '1px solid rgba(29,214,160,0.45)', borderRadius: '8px', padding: '10px 18px', color: '#1dd6a0', fontSize: '12px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>✓ Notifications activées</div>
                   ) : notifBloquee ? (
                     <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', textAlign: 'center', lineHeight: 1.5 }}>
                       🔕 Notifications bloquées par ton navigateur.<br/>
