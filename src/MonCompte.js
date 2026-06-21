@@ -124,13 +124,15 @@ function getVisuelB(visuels) {
 }
 
 // ─── Tracker Ma Collection : mini-lignes (format tableau) réparties en 3 colonnes ──
-const FONDS_LIGNE = ['rgba(255,62,181,0.1)', 'rgba(255,210,80,0.1)', 'rgba(0,212,212,0.1)'];
+const FONDS_LIGNE_DESKTOP = ['rgba(255,62,181,0.05)', 'rgba(255,210,80,0.05)', 'rgba(0,212,212,0.05)'];
+const FONDS_LIGNE_MOBILE = ['rgba(255,62,181,0.1)', 'rgba(255,210,80,0.1)', 'rgba(0,212,212,0.1)'];
 
-function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
+function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, ligneIdx, isMobile }) {
   const url = getVisuelB(illu.visuels);
   const colorieActif = colorieVerrouille || colorieManuel;
   const couleurColorie = colorieVerrouille ? '#ffd250' : (colorieManuel ? '#2ecc71' : 'rgba(255,255,255,0.2)');
-  const fond = FONDS_LIGNE[index % FONDS_LIGNE.length];
+  const palette = isMobile ? FONDS_LIGNE_MOBILE : FONDS_LIGNE_DESKTOP;
+  const fond = palette[ligneIdx % palette.length];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 6px', borderRadius: '6px', background: fond }}>
       <div
@@ -151,13 +153,15 @@ function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManu
 
 // ─── Tracker Ma Collection : grille 3 colonnes (1 sur mobile) de mini-lignes ──
 function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onToggleManuel, onAgrandir, isMobile }) {
+  const nbCols = isMobile ? 1 : 3;
   return (
     <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gridAutoFlow: 'row', columnGap: '10px', rowGap: '2px' }}>
       {illus.map((illu, idx) => (
         <LigneTrackerIllu
           key={illu.id}
           illu={illu}
-          index={idx}
+          ligneIdx={Math.floor(idx / nbCols)}
+          isMobile={isMobile}
           colorieVerrouille={colosPartagesSet.has(illu.id)}
           colorieManuel={!!coloriesManuels[illu.id]}
           onToggleManuel={onToggleManuel}
@@ -887,8 +891,16 @@ function SectionMaCollection({ userId, totalIllus }) {
       });
       if (horsDossiers.length > 0) sections.push({ titre: 'Hors-séries', dossiers: horsDossiers });
 
+      const calcHauteurDossier = (dossier) => {
+        const maxRows = Math.ceil(dossier.illus.length / NB_SUBCOLS);
+        return 5 + HEADER_H + maxRows * ROW_H + 6;
+      };
+
       for (const section of sections) {
-        sautDePage(10);
+        // Le titre de section ne doit jamais se retrouver seul en bas de page :
+        // on vérifie qu'il y a la place pour le titre + le premier dossier complet en dessous.
+        const hPremierDossier = calcHauteurDossier(section.dossiers[0]);
+        if (y > MARGIN && y + 7 + hPremierDossier > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
         doc.setFont(undefined, 'bold');
         doc.setFontSize(12);
         doc.setTextColor(0, 120, 120);
@@ -901,7 +913,7 @@ function SectionMaCollection({ userId, totalIllus }) {
           const colonnes = [[], [], []];
           dossier.illus.forEach((illu, i) => colonnes[i % NB_SUBCOLS].push(illu));
           const maxRows = Math.max(...colonnes.map(c => c.length));
-          const hauteurDossier = 5 + HEADER_H + maxRows * ROW_H + 6;
+          const hauteurDossier = calcHauteurDossier(dossier);
 
           if (hauteurDossier <= PAGE_H - 2 * MARGIN) sautDePage(hauteurDossier);
           // (si un dossier dépasse une page entière à lui seul, on laisse continuer tel quel — cas très rare)
@@ -1113,7 +1125,8 @@ function SectionMaCollection({ userId, totalIllus }) {
 
       {horsAnnees && Object.values(horsAnnees).map((entree) => {
         const eid = entree.info.id;
-        const totalE = totauxRecueil[eid] || totauxLivre[eid] || 1;
+        const TOTAUX_FIXES = { 'recueil_recueil de noel_2026': 109, 'livre_colormefree': 35 };
+        const totalE = TOTAUX_FIXES[eid] || totauxRecueil[eid] || totauxLivre[eid] || 1;
         const jaiE = entree.illus ? entree.illus.length : 0;
         const ouvert = anneesOuvertes[`ha_${eid}`];
         return (
