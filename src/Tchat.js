@@ -53,7 +53,7 @@ function heureRelative(iso) {
 
 // ── Ligne message (chat général) ─────────────────────────────────────────────
 function LigneMessageGeneral({ msg, estMoi, avatarLive }) {
-  const avatarAffiche = avatarLive !== undefined ? avatarLive : msg.avatar_url;
+  const avatarAffiche = avatarLive || msg.avatar_url || null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: estMoi ? 'flex-end' : 'flex-start', marginBottom: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px', flexDirection: estMoi ? 'row-reverse' : 'row' }}>
