@@ -123,40 +123,38 @@ function getVisuelB(visuels) {
   return getVisuelPresentation(visuels);
 }
 
-// ─── Tracker Ma Collection : grille de cartes, fonds de couleur bien visibles ──
-const FONDS_CARTE = ['rgba(255,62,181,0.14)', 'rgba(255,210,80,0.14)', 'rgba(0,212,212,0.14)'];
-const BORDS_CARTE = ['rgba(255,62,181,0.3)', 'rgba(255,210,80,0.3)', 'rgba(0,212,212,0.3)'];
+// ─── Tracker Ma Collection : mini-lignes (format tableau) réparties en 3 colonnes ──
+const FONDS_LIGNE = ['rgba(255,62,181,0.1)', 'rgba(255,210,80,0.1)', 'rgba(0,212,212,0.1)'];
 
-function CarteTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
+function LigneTrackerIllu({ illu, colorieVerrouille, colorieManuel, onToggleManuel, onAgrandir, index }) {
   const url = getVisuelB(illu.visuels);
   const colorieActif = colorieVerrouille || colorieManuel;
   const couleurColorie = colorieVerrouille ? '#ffd250' : (colorieManuel ? '#2ecc71' : 'rgba(255,255,255,0.2)');
-  const fond = FONDS_CARTE[index % FONDS_CARTE.length];
-  const bord = BORDS_CARTE[index % BORDS_CARTE.length];
+  const fond = FONDS_LIGNE[index % FONDS_LIGNE.length];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', padding: '8px', borderRadius: '10px', background: fond, border: `1px solid ${bord}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 6px', borderRadius: '6px', background: fond }}>
       <div
         onClick={() => url && onAgrandir(url, illu.nom)}
-        style={{ width: '46px', height: '46px', borderRadius: '7px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.2)', cursor: url ? 'zoom-in' : 'default' }}
+        style={{ width: '26px', height: '26px', borderRadius: '5px', overflow: 'hidden', flexShrink: 0, background: '#0a0a0a', border: '1px solid rgba(0,212,212,0.2)', cursor: url ? 'zoom-in' : 'default' }}
       >
         {url ? <img src={url} alt={illu.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : null}
       </div>
-      <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '10px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{illu.nom}</span>
+      <span style={{ flex: 1, color: 'rgba(255,255,255,0.85)', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{illu.nom}</span>
       <span
         title={colorieVerrouille ? "Colorié partagé par vous" : (colorieManuel ? "Marqué colorié manuellement (non partagé)" : "Marquer comme colorié (manuel, non partagé)")}
         onClick={() => !colorieVerrouille && onToggleManuel(illu.id)}
-        style={{ fontSize: '17px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: couleurColorie, lineHeight: 1 }}
+        style={{ fontSize: '14px', fontWeight: 'bold', cursor: colorieVerrouille ? 'default' : 'pointer', color: couleurColorie, flexShrink: 0, lineHeight: 1 }}
       >{colorieActif ? '✓' : '✓'}</span>
     </div>
   );
 }
 
-// ─── Tracker Ma Collection : grille complète pour un dossier (livre/recueil/hors-série) ─
+// ─── Tracker Ma Collection : grille 3 colonnes (1 sur mobile) de mini-lignes ──
 function TrackerIllustrations({ illus, colosPartagesSet, coloriesManuels, onToggleManuel, onAgrandir, isMobile }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '8px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gridAutoFlow: 'row', columnGap: '10px', rowGap: '2px' }}>
       {illus.map((illu, idx) => (
-        <CarteTrackerIllu
+        <LigneTrackerIllu
           key={illu.id}
           illu={illu}
           index={idx}
@@ -817,17 +815,14 @@ function SectionMaCollection({ userId, totalIllus }) {
       const PAGE_W = 210;
       const PAGE_H = 297;
       const PAGE_CENTER_X = PAGE_W / 2;
-      const ROW_H = 6;
-      const HEADER_H = 6;
-      const GAP_COLS = 10;
-      const COL_W = (PAGE_W - 2 * MARGIN - GAP_COLS) / 2; // largeur d'une colonne de page
-      const TABLE_W = COL_W;
-      const COL_CHK_W = 20;
-      const COL_NOM_W = TABLE_W - COL_CHK_W;
-      const xCol = [MARGIN, MARGIN + COL_W + GAP_COLS];
-
-      let currentCol = 0;
-      let yColTop = MARGIN;
+      const ROW_H = 5.5;
+      const HEADER_H = 5.5;
+      const GAP_SUB = 6;
+      const NB_SUBCOLS = 3;
+      const SUBCOL_W = (PAGE_W - 2 * MARGIN - (NB_SUBCOLS - 1) * GAP_SUB) / NB_SUBCOLS;
+      const CHK_W = 9; // colonne Colorié réduite pour gagner de la place
+      const NOM_W = SUBCOL_W - CHK_W;
+      const xSub = [0, 1, 2].map(i => MARGIN + i * (SUBCOL_W + GAP_SUB));
       let y = MARGIN;
 
       // Dessine une coche (✓) faite de 2 segments, pour éviter les soucis de police/encodage
@@ -835,21 +830,6 @@ function SectionMaCollection({ userId, totalIllus }) {
         doc.setDrawColor(...couleurRgb);
         doc.setLineWidth(0.7);
         doc.lines([[1.1, 1.3], [2.3, -2.6]], cx - 1.6, cy + 0.2, [1, 1], 'S');
-      };
-
-      // Gère le passage colonne 1 → colonne 2 → nouvelle page
-      const avancerColonne = (needed = ROW_H) => {
-        if (y + needed > PAGE_H - MARGIN) {
-          if (currentCol === 0) {
-            currentCol = 1;
-            y = yColTop;
-          } else {
-            doc.addPage();
-            yColTop = MARGIN;
-            y = yColTop;
-            currentCol = 0;
-          }
-        }
       };
 
       doc.setFont(undefined, 'bold');
@@ -875,7 +855,10 @@ function SectionMaCollection({ userId, totalIllus }) {
         xLeg += largeursLegende[i];
       });
       y += 10;
-      yColTop = y;
+
+      const sautDePage = (needed) => {
+        if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
+      };
 
       // Construit la liste des sections (années + hors-séries) en ne gardant que ce qui est possédé
       const sections = [];
@@ -905,56 +888,68 @@ function SectionMaCollection({ userId, totalIllus }) {
       if (horsDossiers.length > 0) sections.push({ titre: 'Hors-séries', dossiers: horsDossiers });
 
       for (const section of sections) {
-        avancerColonne(10);
+        sautDePage(10);
         doc.setFont(undefined, 'bold');
         doc.setFontSize(12);
         doc.setTextColor(0, 120, 120);
-        doc.text(section.titre, xCol[currentCol] + COL_W / 2, y, { align: 'center' });
+        doc.text(section.titre, PAGE_CENTER_X, y, { align: 'center' });
         doc.setFont(undefined, 'normal');
         y += 7;
 
         for (const dossier of section.dossiers) {
-          avancerColonne(HEADER_H + ROW_H + 6);
+          // Répartit les illustrations sur 3 sous-colonnes (comme sur le site : gauche → centre → droite, puis ligne suivante)
+          const colonnes = [[], [], []];
+          dossier.illus.forEach((illu, i) => colonnes[i % NB_SUBCOLS].push(illu));
+          const maxRows = Math.max(...colonnes.map(c => c.length));
+          const hauteurDossier = 5 + HEADER_H + maxRows * ROW_H + 6;
+
+          if (hauteurDossier <= PAGE_H - 2 * MARGIN) sautDePage(hauteurDossier);
+          // (si un dossier dépasse une page entière à lui seul, on laisse continuer tel quel — cas très rare)
+
           doc.setFont(undefined, 'bold');
           doc.setFontSize(9);
           doc.setTextColor(255, 62, 181);
-          doc.text(dossier.nom, xCol[currentCol] + COL_W / 2, y, { align: 'center', maxWidth: COL_W - 4 });
+          doc.text(dossier.nom, PAGE_CENTER_X, y, { align: 'center', maxWidth: PAGE_W - 2 * MARGIN });
           doc.setFont(undefined, 'normal');
           y += 5;
 
-          // En-tête du tableau
-          avancerColonne(HEADER_H);
-          const tx = xCol[currentCol];
+          const yDepartTableau = y;
+
+          // En-têtes des 3 sous-tableaux
           doc.setDrawColor(170, 170, 170);
           doc.setLineWidth(0.1);
-          doc.setFontSize(7.5);
+          doc.setFontSize(7);
           doc.setTextColor(90, 90, 90);
-          doc.rect(tx, y, COL_NOM_W, HEADER_H);
-          doc.rect(tx + COL_NOM_W, y, COL_CHK_W, HEADER_H);
-          doc.text('Illustration', tx + 2.5, y + 4);
-          doc.text('Colorié', tx + COL_NOM_W + COL_CHK_W / 2, y + 4, { align: 'center' });
+          for (let c = 0; c < NB_SUBCOLS; c++) {
+            if (colonnes[c].length === 0) continue;
+            doc.rect(xSub[c], y, NOM_W, HEADER_H);
+            doc.rect(xSub[c] + NOM_W, y, CHK_W, HEADER_H);
+            doc.text('Illustration', xSub[c] + 1.5, y + 3.8);
+            doc.text('Colo.', xSub[c] + NOM_W + CHK_W / 2, y + 3.8, { align: 'center' });
+          }
           y += HEADER_H;
 
-          for (const illu of dossier.illus) {
-            avancerColonne(ROW_H);
-            const txr = xCol[currentCol];
-            doc.setDrawColor(170, 170, 170);
-            doc.setLineWidth(0.1);
-            doc.rect(txr, y, COL_NOM_W, ROW_H);
-            doc.rect(txr + COL_NOM_W, y, COL_CHK_W, ROW_H);
+          for (let r = 0; r < maxRows; r++) {
+            for (let c = 0; c < NB_SUBCOLS; c++) {
+              const illu = colonnes[c][r];
+              if (!illu) continue;
+              const ry = yDepartTableau + HEADER_H + r * ROW_H;
+              doc.setDrawColor(170, 170, 170);
+              doc.setLineWidth(0.1);
+              doc.rect(xSub[c], ry, NOM_W, ROW_H);
+              doc.rect(xSub[c] + NOM_W, ry, CHK_W, ROW_H);
 
-            doc.setFontSize(7.5);
-            doc.setTextColor(20, 20, 20);
-            doc.text(String(illu.nom || ''), txr + 2.5, y + 4, { maxWidth: COL_NOM_W - 4 });
+              doc.setFontSize(7);
+              doc.setTextColor(20, 20, 20);
+              doc.text(String(illu.nom || ''), xSub[c] + 1.5, ry + 3.8, { maxWidth: NOM_W - 3 });
 
-            const colorieVerrouille = colosPartagesSet.has(illu.id);
-            const colorieManuel = !!coloriesManuels[illu.id];
-            if (colorieVerrouille) tracerCoche(txr + COL_NOM_W + COL_CHK_W / 2, y + 3.2, [220, 170, 30]);
-            else if (colorieManuel) tracerCoche(txr + COL_NOM_W + COL_CHK_W / 2, y + 3.2, [46, 204, 113]);
-
-            y += ROW_H;
+              const colorieVerrouille = colosPartagesSet.has(illu.id);
+              const colorieManuel = !!coloriesManuels[illu.id];
+              if (colorieVerrouille) tracerCoche(xSub[c] + NOM_W + CHK_W / 2, ry + 3, [220, 170, 30]);
+              else if (colorieManuel) tracerCoche(xSub[c] + NOM_W + CHK_W / 2, ry + 3, [46, 204, 113]);
+            }
           }
-          y += 6;
+          y = yDepartTableau + HEADER_H + maxRows * ROW_H + 6;
         }
         y += 3;
       }
