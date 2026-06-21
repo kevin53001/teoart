@@ -1493,10 +1493,10 @@ function SectionMesInfos({ userId }) {
                           try {
                             const { data: { user } } = await supabase.auth.getUser();
                             if (!user) return;
-                            const response = await fetch('/api/delete-account', {
+                            const response = await fetch('/api/delete', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ userId: user.id }),
+                              body: JSON.stringify({ action: 'compte', userId: user.id }),
                             });
                             const data = await response.json();
                             if (data.ok) {
@@ -1918,7 +1918,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
     setSuppression(true);
     try {
       const urlPath = colo.image_url.replace('https://images.kevinteoart.fr/', '');
-      await fetch('/api/delete-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chemin: urlPath, userId }) });
+      await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'colo', chemin: urlPath, userId }) });
       await supabase.from('coloriages').delete().eq('id', colo.id);
       setColos(prev => prev.filter(c => c.id !== colo.id));
       if (coloZoom?.id === colo.id) setColoZoom(null);
