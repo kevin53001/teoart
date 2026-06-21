@@ -127,6 +127,24 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ignoré: true, raison: 'pas de user_id sur la ligne' });
       }
 
+      // Cas particulier "nouvelle_pensee" : ne pousser que si c'est une pensée
+      // de Kevin (table pensees, colonne source = 'kevin'), pas celles des autres
+      // utilisateurs. On va vérifier via l'id de la pensée présent dans contenu.derniere_id.
+      if (record.type === 'nouvelle_pensee') {
+        const derniereId = record.contenu?.derniere_id;
+        if (!derniereId) {
+          return res.status(200).json({ ignoré: true, raison: 'derniere_id manquant dans contenu' });
+        }
+        const { data: pensee, error: erreurPensee } = await supabaseAdmin
+          .from('pensees')
+          .select('source')
+          .eq('id', derniereId)
+          .single();
+        if (erreurPensee || !pensee || pensee.source !== 'kevin') {
+          return res.status(200).json({ ignoré: true, raison: 'pensee non publiée par kevin' });
+        }
+      }
+
       const resultat = await envoyerPush([record.user_id], traduit.titre, traduit.message, traduit.url, record.type);
       return res.status(200).json(resultat);
     }
