@@ -25,7 +25,7 @@ const GUIDES = {
   ],
   presentation: [
     "L'envers du décor. Qui je suis, pourquoi je dessine, et comment tout ça a commencé. Spoiler : beaucoup de café et de patience.",
-    "Si après ça t'as encore des questions, le tchat est là en haut à gauche de l'écran.",
+    "Si après ça t'as encore des questions, le tchat est là en haut à droite de l'écran.",
   ],
   pensees: [
     "Le coin des pensées qui flottent. Une roue interactive remplie de textes que j'écris, à parcourir tranquillement.",
