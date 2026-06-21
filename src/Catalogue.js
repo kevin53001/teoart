@@ -570,6 +570,11 @@ function Catalogue() {
         .badge-panier { position: absolute; bottom: 8px; right: 0; z-index: 20; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; background: #ff3eb5; display: flex; align-items: center; justify-content: center; transition: transform .15s ease, box-shadow .15s ease; box-shadow: 0 3px 0 rgba(255,255,255,0.22), 0 5px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.3), inset 0 -3px 3px rgba(0,0,0,0.2); }
         .badge-panier:hover { transform: scale(1.12); }
         .badge-panier:active { transform: scale(0.92) translateY(3px) !important; box-shadow: 0 0 0 rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.7), inset 0 2px 4px rgba(0,0,0,0.5) !important; }
+        .badge-free { position: absolute; bottom: 8px; right: 0; z-index: 20; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: transform .15s ease, box-shadow .15s ease; box-shadow: 0 3px 0 rgba(255,255,255,0.22), 0 5px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.3), inset 0 -3px 3px rgba(0,0,0,0.2); }
+        .badge-free:hover { transform: scale(1.12); }
+        .badge-free:active { transform: scale(0.92) translateY(3px) !important; box-shadow: 0 0 0 rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.7), inset 0 2px 4px rgba(0,0,0,0.5) !important; }
+        .badge-free.idle { cursor: pointer; }
+        .badge-free.done { box-shadow: none; cursor: default; }
         .badge-palette { position: absolute; bottom: 36px; left: 6px; z-index: 20; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; }
         .badge-palette.inactif { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.2); }
         .badge-palette.actif { background: rgba(255,210,80,0.2); border: 1px solid rgba(255,210,80,0.6); }
@@ -1076,9 +1081,8 @@ function IlluCard({ illu, urlPresentation, visuelsOrdonnes, jAi, jAiAchete = fal
         {onTelechargerGratuit ? (
           <div onClick={(e) => { e.stopPropagation(); onTelechargerGratuit(); }}
             title="Télécharger gratuitement"
-            style={{ position: 'absolute', bottom: '8px', right: '8px', zIndex: 20, cursor: dlGratuitState !== 'idle' ? 'default' : 'pointer', width: '36px', height: '36px', borderRadius: '50%', background: dlGratuitState === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform .2s', boxShadow: dlGratuitState === 'done' ? 'none' : '0 3px 10px rgba(0,212,212,0.65), inset 0 1px 0 rgba(255,255,255,0.2)', border: dlGratuitState === 'done' ? '2px solid #00d4d4' : 'none' }}
-            onMouseEnter={e => { if (dlGratuitState === 'idle') e.currentTarget.style.transform = 'scale(1.12)'; }}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+            className={`badge-free ${dlGratuitState === 'done' ? 'done' : 'idle'}`}
+            style={{ background: dlGratuitState === 'done' ? 'rgba(0,212,212,0.25)' : 'linear-gradient(135deg, #00d4d4, #009999)', border: dlGratuitState === 'done' ? '2px solid #00d4d4' : 'none' }}>
             {dlGratuitState === 'loading' ? <span style={{ fontSize: '12px' }}>⏳</span>
               : dlGratuitState === 'done' ? <span style={{ color: '#00d4d4', fontSize: '11px', fontWeight: 'bold' }}>✓</span>
               : <span style={{ color: '#000', fontSize: '10px', fontWeight: 'bold', letterSpacing: '0.3px' }}>FREE</span>}
