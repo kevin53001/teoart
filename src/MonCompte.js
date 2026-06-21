@@ -1513,15 +1513,21 @@ function SectionMesInfos({ userId }) {
           body: JSON.stringify({ imageBase64: base64, userId }),
         });
         const data = await response.json();
-        if (data.url) { avatarUrl = data.url; }
-        else { console.error('upload-avatar erreur:', data.error); }
-      } catch (e) { console.error('upload-avatar exception:', e); }
+        if (data.url) { avatarUrl = data.url; console.log('[MesInfos] avatar uploadé avec succès:', data.url); }
+        else { console.error('[MesInfos] upload-avatar erreur retournée par l\'API:', data.error); }
+      } catch (e) { console.error('[MesInfos] upload-avatar exception réseau:', e); }
     }
-    await supabase.from('profils').update({
+    const { error: errUpdate } = await supabase.from('profils').update({
       pseudo: profil.pseudo, prenom: profil.prenom, nom: profil.nom,
       telephone: profil.telephone, adresse: profil.adresse, complement: profil.complement,
       code_postal: profil.code_postal, ville: profil.ville, etat: profil.etat, pays: profil.pays, avatar_url: avatarUrl,
     }).eq('id', userId);
+    if (errUpdate) console.error('[MesInfos] erreur écriture Supabase (profils):', errUpdate);
+    // Bug corrigé : l'état local "profil" n'était jamais resynchronisé après la sauvegarde,
+    // donc en cas de retour ultérieur sur la page sans rechargement complet, l'ancien avatar
+    // pouvait sembler "revenir" puisque profil.avatar_url restait sur sa valeur d'avant l'upload.
+    setProfil(p => ({ ...p, avatar_url: avatarUrl }));
+    setAvatarFile(null);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2500);
   };
