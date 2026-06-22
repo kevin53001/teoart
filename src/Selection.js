@@ -124,8 +124,18 @@ function Selection() {
     }
 
     // Écriture dans collection_livres pour les livres et recueils explicitement cochés
+    // + les livres contenus dans les recueils cochés (filtrés à l'étape 2, donc jamais cochés manuellement)
+    const livresDesRecueils = recueilsCoches.length > 0
+      ? await supabase.from('livres').select('id').overlaps('recueils_ids', recueilsCoches)
+      : { data: [] };
+
+    const tousLivresIds = [...new Set([
+      ...livresCoches,
+      ...((livresDesRecueils.data || []).map(l => l.id)),
+    ])];
+
     const rowsLivres = [
-      ...livresCoches.map(id => ({ user_id: user.id, item_id: id, item_type: 'livre', j_ai: true })),
+      ...tousLivresIds.map(id => ({ user_id: user.id, item_id: id, item_type: 'livre', j_ai: true })),
       ...recueilsCoches.map(id => ({ user_id: user.id, item_id: id, item_type: 'recueil', j_ai: true })),
     ];
     if (rowsLivres.length > 0) {
