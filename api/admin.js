@@ -96,11 +96,11 @@ async function actionStats() {
     supabase.from('likes_pensees').select('user_id, created_at'),
     supabase.from('pensees').select('id, user_id, created_at').neq('source', 'kevin'),
     supabase.from('commandes_articles').select('id, created_at').eq('type', 'relie'),
-    supabase.from('collection').select('user_id, illustration_id, j_ai').eq('j_ai', true),
-    supabase.from('collection_livres').select('user_id, item_id, item_type, j_ai'),
-    supabase.from('livres').select('id').eq('statut', 'published'),
-    supabase.from('recueils').select('id').eq('statut', 'published'),
-    supabase.from('illustrations').select('id, livres_ids, recueils_ids').eq('statut', 'published'),
+    supabase.from('collection').select('user_id, illustration_id, j_ai').eq('j_ai', true).limit(50000),
+    supabase.from('collection_livres').select('user_id, item_id, item_type, j_ai').limit(10000),
+    supabase.from('livres').select('id').eq('statut', 'published').limit(500),
+    supabase.from('recueils').select('id').eq('statut', 'published').limit(500),
+    supabase.from('illustrations').select('id, livres_ids, recueils_ids').eq('statut', 'published').limit(10000),
     supabase.from('presence_jours').select('user_id, date').gte('date', debutMois.split('T')[0])
   ])
 
