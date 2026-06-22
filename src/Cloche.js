@@ -138,24 +138,7 @@ function SocialColo({ coloId, userId, userPseudo }) {
     } else {
       await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
       setLikes(prev => [...prev, { user_id: userId }]);
-      // Notif like pour le propriétaire du coloriage (pas pour soi-même) — regroupée tant que non lue
-      const { data: colo } = await supabase.from('coloriages').select('user_id').eq('id', coloId).single();
-      if (colo && colo.user_id !== userId) {
-        const { data: existante } = await supabase.from('notifications')
-          .select('id, contenu').eq('user_id', colo.user_id).eq('type', 'like_coloriage').eq('lu', false)
-          .order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (existante) {
-          const nb = (existante.contenu?.count || 1) + 1;
-          await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId, pseudo: userPseudo }, created_at: new Date().toISOString() }).eq('id', existante.id);
-        } else {
-          await supabase.from('notifications').insert({
-            user_id: colo.user_id,
-            type: 'like_coloriage',
-            contenu: { coloriage_id: coloId, count: 1, pseudo: userPseudo },
-            lu: false,
-          });
-        }
-      }
+      // La notif est gérée par le trigger Supabase on_like_coloriage
     }
   };
 
@@ -166,24 +149,7 @@ function SocialColo({ coloId, userId, userPseudo }) {
       .insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() })
       .select('id, texte, created_at, user_id').single();
     if (data) setComments(prev => [...prev, { ...data, pseudo: userPseudo }]);
-    // Notif commentaire pour le propriétaire du coloriage (pas pour soi-même) — regroupée tant que non lue
-    const { data: colo } = await supabase.from('coloriages').select('user_id').eq('id', coloId).single();
-    if (colo && colo.user_id !== userId) {
-      const { data: existante } = await supabase.from('notifications')
-        .select('id, contenu').eq('user_id', colo.user_id).eq('type', 'commentaire_coloriage').eq('lu', false)
-        .order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (existante) {
-        const nb = (existante.contenu?.count || 1) + 1;
-        await supabase.from('notifications').update({ contenu: { ...existante.contenu, count: nb, coloriage_id: coloId, pseudo: userPseudo }, created_at: new Date().toISOString() }).eq('id', existante.id);
-      } else {
-        await supabase.from('notifications').insert({
-          user_id: colo.user_id,
-          type: 'commentaire_coloriage',
-          contenu: { coloriage_id: coloId, count: 1, pseudo: userPseudo },
-          lu: false,
-        });
-      }
-    }
+    // La notif est gérée par le trigger Supabase on_commentaire_coloriage
     setTexte(''); setEnvoi(false);
   };
 
