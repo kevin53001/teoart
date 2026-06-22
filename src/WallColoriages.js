@@ -105,7 +105,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   const margeDesktop = 56; // espace de chaque côté pour la croix
   const fenetreStyle = isMobile
     ? { position: 'fixed', inset: 0, zIndex: 2000, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
-    : { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2000, background: 'rgba(0,0,0,0.55)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: `calc(${COLS_DESKTOP} * ${cellSize} + ${(COLS_DESKTOP - 1) * gapPx + margeDesktop * 2}px)`, maxWidth: '98vw', maxHeight: '98vh' };
+    : { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2000, background: 'rgba(0,0,0,0.80)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: `calc(${COLS_DESKTOP} * ${cellSize} + ${(COLS_DESKTOP - 1) * gapPx + margeDesktop * 2}px)`, maxWidth: '98vw', maxHeight: '98vh' };
 
   return ReactDOM.createPortal(
     <>
