@@ -1423,7 +1423,7 @@ function Livres() {
 
       <GuideFlottant pageKey="livres" userId={userId} isMobile={isMobile} />
       <BandeLegale />
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
+      <OngletsLateraux userId={userId} userPseudo={userPseudo} onOuvrirFiche={(illu) => setPopupIllu(illu)} />
     </div>
   );
 }

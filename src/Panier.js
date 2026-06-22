@@ -1420,7 +1420,7 @@ export default function Panier() {
       </div>
 
       <BandeLegale />
-      <OngletsLateraux userId={userId} />
+      <OngletsLateraux userId={userId} userPseudo={userPseudo} />
 
       {/* PopupFicheIllu — rendu à la racine pour éviter le piège backdropFilter */}
       {popupIlluChargement && (

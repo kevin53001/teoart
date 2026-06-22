@@ -1386,7 +1386,7 @@ Vous pouvez parcourir ces textes au fil de vos envies, vous y reconnaître parfo
           </div>
         </div>
       )}
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu, liste) => {
+      <OngletsLateraux userId={userId} userPseudo={pseudo} onOuvrirFiche={(illu, liste) => {
         const l = liste || [illu];
         setIllustrationsOnglet(prev => { const merged = [...prev]; l.forEach(i => { if (!merged.find(x => x.id === i.id)) merged.push(i); }); return merged; });
         setPopupOnglet(illu);

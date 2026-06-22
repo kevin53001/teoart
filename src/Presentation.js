@@ -363,7 +363,7 @@ function Presentation() {
 
       <GuideFlottant pageKey="presentation" userId={userId} isMobile={isMobile} />
       <BandeLegale />
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu, liste) => {
+      <OngletsLateraux userId={userId} userPseudo="" onOuvrirFiche={(illu, liste) => {
         const l = liste || [illu];
         setIllustrationsOnglet(prev => { const merged = [...prev]; l.forEach(i => { if (!merged.find(x => x.id === i.id)) merged.push(i); }); return merged; });
         setPopupOnglet(illu);
