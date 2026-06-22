@@ -9,6 +9,7 @@ import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import Cloche from './Cloche';
 import Tchat from './Tchat';
+import { compresserImage } from './compresserImage';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -1016,7 +1017,7 @@ function Catalogue() {
           </div>
         </div>
       )}
-      <OngletsLateraux userId={userId} userPseudo={userPseudo} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
+      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
     </div>
   );
 }
@@ -1118,10 +1119,9 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
     try {
       let imageUrl = null;
       if (avecImage && coloImage) {
-        const ext = coloImage.name.split('.').pop();
-        const nomFichier = `${userId}_${illu.id}_${Date.now()}.${ext}`;
-        const base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(coloImage); });
-        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName: nomFichier, fileType: coloImage.type, fileBase64: base64 }) });
+        const nomFichierSansExt = `${userId}_${illu.id}_${Date.now()}`;
+        const { base64, fileType, fileName } = await compresserImage(coloImage, nomFichierSansExt);
+        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName, fileType, fileBase64: base64 }) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
         imageUrl = data.url;
