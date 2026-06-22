@@ -1016,7 +1016,7 @@ function Catalogue() {
           </div>
         </div>
       )}
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
+      <OngletsLateraux userId={userId} userPseudo={userPseudo} onOuvrirFiche={(illu) => { setPopup(illu); setPopupIndex(0); }} />
     </div>
   );
 }
