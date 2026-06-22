@@ -168,7 +168,6 @@ export default function Admin() {
   const [litigesExistants, setLitigesExistants] = useState({})
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
-  const intervalRef = useRef(null)
   const saisieEnCoursRef = useRef(false) // true tant qu'un input/textarea/select est focus — empêche le auto-refresh de couper l'admin en pleine saisie
   const [ignores, setIgnores] = useState(new Set()) // IDs de commentaires signalés mais validés par l'admin
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 700)
@@ -593,11 +592,6 @@ export default function Admin() {
   useEffect(() => {
     if (!userId) return
     chargerTout()
-    intervalRef.current = setInterval(() => {
-      if (saisieEnCoursRef.current) return // admin en train d'écrire — on saute ce cycle, rien n'est coupé
-      chargerTout()
-    }, 30000)
-    return () => clearInterval(intervalRef.current)
   }, [userId, chargerTout])
 
   // Valider commande (statut + suivi en un seul appel)
