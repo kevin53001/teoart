@@ -342,3 +342,4 @@ function Cloche({ hidden = false }) {
   );
 }
 
+export default Cloche;
