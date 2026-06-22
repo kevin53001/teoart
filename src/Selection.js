@@ -123,6 +123,15 @@ function Selection() {
       await supabase.from('collection').upsert(rows);
     }
 
+    // Écriture dans collection_livres pour les livres et recueils explicitement cochés
+    const rowsLivres = [
+      ...livresCoches.map(id => ({ user_id: user.id, item_id: id, item_type: 'livre', j_ai: true })),
+      ...recueilsCoches.map(id => ({ user_id: user.id, item_id: id, item_type: 'recueil', j_ai: true })),
+    ];
+    if (rowsLivres.length > 0) {
+      await supabase.from('collection_livres').upsert(rowsLivres, { onConflict: 'user_id,item_id,item_type' });
+    }
+
     setSaving(false);
     setEtape(3);
     setTimeout(() => navigate('/accueil'), 10000);
