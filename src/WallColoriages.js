@@ -45,7 +45,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
         .select('id, image_url')
         .not('image_url', 'is', null)
         .order('created_at', { ascending: false })
-        .limit(TOTAL);
+        .limit(PER_PAGE_DESKTOP + PER_PAGE_MOBILE * 3);
       setColoriages(melanger(data || []));
     })();
   }, []);
@@ -101,12 +101,21 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   const cellSize = `min(${cellWpx}, calc((${cellHpx}) / ${RATIO.toFixed(4)}))`;
   const cellH    = `calc(${cellSize} * ${RATIO.toFixed(4)})`;
 
+  // Desktop : largeur fenêtre = grille + marges latérales pour la croix
+  const margeDesktop = 56; // espace de chaque côté pour la croix
+  const fenetreStyle = isMobile
+    ? { position: 'fixed', inset: 0, zIndex: 2000, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+    : { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2000, background: 'rgba(0,0,0,0.55)', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden', width: `calc(${COLS_DESKTOP} * ${cellSize} + ${(COLS_DESKTOP - 1) * gapPx + margeDesktop * 2}px)`, maxWidth: '98vw', maxHeight: '98vh' };
+
   return ReactDOM.createPortal(
-    <div
-      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: isMobile ? '#000' : 'rgba(0,0,0,0.55)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
+    <>
+      {/* Fond cliquable pour fermer (desktop) */}
+      {!isMobile && <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />}
+      <div
+        style={fenetreStyle}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 12px' : '10px 24px', flexShrink: 0, height: `${headerH}px`, boxSizing: 'border-box' }}>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: isMobile ? '10px' : '12px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -164,7 +173,8 @@ function WallColoriages({ userId, userPseudo, onClose }) {
       {popupIds && (
         <PopupColoriages userId={userId} userPseudo={userPseudo} filtreIds={popupIds} idxDepart={popupIdx} onClose={() => setPopupIds(null)} />
       )}
-    </div>,
+    </div>
+    </>,
     document.body
   );
 }
