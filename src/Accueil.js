@@ -9,6 +9,7 @@ import Tchat from './Tchat';
 import PopupFicheIllu from './PopupFicheIllu';
 import BandeLegale from './BandeLegale';
 import { usePanier } from './PanierContext';
+import PopupColoriages from './PopupColoriages';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BANNER_MAX = '1200px';
@@ -335,102 +336,6 @@ function EncartPatreon({ images, onZoom }) {
   );
 }
 
-// ── Social coloriages (identique Catalogue) ──
-function ZoomSocialAccueil({ coloId, pseudo, userId, userPseudo }) {
-  const [likes, setLikes] = React.useState([]);
-  const [commentaires, setCommentaires] = React.useState([]);
-  const [texte, setTexte] = React.useState('');
-  const [envoi, setEnvoi] = React.useState(false);
-  const jaLike = likes.some(l => l.user_id === userId);
-
-  React.useEffect(() => {
-    if (!coloId) return;
-    const charger = async () => {
-      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
-      const { data: commentsRaw } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
-      setLikes(l || []);
-      if (commentsRaw && commentsRaw.length > 0) {
-        const uids = [...new Set(commentsRaw.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
-        const pm = {}; (profils || []).forEach(p => { pm[p.id] = p.pseudo; });
-        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: pm[c.user_id] || 'Anonyme' })));
-      } else setCommentaires([]);
-    };
-    charger();
-  }, [coloId]);
-
-  const toggleLike = async () => {
-    if (!coloId || !userId) return;
-    if (jaLike) { await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId); setLikes(prev => prev.filter(l => l.user_id !== userId)); }
-    else { await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId }); setLikes(prev => [...prev, { user_id: userId }]); }
-  };
-
-  const envoyerCommentaire = async () => {
-    if (!texte.trim() || !coloId || !userId) return;
-    setEnvoi(true);
-    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim() }).select('id, texte, created_at, user_id').single();
-    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
-    setTexte(''); setEnvoi(false);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 14px', background: 'rgba(0,0,0,0.7)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button onClick={toggleLike} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', color: jaLike ? '#ff4d7d' : 'rgba(255,255,255,0.5)', fontSize: '12px', padding: 0, transition: 'color .2s' }}>
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            {jaLike ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
-          </svg>
-          <span>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
-        </button>
-        {pseudo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>🎨 par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{pseudo}</span></span>}
-      </div>
-      {commentaires.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '100px', overflowY: 'auto' }}>
-          {commentaires.map(c => (
-            <div key={c.id} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo}</span>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: 1.4 }}>{c.texte}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-        <textarea
-          rows={1} placeholder="Ajouter un commentaire…" value={texte}
-          onChange={e => setTexte(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
-          style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '8px', padding: '6px 10px', color: '#fff', fontSize: '11px', resize: 'none', fontFamily: 'inherit', outline: 'none' }}
-        />
-        <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi}
-          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', whiteSpace: 'nowrap' }}>
-          Envoyer
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PopupColoAccueil({ img, userId, userPseudo, onClose, onPrecedent, onSuivant, total, index }) {
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', overflow: 'hidden', maxWidth: '480px', width: '100%', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '32px', height: '32px', color: '#fff', fontSize: '18px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-        {/* Flèches navigation */}
-        {total > 1 && (
-          <>
-            <button onClick={e => { e.stopPropagation(); onPrecedent(); }} style={{ position: 'absolute', left: '8px', top: '40%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '22px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-            <button onClick={e => { e.stopPropagation(); onSuivant(); }} style={{ position: 'absolute', right: '8px', top: '40%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: '36px', height: '36px', color: '#fff', fontSize: '22px', cursor: 'pointer', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
-            <p style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.35)', fontSize: '11px', zIndex: 5, pointerEvents: 'none' }}>{index + 1} / {total}</p>
-          </>
-        )}
-        <img src={img.url} alt={img.nom} style={{ width: '100%', maxHeight: '420px', objectFit: 'contain', display: 'block', background: '#000' }} />
-        <ZoomSocialAccueil coloId={img.coloId} pseudo={img.pseudo} userId={userId} userPseudo={userPseudo} />
-      </div>
-    </div>
-  );
-}
-
 // ── Popup zoom image simple ──
 function PopupZoom({ images, indexDepart, onClose }) {
   const [idx, setIdx] = React.useState(indexDepart);
@@ -694,26 +599,15 @@ function Accueil() {
 
       {/* Popup zoom image */}
       {popup && <PopupZoom images={popup.images} indexDepart={popup.index} onClose={() => setPopup(null)} />}
-      {popupColo && <PopupColoAccueil
-        img={popupColo}
-        userId={userId}
-        userPseudo={userPseudo}
-        onClose={() => setPopupColo(null)}
-        total={coloriages.filter(c => c.coloId).length}
-        index={popupColoIndex}
-        onPrecedent={() => {
-          const colosAvecId = coloriages.filter(c => c.coloId);
-          const prev = (popupColoIndex - 1 + colosAvecId.length) % colosAvecId.length;
-          setPopupColoIndex(prev);
-          setPopupColo(colosAvecId[prev]);
-        }}
-        onSuivant={() => {
-          const colosAvecId = coloriages.filter(c => c.coloId);
-          const next = (popupColoIndex + 1) % colosAvecId.length;
-          setPopupColoIndex(next);
-          setPopupColo(colosAvecId[next]);
-        }}
-      />}
+      {popupColo && (
+        <PopupColoriages
+          userId={userId}
+          userPseudo={userPseudo}
+          filtreIds={null}
+          idxDepart={popupColoIndex}
+          onClose={() => setPopupColo(null)}
+        />
+      )}
 
       {/* Popup fiche illustration */}
       {popupFiche && userId && (

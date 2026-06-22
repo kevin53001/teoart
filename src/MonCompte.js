@@ -12,6 +12,7 @@ import { usePWAInstallable, reactiverBannerePWA } from './BannerePWA';
 import Cloche from './Cloche';
 import Tchat from './Tchat';
 import { estCompatibleNotifications, permissionBloquee, aSouscriptionActive, activerNotifications } from './pushNotifications';
+import PopupColoriages from './PopupColoriages';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -2184,95 +2185,12 @@ function SectionMesCommandes({ userId }) {
   );
 }
 
-// ─── ZoomSocialMonCompte — bloc likes + commentaires (identique à PopupFicheIllu) ──
-function ZoomSocialMonCompte({ coloriage, userId, userPseudo }) {
-  const [likes, setLikes] = React.useState([]);
-  const [commentaires, setCommentaires] = React.useState([]);
-  const [texte, setTexte] = React.useState('');
-  const [envoi, setEnvoi] = React.useState(false);
-  const coloId = coloriage?.id;
-  const jaLike = likes.some(l => l.user_id === userId);
-
-  React.useEffect(() => {
-    if (!coloId) return;
-    const charger = async () => {
-      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
-      const { data: commentsRaw } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
-      setLikes(l || []);
-      if (commentsRaw && commentsRaw.length > 0) {
-        const userIds = [...new Set(commentsRaw.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', userIds);
-        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
-        setCommentaires(commentsRaw.map(c => ({ ...c, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
-      } else setCommentaires([]);
-    };
-    charger();
-  }, [coloId]);
-
-  const toggleLike = async () => {
-    if (!coloId || !userId) return;
-    if (jaLike) {
-      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
-      setLikes(prev => prev.filter(l => l.user_id !== userId));
-    } else {
-      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
-      setLikes(prev => [...prev, { user_id: userId }]);
-    }
-  };
-
-  const envoyerCommentaire = async () => {
-    if (!texte.trim() || !coloId || !userId) return;
-    setEnvoi(true);
-    const { data } = await supabase.from('commentaires_coloriages').insert({ coloriage_id: coloId, user_id: userId, texte: texte.trim(), vu: true }).select('id, texte, created_at, user_id').single();
-    if (data) setCommentaires(prev => [...prev, { ...data, pseudo: userPseudo }]);
-    setTexte(''); setEnvoi(false);
-  };
-
-  if (!coloriage) return null;
-  return (
-    <div className="zoom-social">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button className={`zoom-like-btn${jaLike ? ' actif' : ''}`} onClick={toggleLike}>
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            {jaLike
-              ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
-              : <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />}
-          </svg>
-          <span style={{ fontSize: '12px' }}>{likes.length > 0 ? likes.length : ''} {jaLike ? "J'aime ✓" : "J'aime"}</span>
-        </button>
-        {coloriage.pseudo && <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px' }}>par <span style={{ color: 'rgba(255,210,80,0.7)' }}>{coloriage.pseudo}</span></span>}
-      </div>
-      {commentaires.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
-          {commentaires.map(c => (
-            <div key={c.id} className="zoom-commentaire">
-              <span style={{ color: 'rgba(255,210,80,0.7)', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0 }}>{c.pseudo || 'Anonyme'}</span>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', lineHeight: '1.4' }}>{c.texte}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-        <textarea className="zoom-commentaire-input" rows={1} placeholder="Ajouter un commentaire…" value={texte}
-          onChange={e => setTexte(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); envoyerCommentaire(); } }}
-          style={{ flex: 1 }} />
-        <button onClick={envoyerCommentaire} disabled={!texte.trim() || envoi}
-          style={{ background: texte.trim() ? 'rgba(0,212,212,0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${texte.trim() ? 'rgba(0,212,212,0.4)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '6px', padding: '5px 10px', color: texte.trim() ? '#00d4d4' : 'rgba(255,255,255,0.2)', fontSize: '11px', cursor: texte.trim() ? 'pointer' : 'default', transition: 'all .2s', whiteSpace: 'nowrap' }}>
-          Envoyer
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function SectionMesColoriages({ userId, userPseudo }) {
   const [colos, setColos] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [coloZoom, setColoZoom] = React.useState(null);
-  const [coloZoomIndex, setColoZoomIndex] = React.useState(0);
-  const [confirmation, setConfirmation] = React.useState(null);
-  const [suppression, setSuppression] = React.useState(false);
+  const [popupOuvert, setPopupOuvert] = React.useState(false);
+  const [popupIdx, setPopupIdx] = React.useState(0);
 
   React.useEffect(() => { chargerColos(); }, [userId]); // eslint-disable-line
 
@@ -2286,27 +2204,23 @@ function SectionMesColoriages({ userId, userPseudo }) {
     const coloIds = data.map(c => c.id);
     const { data: newComments } = await supabase.from('commentaires_coloriages').select('coloriage_id').in('coloriage_id', coloIds).eq('vu', false).neq('user_id', userId);
     const notifSet = new Set((newComments || []).map(c => c.coloriage_id));
-    setColos(data.map(c => ({ ...c, illu: illusMap[c.illustration_id], hasNotif: notifSet.has(c.id), pseudo: userPseudo })));
+    setColos(data.map(c => ({ ...c, illu: illusMap[c.illustration_id], hasNotif: notifSet.has(c.id) })));
     setLoading(false);
   };
 
   const ouvrirZoom = async (colo, index) => {
-    setColoZoom(colo);
-    setColoZoomIndex(index);
+    // Marquer les commentaires comme vus
     await supabase.from('commentaires_coloriages').update({ vu: true }).eq('coloriage_id', colo.id).neq('user_id', userId);
     setColos(prev => prev.map(c => c.id === colo.id ? { ...c, hasNotif: false } : c));
+    setPopupIdx(index);
+    setPopupOuvert(true);
   };
 
   const supprimerColoriage = async (colo) => {
-    setSuppression(true);
-    try {
-      const urlPath = colo.image_url.replace('https://images.kevinteoart.fr/', '');
-      await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'colo', chemin: urlPath, userId }) });
-      await supabase.from('coloriages').delete().eq('id', colo.id);
-      setColos(prev => prev.filter(c => c.id !== colo.id));
-      if (coloZoom?.id === colo.id) setColoZoom(null);
-    } catch (e) { console.error(e); }
-    setSuppression(false); setConfirmation(null);
+    const urlPath = colo.url.replace('https://images.kevinteoart.fr/', '');
+    await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'colo', chemin: urlPath, userId }) });
+    await supabase.from('coloriages').delete().eq('id', colo.id);
+    setColos(prev => prev.filter(c => c.id !== colo.id));
   };
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
@@ -2319,55 +2233,16 @@ function SectionMesColoriages({ userId, userPseudo }) {
 
   return (
     <>
-      {/* Popup zoom — portal + zIndex 100000 pour passer devant tout */}
-      {coloZoom && ReactDOM.createPortal(
-        <div onClick={() => setColoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: '20px' }}>
-          {/* Image grande centrée */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', position: 'relative' }} onClick={e => e.stopPropagation()}>
-            {/* Flèche gauche */}
-            {colos.length > 1 && (
-              <button
-                onClick={e => { e.stopPropagation(); const prev = (coloZoomIndex - 1 + colos.length) % colos.length; setColoZoom(colos[prev]); setColoZoomIndex(prev); }}
-                style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, flexShrink: 0 }}>
-                ‹
-              </button>
-            )}
-            <img src={coloZoom.image_url} alt="" style={{ maxWidth: '88vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: '8px', display: 'block' }} />
-            {/* Flèche droite */}
-            {colos.length > 1 && (
-              <button
-                onClick={e => { e.stopPropagation(); const next = (coloZoomIndex + 1) % colos.length; setColoZoom(colos[next]); setColoZoomIndex(next); }}
-                style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: '44px', height: '44px', color: '#fff', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, flexShrink: 0 }}>
-                ›
-              </button>
-            )}
-          </div>
-          {/* Bloc social + bouton supprimer */}
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '600px' }}>
-            <ZoomSocialMonCompte coloriage={coloZoom} userId={userId} userPseudo={userPseudo} />
-            <button onClick={() => setConfirmation(coloZoom)} style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '8px', padding: '6px 12px', color: 'rgba(255,100,100,0.7)', fontSize: '11px', cursor: 'pointer', marginTop: '8px' }}>🗑 Supprimer ce coloriage</button>
-          </div>
-          <button onClick={() => setColoZoom(null)} style={{ position: 'fixed', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#fff', fontSize: '28px', cursor: 'pointer', zIndex: 2 }}>✕</button>
-        </div>,
-        document.body
+      {popupOuvert && (
+        <PopupColoriages
+          userId={userId}
+          userPseudo={userPseudo}
+          filtreUserId={userId}
+          idxDepart={popupIdx}
+          onClose={() => setPopupOuvert(false)}
+          onSupprimer={supprimerColoriage}
+        />
       )}
-
-      {/* Popup confirmation suppression — au-dessus du zoom */}
-      {confirmation && ReactDOM.createPortal(
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 100001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#111', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '16px', padding: '28px 32px', maxWidth: '380px', textAlign: 'center' }}>
-            <p style={{ fontSize: '28px', marginBottom: '12px' }}>🗑</p>
-            <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '8px' }}>Supprimer ce coloriage ?</p>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', marginBottom: '24px' }}>Cette action est irréversible. L'image sera supprimée définitivement.</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button onClick={() => setConfirmation(null)} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '10px 20px', color: '#fff', cursor: 'pointer', fontSize: '13px' }}>Annuler</button>
-              <button onClick={() => supprimerColoriage(confirmation)} disabled={suppression} style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.4)', borderRadius: '8px', padding: '10px 20px', color: '#ff8080', cursor: 'pointer', fontSize: '13px', opacity: suppression ? 0.6 : 1 }}>{suppression ? 'Suppression...' : 'Oui, supprimer'}</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Grille vignettes */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         {colos.map((colo, coloIdx) => (
@@ -2384,6 +2259,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
     </>
   );
 }
+
 
 function BoutonOnglet({ label, couleur, couleurRgb, actif, onClick }) {
   const ref = React.useRef(null);
