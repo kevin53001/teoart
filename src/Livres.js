@@ -607,8 +607,20 @@ function Livres() {
     if (error) { console.error(error); setCollection(prev => ({ ...prev, [key]: { ...prev[key], j_ai: actuel.j_ai || false } })); return; }
     try {
       let illuIds = [];
-      if (type === 'recueil') { const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [itemId]); illuIds = (illus || []).map(i => i.id); }
-      else if (type === 'livre') { const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [itemId]); illuIds = (illus || []).map(i => i.id); }
+      if (type === 'recueil') {
+        const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('recueils_ids', [itemId]);
+        illuIds = (illus || []).map(i => i.id);
+        // Cascade sur les livres du recueil dans collection_livres
+        const { data: livresDuRecueil } = await supabase.from('livres').select('id').contains('recueils_ids', [itemId]);
+        if (livresDuRecueil && livresDuRecueil.length > 0) {
+          const rowsLivres = livresDuRecueil.map(l => ({ user_id: userId, item_id: l.id, item_type: 'livre', j_ai: nouveau, je_veux: collection[`livre_${l.id}`]?.je_veux || false }));
+          await supabase.from('collection_livres').upsert(rowsLivres, { onConflict: 'user_id,item_id,item_type' });
+          setCollection(prev => { const next = { ...prev }; livresDuRecueil.forEach(l => { next[`livre_${l.id}`] = { ...prev[`livre_${l.id}`], j_ai: nouveau }; }); return next; });
+        }
+      } else if (type === 'livre') {
+        const { data: illus } = await supabase.from('illustrations').select('id').eq('statut', 'published').contains('livres_ids', [itemId]);
+        illuIds = (illus || []).map(i => i.id);
+      }
       if (illuIds.length > 0) {
         await supabase.from('collection').upsert(illuIds.map(illuId => ({ user_id: userId, illustration_id: illuId, j_ai: nouveau, j_ai_auto: collectionIllus[illuId]?.j_ai_auto || false, je_veux: collectionIllus[illuId]?.je_veux || false })), { onConflict: 'user_id,illustration_id' });
         setCollectionIllus(prev => { const next = { ...prev }; illuIds.forEach(id => { next[id] = { ...prev[id], j_ai: nouveau }; }); return next; });
