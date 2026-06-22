@@ -2086,8 +2086,8 @@ function SectionMesCommandes({ userId }) {
                   const isRelie = item.type === 'relie';
                   const relieOpen = relieOuvert === item.id;
                   const statut = item.statut || 'en_attente';
-                  const statutLabel = { en_attente: 'En cours de traitement', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours';
-                  const statutColor = { en_attente: 'rgba(255,210,80,0.7)', expediee: '#00d4d4', livree: '#22c55e' }[statut];
+                  const statutLabel = { en_attente: 'En cours de traitement', en_cours: 'En cours de préparation', expediee: 'Expédié', livree: 'Livré' }[statut] || 'En cours de traitement';
+                  const statutColor = { en_attente: 'rgba(255,210,80,0.7)', en_cours: '#f97316', expediee: '#00d4d4', livree: '#22c55e' }[statut] || 'rgba(255,210,80,0.7)';
 
                   return (
                     <div key={item.id} style={{ borderRadius: '6px', padding: '4px 8px' }}>
@@ -2166,7 +2166,7 @@ function SectionMesCommandes({ userId }) {
                           )}
 
                           {/* Message si rien encore */}
-                          {statut === 'en_attente' && !item.livreur && !item.lien_suivi && !item.date_livraison_estimee && (
+                          {(statut === 'en_attente' || statut === 'en_cours') && !item.livreur && !item.lien_suivi && !item.date_livraison_estimee && (
                             <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: 0 }}>
                               Votre commande est en cours de traitement. Vous serez notifié(e) dès l'expédition.
                             </p>

@@ -43,6 +43,7 @@ function contientMotInterdit(texte) {
 
 const STATUT_LABEL = {
   en_attente: 'En attente',
+  en_cours: 'En cours',
   expediee: 'Expédiée',
   livree: 'Livrée',
   archivee: 'Archivée'
@@ -50,6 +51,7 @@ const STATUT_LABEL = {
 
 const STATUT_COLOR = {
   en_attente: { bg: 'rgba(239,68,68,0.12)', border: '#ef444444', color: '#ef4444' },
+  en_cours:   { bg: 'rgba(249,115,22,0.12)', border: '#f9731644', color: '#f97316' },
   expediee:   { bg: 'rgba(255,215,0,0.12)',  border: '#ffd70044', color: '#ffd700' },
   livree:     { bg: 'rgba(34,197,94,0.10)',  border: '#22c55e44', color: '#22c55e' },
   archivee:   { bg: 'rgba(100,100,130,0.10)', border: '#64648244', color: '#646482' }
@@ -185,6 +187,7 @@ export default function Admin() {
   const [ventes, setVentes] = useState([])
   const [moisOuverts, setMoisOuverts] = useState({})
   const [venteOuverte, setVenteOuverte] = useState(null)
+  const [sousOngletCommandes, setSousOngletCommandes] = useState('relies')
 
   const chargerVentes = useCallback(async () => {
     if (!userId) return
@@ -802,8 +805,38 @@ export default function Admin() {
         </div>
         {[
           { id:'dashboard', icon:'ti-layout-dashboard', label:'Dashboard' },
-          { id:'commandes', icon:'ti-package', label:`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
-          { id:'ventes', icon:'ti-receipt', label:'Ventes' },
+        ].map(n => (
+          <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
+            <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
+            {n.label}
+          </div>
+        ))}
+
+        {/* Commandes avec sous-menu */}
+        <div
+          style={s.navItem(onglet === 'commandes', isMobile)}
+          onClick={() => setOnglet('commandes')}
+        >
+          <i className="ti ti-package" style={s.navIcon} aria-hidden="true" />
+          {`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}`}
+        </div>
+        {onglet === 'commandes' && (
+          <div style={{ paddingLeft:'16px', borderLeft:'2px solid #00e5ff22', marginLeft:'16px' }}>
+            {[
+              { id:'relies', label:'Livres Reliés' },
+              { id:'ventes', label:'Ventes' },
+            ].map(sub => (
+              <div key={sub.id}
+                style={{ padding:'7px 12px', fontSize:'12px', cursor:'pointer', color: sousOngletCommandes === sub.id ? '#00e5ff' : '#6a6a8a', fontWeight: sousOngletCommandes === sub.id ? 500 : 400, borderRadius:'6px', background: sousOngletCommandes === sub.id ? 'rgba(0,229,255,0.06)' : 'transparent', transition:'all 0.15s', marginBottom:'2px' }}
+                onClick={e => { e.stopPropagation(); setSousOngletCommandes(sub.id) }}
+              >
+                {sub.label}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {[
           { id:'usagers', icon:'ti-users', label:'Usagers' },
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
           { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
@@ -848,8 +881,8 @@ export default function Admin() {
         <div style={s.topbar(isMobile)}>
           <span style={s.topbarTitle}>
             { onglet === 'dashboard' && 'Dashboard' }
-            { onglet === 'commandes' && 'Commandes reliées' }
-            { onglet === 'ventes' && 'Ventes' }
+            { onglet === 'commandes' && sousOngletCommandes === 'relies' && 'Commandes reliées' }
+            { onglet === 'commandes' && sousOngletCommandes === 'ventes' && 'Ventes' }
             { onglet === 'usagers' && 'Tableau des usagers' }
             { onglet === 'moderation' && 'Modération des commentaires' }
             { onglet === 'chat' && 'Conversations privées' }
@@ -860,28 +893,44 @@ export default function Admin() {
 
         {/* NAV HORIZONTALE (mobile) — sous la bande haute */}
         {isMobile && (
-          <div style={s.sidebar(isMobile)}>
-            {[
-              { id:'dashboard', icon:'ti-layout-dashboard', label:'Dash' },
-              { id:'commandes', icon:'ti-package', label:`Com.${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
-              { id:'ventes', icon:'ti-receipt', label:'Ventes' },
-              { id:'usagers', icon:'ti-users', label:'Usag.' },
-              { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
-              { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
-              { id:'notif', icon:'ti-bell', label:'Notif' },
-              { id:'cadeau', icon:'ti-gift', label:`Cadeau${rappelCadeau ? ' ⚠️' : ''}` },
-            ].map(n => (
-              <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
-                <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
-                {n.label}
+          <div style={{ ...s.sidebar(isMobile), flexDirection:'column' }}>
+            <div style={{ display:'flex', overflowX:'auto' }}>
+              {[
+                { id:'dashboard', icon:'ti-layout-dashboard', label:'Dash' },
+                { id:'commandes', icon:'ti-package', label:`Com.${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
+                { id:'usagers', icon:'ti-users', label:'Usag.' },
+                { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
+                { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
+                { id:'notif', icon:'ti-bell', label:'Notif' },
+                { id:'cadeau', icon:'ti-gift', label:`Cadeau${rappelCadeau ? ' ⚠️' : ''}` },
+              ].map(n => (
+                <div key={n.id} style={s.navItem(onglet === n.id, isMobile)} onClick={() => setOnglet(n.id)}>
+                  <i className={`ti ${n.icon}`} style={s.navIcon} aria-hidden="true" />
+                  {n.label}
+                </div>
+              ))}
+              <div
+                style={{ fontSize:'12px', color:'#44445a', cursor:'pointer', padding:'12px 14px', whiteSpace:'nowrap', flexShrink:0, display:'flex', alignItems:'center' }}
+                onClick={() => navigate('/accueil')}
+              >
+                ← Site
               </div>
-            ))}
-            <div
-              style={{ fontSize:'12px', color:'#44445a', cursor:'pointer', padding:'12px 14px', whiteSpace:'nowrap', flexShrink:0, display:'flex', alignItems:'center' }}
-              onClick={() => navigate('/accueil')}
-            >
-              ← Site
             </div>
+            {onglet === 'commandes' && (
+              <div style={{ display:'flex', borderTop:'1px solid #00e5ff15', padding:'6px 12px', gap:'6px' }}>
+                {[
+                  { id:'relies', label:'Livres Reliés' },
+                  { id:'ventes', label:'Ventes' },
+                ].map(sub => (
+                  <div key={sub.id}
+                    style={{ padding:'5px 12px', fontSize:'11px', cursor:'pointer', color: sousOngletCommandes === sub.id ? '#00e5ff' : '#6a6a8a', fontWeight: sousOngletCommandes === sub.id ? 500 : 400, borderRadius:'6px', background: sousOngletCommandes === sub.id ? 'rgba(0,229,255,0.08)' : 'transparent', border: sousOngletCommandes === sub.id ? '1px solid #00e5ff33' : '1px solid transparent', transition:'all 0.15s', whiteSpace:'nowrap' }}
+                    onClick={() => setSousOngletCommandes(sub.id)}
+                  >
+                    {sub.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1034,7 +1083,7 @@ export default function Admin() {
           )}
 
           {/* ======== COMMANDES ======== */}
-          {!loading && onglet === 'commandes' && (
+          {!loading && onglet === 'commandes' && sousOngletCommandes === 'relies' && (
             <>
               <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'12px' }}>
                 <button style={s.btnGold} onClick={exporterCommandesCSV}>
@@ -1043,7 +1092,7 @@ export default function Admin() {
                 </button>
               </div>
               {/* Commandes actives */}
-              {['en_attente', 'expediee', 'livree'].map(statut => {
+              {['en_attente', 'en_cours', 'expediee', 'livree'].map(statut => {
                 const liste = cmdActives.filter(c => c.statut === statut)
                 if (liste.length === 0) return null
                 return (
@@ -1603,7 +1652,7 @@ export default function Admin() {
           )}
 
           {/* ======== VENTES ======== */}
-          {!loading && onglet === 'ventes' && (() => {
+          {!loading && onglet === 'commandes' && sousOngletCommandes === 'ventes' && (() => {
             const MOIS_FR_COURT = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
             const TYPE_LABEL = { illustration: 'Illustration', livre_pdf: 'Livre PDF', recueil: 'Recueil', relie: 'Relié' }
             const TYPE_COLOR = { illustration: '#ff3eb5', livre_pdf: '#00e5ff', recueil: '#00e5ff', relie: '#ffd700' }
@@ -1894,6 +1943,7 @@ function CmdCard({ cmd, suiviOpen, setSuiviOpen, suiviData, setSuiviData, litige
           <div style={s.radioRow}>
             {[
               { val:'en_attente', label:'🔴 En attente' },
+              { val:'en_cours',   label:'🟠 En cours' },
               { val:'expediee',   label:'🟡 Expédiée' },
               { val:'livree',     label:'🟢 Livrée' },
             ].map(({ val, label }) => (
