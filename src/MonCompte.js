@@ -2659,7 +2659,7 @@ function MonCompte() {
           onColoUploaded={() => {}}
         />
       )}
-      <OngletsLateraux userId={userId} onOuvrirFiche={(illu) => { setPopupIllu(illu); setPopupIlluList([illu]); setPopupIlluIndex(0); }} />
+      <OngletsLateraux userId={userId} userPseudo={userPseudo} onOuvrirFiche={(illu) => { setPopupIllu(illu); setPopupIlluList([illu]); setPopupIlluIndex(0); }} />
     </div>
   );
 }
