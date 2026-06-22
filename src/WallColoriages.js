@@ -1,0 +1,248 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
+import { supabase } from './supabase';
+import PopupColoriages from './PopupColoriages';
+
+const R2 = 'https://images.kevinteoart.fr';
+const COLS = 4;
+const ROWS = 6;
+const PER_PAGE = COLS * ROWS; // 24
+const TOTAL = PER_PAGE * 2;   // 48
+const RATIO = 29.7 / 21;      // ratio A4 hauteur/largeur ≈ 1.414
+const ANIM_DURATION = 5000;   // 5s pour afficher les 24 images
+
+function melanger(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function WallColoriages({ userId, userPseudo, onClose }) {
+  const [coloriages, setColoriages] = useState([]);
+  const [page, setPage] = useState(0); // 0 ou 1
+  const [visibles, setVisibles] = useState(new Set());
+  const [popupIds, setPopupIds] = useState(null);
+  const [popupIdx, setPopupIdx] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  const animRef = useRef(null);
+  const touchStartX = useRef(null);
+
+  // Resize
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Charger les 48 derniers coloriages
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('coloriages')
+        .select('id, image_url, created_at')
+        .order('created_at', { ascending: false })
+        .limit(TOTAL);
+      setColoriages(data || []);
+    })();
+  }, []);
+
+  // Animation d'apparition à chaque changement de page
+  const lancerAnimation = useCallback(() => {
+    if (animRef.current) clearInterval(animRef.current);
+    setVisibles(new Set());
+    const indices = melanger(Array.from({ length: PER_PAGE }, (_, i) => i));
+    const delai = ANIM_DURATION / PER_PAGE; // ~208ms entre chaque
+    let i = 0;
+    animRef.current = setInterval(() => {
+      if (i >= indices.length) { clearInterval(animRef.current); return; }
+      setVisibles(prev => new Set([...prev, indices[i]]));
+      i++;
+    }, delai);
+  }, []);
+
+  useEffect(() => {
+    if (coloriages.length > 0) lancerAnimation();
+    return () => { if (animRef.current) clearInterval(animRef.current); };
+  }, [page, coloriages.length, lancerAnimation]);
+
+  // Navigation pages
+  const allerPage = (n) => {
+    if (n < 0 || n > 1) return;
+    setPage(n);
+  };
+
+  // Swipe mobile
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) allerPage(dx < 0 ? 1 : 0);
+    touchStartX.current = null;
+  };
+
+  const pageColoriages = coloriages.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
+  const pageIds = pageColoriages.map(c => c.id);
+
+  // Calcul taille cellule pour tenir dans l'écran
+  const gapPx = isMobile ? 3 : 6;
+  const paddingH = isMobile ? 8 : 32;
+  const paddingV = isMobile ? 48 : 80; // espace pour header + dots
+  const cellW = `calc((100vw - ${paddingH * 2 + gapPx * (COLS - 1)}px) / ${COLS})`;
+
+  return ReactDOM.createPortal(
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 2000,
+        background: '#000',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: isMobile ? '10px 12px' : '14px 24px',
+        flexShrink: 0,
+      }}>
+        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: isMobile ? '11px' : '13px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Wall · {coloriages.length} coloriages
+        </span>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '50%', width: isMobile ? '30px' : '36px', height: isMobile ? '30px' : '36px',
+            color: 'rgba(255,255,255,0.5)', fontSize: '16px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Zone grille + flèches */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', minHeight: 0 }}>
+
+        {/* Flèche gauche */}
+        <button
+          onClick={() => allerPage(page - 1)}
+          style={{
+            position: 'absolute', left: isMobile ? '2px' : '8px', zIndex: 10,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '50%', width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px',
+            color: page === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.5)',
+            cursor: page === 0 ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: isMobile ? '10px' : '13px',
+            transition: 'all 0.2s',
+            pointerEvents: page === 0 ? 'none' : 'auto',
+          }}
+        >‹</button>
+
+        {/* Grille */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${COLS}, ${cellW})`,
+          gridTemplateRows: `repeat(${ROWS}, calc(${cellW} * ${RATIO.toFixed(4)}))`,
+          gap: `${gapPx}px`,
+          padding: `0 ${paddingH}px`,
+        }}>
+          {Array.from({ length: PER_PAGE }, (_, i) => {
+            const colo = pageColoriages[i];
+            const visible = visibles.has(i);
+            return (
+              <div
+                key={i}
+                onClick={() => {
+                  if (!colo || !visible) return;
+                  setPopupIds(pageIds);
+                  setPopupIdx(i);
+                }}
+                style={{
+                  background: '#0a0a0a',
+                  borderRadius: isMobile ? '3px' : '4px',
+                  overflow: 'hidden',
+                  cursor: colo && visible ? 'pointer' : 'default',
+                  opacity: visible ? 1 : 0,
+                  transform: visible ? 'scale(1)' : 'scale(0.85)',
+                  transition: 'opacity 0.25s ease, transform 0.25s ease',
+                }}
+              >
+                {colo && (
+                  <img
+                    src={`${R2}/${colo.image_url}`}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    onMouseEnter={e => { e.currentTarget.parentElement.style.outline = '2px solid rgba(0,212,212,0.6)'; }}
+                    onMouseLeave={e => { e.currentTarget.parentElement.style.outline = 'none'; }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Flèche droite */}
+        <button
+          onClick={() => allerPage(page + 1)}
+          style={{
+            position: 'absolute', right: isMobile ? '2px' : '8px', zIndex: 10,
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '50%', width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px',
+            color: page === 1 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.5)',
+            cursor: page === 1 ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: isMobile ? '10px' : '13px',
+            transition: 'all 0.2s',
+            pointerEvents: page === 1 ? 'none' : 'auto',
+          }}
+        >›</button>
+      </div>
+
+      {/* Points de pagination */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+        padding: isMobile ? '8px 0 12px' : '12px 0 20px',
+        flexShrink: 0,
+      }}>
+        {[0, 1].map(p => (
+          <div
+            key={p}
+            onClick={() => allerPage(p)}
+            style={{
+              width: page === p ? '20px' : '6px',
+              height: '6px',
+              borderRadius: '3px',
+              background: page === p ? '#00d4d4' : 'rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* PopupColoriages au clic */}
+      {popupIds && (
+        <PopupColoriages
+          userId={userId}
+          userPseudo={userPseudo}
+          filtreIds={popupIds}
+          idxDepart={popupIdx}
+          onClose={() => setPopupIds(null)}
+        />
+      )}
+    </div>,
+    document.body
+  );
+}
+
+export default WallColoriages;

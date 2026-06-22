@@ -1,9 +1,12 @@
 import React from 'react';
 import { supabase } from './supabase';
+import WallColoriages from './WallColoriages';
 
 const R2 = 'https://images.kevinteoart.fr';
 
 function BoutonsFlottants() {
+  const [showWall, setShowWall] = React.useState(false);
+  const [userId, setUserId] = React.useState(null);
   const [decoActif, setDecoActif] = React.useState(false);
   const [showScroll, setShowScroll] = React.useState(false);
   const [showContact, setShowContact] = React.useState(false);
@@ -19,6 +22,7 @@ function BoutonsFlottants() {
   React.useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data?.user) return;
+      setUserId(data.user.id);
       const { data: p } = await supabase.from('profils').select('pseudo, email').eq('id', data.user.id).single();
       if (p) { setUserEmail(p.email || ''); setUserPseudo(p.pseudo || ''); }
     });
@@ -146,6 +150,21 @@ function BoutonsFlottants() {
           </div>
         )}
 
+        {/* Pastille Wall */}
+        <div
+          onClick={() => setShowWall(true)}
+          title="Wall des coloriages"
+          style={{ width: '38px', height: '38px', cursor: 'pointer', transition: 'transform 0.15s', transform: showWall ? 'scale(1.1)' : 'scale(1)' }}
+        >
+          <img
+            src={`${R2}/site/pastille_wall.png`}
+            alt="Wall"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            onContextMenu={e => e.preventDefault()}
+            draggable={false}
+          />
+        </div>
+
         {/* Pastille contact */}
         <div
           onClick={() => { setShowContact(v => !v); setContactEnvoye(false); setContactErreur(''); }}
@@ -192,6 +211,14 @@ function BoutonsFlottants() {
           <path d="M9 14V4M9 4L4 9M9 4L14 9" stroke="rgba(0,212,212,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
+      {/* Wall coloriages */}
+      {showWall && (
+        <WallColoriages
+          userId={userId}
+          userPseudo={userPseudo}
+          onClose={() => setShowWall(false)}
+        />
+      )}
     </>
   );
 }
