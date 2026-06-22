@@ -154,7 +154,7 @@ function BoutonsFlottants() {
         <div
           onClick={() => setShowWall(true)}
           title="Wall des coloriages"
-          style={{ width: '38px', height: '38px', cursor: 'pointer', transition: 'transform 0.15s', transform: showWall ? 'scale(1.1)' : 'scale(1)' }}
+          style={{ width: '38px', height: '38px', cursor: 'pointer', transition: 'transform 0.15s', transform: showWall ? 'scale(1.1)' : 'scale(1)', marginBottom: '-2px' }}
         >
           <img
             src={`${R2}/site/pastille_wall.png`}

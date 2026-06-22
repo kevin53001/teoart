@@ -50,21 +50,27 @@ function WallColoriages({ userId, userPseudo, onClose }) {
 
   // Animation d'apparition
   const lancerAnimation = useCallback(() => {
-    if (animRef.current) clearInterval(animRef.current);
+    if (animRef.current) {
+      animRef.current.forEach(t => clearTimeout(t));
+    }
     setVisibles(new Set());
     const indices = melanger(Array.from({ length: PER_PAGE }, (_, i) => i));
     const delai = ANIM_DURATION / PER_PAGE;
-    let i = 0;
-    animRef.current = setInterval(() => {
-      if (i >= indices.length) { clearInterval(animRef.current); return; }
-      setVisibles(prev => new Set([...prev, indices[i]]));
-      i++;
-    }, delai);
+    const timers = indices.map((idx, i) =>
+      setTimeout(() => {
+        setVisibles(prev => new Set([...prev, idx]));
+      }, i * delai)
+    );
+    // Garantie : toutes les images visibles après ANIM_DURATION + marge
+    const timerFinal = setTimeout(() => {
+      setVisibles(new Set(Array.from({ length: PER_PAGE }, (_, i) => i)));
+    }, ANIM_DURATION + 300);
+    animRef.current = [...timers, timerFinal];
   }, []);
 
   useEffect(() => {
     if (coloriages.length > 0) lancerAnimation();
-    return () => { if (animRef.current) clearInterval(animRef.current); };
+    return () => { if (animRef.current) animRef.current.forEach(t => clearTimeout(t)); };
   }, [page, coloriages.length, lancerAnimation]);
 
   const allerPage = (n) => {
