@@ -6,7 +6,7 @@ import PopupColoriages from './PopupColoriages';
 const COLS = 4;
 const ROWS = 6;
 const PER_PAGE = COLS * ROWS; // 24
-const TOTAL = PER_PAGE * 2;   // 48
+const TOTAL = PER_PAGE * 3;   // 72
 const RATIO = 29.7 / 21;      // ratio A4 ≈ 1.414
 const ANIM_DURATION = 5000;
 
@@ -35,16 +35,27 @@ function WallColoriages({ userId, userPseudo, onClose }) {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Charger les 48 derniers coloriages (image_url est une URL complète)
+  // Charger tous les coloriages et mélanger aléatoirement
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      // 1. Compter le total
+      const { count } = await supabase
         .from('coloriages')
-        .select('id, image_url, created_at')
-        .not('image_url', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(TOTAL);
-      setColoriages(data || []);
+        .select('*', { count: 'exact', head: true })
+        .not('image_url', 'is', null);
+      if (!count) return;
+      // 2. Tout charger (Supabase limite à 1000 par défaut — on pagine si nécessaire)
+      const pages = Math.ceil(count / 1000);
+      let tous = [];
+      for (let p = 0; p < pages; p++) {
+        const { data } = await supabase
+          .from('coloriages')
+          .select('id, image_url')
+          .not('image_url', 'is', null)
+          .range(p * 1000, (p + 1) * 1000 - 1);
+        tous = tous.concat(data || []);
+      }
+      setColoriages(melanger(tous));
     })();
   }, []);
 
@@ -74,7 +85,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   }, [page, coloriages.length, lancerAnimation]);
 
   const allerPage = (n) => {
-    if (n < 0 || n > 1) return;
+    if (n < 0 || n > 2) return;
     setPage(n);
   };
 
@@ -82,7 +93,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   const onTouchEnd = (e) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 50) allerPage(dx < 0 ? 1 : 0);
+    if (Math.abs(dx) > 50) allerPage(dx < 0 ? Math.min(page + 1, 2) : Math.max(page - 1, 0));
     touchStartX.current = null;
   };
 
@@ -175,7 +186,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
                   width: cellSize,
                   height: cellH,
                   background: '#0a0a0a',
-                  borderRadius: '3px',
+                  borderRadius: isMobile ? '5px' : '8px',
                   overflow: 'hidden',
                   cursor: colo && visible ? 'pointer' : 'default',
                   opacity: visible ? 1 : 0,
@@ -203,11 +214,11 @@ function WallColoriages({ userId, userPseudo, onClose }) {
             position: 'absolute', right: isMobile ? '2px' : '8px', zIndex: 10,
             background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '50%', width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px',
-            color: page === 1 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)',
-            cursor: page === 1 ? 'default' : 'pointer',
+            color: page === 2 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)',
+            cursor: page === 2 ? 'default' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: isMobile ? '12px' : '15px',
-            pointerEvents: page === 1 ? 'none' : 'auto',
+            pointerEvents: page === 2 ? 'none' : 'auto',
           }}
         >›</button>
       </div>
@@ -217,7 +228,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
         height: `${dotsH}px`, flexShrink: 0,
       }}>
-        {[0, 1].map(p => (
+        {[0, 1, 2].map(p => (
           <div
             key={p}
             onClick={() => allerPage(p)}
