@@ -991,7 +991,7 @@ export default function Panier() {
   const [popupIlluChargement, setPopupIlluChargement] = React.useState(false);
   const [popupCollection, setPopupCollection] = React.useState({});
   const [popupColoriages, setPopupColoriages] = React.useState({});
-  const { articles } = usePanier();
+  const { articles, reductions } = usePanier();
   const illusIds = articles.filter(a => a.type === 'illustration').map(a => a.id);
 
   React.useEffect(() => {
@@ -1125,12 +1125,46 @@ export default function Panier() {
       if (user) {
         // ── Appel confirm-payment → écrit dans commandes_articles ─────────
         try {
+          // Construire le détail des réductions à persister
+          const remisesDetail = []
+          if (reductions.tauxIllus > 0) remisesDetail.push({
+            type: 'illustrations',
+            label: reductions.explicationIllus,
+            taux: reductions.tauxIllus,
+            economie: +(reductions.totalIllusBrut - reductions.totalIllus).toFixed(2)
+          })
+          if (reductions.tauxLivres > 0) remisesDetail.push({
+            type: 'livres',
+            label: reductions.explicationLivres,
+            taux: reductions.tauxLivres,
+            economie: +((reductions.totalLivresBrut - reductions.totalLivres) + (reductions.totalReliesLivresBrut - reductions.totalReliesLivres)).toFixed(2)
+          })
+          if (reductions.tauxRecueils > 0) remisesDetail.push({
+            type: 'recueils',
+            label: reductions.explicationRecueils,
+            taux: reductions.tauxRecueils,
+            economie: +((reductions.totalRecueilsBrut - reductions.totalRecueils) + (reductions.totalReliesRecueilsBrut - reductions.totalReliesRecueils)).toFixed(2)
+          })
+          if (reductions.totalLivresAvecRelieBrut > 0) remisesDetail.push({
+            type: 'pdf_avec_relie',
+            label: 'PDF inclus avec version reliée (−75%)',
+            taux: 0.75,
+            economie: +(reductions.totalLivresAvecRelieBrut - reductions.totalLivresAvecRelie + reductions.totalRecueilsAvecRelieBrut - reductions.totalRecueilsAvecRelie).toFixed(2)
+          })
+          if (reductions.tauxBadgeTotal > 0) remisesDetail.push({
+            type: 'badge',
+            label: reductions.explicationBadge?.texte || `Badge −${Math.round(reductions.tauxBadgeTotal * 100)}%`,
+            taux: reductions.tauxBadgeTotal,
+            economie: +reductions.remiseBadge.toFixed(2)
+          })
+
           await fetch('/api/confirm-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               paymentIntentId,
               userId: user.id,
+              remisesDetail: remisesDetail.length > 0 ? remisesDetail : null,
               articles: snapshotArticles.map(a => ({
                 id: a.id,
                 nom: a.nom,

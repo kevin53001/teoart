@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Méthode non autorisée' });
 
   try {
-    const { paymentIntentId, userId, articles } = req.body;
+    const { paymentIntentId, userId, articles, remisesDetail } = req.body;
 
     if (!paymentIntentId) return res.status(400).json({ error: 'paymentIntentId manquant' });
     if (!userId)          return res.status(400).json({ error: 'userId manquant' });
@@ -116,6 +116,10 @@ module.exports = async (req, res) => {
 
     // 3. Upsert dans commandes_articles
     if (lignes.length > 0) {
+      // Ajouter remises sur la première ligne uniquement
+      if (remisesDetail && remisesDetail.length > 0) {
+        lignes[0].remises = remisesDetail;
+      }
       const { error } = await supabase
         .from('commandes_articles')
         .upsert(lignes, { onConflict: 'commande_id,type,nom', ignoreDuplicates: false });

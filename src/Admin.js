@@ -182,6 +182,17 @@ export default function Admin() {
   const [rechercheUsagerChat, setRechercheUsagerChat] = useState('')
   const [suggestionsUsagersChat, setSuggestionsUsagersChat] = useState([])
 
+  const [ventes, setVentes] = useState([])
+  const [moisOuverts, setMoisOuverts] = useState({})
+  const [venteOuverte, setVenteOuverte] = useState(null)
+
+  const chargerVentes = useCallback(async () => {
+    if (!userId) return
+    const res = await fetch(`/api/admin?action=get-ventes&userId=${userId}`)
+    const data = await res.json()
+    if (data.ventes) setVentes(data.ventes)
+  }, [userId])
+
   const [configCadeau, setConfigCadeau] = useState(null) // { message, chemin_pdf, actif }
   const [messageCadeauEdit, setMessageCadeauEdit] = useState('')
   const [pdfCadeauEdit, setPdfCadeauEdit] = useState('')
@@ -289,9 +300,9 @@ export default function Admin() {
 
   const chargerTout = useCallback(async () => {
     setLoading(true)
-    await Promise.all([chargerStats(), chargerCommandes(), chargerCommentaires()])
+    await Promise.all([chargerStats(), chargerCommandes(), chargerCommentaires(), chargerVentes()])
     setLoading(false)
-  }, [chargerStats, chargerCommandes, chargerCommentaires])
+  }, [chargerStats, chargerCommandes, chargerCommentaires, chargerVentes])
 
   // ── Chat privé : liste des conversations ──
   const chargerConversations = useCallback(async () => {
@@ -792,6 +803,7 @@ export default function Admin() {
         {[
           { id:'dashboard', icon:'ti-layout-dashboard', label:'Dashboard' },
           { id:'commandes', icon:'ti-package', label:`Commandes${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
+          { id:'ventes', icon:'ti-receipt', label:'Ventes' },
           { id:'usagers', icon:'ti-users', label:'Usagers' },
           { id:'moderation', icon:'ti-message-circle', label:`Modération${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
           { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
@@ -837,6 +849,7 @@ export default function Admin() {
           <span style={s.topbarTitle}>
             { onglet === 'dashboard' && 'Dashboard' }
             { onglet === 'commandes' && 'Commandes reliées' }
+            { onglet === 'ventes' && 'Ventes' }
             { onglet === 'usagers' && 'Tableau des usagers' }
             { onglet === 'moderation' && 'Modération des commentaires' }
             { onglet === 'chat' && 'Conversations privées' }
@@ -851,6 +864,7 @@ export default function Admin() {
             {[
               { id:'dashboard', icon:'ti-layout-dashboard', label:'Dash' },
               { id:'commandes', icon:'ti-package', label:`Com.${cmdEnAttente.length > 0 ? ` (${cmdEnAttente.length})` : ''}` },
+              { id:'ventes', icon:'ti-receipt', label:'Ventes' },
               { id:'usagers', icon:'ti-users', label:'Usag.' },
               { id:'moderation', icon:'ti-message-circle', label:`Modé.${cmtSignales.length > 0 ? ` (${cmtSignales.length})` : ''}` },
               { id:'chat', icon:'ti-message-2', label:`Chat${nbNonLusChat > 0 ? ` (${nbNonLusChat})` : ''}` },
@@ -1587,6 +1601,136 @@ export default function Admin() {
               </div>
             )
           )}
+
+          {/* ======== VENTES ======== */}
+          {!loading && onglet === 'ventes' && (() => {
+            const MOIS_FR_COURT = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+            const TYPE_LABEL = { illustration: 'Illustration', livre_pdf: 'Livre PDF', recueil: 'Recueil', relie: 'Relié' }
+            const TYPE_COLOR = { illustration: '#ff3eb5', livre_pdf: '#00e5ff', recueil: '#00e5ff', relie: '#ffd700' }
+
+            // Grouper les ventes par mois
+            const parMois = {}
+            ventes.forEach(v => {
+              const d = new Date(v.date)
+              const cle = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+              const label = `${MOIS_FR_COURT[d.getMonth()]} ${d.getFullYear()}`
+              if (!parMois[cle]) parMois[cle] = { cle, label, ventes: [] }
+              parMois[cle].ventes.push(v)
+            })
+            const moisTries = Object.values(parMois).sort((a, b) => b.cle.localeCompare(a.cle))
+
+            return (
+              <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                {ventes.length === 0 && (
+                  <div style={{ textAlign:'center', color:'#44445a', fontSize:'13px', padding:'40px' }}>Aucune vente enregistrée.</div>
+                )}
+                {moisTries.map(({ cle, label, ventes: ventesduMois }) => {
+                  const ouvert = !!moisOuverts[cle]
+                  const totalMois = ventesduMois.reduce((s, v) => s + (v.montant_total || 0), 0)
+                  return (
+                    <div key={cle} style={{ background:'#0d0d1a', border:'1px solid #00e5ff22', borderRadius:'10px', overflow:'hidden' }}>
+                      {/* En-tête dossier mois */}
+                      <div
+                        onClick={() => setMoisOuverts(prev => ({ ...prev, [cle]: !prev[cle] }))}
+                        style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', cursor:'pointer', userSelect:'none' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,255,0.04)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                          <span style={{ fontSize:'16px' }}>{ouvert ? '📂' : '📁'}</span>
+                          <span style={{ fontSize:'13px', fontWeight:600, color:'#e0e0f0' }}>{label}</span>
+                          <span style={{ fontSize:'11px', color:'#44445a' }}>{ventesduMois.length} vente{ventesduMois.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+                          <span style={{ fontSize:'13px', fontWeight:600, color:'#ffd700' }}>{fmtEur(totalMois)}</span>
+                          <span style={{ color:'#44445a', fontSize:'12px' }}>{ouvert ? '▲' : '▼'}</span>
+                        </div>
+                      </div>
+
+                      {/* Liste des ventes du mois */}
+                      {ouvert && (
+                        <div style={{ borderTop:'1px solid #ffffff08', display:'flex', flexDirection:'column' }}>
+                          {ventesduMois.map(v => {
+                            const estOuverte = venteOuverte === v.commande_id
+                            const heure = new Date(v.date).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
+                            const jour = new Date(v.date).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' })
+                            return (
+                              <div key={v.commande_id} style={{ borderBottom:'1px solid #ffffff06' }}>
+                                {/* Ligne commande */}
+                                <div
+                                  onClick={() => setVenteOuverte(estOuverte ? null : v.commande_id)}
+                                  style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 16px 10px 28px', cursor:'pointer', gap:'12px' }}
+                                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <div style={{ display:'flex', alignItems:'center', gap:'12px', minWidth:0, flex:1 }}>
+                                    <span style={{ color:'#44445a', fontSize:'10px', flexShrink:0 }}>{jour} {heure}</span>
+                                    <span style={{ fontSize:'12px', color:'#d0d0f0', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{v.nom_acheteur}</span>
+                                  </div>
+                                  <div style={{ display:'flex', alignItems:'center', gap:'12px', flexShrink:0 }}>
+                                    {v.remises && v.remises.length > 0 && (
+                                      <span style={{ fontSize:'10px', color:'#00e5ff', background:'rgba(0,229,255,0.08)', border:'1px solid #00e5ff22', borderRadius:'20px', padding:'1px 8px' }}>
+                                        −{fmtEur(v.remises.reduce((s, r) => s + (r.economie || 0), 0))}
+                                      </span>
+                                    )}
+                                    <span style={{ fontSize:'13px', fontWeight:600, color:'#22c55e' }}>{fmtEur(v.montant_total)}</span>
+                                    <span style={{ color:'#44445a', fontSize:'11px' }}>{estOuverte ? '▲' : '▼'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Détail dépliable */}
+                                {estOuverte && (
+                                  <div style={{ padding:'12px 16px 16px 28px', background:'rgba(255,255,255,0.015)', display:'flex', flexDirection:'column', gap:'10px' }}>
+
+                                    {/* Articles */}
+                                    <div>
+                                      <div style={{ fontSize:'10px', color:'#44445a', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'6px' }}>Articles</div>
+                                      <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+                                        {v.articles.map((a, i) => (
+                                          <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px' }}>
+                                            <div style={{ display:'flex', alignItems:'center', gap:'8px', minWidth:0, flex:1 }}>
+                                              <span style={{ fontSize:'10px', color: TYPE_COLOR[a.type] || '#fff', background:`${TYPE_COLOR[a.type] || '#fff'}18`, border:`1px solid ${TYPE_COLOR[a.type] || '#fff'}33`, borderRadius:'10px', padding:'1px 7px', flexShrink:0 }}>{TYPE_LABEL[a.type] || a.type}</span>
+                                              <span style={{ fontSize:'12px', color:'#c0c0e0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.nom}</span>
+                                            </div>
+                                            <span style={{ fontSize:'12px', color:'#d0d0f0', flexShrink:0 }}>{fmtEur(a.prix || 0)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Réductions */}
+                                    {v.remises && v.remises.length > 0 && (
+                                      <div>
+                                        <div style={{ fontSize:'10px', color:'#44445a', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:'6px' }}>Réductions appliquées</div>
+                                        <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+                                          {v.remises.map((r, i) => (
+                                            <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'8px', background:'rgba(0,229,255,0.04)', border:'1px solid #00e5ff15', borderRadius:'6px', padding:'6px 10px' }}>
+                                              <span style={{ fontSize:'11px', color:'#a0c0e0' }}>{r.label}</span>
+                                              <span style={{ fontSize:'11px', color:'#00e5ff', fontWeight:600, flexShrink:0 }}>−{fmtEur(r.economie || 0)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Total */}
+                                    <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:'10px', borderTop:'1px solid #ffffff10', paddingTop:'8px' }}>
+                                      <span style={{ fontSize:'11px', color:'#44445a' }}>Total payé</span>
+                                      <span style={{ fontSize:'14px', fontWeight:700, color:'#22c55e' }}>{fmtEur(v.montant_total)}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
 
           {/* ======== CADEAU ANNIVERSAIRE ======== */}
           {!loading && onglet === 'cadeau' && configCadeau && (

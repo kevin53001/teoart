@@ -420,6 +420,54 @@ async function actionBackfillPrix() {
   return resultats
 }
 
+// ─── GET VENTES ────────────────────────────────────────────────
+async function actionGetVentes() {
+  const { data: articles, error } = await supabase
+    .from('commandes_articles')
+    .select('id, commande_id, user_id, nom, type, prix, remises, created_at')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  // Grouper par commande_id
+  const parCommande = {}
+  ;(articles || []).forEach(a => {
+    if (!parCommande[a.commande_id]) parCommande[a.commande_id] = []
+    parCommande[a.commande_id].push(a)
+  })
+
+  // Récupérer les profils des acheteurs
+  const userIds = [...new Set((articles || []).map(a => a.user_id).filter(Boolean))]
+  const { data: profils } = userIds.length > 0
+    ? await supabase.from('profils').select('id, pseudo, prenom, nom').in('id', userIds)
+    : { data: [] }
+  const profilMap = {}
+  ;(profils || []).forEach(p => { profilMap[p.id] = p })
+
+  // Construire une vente par commande_id
+  const ventes = Object.entries(parCommande).map(([commandeId, lignes]) => {
+    const uid = lignes[0].user_id
+    const p = profilMap[uid] || {}
+    const nom = p.pseudo || p.prenom || p.nom || 'Inconnu'
+    const montantTotal = lignes.reduce((s, l) => s + (l.prix || 0), 0)
+    const remises = lignes.find(l => l.remises)?.remises || null
+    return {
+      commande_id: commandeId,
+      user_id: uid,
+      nom_acheteur: nom,
+      date: lignes[0].created_at,
+      montant_total: montantTotal,
+      remises,
+      articles: lignes.map(l => ({ id: l.id, nom: l.nom, type: l.type, prix: l.prix }))
+    }
+  })
+
+  // Trier par date décroissante
+  ventes.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  return { ventes }
+}
+
 // ─── HANDLER PRINCIPAL ─────────────────────────────────────────
 export default async function handler(req, res) {
   const userId = req.method === 'GET' ? req.query.userId : req.body?.userId
@@ -443,6 +491,10 @@ export default async function handler(req, res) {
     if (action === 'delete-comment') {
       if (req.method !== 'POST') return res.status(405).end()
       return res.status(200).json(await actionDeleteComment(req.body))
+    }
+    if (action === 'get-ventes') {
+      if (req.method !== 'GET') return res.status(405).end()
+      return res.status(200).json(await actionGetVentes())
     }
     if (action === 'backfill-prix') {
       if (req.method !== 'GET') return res.status(405).end()
