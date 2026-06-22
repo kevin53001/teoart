@@ -227,22 +227,27 @@ function SocialColo({ coloId, userId, userPseudo }) {
 }
 
 // ── Popup coloriages partagés ────────────────────────────────────────────────
-function PopupColoriages({ userId, userPseudo, onClose }) {
+function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, idxDepart = 0 }) {
   const [colos, setColos]   = useState([]);
-  const [idx, setIdx]       = useState(0);
+  const [idx, setIdx]       = useState(idxDepart);
   const [loading, setLoading] = useState(true);
   const touchStartX = useRef(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      // Tous les coloriages avec image_url, du plus récent au plus ancien, sans limite
-      const { data } = await supabase
+      let query = supabase
         .from('coloriages')
         .select('id, image_url, user_id, illustration_id, created_at')
         .not('image_url', 'is', null)
         .order('created_at', { ascending: false });
 
+      // Si filtreIds fourni : on ne charge que ces coloriages-là
+      if (filtreIds && filtreIds.length > 0) {
+        query = query.in('id', filtreIds);
+      }
+
+      const { data } = await query;
       if (!data || data.length === 0) { setLoading(false); return; }
 
       // Récupérer les pseudos
@@ -260,7 +265,7 @@ function PopupColoriages({ userId, userPseudo, onClose }) {
       setColos(valides.map(c => ({ id: c.id, url: c.image_url, pseudo: pm[c.user_id] || 'Coloriste', created_at: c.created_at })));
       setLoading(false);
     })();
-  }, []);
+  }, [filtreIds]);
 
   // Navigation clavier
   useEffect(() => {
@@ -359,7 +364,7 @@ function Cloche({ hidden = false }) {
   const [loading, setLoading]         = useState(false);
   const [userId, setUserId]           = useState(null);
   const [userPseudo, setUserPseudo]   = useState('');
-  const [popupColos, setPopupColos]   = useState(false);
+  const [popupColos, setPopupColos]   = useState(null); // null | { ids: [], idxDepart: 0 }
   const dropdownRef = useRef(null);
   const clocheRef   = useRef(null);
 
@@ -458,9 +463,14 @@ function Cloche({ hidden = false }) {
         navigate('/livres', { state: { ouvrirItem: notif.contenu?.item_id, itemType: notif.contenu?.item_type } });
         break;
       case 'like_coloriage':
-      case 'commentaire_coloriage':
-        navigate('/mon-compte', { state: { onglet: 'coloriages', coloId: notif.contenu?.coloriage_id } });
+      case 'commentaire_coloriage': {
+        // Ouvre PopupColoriages filtrée sur les coloriages notifiés
+        const ids = notif.contenu?.coloriage_ids || (notif.contenu?.coloriage_id ? [notif.contenu.coloriage_id] : []);
+        const dernierIdx = ids.length > 0 ? ids.length - 1 : 0;
+        setOuvert(false);
+        setPopupColos({ ids, idxDepart: dernierIdx });
         break;
+      }
       case 'badge_obtenu':
         navigate('/mon-compte', { state: { onglet: 'collection' } });
         break;
@@ -484,7 +494,7 @@ function Cloche({ hidden = false }) {
         if (userId) {
           await supabase.from('profils').update({ dernier_vu_coloriages_partages: maintenant }).eq('id', userId);
         }
-        setPopupColos(true);
+        setPopupColos({ ids: [], idxDepart: 0 }); // ids vide = tous les coloriages
         break;
       case 'notif_admin':
         // Pas de navigation associée — la notif est juste lue puis supprimée (déjà fait en amont)
@@ -572,7 +582,9 @@ function Cloche({ hidden = false }) {
         <PopupColoriages
           userId={userId}
           userPseudo={userPseudo}
-          onClose={() => setPopupColos(false)}
+          filtreIds={popupColos.ids && popupColos.ids.length > 0 ? popupColos.ids : null}
+          idxDepart={popupColos.idxDepart || 0}
+          onClose={() => setPopupColos(null)}
         />
       )}
     </>
