@@ -89,7 +89,6 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   // Calcul taille cellule pour tenir dans l'écran
   const gapPx = isMobile ? 3 : 6;
   const paddingH = isMobile ? 8 : 32;
-  const paddingV = isMobile ? 48 : 80; // espace pour header + dots
   const cellW = `calc((100vw - ${paddingH * 2 + gapPx * (COLS - 1)}px) / ${COLS})`;
 
   return ReactDOM.createPortal(
