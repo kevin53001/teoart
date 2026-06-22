@@ -8,7 +8,6 @@ const COLS_MOBILE  = 4;
 const COLS_DESKTOP = 12;
 const PER_PAGE_MOBILE  = COLS_MOBILE  * ROWS; // 24
 const PER_PAGE_DESKTOP = COLS_DESKTOP * ROWS; // 72
-const TOTAL = PER_PAGE_MOBILE * 3 + PER_PAGE_DESKTOP; // 144 : 3 pages mobile OU 1 page desktop
 const RATIO = 29.7 / 21; // A4 ≈ 1.414
 const ANIM_MOBILE  = 5000;
 const ANIM_DESKTOP = 12000;
@@ -104,7 +103,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
 
   return ReactDOM.createPortal(
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: isMobile ? '#000' : 'rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: isMobile ? '#000' : 'rgba(0,0,0,0.55)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
