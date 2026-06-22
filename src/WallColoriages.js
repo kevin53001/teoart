@@ -3,12 +3,15 @@ import ReactDOM from 'react-dom';
 import { supabase } from './supabase';
 import PopupColoriages from './PopupColoriages';
 
-const COLS = 4;
 const ROWS = 6;
-const PER_PAGE = COLS * ROWS; // 24
-const TOTAL = PER_PAGE * 3;   // 72
-const RATIO = 29.7 / 21;      // ratio A4 ≈ 1.414
-const ANIM_DURATION = 5000;
+const COLS_MOBILE  = 4;
+const COLS_DESKTOP = 12;
+const PER_PAGE_MOBILE  = COLS_MOBILE  * ROWS; // 24
+const PER_PAGE_DESKTOP = COLS_DESKTOP * ROWS; // 72
+const TOTAL = PER_PAGE_MOBILE * 3 + PER_PAGE_DESKTOP; // 144 : 3 pages mobile OU 1 page desktop
+const RATIO = 29.7 / 21; // A4 ≈ 1.414
+const ANIM_MOBILE  = 5000;
+const ANIM_DESKTOP = 12000;
 
 function melanger(arr) {
   const a = [...arr];
@@ -20,129 +23,99 @@ function melanger(arr) {
 }
 
 function WallColoriages({ userId, userPseudo, onClose }) {
-  const [coloriages, setColoriages] = useState([]);
-  const [page, setPage] = useState(0);
-  const [visibles, setVisibles] = useState(new Set());
-  const [popupIds, setPopupIds] = useState(null);
-  const [popupIdx, setPopupIdx] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
-  const animRef = useRef(null);
+  const [coloriages, setColoriages]   = useState([]);
+  const [page, setPage]               = useState(0);
+  const [visibles, setVisibles]       = useState(new Set());
+  const [popupIds, setPopupIds]       = useState(null);
+  const [popupIdx, setPopupIdx]       = useState(0);
+  const [isMobile, setIsMobile]       = useState(window.innerWidth <= 900);
+  const animRef    = useRef(null);
   const touchStartX = useRef(null);
 
   useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth <= 600);
+    const onResize = () => setIsMobile(window.innerWidth <= 900);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Charger tous les coloriages et mélanger aléatoirement
+  // Charger les derniers coloriages
   useEffect(() => {
     (async () => {
-      // 1. Compter le total
-      const { count } = await supabase
+      const { data } = await supabase
         .from('coloriages')
-        .select('*', { count: 'exact', head: true })
-        .not('image_url', 'is', null);
-      if (!count) return;
-      // 2. Tout charger (Supabase limite à 1000 par défaut — on pagine si nécessaire)
-      const pages = Math.ceil(count / 1000);
-      let tous = [];
-      for (let p = 0; p < pages; p++) {
-        const { data } = await supabase
-          .from('coloriages')
-          .select('id, image_url')
-          .not('image_url', 'is', null)
-          .range(p * 1000, (p + 1) * 1000 - 1);
-        tous = tous.concat(data || []);
-      }
-      setColoriages(melanger(tous));
+        .select('id, image_url')
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(TOTAL);
+      setColoriages(melanger(data || []));
     })();
   }, []);
 
-  // Animation d'apparition
-  const lancerAnimation = useCallback(() => {
-    if (animRef.current) {
-      animRef.current.forEach(t => clearTimeout(t));
-    }
+  // Variables dérivées selon mobile/desktop
+  const COLS     = isMobile ? COLS_MOBILE  : COLS_DESKTOP;
+  const PER_PAGE = isMobile ? PER_PAGE_MOBILE : PER_PAGE_DESKTOP;
+  const ANIM     = isMobile ? ANIM_MOBILE  : ANIM_DESKTOP;
+  const NB_PAGES = isMobile ? 3 : 1;
+
+  // Animation
+  const lancerAnimation = useCallback((perPage, animDuration) => {
+    if (animRef.current) animRef.current.forEach(t => clearTimeout(t));
     setVisibles(new Set());
-    const indices = melanger(Array.from({ length: PER_PAGE }, (_, i) => i));
-    const delai = ANIM_DURATION / PER_PAGE;
-    const timers = indices.map((idx, i) =>
-      setTimeout(() => {
-        setVisibles(prev => new Set([...prev, idx]));
-      }, i * delai)
+    const indices = melanger(Array.from({ length: perPage }, (_, i) => i));
+    const delai = animDuration / perPage;
+    const timers = indices.map((idxImg, i) =>
+      setTimeout(() => setVisibles(prev => new Set([...prev, idxImg])), i * delai)
     );
-    // Garantie : toutes les images visibles après ANIM_DURATION + marge
     const timerFinal = setTimeout(() => {
-      setVisibles(new Set(Array.from({ length: PER_PAGE }, (_, i) => i)));
-    }, ANIM_DURATION + 300);
+      setVisibles(new Set(Array.from({ length: perPage }, (_, i) => i)));
+    }, animDuration + 300);
     animRef.current = [...timers, timerFinal];
   }, []);
 
   useEffect(() => {
-    if (coloriages.length > 0) lancerAnimation();
+    if (coloriages.length > 0) lancerAnimation(PER_PAGE, ANIM);
     return () => { if (animRef.current) animRef.current.forEach(t => clearTimeout(t)); };
-  }, [page, coloriages.length, lancerAnimation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, coloriages.length, lancerAnimation, isMobile]);
 
-  const allerPage = (n) => {
-    if (n < 0 || n > 2) return;
-    setPage(n);
-  };
+  const allerPage = (n) => { if (n >= 0 && n < NB_PAGES) setPage(n); };
 
   const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
   const onTouchEnd = (e) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 50) allerPage(dx < 0 ? Math.min(page + 1, 2) : Math.max(page - 1, 0));
+    if (Math.abs(dx) > 50) allerPage(dx < 0 ? page + 1 : page - 1);
     touchStartX.current = null;
   };
 
   const pageColoriages = coloriages.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
   const pageIds = pageColoriages.map(c => c.id);
 
-  // Calcul taille cellule : on prend le min entre contrainte largeur et contrainte hauteur
-  // Header ~50px, dots ~32px, gaps verticaux
-  const gapPx = isMobile ? 3 : 5;
-  const paddingH = isMobile ? 28 : 48; // espace pour les flèches
-  const headerH = isMobile ? 46 : 56;
-  const dotsH = isMobile ? 28 : 36;
+  // Taille cellule : min(contrainte largeur, contrainte hauteur)
+  const gapPx   = isMobile ? 3 : 5;
+  const paddingH = isMobile ? 28 : 48;
+  const headerH  = isMobile ? 46 : 56;
+  const dotsH    = isMobile ? 28 : 36;
 
-  // Largeur max d'une cellule
-  const cellWpx = `(100vw - ${paddingH * 2 + gapPx * (COLS - 1)}px) / ${COLS}`;
-  // Hauteur max d'une cellule (contrainte écran)
-  const cellHpx = `(100vh - ${headerH + dotsH + gapPx * (ROWS - 1)}px) / ${ROWS}`;
-  // On prend le min des deux : si cellH / RATIO < cellW, c'est la hauteur qui contraint
+  const cellWpx  = `(100vw - ${paddingH * 2 + gapPx * (COLS - 1)}px) / ${COLS}`;
+  const cellHpx  = `(100vh - ${headerH + dotsH + gapPx * (ROWS - 1)}px) / ${ROWS}`;
   const cellSize = `min(${cellWpx}, calc((${cellHpx}) / ${RATIO.toFixed(4)}))`;
-  const cellH = `calc(${cellSize} * ${RATIO.toFixed(4)})`;
+  const cellH    = `calc(${cellSize} * ${RATIO.toFixed(4)})`;
 
   return ReactDOM.createPortal(
     <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 2000,
-        background: '#000',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 2000, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: isMobile ? '8px 12px' : '10px 24px',
-        flexShrink: 0, height: `${headerH}px`, boxSizing: 'border-box',
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 12px' : '10px 24px', flexShrink: 0, height: `${headerH}px`, boxSizing: 'border-box' }}>
         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: isMobile ? '10px' : '12px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           Wall · {coloriages.length} coloriages
         </span>
         <button
           onClick={onClose}
-          style={{
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '50%', width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px',
-            color: 'rgba(255,255,255,0.5)', fontSize: '14px', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >✕</button>
       </div>
 
@@ -150,109 +123,47 @@ function WallColoriages({ userId, userPseudo, onClose }) {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', minHeight: 0 }}>
 
         {/* Flèche gauche */}
-        <button
-          onClick={() => allerPage(page - 1)}
-          style={{
-            position: 'absolute', left: isMobile ? '2px' : '8px', zIndex: 10,
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '50%', width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px',
-            color: page === 0 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)',
-            cursor: page === 0 ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: isMobile ? '12px' : '15px',
-            pointerEvents: page === 0 ? 'none' : 'auto',
-          }}
-        >‹</button>
+        {NB_PAGES > 1 && (
+          <button onClick={() => allerPage(page - 1)} style={{ position: 'absolute', left: isMobile ? '2px' : '8px', zIndex: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px', color: page === 0 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)', cursor: page === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '12px' : '15px', pointerEvents: page === 0 ? 'none' : 'auto' }}>‹</button>
+        )}
 
         {/* Grille */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${COLS}, ${cellSize})`,
-          gridTemplateRows: `repeat(${ROWS}, ${cellH})`,
-          gap: `${gapPx}px`,
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${COLS}, ${cellSize})`, gridTemplateRows: `repeat(${ROWS}, ${cellH})`, gap: `${gapPx}px` }}>
           {Array.from({ length: PER_PAGE }, (_, i) => {
             const colo = pageColoriages[i];
             const visible = visibles.has(i);
             return (
               <div
                 key={i}
-                onClick={() => {
-                  if (!colo || !visible) return;
-                  setPopupIds(pageIds);
-                  setPopupIdx(i);
-                }}
-                style={{
-                  width: cellSize,
-                  height: cellH,
-                  background: '#0a0a0a',
-                  borderRadius: isMobile ? '5px' : '8px',
-                  overflow: 'hidden',
-                  cursor: colo && visible ? 'pointer' : 'default',
-                  opacity: visible ? 1 : 0,
-                  transform: visible ? 'scale(1)' : 'scale(0.88)',
-                  transition: 'opacity 0.22s ease, transform 0.22s ease',
-                }}
+                onClick={() => { if (!colo || !visible) return; setPopupIds(pageIds); setPopupIdx(i); }}
+                style={{ width: cellSize, height: cellH, background: '#0a0a0a', borderRadius: isMobile ? '5px' : '8px', overflow: 'hidden', cursor: colo && visible ? 'pointer' : 'default', opacity: visible ? 1 : 0, transform: visible ? 'scale(1)' : 'scale(0.88)', transition: 'opacity 0.22s ease, transform 0.22s ease' }}
               >
-                {colo && (
-                  <img
-                    src={colo.image_url}
-                    alt=""
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                )}
+                {colo && <img src={colo.image_url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
               </div>
             );
           })}
         </div>
 
         {/* Flèche droite */}
-        <button
-          onClick={() => allerPage(page + 1)}
-          style={{
-            position: 'absolute', right: isMobile ? '2px' : '8px', zIndex: 10,
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '50%', width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px',
-            color: page === 2 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)',
-            cursor: page === 2 ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: isMobile ? '12px' : '15px',
-            pointerEvents: page === 2 ? 'none' : 'auto',
-          }}
-        >›</button>
+        {NB_PAGES > 1 && (
+          <button onClick={() => allerPage(page + 1)} style={{ position: 'absolute', right: isMobile ? '2px' : '8px', zIndex: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px', color: page === NB_PAGES - 1 ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.45)', cursor: page === NB_PAGES - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '12px' : '15px', pointerEvents: page === NB_PAGES - 1 ? 'none' : 'auto' }}>›</button>
+        )}
       </div>
 
-      {/* Dots pagination */}
-      <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
-        height: `${dotsH}px`, flexShrink: 0,
-      }}>
-        {[0, 1, 2].map(p => (
-          <div
-            key={p}
-            onClick={() => allerPage(p)}
-            style={{
-              width: page === p ? '18px' : '6px',
-              height: '6px',
-              borderRadius: '3px',
-              background: page === p ? '#00d4d4' : 'rgba(255,255,255,0.2)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-            }}
-          />
-        ))}
-      </div>
+      {/* Dots — mobile seulement */}
+      {NB_PAGES > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: `${dotsH}px`, flexShrink: 0 }}>
+          {Array.from({ length: NB_PAGES }, (_, p) => (
+            <div key={p} onClick={() => allerPage(p)} style={{ width: page === p ? '18px' : '6px', height: '6px', borderRadius: '3px', background: page === p ? '#00d4d4' : 'rgba(255,255,255,0.2)', cursor: 'pointer', transition: 'all 0.3s ease' }} />
+          ))}
+        </div>
+      )}
+      {/* Espace bas desktop */}
+      {!isMobile && <div style={{ height: `${dotsH}px`, flexShrink: 0 }} />}
 
       {/* PopupColoriages */}
       {popupIds && (
-        <PopupColoriages
-          userId={userId}
-          userPseudo={userPseudo}
-          filtreIds={popupIds}
-          idxDepart={popupIdx}
-          onClose={() => setPopupIds(null)}
-        />
+        <PopupColoriages userId={userId} userPseudo={userPseudo} filtreIds={popupIds} idxDepart={popupIdx} onClose={() => setPopupIds(null)} />
       )}
     </div>,
     document.body
