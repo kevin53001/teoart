@@ -17,19 +17,17 @@ function dateRelative(iso) {
 }
 
 // ── Social coloriages (like + commentaires) ──────────────────────────────────
-function SocialColo({ coloId, userId, userPseudo }) {
-  const [likes, setLikes]           = useState([]);
+// likes, jaLike, toggleLike sont gérés par PopupColoriages et passés en props
+// pour que le double-clic sur l'image puisse aussi déclencher le like.
+function SocialColo({ coloId, userId, userPseudo, likes, jaLike, toggleLike }) {
   const [commentaires, setComments] = useState([]);
   const [texte, setTexte]           = useState('');
   const [envoi, setEnvoi]           = useState(false);
-  const jaLike = likes.some(l => l.user_id === userId);
 
   useEffect(() => {
     if (!coloId) return;
     (async () => {
-      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', coloId);
       const { data: cr } = await supabase.from('commentaires_coloriages').select('id, texte, created_at, user_id').eq('coloriage_id', coloId).order('created_at', { ascending: true });
-      setLikes(l || []);
       if (cr && cr.length > 0) {
         const uids = [...new Set(cr.map(c => c.user_id))];
         const { data: profils } = await supabase.from('profils_publics').select('id, pseudo').in('id', uids);
@@ -38,18 +36,6 @@ function SocialColo({ coloId, userId, userPseudo }) {
       } else setComments([]);
     })();
   }, [coloId]);
-
-  const toggleLike = async () => {
-    if (!coloId || !userId) return;
-    if (jaLike) {
-      await supabase.from('likes_coloriages').delete().eq('coloriage_id', coloId).eq('user_id', userId);
-      setLikes(prev => prev.filter(l => l.user_id !== userId));
-    } else {
-      await supabase.from('likes_coloriages').insert({ coloriage_id: coloId, user_id: userId });
-      setLikes(prev => [...prev, { user_id: userId }]);
-      // La notif est gérée par le trigger Supabase on_like_coloriage
-    }
-  };
 
   const envoyer = async () => {
     if (!texte.trim() || !coloId || !userId) return;
@@ -119,6 +105,11 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
   const [suppression, setSuppression]   = useState(false);
   const touchStartX = useRef(null);
 
+  // ── Like géré ici pour être partagé entre le bouton SocialColo et le double-clic image
+  const [likes, setLikes]   = useState([]);
+  const jaLike = likes.some(l => l.user_id === userId);
+  const [heartAnim, setHeartAnim] = useState(false);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -163,6 +154,34 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
     })();
   }, [filtreIds, filtreUserId, idDepart]);
 
+  // Recharger les likes à chaque changement de coloriage
+  const colo = colos[idx];
+  useEffect(() => {
+    if (!colo?.id) { setLikes([]); return; }
+    (async () => {
+      const { data: l } = await supabase.from('likes_coloriages').select('user_id').eq('coloriage_id', colo.id);
+      setLikes(l || []);
+    })();
+  }, [colo?.id]);
+
+  const toggleLike = async () => {
+    if (!colo?.id || !userId) return;
+    if (jaLike) {
+      await supabase.from('likes_coloriages').delete().eq('coloriage_id', colo.id).eq('user_id', userId);
+      setLikes(prev => prev.filter(l => l.user_id !== userId));
+    } else {
+      await supabase.from('likes_coloriages').insert({ coloriage_id: colo.id, user_id: userId });
+      setLikes(prev => [...prev, { user_id: userId }]);
+    }
+  };
+
+  // Double-clic image : like + animation cœur (like seulement si pas déjà liké)
+  const handleDoubleClic = async () => {
+    if (!jaLike) await toggleLike();
+    setHeartAnim(true);
+    setTimeout(() => setHeartAnim(false), 800);
+  };
+
   // Navigation clavier
   useEffect(() => {
     const h = (e) => {
@@ -204,7 +223,6 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
     if (colos.length <= 1) onClose();
   };
 
-  const colo = colos[idx];
 
   return ReactDOM.createPortal(
     <>
@@ -238,14 +256,23 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
 
             {/* Contenu */}
             <div style={{ width: '100%', maxWidth: '500px', background: '#111', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-              <img src={colo.url} alt={colo.pseudo}
-                style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', flexShrink: 0 }} />
+              <div style={{ position: 'relative', flexShrink: 0 }} onDoubleClick={handleDoubleClic}>
+                <img src={colo.url} alt={colo.pseudo}
+                  style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', cursor: 'pointer', userSelect: 'none' }} />
+                {heartAnim && (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', animation: 'heartPop 0.8s ease forwards' }}>
+                    <svg viewBox="0 0 24 24" width="80" height="80" style={{ filter: 'drop-shadow(0 0 12px rgba(255,77,125,0.8))' }}>
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ff4d7d" />
+                    </svg>
+                  </div>
+                )}
+              </div>
               <div style={{ padding: '8px 16px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                 <span style={{ color: 'rgba(255,210,80,0.8)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}><img src={`${R2}/site/pastille_colos.png`} alt="" style={{ width: '14px', height: '14px', objectFit: 'contain' }} /> par <strong>{colo.pseudo}</strong></span>
                 <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '11px' }}>{dateRelative(colo.created_at)}</span>
               </div>
               <div style={{ overflowY: 'auto', flexShrink: 0 }}>
-                <SocialColo coloId={colo.id} userId={userId} userPseudo={userPseudo} />
+                <SocialColo coloId={colo.id} userId={userId} userPseudo={userPseudo} likes={likes} jaLike={jaLike} toggleLike={toggleLike} />
               </div>
               {/* Bouton supprimer — MonCompte uniquement */}
               {onSupprimer && (
@@ -295,6 +322,14 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes heartPop {
+          0%   { opacity: 0; transform: scale(0.3); }
+          30%  { opacity: 1; transform: scale(1.2); }
+          60%  { opacity: 1; transform: scale(1.0); }
+          100% { opacity: 0; transform: scale(1.1); }
+        }
+      `}</style>
     </>,
     document.body
   );
