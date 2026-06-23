@@ -55,7 +55,7 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
   return ReactDOM.createPortal(
     <div
       onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 450, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
     >
       <div
         onClick={e => e.stopPropagation()}
