@@ -2288,7 +2288,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
             )}
 
             {/* Vignette */}
-            <div onClick={() => ouvrirZoom(colo, coloIdx)} style={{ cursor: 'pointer', borderRadius: '10px', overflow: 'visible', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a', borderRadius: '10px', overflow: 'hidden' }}>
+            <div onClick={() => ouvrirZoom(colo, coloIdx)} style={{ cursor: 'pointer', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a' }}>
               <div style={{ position: 'relative' }}>
                 <img src={colo.image_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
                 {/* Badge notif */}
