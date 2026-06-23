@@ -10,6 +10,7 @@ const GUIDES = {
   accueil: [
     "Salut toi ! Bienvenue chez moi ! Ici tu trouveras une boutique d'illustrations à colorier, mais aussi tout un espace pour bâtir et suivre ta propre collection, un peu comme un musée perso qui grandit avec toi.",
     "Une fois ton coloriage terminé, n'oublie surtout pas de le partager ! C'est ce qui fait vivre la communauté : chaque mise en couleur vient rejoindre la galerie de l'illustration. J'adore voir un même dessin prendre vie sous des dizaines de styles différents, alors viens enrichir la collection.",
+    { type: 'visuel', titre: 'Pour partager ton colo, rendez-vous sur le catalogue', image: `${R2}/site/Guide_1.png`, pastille: `${R2}/site/pastille_categories.png` },
     "Je t'ai préparé un petit guide juste en dessous : jette un œil à l'encart \"Comment fonctionne le site ?\", il t'explique tout en détail pour bien démarrer.",
   ],
   catalogue: [
@@ -165,12 +166,27 @@ function GuideFlottant({ pageKey, userId, isMobile }) {
         >×</button>
 
         <div style={{ position: 'relative', zIndex: 6, ...paddingMascotte }}>
-          <p style={{
-            color: '#000', fontSize: isMobile ? '15px' : '16px', lineHeight: '1.75',
-            fontWeight: 500, marginTop: '4px', marginBottom: '22px', paddingRight: '20px',
-          }}>
-            {slides[index]}
-          </p>
+          {typeof slides[index] === 'object' && slides[index].type === 'visuel' ? (
+            <div style={{ marginTop: '4px', marginBottom: '16px' }}>
+              {/* Ligne : titre + flèche + pastille */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                <span style={{ color: '#000', fontSize: isMobile ? '13px' : '14px', fontWeight: 700, textAlign: 'center' }}>
+                  {slides[index].titre}
+                </span>
+                <span style={{ fontSize: '18px', lineHeight: 1 }}>→</span>
+                <img src={slides[index].pastille} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain', flexShrink: 0 }} />
+              </div>
+              {/* Image guide */}
+              <img src={slides[index].image} alt="" style={{ width: '100%', borderRadius: '10px', display: 'block' }} />
+            </div>
+          ) : (
+            <p style={{
+              color: '#000', fontSize: isMobile ? '15px' : '16px', lineHeight: '1.75',
+              fontWeight: 500, marginTop: '4px', marginBottom: '22px', paddingRight: '20px',
+            }}>
+              {slides[index]}
+            </p>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
