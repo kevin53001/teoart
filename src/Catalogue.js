@@ -9,7 +9,6 @@ import { usePanier } from './PanierContext';
 import PopupFicheIllu from './PopupFicheIllu';
 import Cloche from './Cloche';
 import Tchat from './Tchat';
-import { compresserImage } from './compresserImage';
 import PopupColoVignette from './PopupColoVignette';
 
 const R2 = 'https://images.kevinteoart.fr';

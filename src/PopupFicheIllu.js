@@ -1,7 +1,6 @@
 import React from 'react';
 import { supabase } from './supabase';
 import { usePanier } from './PanierContext';
-import { compresserImage } from './compresserImage';
 import PopupColoVignette from './PopupColoVignette';
 
 const R2 = 'https://images.kevinteoart.fr';
@@ -286,10 +285,6 @@ export default function PopupFicheIllu({
   const totalVisuels = visuels.length + colosPropres.length;
   const [zoomIndex, setZoomIndex] = React.useState(null);
   const [showPartagerColo, setShowPartagerColo] = React.useState(false);
-  const [coloImage, setColoImage] = React.useState(null);
-  const [coloDate, setColoDate] = React.useState('');
-  const [coloEnvoi, setColoEnvoi] = React.useState(false);
-  const [coloOk, setColoOk] = React.useState(false);
   const [livresIllu, setLivresIllu] = React.useState([]);
 
   const dansPanier = illu ? estDansPanier('illustration', illu.id) : false;
@@ -332,7 +327,7 @@ export default function PopupFicheIllu({
 
   React.useEffect(() => {
     if (!illu) return;
-    setVisuelActif(0); setShowPartagerColo(false); setColoOk(false); setZoomIndex(null); setLivresIllu([]); setColosPropres([]); setAjoutConfirme(false);
+    setVisuelActif(0); setShowPartagerColo(false); setZoomIndex(null); setLivresIllu([]); setColosPropres([]); setAjoutConfirme(false);
     const charger = async () => {
       const resultats = [];
       if (illu.livres_ids && illu.livres_ids.length > 0) {
@@ -372,30 +367,6 @@ export default function PopupFicheIllu({
       .slice(0, 20);
   }, [illu, illustrations]);
 
-  const handlePartagerColo = async (avecImage = false) => {
-    setColoEnvoi(true);
-    try {
-      let imageUrl = null;
-      if (avecImage && coloImage) {
-        const nomFichierSansExt = `${userId}_${illu.id}_${Date.now()}`;
-        const { base64, fileType, fileName } = await compresserImage(coloImage, nomFichierSansExt);
-        const response = await fetch('/api/upload-colo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileName, fileType, fileBase64: base64 }) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error);
-        imageUrl = data.url;
-      }
-      await supabase.from('coloriages').upsert({ user_id: userId, illustration_id: illu.id, image_url: imageUrl, date_coloriage: coloDate || null });
-      setColoOk(true); onColoUploaded();
-      const { data: colosRefresh } = await supabase.from('coloriages').select('id, image_url, user_id').eq('illustration_id', illu.id).not('image_url', 'is', null).order('created_at', { ascending: true });
-      if (colosRefresh && colosRefresh.length > 0) {
-        const userIds = [...new Set(colosRefresh.map(c => c.user_id))];
-        const { data: profils } = await supabase.from('profils').select('id, pseudo').in('id', userIds);
-        const profilsMap = {}; (profils || []).forEach(p => { profilsMap[p.id] = p.pseudo; });
-        setColosPropres(colosRefresh.map(c => ({ id: c.id, image_url: c.image_url, user_id: c.user_id, pseudo: profilsMap[c.user_id] || 'Anonyme' })));
-      }
-    } catch (e) { console.error(e); }
-    setColoEnvoi(false);
-  };
 
   if (!illu) return null;
 
@@ -526,7 +497,7 @@ export default function PopupFicheIllu({
                   userId={userId}
                   userPseudo={userPseudo}
                   onClose={() => setShowPartagerColo(false)}
-                  onUploaded={() => { setShowPartagerColo(false); setColoOk(true); onColoUploaded(); }}
+                  onUploaded={() => { setShowPartagerColo(false); onColoUploaded(); }}
                 />
               )}
 
