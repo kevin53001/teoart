@@ -862,6 +862,21 @@ function SectionMaCollection({ userId, totalIllus }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  const ouvrirNote = (e, colo) => {
+    e.stopPropagation();
+    if (noteOuverte === colo.id) { setNoteOuverte(null); return; }
+    setNoteOuverte(colo.id);
+    setNoteTexte(colo.note || '');
+    setNoteSauvegarde(false);
+  };
+
+  const sauvegarderNote = async (coloId) => {
+    await supabase.from('coloriages').update({ note: noteTexte.trim() || null }).eq('id', coloId);
+    setColos(prev => prev.map(c => c.id === coloId ? { ...c, note: noteTexte.trim() || null } : c));
+    setNoteSauvegarde(true);
+    setTimeout(() => setNoteSauvegarde(false), 2000);
+  };
+
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (!data) return null;
 
@@ -2191,14 +2206,17 @@ function SectionMesColoriages({ userId, userPseudo }) {
   const [loading, setLoading] = React.useState(true);
   const [popupOuvert, setPopupOuvert] = React.useState(false);
   const [popupIdx, setPopupIdx] = React.useState(0);
+  const [noteOuverte, setNoteOuverte] = React.useState(null); // id du colo dont la note est ouverte
+  const [noteTexte, setNoteTexte] = React.useState('');
+  const [noteSauvegarde, setNoteSauvegarde] = React.useState(false);
 
   React.useEffect(() => { chargerColos(); }, [userId]); // eslint-disable-line
 
   const chargerColos = async () => {
-    const { data } = await supabase.from('coloriages').select('id, illustration_id, image_url, date_coloriage, created_at').eq('user_id', userId).not('image_url', 'is', null).order('created_at', { ascending: false });
+    const { data } = await supabase.from('coloriages').select('id, illustration_id, image_url, date_coloriage, note, created_at').eq('user_id', userId).not('image_url', 'is', null).order('created_at', { ascending: false });
     if (!data || data.length === 0) { setColos([]); setLoading(false); return; }
     const illuIds = [...new Set(data.map(c => c.illustration_id))];
-    const { data: illus } = await supabase.from('illustrations').select('id, nom, annee').in('id', illuIds);
+    const { data: illus } = await supabase.from('illustrations').select('id, nom').in('id', illuIds);
     const illusMap = {};
     (illus || []).forEach(i => { illusMap[i.id] = i; });
     const coloIds = data.map(c => c.id);
@@ -2243,15 +2261,52 @@ function SectionMesColoriages({ userId, userPseudo }) {
           onSupprimer={supprimerColoriage}
         />
       )}
+      {/* Fermer note au clic en dehors */}
+      {noteOuverte && <div onClick={() => setNoteOuverte(null)} style={{ position: 'fixed', inset: 0, zIndex: 10 }} />}
+
       {/* Grille vignettes */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         {colos.map((colo, coloIdx) => (
-          <div key={colo.id} onClick={() => ouvrirZoom(colo, coloIdx)} style={{ position: 'relative', width: '120px', cursor: 'pointer', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a' }}>
-            <img src={colo.image_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
-            {colo.hasNotif && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px' }}>🔔</div>}
-            <div style={{ padding: '4px 6px', background: 'rgba(0,0,0,0.85)' }}>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{colo.illu?.nom}</p>
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '8px' }}>{colo.illu?.annee}</p>
+          <div key={colo.id} style={{ position: 'relative', width: '120px' }}>
+            {/* Panneau note — au-dessus de la vignette */}
+            {noteOuverte === colo.id && (
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: '4px', background: '#1a1a1a', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', padding: '8px', zIndex: 20, boxShadow: '0 -4px 16px rgba(0,0,0,0.6)' }}>
+                <textarea
+                  value={noteTexte}
+                  onChange={e => { setNoteTexte(e.target.value); setNoteSauvegarde(false); }}
+                  placeholder="Ta note personnelle…"
+                  rows={3}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '10px', resize: 'none', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                />
+                <button
+                  onClick={() => sauvegarderNote(colo.id)}
+                  style={{ marginTop: '4px', width: '100%', background: noteSauvegarde ? 'rgba(0,212,212,0.2)' : 'rgba(255,210,80,0.15)', border: `1px solid ${noteSauvegarde ? 'rgba(0,212,212,0.4)' : 'rgba(255,210,80,0.3)'}`, borderRadius: '6px', padding: '4px', color: noteSauvegarde ? '#00d4d4' : 'rgba(255,210,80,0.8)', fontSize: '10px', cursor: 'pointer' }}
+                >
+                  {noteSauvegarde ? '✓ Sauvegardé' : 'Sauvegarder'}
+                </button>
+              </div>
+            )}
+
+            {/* Vignette */}
+            <div onClick={() => ouvrirZoom(colo, coloIdx)} style={{ cursor: 'pointer', borderRadius: '10px', overflow: 'visible', border: '1px solid rgba(255,210,80,0.2)', background: '#0a0a0a', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative' }}>
+                <img src={colo.image_url} alt="" style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }} />
+                {/* Badge notif */}
+                {colo.hasNotif && <div style={{ position: 'absolute', top: '4px', right: '4px', background: '#ff3eb5', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', zIndex: 2 }}>🔔</div>}
+                {/* Badge date — bas droite */}
+                {colo.date_coloriage && (
+                  <div style={{ position: 'absolute', bottom: '4px', right: '4px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 4px', fontSize: '8px', color: 'rgba(255,210,80,0.85)', zIndex: 2, backdropFilter: 'blur(4px)' }}>
+                    {new Date(colo.date_coloriage).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                  </div>
+                )}
+                {/* Emoji note — bas gauche */}
+                <div onClick={e => ouvrirNote(e, colo)} style={{ position: 'absolute', bottom: '4px', left: '4px', fontSize: '14px', cursor: 'pointer', zIndex: 2, lineHeight: 1, filter: colo.note ? 'none' : 'grayscale(1) opacity(0.45)', transition: 'filter .2s' }} title={colo.note ? 'Voir / modifier la note' : 'Ajouter une note'}>
+                  📜
+                </div>
+              </div>
+              <div style={{ padding: '4px 6px', background: 'rgba(0,0,0,0.85)' }}>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{colo.illu?.nom}</p>
+              </div>
             </div>
           </div>
         ))}
