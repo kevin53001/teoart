@@ -2270,7 +2270,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
           <div key={colo.id} style={{ position: 'relative', width: '120px' }}>
             {/* Panneau note — au-dessus de la vignette */}
             {noteOuverte === colo.id && (
-              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: '4px', background: '#1a1a1a', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', padding: '8px', zIndex: 20, boxShadow: '0 -4px 16px rgba(0,0,0,0.6)' }}>
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', background: '#1a1a1a', border: '1px solid rgba(255,210,80,0.3)', borderRadius: '8px', padding: '8px', zIndex: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
                 <textarea
                   value={noteTexte}
                   onChange={e => { setNoteTexte(e.target.value); setNoteSauvegarde(false); }}
@@ -2300,7 +2300,7 @@ function SectionMesColoriages({ userId, userPseudo }) {
                   </div>
                 )}
                 {/* Emoji note — bas gauche */}
-                <div onClick={e => ouvrirNote(e, colo)} style={{ position: 'absolute', bottom: '4px', left: '4px', fontSize: '14px', cursor: 'pointer', zIndex: 2, lineHeight: 1, filter: colo.note ? 'none' : 'grayscale(1) opacity(0.45)', transition: 'filter .2s' }} title={colo.note ? 'Voir / modifier la note' : 'Ajouter une note'}>
+                <div onClick={e => ouvrirNote(e, colo)} style={{ position: 'absolute', bottom: '4px', left: '4px', fontSize: '14px', cursor: 'pointer', zIndex: 2, lineHeight: 1, filter: colo.note ? 'none' : 'grayscale(1) opacity(0.75)', transition: 'filter .2s' }} title={colo.note ? 'Voir / modifier la note' : 'Ajouter une note'}>
                   📜
                 </div>
               </div>
