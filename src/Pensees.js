@@ -51,7 +51,7 @@ function hashString(str) {
   return h;
 }
 
-function couleurPensee(pensee) {
+const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
   if (pensee.couleur) return pensee.couleur;
   if (pensee.source === 'kevin') return KEVIN_CYAN;
   return COULEURS_VISITEURS[Math.abs(hashString(pensee.id || pensee.titre || '')) % COULEURS_VISITEURS.length];
@@ -256,7 +256,8 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
           const zIndex = isDevant ? 9000 : i + 1;
           // Opacité aussi sur courbe exponentielle
           const opacity = 0.25 + Math.pow(frontFactor, 2) * 0.75;
-          const couleur = couleurPensee(pensee);
+          const idxGlobal = pensees.findIndex(p => p.id === pensee.id);
+          const couleur = COULEURS_ROUE[idxGlobal % 3];
           const lue = !!vues[pensee.id];
 
           return (
@@ -870,7 +871,7 @@ function Pensees() {
           pointer-events: none;
           inset: 0;
           border-radius: 12px;
-          background-image: url('https://images.kevinteoart.fr/site/fiche_fond_desktop.jpg');
+          background-image: none;
           background-size: 100% 100%;
           background-repeat: no-repeat;
           background-position: center;
@@ -1064,7 +1065,7 @@ function Pensees() {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
           .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
-          .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: url('https://images.kevinteoart.fr/site/fiche_fond_mobile.jpg'); }
+          .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: none; }
           .fiche-encadre { padding: 6px 7px; container-type: inline-size; }
           .fiche-edge { height: 70%; top: -70%; }
           .fiche-title { font-size: clamp(6px, 9cqi, 10px); -webkit-line-clamp: unset; max-height: none; overflow: visible; }
