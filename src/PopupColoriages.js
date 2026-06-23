@@ -256,7 +256,7 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
 
             {/* Contenu */}
             <div style={{ width: '100%', maxWidth: '500px', background: '#111', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ position: 'relative', flexShrink: 0 }} onDoubleClick={handleDoubleClic}>
+              <div style={{ position: 'relative', flexShrink: 0, userSelect: 'none' }} onDoubleClick={handleDoubleClic}>
                 <img src={colo.url} alt={colo.pseudo}
                   style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', cursor: 'pointer', userSelect: 'none' }} />
                 {heartAnim && (
