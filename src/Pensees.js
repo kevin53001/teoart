@@ -17,6 +17,7 @@ const IMG_W = 110;
 const IMG_H = 150;
 const GAP = 6;
 const KEVIN_CYAN = '#00d4d4';
+const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
 
 const BARRES = [
   { direction: 'left',  images: Array.from({length: 24}, (_, i) => `bg_${String(i+1).padStart(3,'0')}.jpg`),  opacite: 0.40 },
@@ -45,7 +46,17 @@ const COULEURS_VISITEURS = [
   '#7b61ff', '#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#c0c0c0', '#f5f5f5', '#fff8e7'
 ];
 
-const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+  return h;
+}
+
+function couleurPensee(pensee) {
+  if (pensee.couleur) return pensee.couleur;
+  if (pensee.source === 'kevin') return KEVIN_CYAN;
+  return COULEURS_VISITEURS[Math.abs(hashString(pensee.id || pensee.titre || '')) % COULEURS_VISITEURS.length];
+}
 
 function decouperTexte(texte, taille = 820) {
   if (!texte) return [''];
@@ -246,8 +257,9 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
           const zIndex = isDevant ? 9000 : i + 1;
           // Opacité aussi sur courbe exponentielle
           const opacity = 0.25 + Math.pow(frontFactor, 2) * 0.75;
+          const couleur = couleurPensee(pensee);
           const idxGlobal = pensees.findIndex(p => p.id === pensee.id);
-          const couleur = COULEURS_ROUE[idxGlobal % 3];
+          const fondFiche = COULEURS_ROUE[idxGlobal % 3];
           const lue = !!vues[pensee.id];
 
           return (
@@ -257,6 +269,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                 className="fiche-reflet"
                 style={{
                   '--accent': couleur,
+                  '--fond-fiche': fondFiche,
                   transform: `translate(${x}px, ${y + 96}px) translateZ(${frontFactor * 299}px) scale(${scale}, ${scale * 0.55})`,
                   opacity: frontFactor > 0.72 ? 0.12 : 0.03,
                   zIndex: isDevant ? 8999 : Math.max(1, i),
@@ -271,6 +284,7 @@ function RouePensees({ pensees, vues, isMobile, ouvrirPopup }) {
                 }}
                 style={{
                   '--accent': couleur,
+                  '--fond-fiche': fondFiche,
                   '--author-color': couleur,
                   transform: `translate(${x}px, ${y + lift}px) translateZ(${frontFactor * 300}px) scale(${scale}) rotateY(${rotateY}deg)`,
                   zIndex,
@@ -862,6 +876,7 @@ function Pensees() {
           inset: 0;
           border-radius: 12px;
           background-image: none;
+          background-color: var(--fond-fiche);
           background-size: 100% 100%;
           background-repeat: no-repeat;
           background-position: center;
@@ -1055,7 +1070,7 @@ function Pensees() {
           .donut-zone { height: 400px; }
           .donut-stage { width: 560px; height: 330px; }
           .fiche-wrap { width: 92px; height: 152px; margin-left: -46px; margin-top: -76px; }
-          .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: none; }
+          .fiche-face { border-radius: 8px; padding: 16px 8px 10px; border-top-width: 5px; background-image: none; background-color: var(--fond-fiche); }
           .fiche-encadre { padding: 6px 7px; container-type: inline-size; }
           .fiche-edge { height: 70%; top: -70%; }
           .fiche-title { font-size: clamp(6px, 9cqi, 10px); -webkit-line-clamp: unset; max-height: none; overflow: visible; }
