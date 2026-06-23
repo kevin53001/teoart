@@ -40,6 +40,17 @@ function getMoisPatreonDisponibles() {
   return MOIS_FR.slice(0, moisCourant + 1).map(m => `Patreon - ${m} 2026`);
 }
 
+const COULEURS_VISITEURS = [
+  '#cc0000', '#ff4d4d', '#ff7a3d', '#ffd250', '#a8e063', '#2ecc71', '#00c4aa', '#1a6bbd',
+  '#7b61ff', '#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#c0c0c0', '#f5f5f5', '#fff8e7'
+];
+
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
+  return h;
+}
+
 const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
 
 function decouperTexte(texte, taille = 820) {
