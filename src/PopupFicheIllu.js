@@ -2,6 +2,7 @@ import React from 'react';
 import { supabase } from './supabase';
 import { usePanier } from './PanierContext';
 import { compresserImage } from './compresserImage';
+import PopupColoVignette from './PopupColoVignette';
 
 const R2 = 'https://images.kevinteoart.fr';
 const BASE_LOCAL = "C:\\Users\\Kevin\\Desktop\\Kevin Teo'Art - base de données\\";
@@ -518,28 +519,15 @@ export default function PopupFicheIllu({
                 )}
               </div>
 
-              {/* Partager colo */}
+              {/* Partager colo — popup flottant */}
               {showPartagerColo && (
-                <div style={{ background: 'rgba(0,212,212,0.05)', border: '1px solid rgba(0,212,212,0.2)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {coloOk ? <p style={{ color: '#00d4d4', fontSize: '12px', textAlign: 'center' }}>🎉 Ton coloriage a été partagé ! Merci {userPseudo} !</p> : (
-                    <>
-                      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>Partagé sous le pseudo : <strong style={{ color: '#00d4d4' }}>{userPseudo}</strong></p>
-                      <label style={{ display: 'block', cursor: 'pointer' }}>
-                        <input type="file" accept="image/*" onChange={e => setColoImage(e.target.files[0])} style={{ display: 'none' }} />
-                        <div style={{ background: coloImage ? 'linear-gradient(135deg, rgba(0,212,212,0.25), rgba(0,153,170,0.25))' : 'rgba(255,255,255,0.07)', border: `1px solid ${coloImage ? 'rgba(0,212,212,0.5)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '8px', padding: '7px 10px', color: coloImage ? '#00d4d4' : 'rgba(255,255,255,0.5)', fontSize: '11px', textAlign: 'center', transition: 'all .2s', boxShadow: coloImage ? 'inset 0 1px 0 rgba(255,255,255,0.08)' : 'none' }}>
-                          {coloImage ? `✓ ${coloImage.name}` : 'Choisir une image'}
-                        </div>
-                      </label>
-                      <input type="date" value={coloDate} onChange={e => setColoDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '11px' }} />
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <button onClick={() => handlePartagerColo(true)} disabled={!coloImage || coloEnvoi} style={{ flex: 1, background: coloImage ? 'linear-gradient(135deg, #00d4d4, #0099aa)' : 'rgba(255,255,255,0.04)', border: coloImage ? 'none' : '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '7px', color: coloImage ? '#fff' : 'rgba(255,255,255,0.3)', fontWeight: 'bold', fontSize: '10px', cursor: coloImage ? 'pointer' : 'not-allowed', opacity: coloEnvoi ? 0.6 : 1, boxShadow: coloImage ? '0 3px 10px rgba(0,212,212,0.35), inset 0 1px 0 rgba(255,255,255,0.15)' : 'none' }}>
-                          <img src={`${R2}/site/pastille_colos.png`} alt="" style={{ width: '11px', height: '11px', objectFit: 'contain', marginRight: '4px', verticalAlign: 'middle' }} />Valider
-                        </button>
-                        <button onClick={() => setShowPartagerColo(false)} style={{ background: 'transparent', border: '1px solid rgba(255,80,80,0.3)', borderRadius: '6px', padding: '7px 10px', color: 'rgba(255,100,100,0.7)', fontSize: '10px', cursor: 'pointer' }}>Annuler</button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                <PopupColoVignette
+                  illu={illu}
+                  userId={userId}
+                  userPseudo={userPseudo}
+                  onClose={() => setShowPartagerColo(false)}
+                  onUploaded={() => { setShowPartagerColo(false); setColoOk(true); onColoUploaded(); }}
+                />
               )}
 
               {/* Description */}
