@@ -400,7 +400,12 @@ function Catalogue() {
       } else if (categorie !== 'Tout' && i.categorie !== categorie) return false;
     }
     if (anneeFiltre !== null && i.annee !== anneeFiltre) return false;
-    if (recherche && !i.nom.toLowerCase().includes(recherche.toLowerCase())) return false;
+    if (recherche) {
+      const q = recherche.toLowerCase();
+      const dansNom = i.nom.toLowerCase().includes(q);
+      const dansTags = Array.isArray(i.tags) && i.tags.some(t => t.toLowerCase().includes(q));
+      if (!dansNom && !dansTags) return false;
+    }
     if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto && !collection[i.id]?.j_ai_achete) return false;
     if (filtreCollection === 'jeveux' && !collection[i.id]?.je_veux) return false;
     if (filtreCollection === 'japas' && collection[i.id]?.j_ai) return false;
