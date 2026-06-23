@@ -52,10 +52,6 @@ function hashString(str) {
 }
 
 const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
-  if (pensee.couleur) return pensee.couleur;
-  if (pensee.source === 'kevin') return KEVIN_CYAN;
-  return COULEURS_VISITEURS[Math.abs(hashString(pensee.id || pensee.titre || '')) % COULEURS_VISITEURS.length];
-}
 
 function decouperTexte(texte, taille = 820) {
   if (!texte) return [''];
