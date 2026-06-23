@@ -455,7 +455,7 @@ export default function Admin() {
       }
       if (destinataires.length === 0) { showToast('Aucun destinataire trouvé', 'error'); setEnvoiNotifEnCours(false); return }
       const lignes = destinataires.map(uid => ({ user_id: uid, type: 'notif_admin', contenu: { texte }, lu: false }))
-      const { error } = await supabase.from('notifications').upsert(lignes, { onConflict: 'user_id,type', ignoreDuplicates: false })
+      const { error } = await supabase.from('notifications').insert(lignes)
       if (error) throw error
       showToast(modeCibleNotif === 'tous' ? `Notification envoyée à ${destinataires.length} usagers` : `Notification envoyée à ${usagerCible.pseudo}`)
       setTexteNotifAdmin('')
