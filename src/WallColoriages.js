@@ -5,9 +5,9 @@ import PopupColoriages from './PopupColoriages';
 
 const ROWS = 6;
 const COLS_MOBILE  = 4;
-const COLS_DESKTOP = 12;
+const COLS_DESKTOP = 6;
 const PER_PAGE_MOBILE  = COLS_MOBILE  * ROWS; // 24
-const PER_PAGE_DESKTOP = COLS_DESKTOP * ROWS; // 72
+const PER_PAGE_DESKTOP = COLS_DESKTOP * ROWS; // 36
 const RATIO = 29.7 / 21; // A4 ≈ 1.414
 const ANIM_MOBILE  = 5000;
 const ANIM_DESKTOP = 12000;
@@ -54,7 +54,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
   const COLS     = isMobile ? COLS_MOBILE  : COLS_DESKTOP;
   const PER_PAGE = isMobile ? PER_PAGE_MOBILE : PER_PAGE_DESKTOP;
   const ANIM     = isMobile ? ANIM_MOBILE  : ANIM_DESKTOP;
-  const NB_PAGES = isMobile ? 3 : 1;
+  const NB_PAGES = isMobile ? 3 : 2;
 
   // Animation
   const lancerAnimation = useCallback((perPage, animDuration) => {
@@ -118,9 +118,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
       >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 12px' : '10px 24px', flexShrink: 0, height: `${headerH}px`, boxSizing: 'border-box' }}>
-        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: isMobile ? '10px' : '12px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Wall · {coloriages.length} coloriages
-        </span>
+        <div />
         <button
           onClick={onClose}
           style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -158,7 +156,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
         )}
       </div>
 
-      {/* Dots — mobile seulement */}
+      {/* Dots */}
       {NB_PAGES > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', height: `${dotsH}px`, flexShrink: 0 }}>
           {Array.from({ length: NB_PAGES }, (_, p) => (
@@ -166,8 +164,6 @@ function WallColoriages({ userId, userPseudo, onClose }) {
           ))}
         </div>
       )}
-      {/* Espace bas desktop */}
-      {!isMobile && <div style={{ height: `${dotsH}px`, flexShrink: 0 }} />}
 
       {/* PopupColoriages */}
       {popupIds && (
