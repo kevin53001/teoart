@@ -45,12 +45,6 @@ const COULEURS_VISITEURS = [
   '#7b61ff', '#9b59b6', '#d96cff', '#ff3eb5', '#ff8fb3', '#c0c0c0', '#f5f5f5', '#fff8e7'
 ];
 
-function hashString(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h) + str.charCodeAt(i);
-  return h;
-}
-
 const COULEURS_ROUE = ['#00d4d4', '#ffd250', '#ff3eb5'];
 
 function decouperTexte(texte, taille = 820) {
