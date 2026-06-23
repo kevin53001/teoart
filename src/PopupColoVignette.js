@@ -66,14 +66,12 @@ function PopupColoVignette({ illu, userId, userPseudo, onClose, onUploaded }) {
         {ok ? (
           /* ── Mini popup confirmation ── */
           <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <p style={{ fontSize: '32px', margin: 0 }}>🎉</p>
             <p style={{ color: '#fff', fontSize: '14px', fontWeight: 'bold', margin: 0 }}>
               Merci, ton colo est ajouté à la galerie !
             </p>
           </div>
         ) : (
           <>
-            <p style={{ fontSize: '24px', marginBottom: '8px' }}>🎨</p>
             <p style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{illu.nom}</p>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '16px' }}>Partage ton coloriage !</p>
 
