@@ -862,21 +862,6 @@ function SectionMaCollection({ userId, totalIllus }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const ouvrirNote = (e, colo) => {
-    e.stopPropagation();
-    if (noteOuverte === colo.id) { setNoteOuverte(null); return; }
-    setNoteOuverte(colo.id);
-    setNoteTexte(colo.note || '');
-    setNoteSauvegarde(false);
-  };
-
-  const sauvegarderNote = async (coloId) => {
-    await supabase.from('coloriages').update({ note: noteTexte.trim() || null }).eq('id', coloId);
-    setColos(prev => prev.map(c => c.id === coloId ? { ...c, note: noteTexte.trim() || null } : c));
-    setNoteSauvegarde(true);
-    setTimeout(() => setNoteSauvegarde(false), 2000);
-  };
-
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
   if (!data) return null;
 
@@ -2239,6 +2224,21 @@ function SectionMesColoriages({ userId, userPseudo }) {
     await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'colo', chemin: urlPath, userId }) });
     await supabase.from('coloriages').delete().eq('id', colo.id);
     setColos(prev => prev.filter(c => c.id !== colo.id));
+  };
+
+  const ouvrirNote = (e, colo) => {
+    e.stopPropagation();
+    if (noteOuverte === colo.id) { setNoteOuverte(null); return; }
+    setNoteOuverte(colo.id);
+    setNoteTexte(colo.note || '');
+    setNoteSauvegarde(false);
+  };
+
+  const sauvegarderNote = async (coloId) => {
+    await supabase.from('coloriages').update({ note: noteTexte.trim() || null }).eq('id', coloId);
+    setColos(prev => prev.map(c => c.id === coloId ? { ...c, note: noteTexte.trim() || null } : c));
+    setNoteSauvegarde(true);
+    setTimeout(() => setNoteSauvegarde(false), 2000);
   };
 
   if (loading) return <p style={{ color: '#00d4d4', textAlign: 'center' }}>Chargement...</p>;
