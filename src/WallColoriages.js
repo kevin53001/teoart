@@ -141,7 +141,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
             return (
               <div
                 key={i}
-                onClick={() => { if (!colo || !visible) return; setPopupIds(pageIds); setPopupIdx(i); }}
+                onClick={() => { if (!colo || !visible) return; setPopupIds(pageIds); setPopupIdx(colo.id); }}
                 style={{ width: cellSize, height: cellH, background: '#0a0a0a', borderRadius: isMobile ? '5px' : '8px', overflow: 'hidden', cursor: colo && visible ? 'pointer' : 'default', opacity: visible ? 1 : 0, transform: visible ? 'scale(1)' : 'scale(0.88)', transition: 'opacity 0.22s ease, transform 0.22s ease' }}
               >
                 {colo && <img src={colo.image_url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
@@ -167,7 +167,7 @@ function WallColoriages({ userId, userPseudo, onClose }) {
 
       {/* PopupColoriages */}
       {popupIds && (
-        <PopupColoriages userId={userId} userPseudo={userPseudo} filtreIds={popupIds} idxDepart={popupIdx} onClose={() => setPopupIds(null)} />
+        <PopupColoriages userId={userId} userPseudo={userPseudo} filtreIds={popupIds} idDepart={popupIdx} onClose={() => setPopupIds(null)} />
       )}
     </div>
     </>,
