@@ -161,7 +161,7 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
       }
       setLoading(false);
     })();
-  }, [filtreIds, filtreUserId]);
+  }, [filtreIds, filtreUserId, idDepart]);
 
   // Navigation clavier
   useEffect(() => {
