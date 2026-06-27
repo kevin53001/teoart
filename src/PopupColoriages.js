@@ -256,9 +256,9 @@ function PopupColoriages({ userId, userPseudo, onClose, filtreIds = null, filtre
 
             {/* Contenu */}
             <div style={{ width: '100%', maxWidth: '500px', background: '#111', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ position: 'relative', flexShrink: 0, userSelect: 'none' }} onDoubleClick={handleDoubleClic}>
+              <div style={{ position: 'relative', flexShrink: 0, userSelect: 'none', WebkitUserSelect: 'none', WebkitTapHighlightColor: 'transparent', WebkitTouchCallout: 'none' }} onDoubleClick={handleDoubleClic}>
                 <img src={colo.url} alt={colo.pseudo}
-                  style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', cursor: 'pointer', userSelect: 'none' }} />
+                  style={{ width: '100%', maxHeight: '55vh', objectFit: 'contain', display: 'block', background: '#000', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none', WebkitTapHighlightColor: 'transparent', WebkitTouchCallout: 'none' }} />
                 {heartAnim && (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', animation: 'heartPop 0.8s ease forwards' }}>
                     <svg viewBox="0 0 24 24" width="80" height="80" style={{ filter: 'drop-shadow(0 0 12px rgba(255,77,125,0.8))' }}>
