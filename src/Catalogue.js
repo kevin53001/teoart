@@ -401,9 +401,10 @@ function Catalogue() {
     }
     if (anneeFiltre !== null && i.annee !== anneeFiltre) return false;
     if (recherche) {
-      const q = recherche.toLowerCase();
-      const dansNom = i.nom.toLowerCase().includes(q);
-      const dansTags = Array.isArray(i.tags) && i.tags.some(t => t.toLowerCase().includes(q));
+      const normaliser = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/['']/g, ' ');
+      const q = normaliser(recherche);
+      const dansNom = normaliser(i.nom).includes(q);
+      const dansTags = Array.isArray(i.tags) && i.tags.some(t => normaliser(t).includes(q));
       if (!dansNom && !dansTags) return false;
     }
     if (filtreCollection === 'jai' && !collection[i.id]?.j_ai && !collection[i.id]?.j_ai_auto && !collection[i.id]?.j_ai_achete) return false;
