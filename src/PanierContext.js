@@ -1,4 +1,5 @@
 import React from 'react';
+import { supabase } from './supabase';
 
 export const PanierContext = React.createContext();
 
@@ -142,64 +143,126 @@ function calcReductions(articles, promoBadge = {}) {
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function PanierProvider({ children }) {
-  const [articles, setArticles] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('panier_kevinteoart');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-
+  const [articles, setArticles] = React.useState([]);
   const [promoBadge, setPromoBadge] = React.useState({});
+  const [userId, setUserId] = React.useState(null);
 
+  // ── Récupération du user_id au montage ──
   React.useEffect(() => {
-    try { localStorage.setItem('panier_kevinteoart', JSON.stringify(articles)); } catch {}
-  }, [articles]);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
+
+  // ── Chargement du panier depuis Supabase dès que userId est connu ──
+  React.useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase.from('panier').select('*').eq('user_id', userId);
+      if (!data) return;
+      const liste = data.map(row => {
+        const base = { type: row.type, id: row.item_id, nom: row.nom, image: row.image, quantite: row.quantite || 1 };
+        if (row.type === 'relie') return { ...base, prixRelie: row.prix_relie || 0, pays: row.pays, delai: row.delai, sousType: row.sous_type };
+        return { ...base, prix: row.prix || 0 };
+      });
+      setArticles(liste);
+    })();
+  }, [userId]);
+
+  // ── Upsert d'un article en Supabase ──
+  const upsertEnBase = async (uid, article) => {
+    const row = {
+      user_id: uid,
+      type: article.type,
+      item_id: String(article.id),
+      nom: article.nom,
+      image: article.image || null,
+      prix: article.prix || null,
+      prix_relie: article.prixRelie || null,
+      sous_type: article.sousType || null,
+      pays: article.pays || null,
+      delai: article.delai || null,
+      quantite: article.quantite || 1,
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from('panier').upsert(row, { onConflict: 'user_id,type,item_id' });
+  };
+
+  // ── Suppression d'un article en Supabase ──
+  const supprimerEnBase = async (uid, type, id) => {
+    await supabase.from('panier').delete().eq('user_id', uid).eq('type', type).eq('item_id', String(id));
+  };
 
   const ajouterIllustration = (illu) => {
+    if (!userId) return;
+    const article = { type: 'illustration', id: illu.id, nom: illu.nom, prix: parseFloat(illu.prix) || 2.50, image: illu.image || null, quantite: 1 };
     setArticles(prev => {
       if (prev.find(a => a.type === 'illustration' && a.id === illu.id)) return prev;
-      return [...prev, { type: 'illustration', id: illu.id, nom: illu.nom, prix: parseFloat(illu.prix) || 2.50, image: illu.image || null, quantite: 1 }];
+      upsertEnBase(userId, article);
+      return [...prev, article];
     });
   };
 
   const ajouterLivrePdf = (livre) => {
+    if (!userId) return;
+    const article = { type: 'livre_pdf', id: livre.id, nom: livre.nom, prix: parseFloat(livre.prix) || 0, image: livre.image || null, quantite: 1 };
     setArticles(prev => {
       if (prev.find(a => a.type === 'livre_pdf' && a.id === livre.id)) return prev;
-      return [...prev, { type: 'livre_pdf', id: livre.id, nom: livre.nom, prix: parseFloat(livre.prix) || 0, image: livre.image || null, quantite: 1 }];
+      upsertEnBase(userId, article);
+      return [...prev, article];
     });
   };
 
   const ajouterRecueil = (recueil) => {
+    if (!userId) return;
+    const article = { type: 'recueil', id: recueil.id, nom: recueil.nom, prix: parseFloat(recueil.prix) || 0, image: recueil.image || null, quantite: 1 };
     setArticles(prev => {
       if (prev.find(a => a.type === 'recueil' && a.id === recueil.id)) return prev;
-      return [...prev, { type: 'recueil', id: recueil.id, nom: recueil.nom, prix: parseFloat(recueil.prix) || 0, image: recueil.image || null, quantite: 1 }];
+      upsertEnBase(userId, article);
+      return [...prev, article];
     });
   };
 
   const ajouterRelie = (livre, pays, prixRelie, delai, sousType = 'livre') => {
+    if (!userId) return;
+    const article = { type: 'relie', id: livre.id, nom: livre.nom, image: livre.image || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 };
     setArticles(prev => {
       if (prev.find(a => a.type === 'relie' && a.id === livre.id)) return prev;
-      return [...prev, { type: 'relie', id: livre.id, nom: livre.nom, image: livre.image || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 }];
+      upsertEnBase(userId, article);
+      return [...prev, article];
     });
   };
 
   // Ajouter relié + PDF du même titre en une fois
   const ajouterRelieEtPdf = (item, pays, prixRelie, delai, sousType, prixPdf, imagePdf) => {
+    if (!userId) return;
+    const articleRelie = { type: 'relie', id: item.id, nom: item.nom, image: item.image || imagePdf || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 };
+    const typePdf = sousType === 'recueil' ? 'recueil' : 'livre_pdf';
+    const articlePdf = { type: typePdf, id: item.id, nom: item.nom, prix: parseFloat(prixPdf) || 0, image: item.image || imagePdf || null, quantite: 1 };
     setArticles(prev => {
       let next = [...prev];
       if (!next.find(a => a.type === 'relie' && a.id === item.id)) {
-        next.push({ type: 'relie', id: item.id, nom: item.nom, image: item.image || imagePdf || null, pays, prixRelie: parseFloat(prixRelie) || 0, delai, sousType, quantite: 1 });
+        upsertEnBase(userId, articleRelie);
+        next.push(articleRelie);
       }
-      const typePdf = sousType === 'recueil' ? 'recueil' : 'livre_pdf';
       if (!next.find(a => a.type === typePdf && a.id === item.id)) {
-        next.push({ type: typePdf, id: item.id, nom: item.nom, prix: parseFloat(prixPdf) || 0, image: item.image || imagePdf || null, quantite: 1 });
+        upsertEnBase(userId, articlePdf);
+        next.push(articlePdf);
       }
       return next;
     });
   };
 
-  const supprimerArticle = (type, id) => setArticles(prev => prev.filter(a => !(a.type === type && a.id === id)));
-  const viderPanier = () => setArticles([]);
+  const supprimerArticle = (type, id) => {
+    if (userId) supprimerEnBase(userId, type, id);
+    setArticles(prev => prev.filter(a => !(a.type === type && a.id === id)));
+  };
+
+  const viderPanier = () => {
+    if (userId) supabase.from('panier').delete().eq('user_id', userId);
+    setArticles([]);
+  };
+
   const estDansPanier = (type, id) => articles.some(a => a.type === type && a.id === id);
   const nbArticles = articles.reduce((s, a) => s + a.quantite, 0);
   const reductions = calcReductions(articles, promoBadge);
