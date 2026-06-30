@@ -372,7 +372,7 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFac
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: profil } = await supabase.from('profils')
-        .select('email, prenom, nom, adresse, complement, code_postal, ville, etat, pays')
+        .select('email, prenom, nom, telephone, adresse, complement, code_postal, ville, etat, pays')
         .eq('id', user.id).single();
       if (!profil) return;
       setInfos(prev => ({
@@ -380,6 +380,7 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFac
         email:       prev.email || user.email || '',
         prenom:      prev.prenom || profil.prenom || '',
         nom:         prev.nom || profil.nom || '',
+        telephone:   prev.telephone || profil.telephone || '',
         adresse:     prev.adresse || profil.adresse || '',
         complement:  prev.complement || profil.complement || '',
         code_postal: prev.code_postal || profil.code_postal || '',
@@ -391,7 +392,7 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFac
     charger();
   }, []); // eslint-disable-line
 
-  const champObligatoires = ['email', 'prenom', 'nom', 'adresse', 'code_postal', 'ville', 'pays'];
+  const champObligatoires = ['email', 'prenom', 'nom', 'telephone', 'adresse', 'code_postal', 'ville', 'pays'];
   const peutContinuer = champObligatoires.every(c => (infos[c] || '').trim() !== '') &&
     (!facturationDifferente || ['prenom', 'nom', 'adresse', 'code_postal', 'ville', 'pays'].every(c => (infosFacturation[c] || '').trim() !== ''));
 
@@ -405,7 +406,7 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFac
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase.from('profils').update({
-          prenom: infos.prenom, nom: infos.nom,
+          prenom: infos.prenom, nom: infos.nom, telephone: infos.telephone,
           adresse: infos.adresse, complement: infos.complement || null,
           code_postal: infos.code_postal, ville: infos.ville,
           etat: infos.etat || null, pays: infos.pays,
@@ -438,6 +439,9 @@ function EtapeInfos({ onContinuer, onRetour, isMobile, infos, setInfos, infosFac
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <ChampInput label="Prénom" obligatoire value={infos.prenom || ''} onChange={setChamp('prenom')} placeholder="Votre prénom" autoComplete="given-name" />
           <ChampInput label="Nom" obligatoire value={infos.nom || ''} onChange={setChamp('nom')} placeholder="Votre nom" autoComplete="family-name" />
+        </div>
+        <div style={{ marginTop: '12px' }}>
+          <ChampInput label="Téléphone" obligatoire type="tel" value={infos.telephone || ''} onChange={setChamp('telephone')} placeholder="06 12 34 56 78" autoComplete="tel" />
         </div>
       </div>
 
@@ -644,6 +648,7 @@ function EtapeRecap({ onContinuer, onRetour, isMobile, infos, infosFacturation, 
         </div>
         <p style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{[infos.prenom, infos.nom].filter(Boolean).join(' ')}</p>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{infos.email}</p>
+        {infos.telephone && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{infos.telephone}</p>}
         {infos.adresse && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', lineHeight: 1.6 }}>
           {infos.adresse}{infos.complement ? `, ${infos.complement}` : ''}<br />
           {[infos.code_postal, infos.ville].filter(Boolean).join(' ')}{infos.etat ? `, ${infos.etat}` : ''}<br />
@@ -983,7 +988,7 @@ export default function Panier() {
   const [userId, setUserId] = React.useState(null);
   const [userPseudo, setUserPseudo] = React.useState('');
   const [etape, setEtape] = React.useState(1);
-  const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
+  const [infos, setInfos] = React.useState({ email: '', prenom: '', nom: '', telephone: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [infosFacturation, setInfosFacturation] = React.useState({ prenom: '', nom: '', adresse: '', complement: '', code_postal: '', ville: '', etat: '', pays: '' });
   const [facturationDifferente, setFacturationDifferente] = React.useState(false);
   const [popupIllu, setPopupIllu] = React.useState(null);
@@ -1088,7 +1093,7 @@ export default function Panier() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        const { data: profil } = await supabase.from('profils').select('pseudo, email, prenom, nom, adresse, complement, code_postal, ville, etat, pays').eq('id', user.id).single();
+        const { data: profil } = await supabase.from('profils').select('pseudo, email, prenom, nom, telephone, adresse, complement, code_postal, ville, etat, pays').eq('id', user.id).single();
         if (profil) {
           if (profil.pseudo) setUserPseudo(profil.pseudo);
           setInfos(prev => ({
@@ -1096,6 +1101,7 @@ export default function Panier() {
             email:       profil.email || user.email || '',
             prenom:      profil.prenom || profil.pseudo || '',
             nom:         profil.nom || '',
+            telephone:   profil.telephone || '',
             adresse:     profil.adresse || '',
             complement:  profil.complement || '',
             code_postal: profil.code_postal || '',
