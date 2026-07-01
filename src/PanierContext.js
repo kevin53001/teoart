@@ -43,7 +43,7 @@ function calcReductions(articles, promoBadge = {}) {
   else if (nbIllus >= 6) tauxIllus = 0.25;
   else if (nbIllus >= 3) tauxIllus = 0.15;
   const tauxLivres   = nbLivresTotal >= 2 ? 0.15 : 0;
-  const tauxRecueils = nbRecueilsTotal >= 2 ? 0.20 : 0;
+  const tauxRecueils = nbRecueilsTotal >= 2 ? 0.10 : 0;
 
   // ── Totaux bruts ──
   const totalIllusBrut = illus.reduce((s, a) => s + a.prix * a.quantite, 0);
@@ -96,7 +96,7 @@ function calcReductions(articles, promoBadge = {}) {
   else if (nbIllus >= 3 && nbIllus < 6) messageIllus = `Plus que ${6 - nbIllus} illustration${6 - nbIllus > 1 ? 's' : ''} pour obtenir −25% !`;
   else if (nbIllus >= 6 && nbIllus < 10) messageIllus = `Plus que ${10 - nbIllus} illustration${10 - nbIllus > 1 ? 's' : ''} pour obtenir −35% !`;
   const messageLivres   = nbLivresTotal === 1 ? "Ajoutez un autre livre (PDF ou relié) pour obtenir −15% !" : null;
-  const messageRecueils = nbRecueilsTotal === 1 ? "Ajoutez un autre recueil (PDF ou relié) pour obtenir −20% !" : null;
+  const messageRecueils = nbRecueilsTotal === 1 ? "Ajoutez un autre recueil (PDF ou relié) pour obtenir −10% !" : null;
 
   // ── Explications paliers ──
   let explicationIllus = null;
@@ -105,7 +105,7 @@ function calcReductions(articles, promoBadge = {}) {
     explicationIllus = `${nbIllus} illustration${nbIllus > 1 ? 's' : ''} : −${Math.round(tauxIllus * 100)}% appliqué (palier ${palier}+)`;
   }
   const explicationLivres   = tauxLivres > 0   ? `${nbLivresTotal} livre${nbLivresTotal > 1 ? 's' : ''} (PDF + reliés) : −15% appliqué` : null;
-  const explicationRecueils = tauxRecueils > 0 ? `${nbRecueilsTotal} recueil${nbRecueilsTotal > 1 ? 's' : ''} (PDF + reliés) : −20% appliqué` : null;
+  const explicationRecueils = tauxRecueils > 0 ? `${nbRecueilsTotal} recueil${nbRecueilsTotal > 1 ? 's' : ''} (PDF + reliés) : −10% appliqué` : null;
 
   // ── Explication badge ──
   let explicationBadge = null;

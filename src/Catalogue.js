@@ -76,7 +76,7 @@ const PALIERS_PROMO = [
   { texte: '✦ Dès 6 illustrations : -25%', mention: '(hors livres et recueils)', couleur: 'rgba(255,210,80,0.95)', glow: 'glowPromo1' },
   { texte: '✦ Dès 10 illustrations : -35%', mention: '(hors livres et recueils)', couleur: '#ff3eb5', glow: 'glowPromo2' },
   { texte: '✦ Dès 2 livres PDF : -15% sur tes livres ✦', mention: null, couleur: '#b47fff', glow: 'glowPromo3' },
-  { texte: '✦ Dès 2 recueils : -20% sur tes recueils ✦', mention: null, couleur: '#00ffcc', glow: 'glowPromo4' },
+  { texte: '✦ Dès 2 recueils : -10% sur tes recueils ✦', mention: null, couleur: '#00ffcc', glow: 'glowPromo4' },
 ];
 
 function BandeauPromo() {
